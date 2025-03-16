@@ -2,8 +2,7 @@
 
 import { useResumeContext } from "@/context/ResumeContext";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { Building, MapPin, User } from "lucide-react";
+import { Plus, Trash2, GraduationCap, MapPin, Award, BarChart, Calendar, BookOpen, Users } from "lucide-react"
 import FormLabel from "../form-label";
 
 
@@ -65,110 +64,78 @@ export default function EducationForm() {
             </div>
 
             <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor={`schoolName-${edu.id}`} className="text-sm font-medium">
-                    School Name
-                  </label>
-                  <input
-                    id={`schoolName-${edu.id}`}
-                    value={edu.schoolName || ""}
-                    onChange={(e) => updateEducation(edu.id, "schoolName", e.target.value)}
-                    placeholder="Stanford University"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={GraduationCap}
+                  title="School Name"
+                  placeholderText="Stanford University"
+                  id={`schoolName-${edu.id}`}
+                  value={edu.schoolName || ""}
+                  onChange={(e) => updateEducation(edu.id, "schoolName", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`schoolLocation-${edu.id}`} className="text-sm font-medium">
-                    Location
-                  </label>
-                  <input
-                    id={`schoolLocation-${edu.id}`}
-                    value={edu.schoolLocation || ""}
-                    onChange={(e) => updateEducation(edu.id, "schoolLocation", e.target.value)}
-                    placeholder="Stanford, CA"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={MapPin}
+                  title="Location"
+                  placeholderText="Stanford, CA"
+                  id={`schoolLocation-${edu.id}`}
+                  value={edu.schoolLocation || ""}
+                  onChange={(e) => updateEducation(edu.id, "schoolLocation", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`degree-${edu.id}`} className="text-sm font-medium">
-                    Degree
-                  </label>
-                  <input
-                    id={`degree-${edu.id}`}
-                    value={edu.degree || ""}
-                    onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
-                    placeholder="B.S. in Computer Science"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Award}
+                  title="Degree"
+                  placeholderText="B.S. in Computer Science"
+                  id={`degree-${edu.id}`}
+                  value={edu.degree || ""}
+                  onChange={(e) => updateEducation(edu.id, "degree", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`gpa-${edu.id}`} className="text-sm font-medium">
-                    GPA
-                  </label>
-                  <input
-                    id={`gpa-${edu.id}`}
-                    value={edu.gpa || ""}
-                    onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
-                    placeholder="3.9 / 4.0"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={BarChart}
+                  title="GPA"
+                  placeholderText="3.9 / 4.0"
+                  id={`gpa-${edu.id}`}
+                  value={edu.gpa || ""}
+                  onChange={(e) => updateEducation(edu.id, "gpa", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`coursework-${edu.id}`} className="text-sm font-medium">
-                    Relevant Coursework
-                  </label>
-                  <input
-                    id={`coursework-${edu.id}`}
-                    value={edu.coursework || ""}
-                    onChange={(e) => updateEducation(edu.id, "coursework", e.target.value)}
-                    placeholder="Data Structures & Algorithms, Computer Networking,..."
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={BookOpen}
+                  title="Relevant Coursework"
+                  placeholderText="Data Structures & Algorithms, Computer Networking,..."
+                  id={`coursework-${edu.id}`}
+                  value={edu.coursework || ""}
+                  onChange={(e) => updateEducation(edu.id, "coursework", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`involvement-${edu.id}`} className="text-sm font-medium">
-                    Involvement
-                  </label>
-                  <input
-                    id={`involvement-${edu.id}`}
-                    value={edu.involvement || ""}
-                    onChange={(e) => updateEducation(edu.id, "involvement", e.target.value)}
-                    placeholder="Association for Computing Machinery, Google Developer Student Club,..."
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Users}
+                  title="Involvement"
+                  placeholderText="Association for Computing Machinery, Google Developer Student Club,..."
+                  id={`involvement-${edu.id}`}
+                  value={edu.involvement || ""}
+                  onChange={(e) => updateEducation(edu.id, "involvement", e.target.value)}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor={`schoolStartDate-${edu.id}`} className="text-sm font-medium">
-                      Start Date
-                    </label>
-                    <input
-                      id={`schoolStartDate-${edu.id}`}
-                      value={edu.schoolStartDate || ''}
-                      onChange={(e) => updateEducation(edu.id, "schoolStartDate", e.target.value)}
-                      placeholder="Sep 2024"
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor={`schoolEndDate-${edu.id}`} className="text-sm font-medium">
-                      End Date
-                    </label>
-                    <input
-                      id={`schoolEndDate-${edu.id}`}
-                      value={edu.schoolEndDate || ''}
-                      onChange={(e) => updateEducation(edu.id, "schoolEndDate", e.target.value)}
-                      placeholder="Jun 2028"
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
+                  <FormLabel
+                    icon={Calendar}
+                    title="Start Date"
+                    placeholderText="Sep 2024"
+                    id={`schoolStartDate-${edu.id}`}
+                    value={edu.schoolStartDate || ""}
+                    onChange={(e) => updateEducation(edu.id, "schoolStartDate", e.target.value)}
+                  />
+                  
+                  <FormLabel
+                    icon={Calendar}
+                    title="End Date"
+                    placeholderText="Jun 2028"
+                    id={`schoolEndDate-${edu.id}`}
+                    value={edu.schoolEndDate || ""}
+                    onChange={(e) => updateEducation(edu.id, "schoolEndDate", e.target.value)}
+                  />
                 </div>
             </div>
           </div>
