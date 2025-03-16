@@ -2,6 +2,8 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
+import FormLabel from "../form-label";
+import { User, Phone, Mail, Linkedin, Github, Globe, UserCircle, ArrowRight } from "lucide-react"
 
 interface Profile {
   fullName: string;
@@ -35,89 +37,64 @@ export default function ProfileForm() {
 
       <div className="grid grid-cols-1 gap-4">
         {/* Name */}
-        <div className="space-y-2">
-          <label htmlFor="fullName" className="text-sm font-medium">
-            Full Name
-          </label>
-          <input
-            id="fullName"
-            value={profile.fullName}
-            onChange={(e) => updateProfile("fullName", e.target.value)}
-            placeholder="Your full name"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={User}
+          title="Full Name"
+          placeholderText="Your full name"
+          id="fullName"
+          value={profile.fullName}
+          onChange={(e) => updateProfile("fullName", e.target.value)}
+        />
 
         {/* Phone Number */}
-        <div className="space-y-2">
-          <label htmlFor="phoneNumber" className="text-sm font-medium">
-            Phone Number
-          </label>
-          <input
-            id="phoneNumber"
-            type="tel"
-            value={profile.phoneNumber}
-            onChange={(e) => updateProfile("phoneNumber", e.target.value)}
-            placeholder="Your phone number"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={Phone}
+          title="Phone Number"
+          placeholderText="Your phone number"
+          id="phoneNumber"
+          value={profile.phoneNumber}
+          onChange={(e) => updateProfile("phoneNumber", e.target.value)}
+        />
 
         {/* Email */}
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <input
-            id="email"
-            value={profile.email}
-            onChange={(e) => updateProfile("email", e.target.value)}
-            placeholder="Email address"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={Mail}
+          title="Email"
+          placeholderText="Your email address"
+          id="email"
+          value={profile.email}
+          onChange={(e) => updateProfile("email", e.target.value)}
+        />
 
         {/* LinkedIn */}
-        <div className="space-y-2">
-          <label htmlFor="linkedin" className="text-sm font-medium">
-            LinkedIn
-          </label>
-          <input
-            id="linkedin"
-            value={profile.linkedin}
-            onChange={(e) => updateProfile("linkedin", e.target.value)}
-            placeholder="LinkedIn profile URL"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={Linkedin}
+          title="LinkedIn"
+          placeholderText="Your LinkedIn profile URL"
+          id="linkedin"
+          value={profile.linkedin}
+          onChange={(e) => updateProfile("linkedin", e.target.value)}
+        />
 
         {/* Website */}
-        <div className="space-y-2">
-          <label htmlFor="personalWebsite" className="text-sm font-medium">
-            Personal Website
-          </label>
-          <input
-            id="personalWebsites"
-            value={profile.personalWebsite}
-            onChange={(e) => updateProfile("personalWebsite", e.target.value)}
-            placeholder="Personal website or portfolio"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={Globe}
+          title="Website"
+          placeholderText="Your personal website"
+          id="personalWebsite"
+          value={profile.personalWebsite}
+          onChange={(e) => updateProfile("personalWebsite", e.target.value)}
+        />
 
         {/* GitHub */}
-        <div className="space-y-2">
-          <label htmlFor="profileGithub" className="text-sm font-medium">
-            GitHub Link
-          </label>
-          <input
-            id="profileGithub"
-            value={profile.profileGithub}
-            onChange={(e) => updateProfile("profileGithub", e.target.value)}
-            placeholder="GitHub profile URL"
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          />
-        </div>
+        <FormLabel
+          icon={Github}
+          title="GitHub"
+          placeholderText="Your GitHub profile URL"
+          id="profileGithub"
+          value={profile.profileGithub}
+          onChange={(e) => updateProfile("profileGithub", e.target.value)}
+        />
       </div>
     </div>
   )

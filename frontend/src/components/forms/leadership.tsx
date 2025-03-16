@@ -3,6 +3,8 @@
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
+import { Building, MapPin, User, Calendar } from "lucide-react";
+import FormLabel from "../form-label";
 
 interface LeadershipExperience {
   id: number;
@@ -61,44 +63,33 @@ export default function LeadershipExperienceForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor={`leadershipOrg-${experience.id}`} className="text-sm font-medium">
-                    Organization
-                  </label>
-                  <input
-                    id={`leadershipOrg-${experience.id}`}
-                    value={experience.leadershipOrg}
-                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipOrg", e.target.value)}
-                    placeholder="Organization Name"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <label htmlFor={`leadershipLocation-${experience.id}`} className="text-sm font-medium">
-                    Location
-                  </label>
-                  <input
-                    id={`leadershipLocation-${experience.id}`}
-                    value={experience.leadershipLocation}
-                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipLocation", e.target.value)}
-                    placeholder="Location"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel 
+                  icon={Building} 
+                  title="Organization" 
+                  placeholderText="Organization Name" 
+                  id={`leadershipOrg-${experience.id}`} 
+                  value={experience.leadershipOrg} 
+                  onChange={(e) => updateLeadershipExperience(experience.id, "leadershipOrg", e.target.value)} 
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`leadershipRole-${experience.id}`} className="text-sm font-medium">
-                    Role
-                  </label>
-                  <input
-                    id={`leadershipRole-${experience.id}`}
-                    value={experience.leadershipRole}
-                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipRole", e.target.value)}
-                    placeholder="Your Role"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={MapPin}
+                  title="Location"
+                  placeholderText="Location"
+                  id={`leadershipLocation-${experience.id}`}
+                  value={experience.leadershipLocation}
+                  onChange={(e) => updateLeadershipExperience(experience.id, "leadershipLocation", e.target.value)}
+                />
+
+                <FormLabel
+                  icon={User}
+                  title="Role"
+                  placeholderText="Your Role"
+                  id={`leadershipRole-${experience.id}`}
+                  value={experience.leadershipRole}
+                  onChange={(e) => updateLeadershipExperience(experience.id, "leadershipRole", e.target.value)}
+                />
 
                 <div className="space-y-2">
                   <label htmlFor={`leadershipDescription-${experience.id}`} className="text-sm font-medium">
@@ -115,28 +106,22 @@ export default function LeadershipExperienceForm() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor={`leadershipStartDate-${experience.id}`} className="text-sm font-medium">
-                      Start Date
-                    </label>
-                    <input
-                      id={`leadershipStartDate-${experience.id}`}
-                      value={experience.leadershipStartDate || ''}
-                      onChange={(e) => updateLeadershipExperience(experience.id, "leadershipStartDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`leadershipEndDate-${experience.id}`} className="text-sm font-medium">
-                      End Date
-                    </label>
-                    <input
-                      id={`leadershipEndDate-${experience.id}`}
-                      value={experience.leadershipEndDate || ''}
-                      onChange={(e) => updateLeadershipExperience(experience.id, "leadershipEndDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
+                  <FormLabel
+                    icon={Calendar}
+                    title="Start Date"
+                    placeholderText="Month Year"
+                    id={`leadershipStartDate-${experience.id}`}
+                    value={experience.leadershipStartDate || ''}
+                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipStartDate", e.target.value)}
+                  />
+                  <FormLabel
+                    icon={Calendar}
+                    title="End Date"
+                    placeholderText="Month Year"
+                    id={`leadershipEndDate-${experience.id}`}
+                    value={experience.leadershipEndDate || ''}
+                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipEndDate", e.target.value)}
+                  />
                 </div>
               </div>
             </div>

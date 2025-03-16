@@ -86,7 +86,7 @@ export default function NewResumePage() {
   };
 
   return (
-    <main className="container mx-auto max-w-7xl py-8 px-4">
+    <main className="container mx-auto max-w-7xl py-8 px-1">
       <div className="mb-6">
         <Link href="/create" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -97,7 +97,7 @@ export default function NewResumePage() {
       {/* Main Layout: 3 Column - Left (Fixed) | Center | Right */}
       <div className="flex gap-1">
         {/* Left Sidebar (Fixed Navigation) */}
-        <div className="w-48 flex-shrink-0 pr-4">
+        <div className="w-42 flex-shrink-0 pr-4">
           <div className="sticky top-24">
             <h1 className="text-lg font-semibold mb-4">Sections</h1>
             <nav className="space-y-1">
@@ -119,8 +119,8 @@ export default function NewResumePage() {
         {/* Center and Right Sections (Resizable) */}
         <PanelGroup direction="horizontal" className="flex-1">
           {/* Center Form Section */}
-          <Panel defaultSize={40} minSize={30} className="space-y-8 pr-1">
-            <div className="bg-white rounded-lg border border-gray-300 p-6">
+          <Panel defaultSize={45} minSize={30} className="space-y-8 pr-1">
+            <div className="bg-white rounded-lg border border-gray-300 p-6 overflow-y-auto shadow-md scrollbar-hidden" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
               {renderForm()}
             </div>
             <div className="flex justify-between">
@@ -134,10 +134,10 @@ export default function NewResumePage() {
           </Panel>
 
           {/* Divider between center and right panel */}
-          <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-gray-300 transition-colors" />
+          <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-gray-300 transition-colors rounded-full" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }} />
 
           {/* Right Resume Review Panel */}
-          <Panel defaultSize={60} minSize={40} className="pl-1">
+          <Panel defaultSize={55} minSize={40} className="pl-1">
             <div className="sticky top-0 bg-gray-300 rounded-lg shadow-md">
               <PDFViewer pdfData={pdfUrl} />
             </div>

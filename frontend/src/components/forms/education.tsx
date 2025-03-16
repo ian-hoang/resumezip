@@ -3,6 +3,9 @@
 import { useResumeContext } from "@/context/ResumeContext";
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { Building, MapPin, User } from "lucide-react";
+import FormLabel from "../form-label";
+
 
 interface Education {
   id: number;
