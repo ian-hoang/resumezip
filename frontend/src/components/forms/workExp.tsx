@@ -2,7 +2,8 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Briefcase, MapPin, User, Calendar, FileText } from "lucide-react"
+import FormLabel from "../form-label"
 
 interface WorkExperience {
   id: number;
@@ -65,45 +66,32 @@ export default function WorkExperienceForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor={`companyName-${experience.id}`} className="text-sm font-medium">
-                    Company
-                  </label>
-                  <input
-                    id={`companyName-${experience.id}`}
-                    value={experience.companyName}
-                    onChange={(e) => updateWorkExperience(experience.id, "companyName", e.target.value)}
-                    placeholder="Company Name"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Briefcase}
+                  title="Company"
+                  placeholderText="Company Name"
+                  id={`companyName-${experience.id}`}
+                  value={experience.companyName}
+                  onChange={(e) => updateWorkExperience(experience.id, "companyName", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`workLocation-${experience.id}`} className="text-sm font-medium">
-                    Location
-                  </label>
-                  <input
-                    id={`workLocation-${experience.id}`}
-                    value={experience.workLocation}
-                    onChange={(e) => updateWorkExperience(experience.id, "workLocation", e.target.value)}
-                    placeholder="Your job location"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={MapPin}
+                  title="Location"
+                  placeholderText="Your job location"
+                  id={`workLocation-${experience.id}`}
+                  value={experience.workLocation}
+                  onChange={(e) => updateWorkExperience(experience.id, "workLocation", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`workRole-${experience.id}`} className="text-sm font-medium">
-                    Role
-                  </label>
-                  <input
-                    id={`role-${experience.id}`}
-                    value={experience.workRole}
-                    onChange={(e) => updateWorkExperience(experience.id, "workRole", e.target.value)}
-                    placeholder="Your role"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
-
+                <FormLabel
+                  icon={User}
+                  title="Role"
+                  placeholderText="Your role"
+                  id={`workRole-${experience.id}`}
+                  value={experience.workRole}
+                  onChange={(e) => updateWorkExperience(experience.id, "workRole", e.target.value)}
+                />
                 <div className="space-y-2">
                   <label htmlFor={`workDescription-${experience.id}`} className="text-sm font-medium">
                     Description
@@ -119,29 +107,23 @@ export default function WorkExperienceForm() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor={`workStartDate-${experience.id}`} className="text-sm font-medium">
-                      Start Date
-                    </label>
-                    <input
-                      id={`workStartDate-${experience.id}`}
-                      value={experience.workStartDate || ''}
-                      onChange={(e) => updateWorkExperience(experience.id, "workStartDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
+                  <FormLabel
+                    icon={Calendar}
+                    title="Start Date"
+                    placeholderText="Your job start date"
+                    id={`workStartDate-${experience.id}`}
+                    value={experience.workStartDate}
+                    onChange={(e) => updateWorkExperience(experience.id, "workStartDate", e.target.value)}
+                  />
 
-                  <div className="space-y-2">
-                    <label htmlFor={`workEndDate-${experience.id}`} className="text-sm font-medium">
-                      End Date
-                    </label>
-                    <input
-                      id={`workEndDate-${experience.id}`}
-                      value={experience.workEndDate || ''}
-                      onChange={(e) => updateWorkExperience(experience.id, "workEndDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
+                  <FormLabel
+                    icon={Calendar}
+                    title="End Date"
+                    placeholderText="Your job end date"
+                    id={`workEndDate-${experience.id}`}
+                    value={experience.workEndDate}
+                    onChange={(e) => updateWorkExperience(experience.id, "workEndDate", e.target.value)}
+                  />
                 </div>
               </div>
             </div>

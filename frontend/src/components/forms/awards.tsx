@@ -2,7 +2,8 @@
 
 import { useResumeContext } from "@/context/ResumeContext";
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Award, Building, Calendar, Medal } from "lucide-react"
+import FormLabel from "../form-label";
 
 interface CertificationAward {
   id: number;
@@ -65,42 +66,32 @@ export default function CertificationAwardsForm() {
               </button>
             </div>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor={`awardName-${cert.id}`} className="text-sm font-medium">
-                  Certification/Award Name
-                </label>
-                <input
-                  id={`awardName-${cert.id}`}
-                  value={cert.awardName}
-                  onChange={(e) => updateCertification(cert.id, "awardName", e.target.value)}
-                  placeholder="Certification or Award Name"
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor={`awardOrg-${cert.id}`} className="text-sm font-medium">
-                  Organizer
-                </label>
-                <input
-                  id={`awardOrg-${cert.id}`}
-                  value={cert.awardOrg}
-                  onChange={(e) => updateCertification(cert.id, "awardOrg", e.target.value)}
-                  placeholder="Organization or Issuer"
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor={`awardDate-${cert.id}`} className="text-sm font-medium">
-                  Date
-                </label>
-                <input
-                  id={`awardDate-${cert.id}`}
-                  value={cert.awardDate}
-                  onChange={(e) => updateCertification(cert.id, "awardDate", e.target.value)}
-                  placeholder="MM/YYYY"
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                />
-              </div>
+              <FormLabel
+                icon={Award}
+                title="Certification/Award Name"
+                placeholderText="AWS Certified Solutions Architect, Dean's List, etc."
+                id={`awardName-${cert.id}`}
+                value={cert.awardName}
+                onChange={(e) => updateCertification(cert.id, "awardName", e.target.value)}
+              />
+
+              <FormLabel
+                icon={Building}
+                title="Issuing Organization"
+                placeholderText="Amazon Web Services, University of Washington, etc."
+                id={`awardOrg-${cert.id}`}
+                value={cert.awardOrg}
+                onChange={(e) => updateCertification(cert.id, "awardOrg", e.target.value)}
+              />
+
+              <FormLabel
+                icon={Calendar}
+                title="Date Received"
+                placeholderText="Month Year"
+                id={`awardDate-${cert.id}`}
+                value={cert.awardDate}
+                onChange={(e) => updateCertification(cert.id, "awardDate", e.target.value)}
+              />
             </div>
           </div>
         ))}
