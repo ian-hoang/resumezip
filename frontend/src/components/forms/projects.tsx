@@ -2,7 +2,9 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Code, Calendar, Github, Globe, Layers, Rocket} from "lucide-react"
+import FormLabel from "../form-label"
+import FormDescription from "../form-description"
 
 interface Project {
   id: number,
@@ -60,84 +62,58 @@ export default function TechnicalProjectsForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor={`projectName-${project.id}`} className="text-sm font-medium">
-                    Project Name
-                  </label>
-                  <input
-                    id={`projectName-${project.id}`}
-                    value={project.projectName}
-                    onChange={(e) => updateProject(project.id, "projectName", e.target.value)}
-                    placeholder="Project Name"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Rocket}
+                  title="Project Name"
+                  placeholderText="Project Name"
+                  id={`projectName-${project.id}`}
+                  value={project.projectName}
+                  onChange={(e) => updateProject(project.id, "projectName", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`techStack-${project.id}`} className="text-sm font-medium">
-                    Technical Stack
-                  </label>
-                  <input
-                    id={`techStack-${project.id}`}
-                    value={project.techStack}
-                    onChange={(e) => updateProject(project.id, "techStack", e.target.value)}
-                    placeholder="Technologies used"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Layers}
+                  title="Tech Stack"
+                  placeholderText="React, Node.js, MongoDB, etc."
+                  id={`techStack-${project.id}`}
+                  value={project.techStack}
+                  onChange={(e) => updateProject(project.id, "techStack", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`projectDate-${project.id}`} className="text-sm font-medium">
-                    Date
-                  </label>
-                  <input
-                    id={`projectDate-${project.id}`}
-                    value={project.projectDate}
-                    onChange={(e) => updateProject(project.id, "projectDate", e.target.value)}
-                    placeholder="Date of project"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Calendar}
+                  title="Project Duration"
+                  placeholderText="June 2023 - August 2023"
+                  id={`projectDuration-${project.id}`}
+                  value={project.projectDate}
+                  onChange={(e) => updateProject(project.id, "projectDate", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`projectGithub-${project.id}`} className="text-sm font-medium">
-                    GitHub Link
-                  </label>
-                  <input
-                    id={`projectGithub-${project.id}`}
-                    value={project.projectGithub}
-                    onChange={(e) => updateProject(project.id, "projectGithub", e.target.value)}
-                    placeholder="GitHub Link"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Github}
+                  title="GitHub Link"
+                  placeholderText="https://github.com/username/project"
+                  id={`projectGithub-${project.id}`}
+                  value={project.projectGithub}
+                  onChange={(e) => updateProject(project.id, "projectGithub", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`additionalLink-${project.id}`} className="text-sm font-medium">
-                    Website Link
-                  </label>
-                  <input
-                    id={`additionalLink-${project.id}`}
-                    value={project.additionalLink}
-                    onChange={(e) => updateProject(project.id, "additionalLink", e.target.value)}
-                    placeholder="Website link"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Globe}
+                  title="Website Link"
+                  placeholderText="https://project-website.com"
+                  id={`additionalLink-${project.id}`}
+                  value={project.additionalLink}
+                  onChange={(e) => updateProject(project.id, "additionalLink", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`projectDescription-${project.id}`} className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id={`projectDescription-${project.id}`}
-                    value={project.projectDescription}
-                    onChange={(e) => updateProject(project.id, "projectDescription", e.target.value)}
-                    placeholder="Project description"
-                    rows={4}
-                    className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormDescription
+                  id={`projectDescription-${project.id}`}
+                  title="Project Description"
+                  placeholderText="Describe your project, its features, and your contributions"
+                  value={project.projectDescription}
+                  onChange={(e) => updateProject(project.id, "projectDescription", e.target.value)}
+                />
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { Building, MapPin, User, Calendar } from "lucide-react";
 import FormLabel from "../form-label";
+import FormDescription from "../form-description";
 
 interface LeadershipExperience {
   id: number;
@@ -91,19 +92,13 @@ export default function LeadershipExperienceForm() {
                   onChange={(e) => updateLeadershipExperience(experience.id, "leadershipRole", e.target.value)}
                 />
 
-                <div className="space-y-2">
-                  <label htmlFor={`leadershipDescription-${experience.id}`} className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id={`leadershipDescription-${experience.id}`}
-                    value={experience.leadershipDescription || ''}
-                    onChange={(e) => updateLeadershipExperience(experience.id, "leadershipDescription", e.target.value)}
-                    placeholder="Describe your responsibilities and contributions"
-                    rows={4}
-                    className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormDescription
+                  id={`leadershipDescription-${experience.id}`}
+                  title="Leadership Description"
+                  placeholderText="Describe your responsibilities and contributions"
+                  value={experience.leadershipDescription}
+                  onChange={(e) => updateLeadershipExperience(experience.id, "leadershipDescription", e.target.value)}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormLabel

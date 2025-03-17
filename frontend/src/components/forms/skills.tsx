@@ -2,7 +2,8 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Wrench, Sparkles } from "lucide-react"
+import FormLabel from "../form-label"
 
 interface Skill {
   id: number;
@@ -56,33 +57,26 @@ export default function TechnicalSkillsForm() {
               </button>
             </div>
 
+
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor={`skillName-${skill.id}`} className="text-sm font-medium">
-                    Skill Name
-                  </label>
-                  <input
-                    id={`skillName-${skill.id}`}
-                    value={skill.skillName}
-                    onChange={(e) => updateSkill(skill.id, "skillName", e.target.value)}
-                    placeholder="Programming languages"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Wrench}
+                  title="Skill Category"
+                  placeholderText="Programming Languages, Frameworks, Tools, etc."
+                  id={`skillType-${skill.id}`}
+                  value={skill.skillName}
+                  onChange={(e) => updateSkill(skill.id, "skillName", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`skillDetails-${skill.id}`} className="text-sm font-medium">
-                    Skill Details
-                  </label>
-                  <input
-                    id={`skillDetails-${skill.id}`}
-                    value={skill.skillDetails}
-                    onChange={(e) => updateSkill(skill.id, "skillDetails", e.target.value)}
-                    placeholder="TypeScript, C++, Python, Java, Assembly"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={Sparkles}
+                  title="Skill Details"
+                  placeholderText="TypeScript, C++, Python, Java"
+                  id={`skillLevel-${skill.id}`}
+                  value={skill.skillDetails}
+                  onChange={(e) => updateSkill(skill.id, "skillDetails", e.target.value)}
+                />
               </div>
             </div>
           </div>

@@ -15,8 +15,8 @@ const FormLabel: FC<FormLabelProps> = ({  icon: Icon,  title,  placeholderText, 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-gray-500" />
-        <label htmlFor={id} className="text-sm font-medium text-gray-700">
+        <Icon className="h-5 w-5 text-black" />
+        <label htmlFor={id} className="text-sm font-medium text-black">
           {title}
         </label>
       </div>
