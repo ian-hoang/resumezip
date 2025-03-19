@@ -120,7 +120,7 @@ export default function NewResumePage() {
         <PanelGroup direction="horizontal" className="flex-1">
           {/* Center Form Section */}
           <Panel defaultSize={45} minSize={30} className="space-y-8 pr-1">
-            <div className="bg-white rounded-lg border border-gray-300 p-6 overflow-y-auto shadow-md scrollbar-hidden" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
+            <div className="bg-white rounded-lg border border-gray-300 overflow-y-auto shadow-md scrollbar-hidden" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
               {renderForm()}
             </div>
             <div className="flex justify-between">

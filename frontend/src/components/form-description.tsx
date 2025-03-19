@@ -19,8 +19,8 @@ const FormDescription: FC<FormDescriptionProps> = ({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <FileText className="h-5 w-5 text-black" />
-        <label htmlFor={id} className="text-sm font-medium text-black">
+        <FileText className="h-5 w-5 text-blue-600" />
+        <label htmlFor={id} className="text-sm font-medium text-gray-700">
           {title}
         </label>
       </div>
@@ -29,7 +29,7 @@ const FormDescription: FC<FormDescriptionProps> = ({
         value={value}
         onChange={onChange}
         placeholder={placeholderText}
-        className="w-full h-30 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 resize-none"
+        className="w-full h-30 rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 resize-none transition-all"
       />
     </div>
   );

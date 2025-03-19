@@ -3,6 +3,9 @@
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
+import { Building, MapPin, User, Calendar } from "lucide-react";
+import FormLabel from "../form-label";
+import FormDescription from "../form-description";
 
 interface VolunteerExperience {
   id: number;
@@ -61,82 +64,59 @@ export default function VolunteerExperienceForm() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor={`volunteerOrg-${experience.id}`} className="text-sm font-medium">
-                    Organization
-                  </label>
-                  <input
-                    id={`volunteerOrg-${experience.id}`}
-                    value={experience.volunteerOrg}
-                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerOrg", e.target.value)}
-                    placeholder="Organization Name"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <label htmlFor={`volunteerLocation-${experience.id}`} className="text-sm font-medium">
-                    Location
-                  </label>
-                  <input
-                    id={`volunteerLocation-${experience.id}`}
-                    value={experience.volunteerLocation}
-                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerLocation", e.target.value)}
-                    placeholder="Location"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel 
+                  icon={Building} 
+                  title="Organization" 
+                  placeholderText="Organization Name" 
+                  id={`volunteerOrg-${experience.id}`}
+                  value={experience.volunteerOrg}
+                  onChange={(e) => updateVolunteerExperience(experience.id, "volunteerOrg", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`volunteerRole-${experience.id}`} className="text-sm font-medium">
-                    Role
-                  </label>
-                  <input
-                    id={`volunteerRole-${experience.id}`}
-                    value={experience.volunteerRole}
-                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerRole", e.target.value)}
-                    placeholder="Your Role"
-                    className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormLabel
+                  icon={MapPin}
+                  title="Location"
+                  placeholderText="Location"
+                  id={`volunteerLocation-${experience.id}`}
+                  value={experience.volunteerLocation}
+                  onChange={(e) => updateVolunteerExperience(experience.id, "volunteerLocation", e.target.value)}
+                />
+                <FormLabel
+                  icon={User}
+                  title="Role"
+                  placeholderText="Your Role"
+                  id={`volunteerRole-${experience.id}`}
+                  value={experience.volunteerRole}
+                  onChange={(e) => updateVolunteerExperience(experience.id, "volunteerRole", e.target.value)}
+                />
 
-                <div className="space-y-2">
-                  <label htmlFor={`volunteerDescription-${experience.id}`} className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id={`volunteerDescription-${experience.id}`}
-                    value={experience.volunteerDescription || ''}
-                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerDescription", e.target.value)}
-                    placeholder="Describe your responsibilities and contributions"
-                    rows={4}
-                    className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  />
-                </div>
+                <FormDescription
+                  id={`volunteerDescription-${experience.id}`}
+                  title="Volunteer Description"
+                  placeholderText="Describe your responsibilities and contributions"
+                  value={experience.volunteerDescription}
+                  onChange={(e) => updateVolunteerExperience(experience.id, "volunteerDescription", e.target.value)}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor={`volunteerStartDate-${experience.id}`} className="text-sm font-medium">
-                      Start Date
-                    </label>
-                    <input
-                      id={`volunteerStartDate-${experience.id}`}
-                      value={experience.volunteerStartDate || ''}
-                      onChange={(e) => updateVolunteerExperience(experience.id, "volunteerStartDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor={`volunteerEndDate-${experience.id}`} className="text-sm font-medium">
-                      End Date
-                    </label>
-                    <input
-                      id={`volunteerEndDate-${experience.id}`}
-                      value={experience.volunteerEndDate || ''}
-                      onChange={(e) => updateVolunteerExperience(experience.id, "volunteerEndDate", e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    />
-                  </div>
+                  <FormLabel
+                    icon={Calendar}
+                    title="Start Date"
+                    placeholderText="Start Date"
+                    id={`volunteerStartDate-${experience.id}`}
+                    value={experience.volunteerStartDate}
+                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerStartDate", e.target.value)}
+                  />
+                  
+                  <FormLabel
+                    icon={Calendar}
+                    title="End Date"
+                    placeholderText="End Date"
+                    id={`volunteerEndDate-${experience.id}`}
+                    value={experience.volunteerEndDate}
+                    onChange={(e) => updateVolunteerExperience(experience.id, "volunteerEndDate", e.target.value)}
+                  />
                 </div>
               </div>
             </div>
