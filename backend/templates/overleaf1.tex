@@ -158,14 +158,16 @@
 {{if .Projects}}
 \section{Projects}
 \resumeSubHeadingListStart
-    {{- range .Projects -}}
+    {{- range .Projects}}
     \resumeProjectHeading
-    {\textbf{ {{- .Name -}} } $|$ \emph{ {{- .TechStack -}} }}{}
+    {\textbf{ {{- .Name -}} } {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}{}
+    {{- if gt (len .Description) 0 }}
     \resumeItemListStart
         {{- range .Description -}}
         \resumeItem{ {{ . }} }
         {{- end}}
     \resumeItemListEnd
+    {{- end}}
     {{- end}}
 \resumeSubHeadingListEnd
 {{- end}}
@@ -175,8 +177,8 @@
 \section{Technical Skills}
     \begin{itemize}[leftmargin=0.15in, label={}]
 	\small{\item{
-    {{- range .Skills -}}
-    \textbf{ {{- .Name}}:} {{ .Details -}} \\
+    {{- range .Skills}}
+    \textbf{ {{- if .Name }} {{- .Name}}: {{ end }} } {{ .Details -}} \\
     {{- end}}
 	}}
     \end{itemize}
@@ -222,5 +224,16 @@
 \resumeSubHeadingListEnd
 {{- end}}
 
+%-----------AWARDS-----------%
+{{if .Awards}}
+\section{Awards}
+\resumeSubHeadingListStart
+    {{- range .Awards}}
+    \resumeSubheading
+    { {{- .Name -}} }{ {{- .Date -}} }
+    { {{- .Organization -}} }{}
+    {{- end}}
+\resumeSubHeadingListEnd
+{{- end}}
 
 \end{document}

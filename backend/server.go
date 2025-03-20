@@ -35,9 +35,6 @@ func StartServer() {
 	// Route to submit resume data
 	r.POST("/api/resume", handleResumeSubmission)
 
-	// Route to fetch the latest generated PDF
-	r.GET("/api/resume/pdf", getResumePDF)
-
 	// Start the server
 	port := ":8080"
 	log.Printf("Server running on port %s...", port)

@@ -2,6 +2,7 @@ package main
 
 // ResumeData holds the main resume structure
 type ResumeData struct {
+	ID              string           `json:"id"`
 	Profile         ProfileStruct    `json:"profileSection"`
 	Educations      []Education      `json:"educationSection"`
 	WorkExperiences []WorkExperience `json:"workExperienceSection"`
