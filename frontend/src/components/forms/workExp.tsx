@@ -71,7 +71,7 @@ export default function WorkExperienceForm() {
       </div>
 
       {workExperienceList.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-300 hover:shadow-md transition-shadows duration-300">
           <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">No work experience entries yet</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
@@ -79,9 +79,9 @@ export default function WorkExperienceForm() {
           </p>
           <button
             onClick={addWorkExperience}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer active:scale-105 transition-transform duration-200"
           >
-            <Plus className="mr-2 h-4 w-4" /> Add First Work Experience Entry
+            <Plus className="mr-2 h-4 w-4" /> Add Work Experience
           </button>
         </div>
       ) : (
@@ -103,7 +103,7 @@ export default function WorkExperienceForm() {
                   </div>
                   <button
                     onClick={() => removeWorkExperience(exp.id)}
-                    className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                    className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer active:scale-110 transition-transform duration-200"
                     aria-label="Remove work experience entry"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -175,7 +175,7 @@ export default function WorkExperienceForm() {
 
           <div className="m-6 text-center">
             <button
-              className="inline-flex items-center justify-center w-full rounded-md border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer"
+              className="inline-flex items-center justify-center w-full rounded-md border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer active:scale-105"
               onClick={addWorkExperience}
               aria-label="Add work experience entry"
             >

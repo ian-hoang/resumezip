@@ -64,7 +64,7 @@ export default function CertificationAwardsForm() {
       </div>
 
       {certifications.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-300 hover:shadow-md transition-shadows duration-300">
           <Medal className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">
             No certifications or awards added yet
@@ -74,9 +74,9 @@ export default function CertificationAwardsForm() {
           </p>
           <button
             onClick={addCertification}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer active:scale-105 transition-transform duration-200"
           >
-            <Plus className="mr-2 h-4 w-4" /> Add First Certification/Award
+            <Plus className="mr-2 h-4 w-4" /> Add Certification/Award
           </button>
         </div>
       ) : (
@@ -98,7 +98,7 @@ export default function CertificationAwardsForm() {
                   </div>
                   <button
                     onClick={() => removeCertification(cert.id)}
-                    className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                    className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer active:scale-110 transition-transform duration-200"
                     aria-label="Remove certification/award entry"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -139,7 +139,7 @@ export default function CertificationAwardsForm() {
 
           <div className="m-6 text-center">
             <button
-              className="inline-flex items-center justify-center w-full rounded-md border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer"
+              className="inline-flex items-center justify-center w-full rounded-md border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer active:scale-105"
               onClick={addCertification}
               aria-label="Add certification/award entry"
             >
