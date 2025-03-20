@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Plus, FileDown } from "lucide-react";
+import { ArrowLeft, Plus, ArrowRight } from "lucide-react";
 import WorkExperienceForm from "@/components/forms/workExp";
 import EducationForm from "@/components/forms/education";
 import TechnicalProjectsForm from "@/components/forms/projects";
@@ -15,15 +15,24 @@ import { useState } from "react";
 import { useResumeContext } from "@/context/ResumeContext";
 import PDFViewer from "@/components/pdfViewer";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { v4 as uuidv4 } from "uuid"; // Import UUID library
 
 export default function NewResumePage() {
   const [activeSection, setActiveSection] = useState<string>("Profile");
-  const { formData } = useResumeContext();
+  const { formData, updateFormData } = useResumeContext();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     try {
+
+      let id = formData.id;
+      if (!id) {
+        id = uuidv4(); // Generate a new ID
+        updateFormData("id", id); // Update the context with the new ID
+      }
+
       const payload = {
+        id,
         profileSection: formData.profileSection,
         educationSection: formData.educationSection,
         workExperienceSection: formData.workExperienceSection,
@@ -51,7 +60,12 @@ export default function NewResumePage() {
       const responseData = await response.json();
       console.log("Resume submitted successfully:", responseData);
 
-      setPdfUrl(`http://localhost:8080/api/resume/pdf?timestamp=${new Date().getTime()}`);
+      // Append a timestamp to the PDF URL to force the browser to fetch the updated file
+      const timestamp = new Date().getTime();
+      const updatedPdfUrl = `${responseData.pdf_url}?timestamp=${timestamp}`;
+
+      // Set the updated PDF URL
+      setPdfUrl(updatedPdfUrl);
       console.log("PDF URL:", pdfUrl);
     } catch (error) {
       console.error("Error submitting resume:", error);
@@ -80,8 +94,6 @@ export default function NewResumePage() {
         return <AwardsForm />;
       case "Skills":
         return <TechnicalSkillsForm />;
-      default:
-        return <ProfileForm />;
     }
   };
 
@@ -101,7 +113,7 @@ export default function NewResumePage() {
           <div className="sticky top-24">
             <h1 className="text-lg font-semibold mb-4">Sections</h1>
             <nav className="space-y-1">
-              {["Profile", "Education", "Work Experience", "Skills", "Projects", "Volunteership", "Leadership", "Awards", "Others"].map((section) => (
+              {["Profile", "Education", "Work Experience", "Skills", "Projects", "Volunteership", "Leadership", "Awards"].map((section) => (
                 <ResumeNavItem
                   key={section}
                   title={section}
@@ -124,11 +136,8 @@ export default function NewResumePage() {
               {renderForm()}
             </div>
             <div className="flex justify-between">
-              <button onClick={handleSubmit} className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer">
+              <button onClick={handleSubmit} className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer">
                 Save Draft
-              </button>
-              <button className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer">
-                <FileDown className="h-4 w-4" /> Export PDF
               </button>
             </div>
           </Panel>

@@ -31,7 +31,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [searchText, setSearchText] = useState("")
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   const pdfContainerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<HTMLDivElement>(null)
@@ -164,12 +163,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
             handleZoomReset()
           }
           break
-        case "f":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault()
-            setIsSearchOpen(true)
-          }
-          break
       }
     }
 
@@ -235,15 +228,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
               <Download className="h-4 w-4" />
             </button>
           )}
-
-          <button
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className={`p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors ${isSearchOpen ? "bg-gray-200" : ""}`}
-            aria-label="Search"
-            title="Search (Ctrl+F)"
-          >
-            <Search className="h-4 w-4" />
-          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -286,22 +270,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
           </button>
         </div>
       </div>
-
-      {/* Search bar */}
-      {isSearchOpen && (
-        <div className="p-2 bg-white border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search in document..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-      )}
 
       {/* PDF Viewer */}
       <div ref={pdfContainerRef} className="flex-1 overflow-auto bg-gray-200 relative">
@@ -366,9 +334,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
           <span>
             Navigate: <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">←</kbd>{" "}
             <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">→</kbd>
-          </span>
-          <span>
-            Search: <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">Ctrl+F</kbd>
           </span>
         </div>
         <div className="sm:hidden">Pinch to zoom, swipe to navigate</div>
