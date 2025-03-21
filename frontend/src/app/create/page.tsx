@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unescaped-entities
+// eslint-disable-next-line react/no-unescaped-entities
 
 import Link from "next/link"
 import { ArrowLeft, Upload } from "lucide-react"
