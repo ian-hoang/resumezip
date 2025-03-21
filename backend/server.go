@@ -28,14 +28,14 @@ func corsMiddleware() gin.HandlerFunc {
 func StartServer() {
 	// Initialize Gin router
 	r := gin.Default()
-
-	// Apply CORS middleware
 	r.Use(corsMiddleware())
 
 	// Route to submit resume data
 	r.POST("/api/resume", handleResumeSubmission)
 
-	// Start the server
+	// Route to improve job description using Together AI
+	r.POST("/improve-job-desc", improveJobDescHandler)
+
 	port := ":8080"
 	log.Printf("Server running on port %s...", port)
 	if err := r.Run(port); err != nil {

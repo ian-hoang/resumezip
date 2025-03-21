@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 )
 
@@ -22,14 +23,23 @@ func (we *WorkExperience) UnmarshalJSON(data []byte) error {
 	}
 	// Split the description string into an array of strings
 	descriptions := strings.Split(temp.Description, "\n")
+	fmt.Println("Initial Descriptions:", descriptions)
 
 	// Filter out empty strings
 	var filteredDescriptions []string
 	for _, desc := range descriptions {
-		if strings.TrimSpace(desc) != "" { // Remove whitespace-only entries
-			filteredDescriptions = append(filteredDescriptions, desc)
+		trimmedDesc := strings.TrimSpace(desc) // Remove leading/trailing whitespace
+		if trimmedDesc != "" {                 // Remove empty lines
+			// Remove "•" or "• " prefix if present
+			trimmedDesc = strings.TrimPrefix(trimmedDesc, "•")
+			trimmedDesc = strings.TrimPrefix(trimmedDesc, "• ")
+			fmt.Println("Trimmed Description:", trimmedDesc)
+			filteredDescriptions = append(filteredDescriptions, trimmedDesc)
 		}
 	}
+
+	fmt.Println("Filtered Descriptions:", filteredDescriptions)
+
 	// Assign the filtered descriptions
 	we.Description = filteredDescriptions
 

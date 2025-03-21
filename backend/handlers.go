@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
 	"text/template"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -14,41 +15,45 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
-var (
-	tmpl *template.Template
-)
+var tmpl *template.Template
 
 func init() {
-	// Load the .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+
+	// Load the .env file, for local development
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
+
+	// Debug: Print environment variables
+	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	awsSecretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	awsRegion := os.Getenv("AWS_REGION")
+
+	log.Printf("AWS_ACCESS_KEY_ID: %s", awsAccessKeyID)
+	log.Printf("AWS_SECRET_ACCESS_KEY: %s", awsSecretAccessKey)
+	log.Printf("AWS_REGION: %s", awsRegion)
 
 	// Load the LaTeX template
+	var err error
 	tmpl, err = template.ParseFiles("templates/overleaf1.tex")
 	if err != nil {
 		log.Fatalf("Failed to parse LaTeX template: %v", err)
 	}
 }
 
-// handleResumeSubmission handles the resume generation request
 func handleResumeSubmission(c *gin.Context) {
 	var resume ResumeData
 
 	// Bind JSON request to struct
 	if err := c.ShouldBindJSON(&resume); err != nil {
-		log.Printf("Failed to decode JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON format"})
 		return
 	}
 
 	sanitizeResume(&resume)
-
-	// Generate PDF
 	pdfPath, err := generatePDF(resume)
 	if err != nil {
 		log.Printf("Failed to generate PDF: %v", err)
