@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Plus, ArrowRight } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import WorkExperienceForm from "@/components/forms/workExp";
 import EducationForm from "@/components/forms/education";
 import TechnicalProjectsForm from "@/components/forms/projects";

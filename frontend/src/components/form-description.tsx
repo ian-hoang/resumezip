@@ -43,7 +43,7 @@ const FormDescription: FC<FormDescriptionProps> = ({
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
 
-      let newText = normalizeText(value);
+      const newText = normalizeText(value);
 
       const updatedValue =
         newText.substring(0, start) +

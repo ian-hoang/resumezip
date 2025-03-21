@@ -1,4 +1,5 @@
-"use client"
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+void "use client"
 
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/esm/Page/AnnotationLayer.css"
