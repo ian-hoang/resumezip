@@ -24,13 +24,12 @@ export default function NewResumePage() {
 
   const handleSubmit = async () => {
     try {
-
       let id = formData.id;
       if (!id) {
         id = uuidv4(); // Generate a new ID
         updateFormData("id", id); // Update the context with the new ID
       }
-
+  
       const payload = {
         id,
         profileSection: formData.profileSection,
@@ -42,9 +41,9 @@ export default function NewResumePage() {
         volunteerExperienceSection: formData.volunteerExperienceSection,
         awardsSection: formData.awardsSection,
       };
-
+  
       console.log("Submitting payload:", payload);
-
+  
       const response = await fetch("http://localhost:8080/api/resume", {
         method: "POST",
         headers: {
@@ -52,11 +51,11 @@ export default function NewResumePage() {
         },
         body: JSON.stringify(payload),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to submit resume data");
       }
-
+  
       const responseData = await response.json();
       console.log("Resume submitted successfully:", responseData);
 
@@ -71,6 +70,7 @@ export default function NewResumePage() {
       console.error("Error submitting resume:", error);
     }
   };
+  
 
   const handleNavClick = (section: string) => {
     setActiveSection(section);

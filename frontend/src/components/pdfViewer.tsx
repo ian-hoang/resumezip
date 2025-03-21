@@ -14,7 +14,6 @@ import {
   Download,
   Loader2,
   FileText,
-  Search,
   RotateCw,
 } from "lucide-react"
 
@@ -30,7 +29,6 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
   const [scale, setScale] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [searchText, setSearchText] = useState("")
 
   const pdfContainerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<HTMLDivElement>(null)

@@ -3,7 +3,7 @@
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
 import FormLabel from "../form-label"
-import { User, Phone, Mail, Linkedin, Github, Globe, UserCircle, ArrowRight } from "lucide-react"
+import { User, Phone, Mail, Linkedin, Github, Globe, UserCircle } from "lucide-react"
 
 interface Profile {
   fullName: string

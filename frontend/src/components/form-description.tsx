@@ -1,6 +1,5 @@
-import { FC } from "react";
-import { FileText, WandSparkles } from "lucide-react";
-
+import { FC, useState } from "react";
+import { FileText, WandSparkles, Loader2 } from "lucide-react";
 
 interface FormDescriptionProps {
   title: string;
@@ -8,7 +7,6 @@ interface FormDescriptionProps {
   id: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onAiFinish?: () => void; // Callback for AI button
 }
 
 const FormDescription: FC<FormDescriptionProps> = ({
@@ -18,6 +16,8 @@ const FormDescription: FC<FormDescriptionProps> = ({
   value,
   onChange,
 }) => {
+  const [loading, setLoading] = useState(false); // Loading state
+
   const normalizeText = (text: string) => {
     return text
       .split("\n")
@@ -62,24 +62,28 @@ const FormDescription: FC<FormDescriptionProps> = ({
 
   const onAiFinish = async () => {
     if (!value.trim()) return;
-  
+
+    setLoading(true); // Start loading
+
     try {
-      const response = await fetch("http://localhost:8080/ai-gen", {
+      const response = await fetch("http://localhost:8080/improve-job-desc", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: value }),
+        body: JSON.stringify({ jobDesc: value }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch AI response");
       }
-  
+
       const data = await response.json();
       onChange({ target: { value: data.optimizedText } } as React.ChangeEvent<HTMLTextAreaElement>);
     } catch (error) {
       console.error("Error optimizing text:", error);
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -99,13 +103,22 @@ const FormDescription: FC<FormDescriptionProps> = ({
         placeholder={placeholderText}
         className="w-full h-30 rounded-md border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 resize-none transition-all"
       />
-      {/* Smaller AI Finish Button */}
+      {/* AI Button with Loading Spinner */}
       <button
         onClick={onAiFinish}
-        className="absolute bottom-2 right-2 flex items-center gap-0.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-1.5 py-0.5 rounded-md shadow-sm transition-transform duration-200 cursor-pointer active:scale-110"
+        disabled={loading}
+        className={`absolute bottom-2 right-2 flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-medium px-2 py-1 rounded-md shadow-sm transition-transform duration-200 cursor-pointer active:scale-110 ${
+          loading ? "opacity-75 cursor-not-allowed" : ""
+        }`}
       >
-        <WandSparkles className="h-3 w-3" />
-        Zip It
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" /> // Loading spinner
+        ) : (
+          <>
+            <WandSparkles className="h-4 w-4" />
+            Zip It
+          </>
+        )}
       </button>
     </div>
   );
