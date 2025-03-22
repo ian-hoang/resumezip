@@ -60,7 +60,7 @@ func callDeepSeekAPI(jobDesc string) (string, error) {
 	requestData := DeepSeekRequest{
 		Model: "deepseek-chat",
 		Messages: []map[string]string{
-			{"role": "system", "content": "You are a technical recruiter at Google. Improve this job description while keeping the exact format (spaces, bullet points, structure)."},
+			{"role": "system", "content": "Improve these job descriptions using metrics and details. Censor bad/inappropriate input. return responses 3-4 lines (seperated by /n)."},
 			{"role": "user", "content": jobDesc},
 		},
 	}
