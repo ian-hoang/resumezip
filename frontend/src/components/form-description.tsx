@@ -66,7 +66,7 @@ const FormDescription: FC<FormDescriptionProps> = ({
     setLoading(true); // Start loading
 
     try {
-      const response = await fetch("http://localhost:8080/improve-job-desc", {
+      const response = await fetch("http://3.16.31.67:8080/improve-job-desc", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
