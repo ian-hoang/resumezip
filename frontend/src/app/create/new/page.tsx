@@ -44,7 +44,7 @@ export default function NewResumePage() {
   
       console.log("Submitting payload:", payload);
   
-      const response = await fetch("https://resumezip-alb-324221678.us-east-2.elb.amazonaws.com/api/resume", {
+      const response = await fetch("https://api.resumezip.io/api/resume", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

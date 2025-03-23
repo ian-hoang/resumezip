@@ -7,10 +7,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// corsMiddleware configures CORS to allow frontend requests
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "http://localhost:3000")
+		allowedOrigins := []string{
+			"http://localhost:3000",
+			"https://resume-zip-full.vercel.app",
+			"https://resumezip.io",
+			"https://www.resumezip.io",
+		}
+
+		origin := c.Request.Header.Get("Origin")
+
+		// Check if the request's origin is in the allowed list
+		for _, allowedOrigin := range allowedOrigins {
+			if origin == allowedOrigin {
+				c.Header("Access-Control-Allow-Origin", origin)
+				break
+			}
+		}
+
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type")
 		c.Header("Access-Control-Allow-Credentials", "true")
