@@ -2,7 +2,7 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, Code, Calendar, Github, Globe, Layers, Rocket } from "lucide-react"
+import { Plus, Trash2, Code, Calendar, Github, Globe, Layers, Rocket, Pencil } from "lucide-react"
 import FormLabel from "../form-label"
 import FormDescription from "../form-description"
 
@@ -19,6 +19,8 @@ interface Project {
 export default function TechnicalProjectsForm() {
   const { formData, updateFormData } = useResumeContext()
   const [projects, setProjects] = useState<Project[]>(formData?.projectsSection || [])
+  const [title, setTitle] = useState<string>(formData?.headings?.projects || "Technical Projects")
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
 
   const addProject = () => {
     const newId = projects.length > 0 ? Math.max(...projects.map((proj) => proj.id)) + 1 : 1
@@ -58,12 +60,32 @@ export default function TechnicalProjectsForm() {
       <div className="bg-blue-600 shadow-lg p-6 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">Technical Projects</h2>
+            {isEditingTitle ? (
+              <input
+                type="text"
+                className="text-3xl font-bold text-white tracking-tight bg-transparent border-b border-white focus:outline-none"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                }}
+                onBlur={() => {
+                  setIsEditingTitle(false)
+                  updateFormData("headings", { ...formData.headings, projects: title })
+                }}
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+                <Pencil
+                  className="h-5 w-5 text-white cursor-pointer"
+                  onClick={() => setIsEditingTitle(true)}
+                />
+              </div>
+            )}
             <p className="text-blue-100 mt-1">Add your technical projects and contributions</p>
           </div>
-          <div className="">
-            <Code className="h-8 w-8 text-white" />
-          </div>
+          <Code className="h-8 w-8 text-white" />
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, Wrench, Sparkles } from "lucide-react"
+import { Plus, Trash2, Wrench, Sparkles, Pencil } from "lucide-react"
 import FormLabel from "../form-label"
 
 interface Skill {
@@ -14,6 +14,8 @@ interface Skill {
 export default function TechnicalSkillsForm() {
   const { formData, updateFormData } = useResumeContext()
   const [skills, setSkills] = useState<Skill[]>(formData?.skillsSection || [])
+  const [title, setTitle] = useState<string>(formData?.headings?.skills || "Skills")
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
 
   const addSkill = () => {
     const newId = skills.length > 0 ? Math.max(...skills.map((skill) => skill.id)) + 1 : 1
@@ -45,12 +47,32 @@ export default function TechnicalSkillsForm() {
       <div className="bg-blue-600 shadow-lg p-6 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">Technical Skills</h2>
+            {isEditingTitle ? (
+              <input
+                type="text"
+                className="text-3xl font-bold text-white tracking-tight bg-transparent border-b border-white focus:outline-none"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                }}
+                onBlur={() => {
+                  setIsEditingTitle(false)
+                  updateFormData("headings", { ...formData.headings, skills: title })
+                }}
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+                <Pencil
+                  className="h-5 w-5 text-white cursor-pointer"
+                  onClick={() => setIsEditingTitle(true)}
+                />
+              </div>
+            )}
             <p className="text-blue-100 mt-1">Add your technical skills and expertise</p>
           </div>
-          <div className="">
-            <Wrench className="h-8 w-8 text-white" />
-          </div>
+          <Wrench className="h-8 w-8 text-white" />
         </div>
       </div>
 

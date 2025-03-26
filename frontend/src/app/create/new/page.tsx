@@ -64,7 +64,8 @@ export default function NewResumePage() {
         leadershipExperienceSection: formData.leadershipExperienceSection,
         volunteerExperienceSection: formData.volunteerExperienceSection,
         awardsSection: formData.awardsSection,
-        sectionOrder: ["Profile", ...sections] // Include the current section order
+        sectionOrder: ["Profile", ...sections], // Include the current section order
+        sectionHeadings: formData.headings,
       };
 
       console.log("Submitting payload:", payload);
@@ -138,7 +139,7 @@ export default function NewResumePage() {
                 activeSection === "Profile" 
                   ? "bg-blue-600 text-white" 
                   : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-              } mb-2`}
+              } mb-1`}
             >
               Profile
             </div>
@@ -165,7 +166,7 @@ export default function NewResumePage() {
                             }`}
                             onClick={() => setActiveSection(section)}
                           >
-                            <div {...provided.dragHandleProps} className="mr-2">
+                            <div {...provided.dragHandleProps} className="mr-1">
                               <GripVertical className="h-4 w-4" />
                             </div>
                             {section}

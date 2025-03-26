@@ -2,7 +2,7 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, Award, Building, Calendar, Medal } from "lucide-react"
+import { Plus, Trash2, Award, Building, Calendar, Medal, Pencil } from "lucide-react"
 import FormLabel from "../form-label"
 
 interface CertificationAward {
@@ -14,9 +14,9 @@ interface CertificationAward {
 
 export default function CertificationAwardsForm() {
   const { formData, updateFormData } = useResumeContext()
-  const [certifications, setCertifications] = useState<CertificationAward[]>(
-    formData?.awardsSection || []
-  )
+  const [certifications, setCertifications] = useState<CertificationAward[]>(formData?.awardsSection || [])
+  const [title, setTitle] = useState<string>(formData?.headings?.awards || "Certifications & Awards")
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
 
   const addCertification = () => {
     const newId =
@@ -54,12 +54,32 @@ export default function CertificationAwardsForm() {
       <div className="bg-blue-600 shadow-lg p-6 mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">Certifications & Awards</h2>
+            {isEditingTitle ? (
+              <input
+                type="text"
+                className="text-3xl font-bold text-white tracking-tight bg-transparent border-b border-white focus:outline-none"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                }}
+                onBlur={() => {
+                  setIsEditingTitle(false)
+                  updateFormData("headings", { ...formData.headings, awards: title })
+                }}
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+                <Pencil
+                  className="h-5 w-5 text-white cursor-pointer"
+                  onClick={() => setIsEditingTitle(true)}
+                />
+              </div>
+            )}
             <p className="text-blue-100 mt-1">Add your certifications, awards, and recognitions</p>
           </div>
-          <div className="">
-            <Medal className="h-8 w-8 text-white" />
-          </div>
+          <Medal className="h-8 w-8 text-white" />
         </div>
       </div>
 
