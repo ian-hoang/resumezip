@@ -317,8 +317,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
             </div>
             <h3 className="text-lg font-medium text-gray-700 mb-2">No PDF Document</h3>
             <p className="text-sm text-gray-500 max-w-md">
-              Upload or select a PDF document to view it here. You can zoom, navigate pages, and search within the
-              document.
+              You can zoom, navigate pages, and search within the document.
             </p>
           </div>
         )}

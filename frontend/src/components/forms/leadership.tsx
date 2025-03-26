@@ -2,7 +2,7 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, Building, MapPin, User, Calendar } from "lucide-react"
+import { Plus, Trash2, Building, MapPin, User, Calendar, Trophy } from "lucide-react"
 import FormLabel from "../form-label"
 import FormDescription from "../form-description"
 
@@ -67,14 +67,14 @@ export default function LeadershipExperienceForm() {
             <p className="text-blue-100 mt-1">Add your leadership roles and contributions</p>
           </div>
           <div className="">
-            <User className="h-8 w-8 text-white" />
+            <Trophy className="h-8 w-8 text-white" />
           </div>
         </div>
       </div>
 
       {leadershipExperiences.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-300 hover:shadow-md transition-shadows duration-300">
-          <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-600 mb-2">No leadership experiences added yet</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
             Add your leadership experiences to showcase your roles, responsibilities, and achievements.

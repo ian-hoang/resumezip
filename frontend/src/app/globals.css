@@ -19,6 +19,22 @@
     scrollbar-width: none; /* Hide scrollbar for Firefox */
   }
 }
+
+/* Better drag handle appearance */
+[data-rbd-drag-handle-context-id] {
+  cursor: grab;
+}
+
+/* Dragging state */
+[data-rbd-draggable-context-id][data-rbd-dragging="true"] {
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions */
+[data-rbd-draggable-context-id] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 /* @layer base{
   :root {
   --radius: 0.5rem;
