@@ -11,6 +11,8 @@ type ResumeData struct {
 	Leaderships     []Leadership     `json:"leadershipExperienceSection"`
 	Volunteerships  []Volunteership  `json:"volunteerExperienceSection"`
 	Awards          []Award          `json:"awardsSection"`
+	Order           []string         `json:"sectionOrder"`
+	Headings        HeadingsStruct   `json:"sectionHeadings"`
 }
 
 type ProfileStruct struct {
@@ -20,6 +22,16 @@ type ProfileStruct struct {
 	LinkedIn string `json:"linkedin"`
 	Github   string `json:"profileGithub"`
 	Website  string `json:"personalWebsite"`
+}
+
+type HeadingsStruct struct {
+	EduHeading   string `json:"edu"`
+	WorkHeading  string `json:"work"`
+	ProjHeading  string `json:"projects"`
+	SkillHeading string `json:"skills"`
+	LeadHeading  string `json:"leadership"`
+	VolHeading   string `json:"volunteer"`
+	AwardHeading string `json:"awards"`
 }
 
 // Education structure for each education entry
@@ -43,7 +55,7 @@ type WorkExperience struct {
 	Role        string   `json:"workRole"`
 	Description []string `json:"workDescription"`
 	StartDate   string   `json:"workStartDate"`
-	EndDate     string   `json:"wordEndDate"`
+	EndDate     string   `json:"workEndDate"`
 }
 
 // Skill structure for each skill entry

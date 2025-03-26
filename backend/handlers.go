@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 var tmpl *template.Template
@@ -22,10 +23,10 @@ var tmpl *template.Template
 func init() {
 
 	// Load the .env file, for local development
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Fatal("Error loading .env file")
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	// Debug: Print environment variables
 	awsAccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
@@ -37,7 +38,7 @@ func init() {
 	log.Printf("AWS_REGION: %s", awsRegion)
 
 	// Load the LaTeX template
-	var err error
+	// var err error
 	tmpl, err = template.ParseFiles("templates/overleaf1.tex")
 	if err != nil {
 		log.Fatalf("Failed to parse LaTeX template: %v", err)

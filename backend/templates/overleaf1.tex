@@ -1,10 +1,3 @@
-%-------------------------
-% Resume in Latex
-% Author : Audric Serador
-% Inspired by: https://github.com/sb2nov/resume
-% License : MIT
-%------------------------
-
 \documentclass[letterpaper,11pt]{article}
 
 \usepackage{fontawesome5}
@@ -108,132 +101,151 @@
   {{- if .Profile.Github }} \href{https://github.com/{{- .Profile.Github -}} }{\seticon{faGithub} \underline{ {{- .Profile.Github -}}}} {{- end}}
 \end{center}
 
-%-----------EDUCATION-----------%
-{{- if .Educations }}
-\section{Education}
-    \resumeSubHeadingListStart
-    {{ range .Educations -}}
-    \resumeSubheading
-    { {{- .School -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
-    { {{- .Degree -}} {{- if .GPA }} (GPA: {{ .GPA }}){{- end -}} }{ {{- .Location -}} }
-    
-    {{- if or .Coursework .Involvement }} % Check if either Coursework or Involvement exists
-    \resumeItemListStart
-        {{- if .Coursework }}
-        \resumeItem{\textbf{Relevant Coursework:}  {{ .Coursework }}}
-        {{- end -}}
-        {{- if .Involvement }}
-        \resumeItem{\textbf{Involvements:}  {{ .Involvement }}}
+{{- range .Order }}
+    %-----------EDUCATION-----------%
+    {{- if eq . "Education" }}
+        {{- if $.Educations }}
+        \section{ {{- if $.Headings.EduHeading }} {{ $.Headings.EduHeading }} {{ else }} Education {{ end -}} }
+            \resumeSubHeadingListStart
+            {{range $.Educations}}
+            \resumeSubheading
+            { {{- .School -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
+            { {{- .Degree -}} {{- if .GPA }} (GPA: {{ .GPA }}){{- end -}} }{ {{- .Location -}} }
+            
+            {{- if or .Coursework .Involvement }} % Check if either Coursework or Involvement exists
+            \resumeItemListStart
+                {{- if .Coursework }}
+                \resumeItem{\textbf{Relevant Coursework:}  {{ .Coursework }}}
+                {{- end -}}
+                {{- if .Involvement }}
+                \resumeItem{\textbf{Involvements:}  {{ .Involvement }}}
+                {{- end}}
+            \resumeItemListEnd
+            {{- end}}
+
+            {{- end}}
+            \resumeSubHeadingListEnd
         {{- end}}
-    \resumeItemListEnd
     {{- end}}
 
-    {{- end}}
-    \resumeSubHeadingListEnd
-{{- end}}
+    %-----------EXPERIENCE-----------%
+    {{- if eq . "Work" }}
+        {{if $.WorkExperiences}}
+        \section{ {{- if $.Headings.WorkHeading }} {{ $.Headings.WorkHeading }} {{ else }} Work Experience {{ end -}} }
+        \resumeSubHeadingListStart
 
-%-----------EXPERIENCE-----------%
-{{if .WorkExperiences}}
-\section{Experience}
-\resumeSubHeadingListStart
-
-    {{- range .WorkExperiences}}
-    \resumeSubheading
-    { {{- .CompanyName -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
-    { {{- .Role -}}}{ {{- .Location -}} }
-    {{- if .Description}}
-    {{- if gt (len .Description) 0 }}
-    \resumeItemListStart
-        {{ range .Description -}}
-        \resumeItem{ {{ . }} }
+            {{- range $.WorkExperiences}}
+            \resumeSubheading
+            { {{- .CompanyName -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
+            { {{- .Role -}}}{ {{- .Location -}} }
+            {{- if .Description}}
+            {{- if gt (len .Description) 0 }}
+            \resumeItemListStart
+                {{ range .Description -}}
+                \resumeItem{ {{ . }} }
+                {{- end}}
+            \resumeItemListEnd
+            {{- end}}
+            {{- end}}
+            {{- end}}
+        \resumeSubHeadingListEnd
         {{- end}}
-    \resumeItemListEnd
     {{- end}}
-    {{- end}}
-    {{- end}}
-\resumeSubHeadingListEnd
-{{- end}}
 
-%-----------PROJECTS-----------%
-{{if .Projects}}
-\section{Projects}
-\resumeSubHeadingListStart
-    {{- range .Projects}}
-    \resumeProjectHeading
-    {\textbf{ {{- .Name -}} } {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}{}
-    {{- if gt (len .Description) 0 }}
-    \resumeItemListStart
-        {{- range .Description -}}
-        \resumeItem{ {{ . }} }
+    %-----------PROJECTS-----------%
+    {{- if eq . "Projects" }}
+        {{if $.Projects}}
+        \section{ {{- if $.Headings.ProjHeading }} {{ $.Headings.ProjHeading }} {{ else }} Technical Projects {{ end -}} }
+        \resumeSubHeadingListStart
+            {{- range $.Projects}}
+            \resumeProjectHeading
+            {\textbf{ {{- .Name -}} } \hspace{0.1em}
+                {{- if .Github }} \href{ {{- .Github -}} }{\seticon{faGithub}} {{- end}} 
+                {{- if .Website }} \href{ {{- .Website -}} }{\seticon{faGlobe}} {{- end}} 
+                {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}
+            { {{- .Date }} }
+            
+            {{- if gt (len .Description) 0 }}
+            \resumeItemListStart
+                {{- range .Description -}}
+                \resumeItem{ {{ . }} }
+                {{- end}}
+            \resumeItemListEnd
+            {{- end}}
+            {{- end}}
+        \resumeSubHeadingListEnd
         {{- end}}
-    \resumeItemListEnd
     {{- end}}
-    {{- end}}
-\resumeSubHeadingListEnd
-{{- end}}
 
-%-----------PROGRAMMING SKILLS-----------%
-{{if .Skills}}
-\section{Technical Skills}
-    \begin{itemize}[leftmargin=0.15in, label={}]
-	\small{\item{
-    {{- range .Skills}}
-    \textbf{ {{- if .Name }} {{- .Name}}: {{ end }} } {{ .Details -}} \\
-    {{- end}}
-	}}
-    \end{itemize}
-{{- end}}
-
-%-----------LEADERSHIP-----------%
-{{if .Leaderships}}
-\section{Leadership Experience}
-\resumeSubHeadingListStart
-
-    {{- range .Leaderships}}
-    \resumeSubheading
-    { {{- .Organization -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
-    { {{- .Role -}}}{ {{- .Location -}} }
-    {{- if .Description}}
-    \resumeItemListStart
-        {{ range .Description -}}
-        \resumeItem{ {{ . }} }
+    %-----------PROGRAMMING SKILLS-----------%
+    {{- if eq . "Skills" }}
+        {{if $.Skills}}
+        \section{ {{- if $.Headings.SkillHeading }} {{ $.Headings.SkillHeading }} {{ else }} Skills {{ end -}} }
+            \begin{itemize}[leftmargin=0.15in, label={}]
+            \small{\item{
+            {{- range $.Skills}}
+            \textbf{ {{- if .Name }} {{- .Name}}: {{ end }} } {{ .Details -}} \\
+            {{- end}}
+            }}
+            \end{itemize}
         {{- end}}
-    \resumeItemListEnd
     {{- end}}
-    {{- end}}
-\resumeSubHeadingListEnd
-{{- end}}
 
-%-----------VOLUNTEER-----------%
-{{if .Volunteerships}}
-\section{Volunteer Experience}
-\resumeSubHeadingListStart
-
-    {{- range .Volunteerships}}
-    \resumeSubheading
-    { {{- .Organization -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
-    { {{- .Role -}}}{ {{- .Location -}} }
-    {{- if .Description}}
-    \resumeItemListStart
-        {{ range .Description -}}
-        \resumeItem{ {{ . }} }
+    %-----------LEADERSHIP-----------%
+    {{- if eq . "Leadership" }}
+        {{if $.Leaderships}}
+        \section{ {{- if $.Headings.LeadHeading }} {{ $.Headings.LeadHeading }} {{ else }} Leadership Experience {{ end -}} }
+        \resumeSubHeadingListStart
+            {{- range $.Leaderships}}
+            \resumeSubheading
+            { {{- .Organization -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
+            { {{- .Role -}}}{ {{- .Location -}} }
+            {{- if .Description}}
+            \resumeItemListStart
+                {{ range .Description -}}
+                \resumeItem{ {{ . }} }
+                {{- end}}
+            \resumeItemListEnd
+            {{- end}}
+            {{- end}}
+        \resumeSubHeadingListEnd
         {{- end}}
-    \resumeItemListEnd
     {{- end}}
-    {{- end}}
-\resumeSubHeadingListEnd
-{{- end}}
 
-%-----------AWARDS-----------%
-{{if .Awards}}
-\section{Awards}
-\resumeSubHeadingListStart
-    {{- range .Awards}}
-    \resumeSubheading
-    { {{- .Name -}} }{ {{- .Date -}} }
-    { {{- .Organization -}} }{}
+    %-----------VOLUNTEER-----------%
+    {{- if eq . "Volunteership" }}
+        {{if $.Volunteerships}}
+        \section{ {{- if $.Headings.VolHeading }} {{ $.Headings.VolHeading }} {{ else }} Volunteer Experience {{ end -}} }
+        \resumeSubHeadingListStart
+            {{- range $.Volunteerships}}
+            \resumeSubheading
+            { {{- .Organization -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
+            { {{- .Role -}}}{ {{- .Location -}} }
+            {{- if .Description}}
+            \resumeItemListStart
+                {{ range .Description -}}
+                \resumeItem{ {{ . }} }
+                {{- end}}
+            \resumeItemListEnd
+            {{- end}}
+            {{- end}}
+        \resumeSubHeadingListEnd
+        {{- end}}
     {{- end}}
-\resumeSubHeadingListEnd
+
+    %-----------AWARDS-----------%
+    {{- if eq . "Awards" }}
+        {{if $.Awards}}
+        \section{ {{- if $.Headings.AwardHeading }} {{ $.Headings.AwardHeading }} {{ else }} Awards/Certifications {{ end -}} }
+        \resumeSubHeadingListStart
+            {{- range $.Awards}}
+            \resumeSubheading
+            { {{- .Name -}} }{ {{- .Date -}} }
+            { {{- .Organization -}} }{}
+            {{- end}}
+        \resumeSubHeadingListEnd
+        {{- end}}
+    {{- end}}
 {{- end}}
 
 \end{document}

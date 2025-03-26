@@ -1,3 +1,4 @@
+ARG TARGETARCH=amd64
 
 # Use the official Golang image as the base image
 FROM golang:1.24-alpine AS builder
