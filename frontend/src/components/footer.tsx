@@ -8,10 +8,7 @@ export default function Footer() {
                 <p className="text-center text-sm leading-loose text-gray-500">© 2025 ResumeZip. All rights reserved.</p>
                 <div className="flex gap-4">
                     <Link href="/terms" className="text-sm text-gray-500 hover:underline">
-                    Terms
-                    </Link>
-                    <Link href="/privacy" className="text-sm text-gray-500 hover:underline">
-                    Privacy
+                    Terms and Privacy
                     </Link>
                 </div>
             </div>

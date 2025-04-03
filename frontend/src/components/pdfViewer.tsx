@@ -180,7 +180,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
           <div className="flex items-center bg-gray-100 rounded-md p-1">
             <button
               onClick={handleZoomOut}
-              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
               aria-label="Zoom out"
               title="Zoom out (Ctrl+-)"
             >
@@ -191,7 +191,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
 
             <button
               onClick={handleZoomIn}
-              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
               aria-label="Zoom in"
               title="Zoom in (Ctrl++)"
             >
@@ -201,7 +201,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
 
           <button
             onClick={handleZoomReset}
-            className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+            className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
             aria-label="Reset zoom"
             title="Reset zoom (Ctrl+0)"
           >
@@ -210,7 +210,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
 
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+            className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
             aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
@@ -220,7 +220,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
           {pdfData && (
             <button
               onClick={handleDownload}
-              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors"
+              className="p-1.5 text-gray-700 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
               aria-label="Download PDF"
               title="Download PDF"
             >

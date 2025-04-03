@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Plus, Loader2, ArrowRight, GripVertical } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, ArrowRight, GripVertical, FileText } from "lucide-react";
 import WorkExperienceForm from "@/components/forms/workExp";
 import EducationForm from "@/components/forms/education";
 import TechnicalProjectsForm from "@/components/forms/projects";
@@ -11,6 +11,7 @@ import LeadershipForm from "@/components/forms/leadership";
 import ProfileForm from "@/components/forms/profile";
 import AwardsForm from "@/components/forms/awards";
 import TechnicalSkillsForm from "@/components/forms/skills";
+import TemplatesForm from "@/components/forms/templates";
 import { useState, useEffect } from "react";
 import { useResumeContext } from "@/context/ResumeContext";
 import PDFViewer from "@/components/pdfViewer";
@@ -113,15 +114,20 @@ export default function NewResumePage() {
       case "Leadership": return <LeadershipForm />;
       case "Awards": return <AwardsForm />;
       case "Skills": return <TechnicalSkillsForm />;
+      case "Templates": return <TemplatesForm/>;
       default: return <ProfileForm />;
     }
   };
 
   return (
-    <main className="container mx-auto max-w-7xl py-8 px-1">
-      <div className="mb-6">
-        <Link href="/create" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-900">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="bg-[#D3D9D4]/50">
+    <main className="container mx-auto max-w-7xl py-8 px-1 min-h-screen">
+    <div className="mb-6">
+        <Link
+          href="/create"
+          className="inline-flex items-center text-sm font-medium text-[#2E3944] hover:text-[#124E66] transition-colors group"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           Back to options
         </Link>
       </div>
@@ -129,17 +135,17 @@ export default function NewResumePage() {
       <div className="flex gap-1">
         {/* Left Sidebar (Fixed Navigation) */}
         <div className="w-42 flex-shrink-0 pr-4">
-          <div className="sticky top-24">
-            <h1 className="text-lg font-semibold mb-4">Sections</h1>
+          <div className="sticky top-24 rounded-xl shadow-lg p-2 border border-[#748D92]/20">
+            <div className="flex items-center gap-2 mb-1 p-2">
+              <Sparkles className="h-4 w-4 text-[#124E66]" />
+              <h1 className="text-lg font-bold text-[#212A31]"> Sections</h1>
+            </div>
             
             {/* Fixed Profile Section */}
             <div
               onClick={() => setActiveSection("Profile")}
-              className={`flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition ${
-                activeSection === "Profile" 
-                  ? "bg-blue-600 text-white" 
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-              } mb-1`}
+              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${
+                activeSection === "Profile"  ? "bg-[#124E66] text-[#D3D9D4] shadow-md"  : "text-[#2E3944] hover:bg-[#124E66]/10 hover:text-[#124E66]" } mb-1`}
             >
               Profile
             </div>
@@ -159,11 +165,8 @@ export default function NewResumePage() {
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={`flex items-center px-3 py-2 rounded-md text-sm cursor-pointer transition ${
-                              activeSection === section 
-                                ? "bg-blue-600 text-white" 
-                                : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-                            }`}
+                            className={`flex items-center px-1 py-2 rounded-md text-sm cursor-pointer transition-all duration-200  ${
+                              activeSection === section ? "bg-[#124E66] text-[#D3D9D4] shadow-md"  : "text-[#2E3944] hover:bg-[#124E66]/10 hover:text-[#124E66]" }`}
                             onClick={() => setActiveSection(section)}
                           >
                             <div {...provided.dragHandleProps} className="mr-1">
@@ -180,42 +183,52 @@ export default function NewResumePage() {
               </Droppable>
             </DragDropContext>
 
-            <button className="mt-4 w-full flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              <Plus className="mr-2 h-4 w-4" /> Add Section
-            </button>
+            {/* Fixed Profile Section */}
+            <div
+              onClick={() => setActiveSection("Templates")}
+              className={`mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold transition-all duration-300 focus:outline-none cursor-pointer ${
+                activeSection === "Templates"
+                  ? "bg-[#212A31] text-[#D3D9D4] shadow-md"
+                  : "bg-[#212A31]/10 text-[#212A31] hover:bg-[#212A31]/20"
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              Templates
+            </div>
           </div>
         </div>
 
         {/* Center and Right Sections (Resizable) */}
         <PanelGroup direction="horizontal" className="flex-1">
-          <Panel defaultSize={45} minSize={30} className="space-y-8 pr-1">
-            <div className="bg-white rounded-lg border border-gray-300 overflow-y-auto shadow-md scrollbar-hidden" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
-              {renderForm()}
+          <Panel defaultSize={45} minSize={38} className="space-y-8 pr-1">
+            <div className="bg-white rounded-lg border border-[#748D92]/20 overflow-y-auto shadow-md scrollbar-hidden flex flex-col" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
+              <div className="flex-1">
+                {renderForm()}
+              </div>
             </div>
             <div className="flex justify-center w-full">
-              <button 
-                onClick={handleSubmit} 
+              <button
+                onClick={handleSubmit}
                 disabled={loading}
-                className="w-full flex items-center gap-2 px-6 py-2 mb-4 bg-gray-900 hover:bg-gray-800 text-white 
-                 border border-gray-700 rounded-lg shadow-md transition-all 
-                 hover:shadow-gray-500/30 focus:outline-none focus:ring-2 cursor-pointer
-                disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 px-6 py-2 bg-[#124E66] hover:bg-[#124E66]/90 text-[#D3D9D4] 
+                 font-bold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#748D92] focus:ring-offset-2 cursor-pointer
+                 transform hover:-translate-y-1 border-b-[3px] border-[#124E66]/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Compiling...</span>
+                    <span>Compiling Resume...</span>
                   </>
                 ) : (
                   <>
                     <span>Compile Resume</span>
                     <motion.div
-                      className="ml-2"
+                      className="ml-1"
                       initial={{ x: 0 }}
                       animate={{ x: [0, 5, 0] }}
                       transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5 }}
                     >
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-5 w-5" />
                     </motion.div>
                   </>
                 )}
@@ -233,5 +246,6 @@ export default function NewResumePage() {
         </PanelGroup>
       </div>
     </main>
+    </div>
   );
 }

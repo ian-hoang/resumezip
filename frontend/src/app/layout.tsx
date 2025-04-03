@@ -20,6 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <link rel="icon" href="/zap.svg" type="image/svg+xml" />
+      </head>
       <body className={inter.className}>
         <Navbar />
         <FormProvider>{children}</FormProvider>

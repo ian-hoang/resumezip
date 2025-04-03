@@ -2,9 +2,9 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, Briefcase, MapPin, User, Calendar, Pencil } from "lucide-react"
+import { Plus, Trash2, Briefcase, MapPin, User, Calendar, Pencil, Sparkles } from "lucide-react"
 import FormLabel from "../form-label"
-import FormDescription from "../form-description" // Added FormDescription import
+import FormDescription from "../form-description"
 
 interface WorkExperience {
   id: number
@@ -22,10 +22,8 @@ export default function WorkExperienceForm() {
   const [title, setTitle] = useState<string>(formData?.headings?.work || "Work Experience")
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
 
-
   const addWorkExperience = () => {
-    const newId =
-      workExperienceList.length > 0 ? Math.max(...workExperienceList.map((exp) => exp.id)) + 1 : 1
+    const newId = workExperienceList.length > 0 ? Math.max(...workExperienceList.map((exp) => exp.id)) + 1 : 1
     const newWorkExperience = {
       id: newId,
       companyName: "",
@@ -50,22 +48,25 @@ export default function WorkExperienceForm() {
   }
 
   const updateWorkExperience = (id: number, field: string, value: string) => {
-    const updatedWorkExperience = workExperienceList.map((exp) =>
-      exp.id === id ? { ...exp, [field]: value } : exp
-    )
+    const updatedWorkExperience = workExperienceList.map((exp) => (exp.id === id ? { ...exp, [field]: value } : exp))
     setWorkExperienceList(updatedWorkExperience)
     updateFormData("workExperienceSection", updatedWorkExperience)
   }
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="bg-blue-600 shadow-lg p-6 mb-8">
-        <div className="flex items-center justify-between">
+    <div className="h-full space-y-0 max-w-4xl mx-auto">
+      <div className="bg-gradient-to-r from-[#212A31] to-[#124E66] shadow-xl p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-[#124E66]/20 rounded-full blur-3xl"></div>
+        <div className="relative z-10 flex items-center justify-between">
           <div>
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#124E66]/20 text-[#D3D9D4] font-semibold text-sm mb-3">
+              <Sparkles className="h-4 w-4 mr-2" /> PROFESSIONAL HISTORY
+            </div>
+
             {isEditingTitle ? (
               <input
                 type="text"
-                className="text-3xl font-bold text-white tracking-tight bg-transparent border-b border-white focus:outline-none"
+                className="text-3xl font-extrabold text-white tracking-tight bg-transparent border-b-2 border-[#748D92] focus:outline-none focus:border-[#D3D9D4] px-1 py-0.5 w-full"
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value)
@@ -78,133 +79,137 @@ export default function WorkExperienceForm() {
               />
             ) : (
               <div className="flex items-center gap-2">
-                <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{title}</h2>
                 <Pencil
-                  className="h-5 w-5 text-white cursor-pointer"
+                  className="h-5 w-5 text-[#748D92] hover:text-[#D3D9D4] cursor-pointer transition-colors"
                   onClick={() => setIsEditingTitle(true)}
                 />
               </div>
             )}
-            <p className="text-blue-100 mt-1">Add your professional experience and achievements</p>
+            <p className="text-[#D3D9D4]/80 mt-2">Add your professional experience and achievements</p>
           </div>
-          <Briefcase className="h-8 w-8 text-white" />
+          <div className="bg-[#124E66]/20 p-3 rounded-full">
+            <Briefcase className="h-10 w-10 text-[#D3D9D4]" />
+          </div>
         </div>
       </div>
 
       {workExperienceList.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-300 hover:shadow-md transition-shadows duration-300">
-          <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-600 mb-2">No work experience entries yet</h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+        <div className="h-full items-center text-center py-16 bg-white border-2 border-dashed border-[#748D92]/30 shadow-lg hover:border-[#124E66]/50 transition-all duration-300 group">
+          <Briefcase className="h-16 w-16 text-[#748D92]/70 mx-auto mb-6 group-hover:text-[#124E66]/70 transition-colors duration-300" />
+          <h3 className="text-xl font-bold text-[#212A31] mb-3">No work experience entries yet</h3>
+          <p className="text-[#2E3944] mb-8 max-w-md mx-auto">
             Add your professional experience to showcase your skills and accomplishments.
           </p>
           <button
             onClick={addWorkExperience}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer active:scale-105 transition-transform duration-200"
+            className="inline-flex items-center justify-center rounded-lg bg-[#124E66] px-6 py-3 text-base font-bold text-[#D3D9D4] hover:bg-[#124E66]/90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#748D92] focus:ring-offset-2 cursor-pointer shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-b-[3px] border-[#124E66]/50"
           >
-            <Plus className="mr-2 h-4 w-4" /> Add Work Experience
+            <Plus className="mr-2 h-5 w-5" /> Add Work Experience
           </button>
         </div>
       ) : (
-        <>
-          {workExperienceList.map((exp, index) => (
-            <div
-              key={exp.id}
-              className="bg-white border border-gray-200 shadow-sm overflow-hidden transition-all hover:shadow-md"
-            >
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-gray-200">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">
-                      {index + 1}
+        <div className="bg-white shadow-xl overflow-hidden">
+          <div className="p-6 space-y-6">
+            {workExperienceList.map((exp, index) => (
+              <div
+                key={exp.id}
+                className="bg-[#D3D9D4]/20 border-2 border-[#748D92]/20 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-[#124E66]/30 group"
+              >
+                <div className="bg-gradient-to-r from-[#212A31]/5 to-[#124E66]/10 px-6 py-4 border-b border-[#748D92]/20">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-[#124E66] text-[#D3D9D4] w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">
+                        {index + 1}
+                      </div>
+                      <h3 className="font-bold text-lg text-[#212A31]">
+                        {exp.companyName ? exp.companyName : `Work Experience Entry`}
+                      </h3>
                     </div>
-                    <h3 className="font-semibold text-lg text-gray-800">
-                      {exp.companyName ? exp.companyName : `Work Experience Entry`}
-                    </h3>
+                    <button
+                      onClick={() => removeWorkExperience(exp.id)}
+                      className="h-9 w-9 rounded-md flex items-center justify-center text-[#748D92] hover:bg-red-100/50 hover:text-red-600 transition-all duration-300 cursor-pointer transform hover:scale-110"
+                      aria-label="Remove work experience entry"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => removeWorkExperience(exp.id)}
-                    className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer active:scale-110 transition-transform duration-200"
-                    aria-label="Remove work experience entry"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormLabel
+                      icon={Briefcase}
+                      title="Company Name"
+                      placeholderText="Google"
+                      id={`companyName-${exp.id}`}
+                      value={exp.companyName || ""}
+                      onChange={(e) => updateWorkExperience(exp.id, "companyName", e.target.value)}
+                    />
+
+                    <FormLabel
+                      icon={MapPin}
+                      title="Location"
+                      placeholderText="Mountain View, CA"
+                      id={`workLocation-${exp.id}`}
+                      value={exp.workLocation || ""}
+                      onChange={(e) => updateWorkExperience(exp.id, "workLocation", e.target.value)}
+                    />
+                  </div>
+
+                  <FormLabel
+                    icon={User}
+                    title="Role"
+                    placeholderText="Software Engineer"
+                    id={`workRole-${exp.id}`}
+                    value={exp.workRole || ""}
+                    onChange={(e) => updateWorkExperience(exp.id, "workRole", e.target.value)}
+                  />
+
+                  <FormDescription
+                    id={`workDescription-${exp.id}`}
+                    title="Job Description"
+                    placeholderText="Describe your responsibilities and achievements..."
+                    value={exp.workDescription || ""}
+                    onChange={(e) => updateWorkExperience(exp.id, "workDescription", e.target.value)}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormLabel
+                      icon={Calendar}
+                      title="Start Date"
+                      placeholderText="Jan 2020"
+                      id={`workStartDate-${exp.id}`}
+                      value={exp.workStartDate || ""}
+                      onChange={(e) => updateWorkExperience(exp.id, "workStartDate", e.target.value)}
+                    />
+
+                    <FormLabel
+                      icon={Calendar}
+                      title="End Date"
+                      placeholderText="Dec 2022"
+                      id={`workEndDate-${exp.id}`}
+                      value={exp.workEndDate || ""}
+                      onChange={(e) => updateWorkExperience(exp.id, "workEndDate", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
+            ))}
 
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormLabel
-                    icon={Briefcase}
-                    title="Company Name"
-                    placeholderText="Google"
-                    id={`companyName-${exp.id}`}
-                    value={exp.companyName || ""}
-                    onChange={(e) => updateWorkExperience(exp.id, "companyName", e.target.value)}
-                  />
-
-                  <FormLabel
-                    icon={MapPin}
-                    title="Location"
-                    placeholderText="Mountain View, CA"
-                    id={`workLocation-${exp.id}`}
-                    value={exp.workLocation || ""}
-                    onChange={(e) => updateWorkExperience(exp.id, "workLocation", e.target.value)}
-                  />
-                </div>
-
-                <FormLabel
-                  icon={User}
-                  title="Role"
-                  placeholderText="Software Engineer"
-                  id={`workRole-${exp.id}`}
-                  value={exp.workRole || ""}
-                  onChange={(e) => updateWorkExperience(exp.id, "workRole", e.target.value)}
-                />
-
-                {/* Replaced FormLabel with FormDescription for workDescription */}
-                <FormDescription
-                  id={`workDescription-${exp.id}`}
-                  title="Job Description"
-                  placeholderText="Describe your responsibilities and achievements..."
-                  value={exp.workDescription || ""}
-                  onChange={(e) => updateWorkExperience(exp.id, "workDescription", e.target.value)}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormLabel
-                    icon={Calendar}
-                    title="Start Date"
-                    placeholderText="Jan 2020"
-                    id={`workStartDate-${exp.id}`}
-                    value={exp.workStartDate || ""}
-                    onChange={(e) => updateWorkExperience(exp.id, "workStartDate", e.target.value)}
-                  />
-
-                  <FormLabel
-                    icon={Calendar}
-                    title="End Date"
-                    placeholderText="Dec 2022"
-                    id={`workEndDate-${exp.id}`}
-                    value={exp.workEndDate || ""}
-                    onChange={(e) => updateWorkExperience(exp.id, "workEndDate", e.target.value)}
-                  />
-                </div>
-              </div>
+            <div className="text-center pt-4">
+              <button
+                className="inline-flex items-center justify-center w-full rounded-lg border-2 border-dashed border-[#748D92]/30 bg-[#124E66]/5 px-5 py-3 text-base font-bold text-[#124E66] hover:bg-[#124E66]/10 hover:border-[#124E66]/30 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                onClick={addWorkExperience}
+                aria-label="Add work experience entry"
+              >
+                <Plus className="mr-2 h-5 w-5" /> Add Another Work Experience Entry
+              </button>
             </div>
-          ))}
-
-          <div className="m-6 text-center">
-            <button
-              className="inline-flex items-center justify-center w-full rounded-md border-2 border-dashed border-blue-300 bg-blue-50 px-5 py-3 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer active:scale-105"
-              onClick={addWorkExperience}
-              aria-label="Add work experience entry"
-            >
-              <Plus className="mr-2 h-5 w-5" /> Add Another Work Experience Entry
-            </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
 }
+
