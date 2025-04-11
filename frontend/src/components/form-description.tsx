@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { type FC, useState } from "react"
 import { FileText, WandSparkles, Loader2 } from "lucide-react"
 
@@ -86,13 +85,10 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
   return (
     <div className="relative flex flex-col gap-2 group">
       <div className="flex items-center gap-2">
-        <div className="text-[#124E66] group-hover:text-[#124E66] transition-colors duration-300">
+        <div className="text-blue-500">
           <FileText className="h-5 w-5" />
         </div>
-        <label
-          htmlFor={id}
-          className="text-sm font-bold text-[#212A31] group-hover:text-[#124E66] transition-colors duration-300"
-        >
+        <label htmlFor={id} className="text-sm font-bold text-gray-800">
           {title}
         </label>
       </div>
@@ -102,15 +98,15 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
         onChange={onChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholderText}
-        className="w-full min-h-[120px] rounded-lg border-2 border-[#748D92]/30 bg-[#D3D9D4]/10 px-4 py-3 text-[#212A31] placeholder:text-[#2E3944]/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#124E66] focus:border-[#124E66] focus:ring-offset-1 transition-all duration-300 resize-none"
+        className="cursor-pointer w-full min-h-[120px] rounded-lg border border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:border-blue-500 transition-all duration-300 resize-none"
       />
 
       {/* AI Button with Loading Spinner */}
       <button
         onClick={onAiFinish}
         disabled={loading}
-        className={`absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#124E66] hover:bg-[#124E66]/90 text-[#D3D9D4] text-xs font-bold px-3 py-1.5 rounded-md shadow-md transition-all duration-300 ${
-          loading ? "opacity-75 cursor-not-allowed" : "hover:-translate-y-0.5 hover:shadow-lg active:scale-105"
+        className={`absolute bottom-3 right-3 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-sm transition-all duration-300 ${
+          loading ? "opacity-75 cursor-not-allowed" : "hover:-translate-y-0.5 hover:shadow-md active:scale-105"
         }`}
       >
         {loading ? (

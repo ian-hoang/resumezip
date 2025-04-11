@@ -1,60 +1,51 @@
-// app/create/new/page.tsx
-"use client";
+"use client"
 
-import Link from "next/link";
-import { ArrowLeft, Sparkles, Loader2, ArrowRight, GripVertical, FileText } from "lucide-react";
-import WorkExperienceForm from "@/components/forms/workExp";
-import EducationForm from "@/components/forms/education";
-import TechnicalProjectsForm from "@/components/forms/projects";
-import VolunteerForm from "@/components/forms/volunteer";
-import LeadershipForm from "@/components/forms/leadership";
-import ProfileForm from "@/components/forms/profile";
-import AwardsForm from "@/components/forms/awards";
-import TechnicalSkillsForm from "@/components/forms/skills";
-import TemplatesForm from "@/components/forms/templates";
-import { useState, useEffect } from "react";
-import { useResumeContext } from "@/context/ResumeContext";
-import PDFViewer from "@/components/pdfViewer";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { v4 as uuidv4 } from "uuid";
-import { motion } from "framer-motion";
-import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
+import Link from "next/link"
+import { ArrowLeft, Sparkles, Loader2, ArrowRight, GripVertical, FileText } from "lucide-react"
+import WorkExperienceForm from "@/components/forms/workExp"
+import EducationForm from "@/components/forms/education"
+import TechnicalProjectsForm from "@/components/forms/projects"
+import VolunteerForm from "@/components/forms/volunteer"
+import LeadershipForm from "@/components/forms/leadership"
+import ProfileForm from "@/components/forms/profile"
+import AwardsForm from "@/components/forms/awards"
+import TechnicalSkillsForm from "@/components/forms/skills"
+import TemplatesForm from "@/components/forms/templates"
+import { useState, useEffect } from "react"
+import { useResumeContext } from "@/context/ResumeContext"
+import PDFViewer from "@/components/pdfViewer"
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
+import { v4 as uuidv4 } from "uuid"
+import { motion } from "framer-motion"
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
 
-const defaultSections = [
-  "Education",
-  "Work",
-  "Skills",
-  "Projects",
-  "Volunteership",
-  "Leadership",
-  "Awards"
-];
+const defaultSections = ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"]
 
 export default function NewResumePage() {
-  const [activeSection, setActiveSection] = useState<string>("Profile");
-  const { formData, updateFormData } = useResumeContext();
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [sections, setSections] = useState<string[]>(formData.sectionOrder || defaultSections);
-  const [isClient, setIsClient] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("Profile")
+  const { formData, updateFormData } = useResumeContext()
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [sections, setSections] = useState<string[]>(formData.sectionOrder || defaultSections)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    setIsClient(true)
+  }, [])
 
   if (!isClient) {
-    return null; // Prevent server-side rendering of drag-and-drop component
+    return null // Prevent server-side rendering of drag-and-drop component
   }
 
   const handleSubmit = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      let id = formData.id;
+      let id = formData.id
       if (!id) {
-        id = uuidv4();
-        updateFormData("id", id);
+        id = uuidv4()
+        updateFormData("id", id)
       }
-  
+
       const payload = {
         id,
         profileSection: formData.profileSection,
@@ -67,9 +58,9 @@ export default function NewResumePage() {
         awardsSection: formData.awardsSection,
         sectionOrder: ["Profile", ...sections], // Include the current section order
         sectionHeadings: formData.headings,
-      };
+      }
 
-      console.log("Submitting payload:", payload);
+      console.log("Submitting payload:", payload)
 
       // const response = await fetch("https://api.resumezip.io/api/resume", {
       const response = await fetch("http://localhost:8080/api/resume", {
@@ -78,174 +69,190 @@ export default function NewResumePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      });
-  
-      if (!response.ok) throw new Error("Failed to submit resume data");
-  
-      const responseData = await response.json();
-      const timestamp = new Date().getTime();
-      const updatedPdfUrl = `${responseData.pdf_url}?timestamp=${timestamp}`;
-      setPdfUrl(updatedPdfUrl);
+      })
+
+      if (!response.ok) throw new Error("Failed to submit resume data")
+
+      const responseData = await response.json()
+      const timestamp = new Date().getTime()
+      const updatedPdfUrl = `${responseData.pdf_url}?timestamp=${timestamp}`
+      setPdfUrl(updatedPdfUrl)
     } catch (error) {
-      console.error("Error submitting resume:", error);
+      console.error("Error submitting resume:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    const reorderedSections = Array.from(sections);
-    const [movedSection] = reorderedSections.splice(result.source.index, 1);
-    reorderedSections.splice(result.destination.index, 0, movedSection);
-    
-    setSections(reorderedSections);
-    updateFormData("sectionOrder", reorderedSections);
-  };
+    if (!result.destination) return
+
+    const reorderedSections = Array.from(sections)
+    const [movedSection] = reorderedSections.splice(result.source.index, 1)
+    reorderedSections.splice(result.destination.index, 0, movedSection)
+
+    setSections(reorderedSections)
+    updateFormData("sectionOrder", reorderedSections)
+  }
 
   const renderForm = () => {
     switch (activeSection) {
-      case "Work": return <WorkExperienceForm />;
-      case "Education": return <EducationForm />;
-      case "Projects": return <TechnicalProjectsForm />;
-      case "Profile": return <ProfileForm />;
-      case "Volunteership": return <VolunteerForm />;
-      case "Leadership": return <LeadershipForm />;
-      case "Awards": return <AwardsForm />;
-      case "Skills": return <TechnicalSkillsForm />;
-      case "Templates": return <TemplatesForm/>;
-      default: return <ProfileForm />;
+      case "Work":
+        return <WorkExperienceForm />
+      case "Education":
+        return <EducationForm />
+      case "Projects":
+        return <TechnicalProjectsForm />
+      case "Profile":
+        return <ProfileForm />
+      case "Volunteership":
+        return <VolunteerForm />
+      case "Leadership":
+        return <LeadershipForm />
+      case "Awards":
+        return <AwardsForm />
+      case "Skills":
+        return <TechnicalSkillsForm />
+      case "Templates":
+        return <TemplatesForm />
+      default:
+        return <ProfileForm />
     }
-  };
+  }
 
   return (
-    <div className="bg-[#D3D9D4]/50">
-    <main className="container mx-auto max-w-7xl py-8 px-1 min-h-screen">
-    <div className="mb-6">
-        <Link
-          href="/create"
-          className="inline-flex items-center text-sm font-medium text-[#2E3944] hover:text-[#124E66] transition-colors group"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Back to options
-        </Link>
-      </div>
-
-      <div className="flex gap-1">
-        {/* Left Sidebar (Fixed Navigation) */}
-        <div className="w-42 flex-shrink-0 pr-4">
-          <div className="sticky top-24 rounded-xl shadow-lg p-2 border border-[#748D92]/20">
-            <div className="flex items-center gap-2 mb-1 p-2">
-              <Sparkles className="h-4 w-4 text-[#124E66]" />
-              <h1 className="text-lg font-bold text-[#212A31]"> Sections</h1>
-            </div>
-            
-            {/* Fixed Profile Section */}
-            <div
-              onClick={() => setActiveSection("Profile")}
-              className={`flex items-center px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-200 ${
-                activeSection === "Profile"  ? "bg-[#124E66] text-[#D3D9D4] shadow-md"  : "text-[#2E3944] hover:bg-[#124E66]/10 hover:text-[#124E66]" } mb-1`}
-            >
-              Profile
-            </div>
-
-            {/* Draggable Other Sections */}
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="sections">
-                {(provided) => (
-                  <nav 
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="space-y-1"
-                  >
-                    {sections.map((section, index) => (
-                      <Draggable key={section} draggableId={section} index={index}>
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`flex items-center px-1 py-2 rounded-md text-sm cursor-pointer transition-all duration-200  ${
-                              activeSection === section ? "bg-[#124E66] text-[#D3D9D4] shadow-md"  : "text-[#2E3944] hover:bg-[#124E66]/10 hover:text-[#124E66]" }`}
-                            onClick={() => setActiveSection(section)}
-                          >
-                            <div {...provided.dragHandleProps} className="mr-1">
-                              <GripVertical className="h-4 w-4" />
-                            </div>
-                            {section}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </nav>
-                )}
-              </Droppable>
-            </DragDropContext>
-
-            {/* Fixed Profile Section */}
-            <div
-              onClick={() => setActiveSection("Templates")}
-              className={`mt-4 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold transition-all duration-300 focus:outline-none cursor-pointer ${
-                activeSection === "Templates"
-                  ? "bg-[#212A31] text-[#D3D9D4] shadow-md"
-                  : "bg-[#212A31]/10 text-[#212A31] hover:bg-[#212A31]/20"
-              }`}
-            >
-              <FileText className="h-4 w-4" />
-              Templates
-            </div>
-          </div>
+    <div className="bg-[#f1efed]">
+      <main className="container mx-auto max-w-7xl py-8 min-h-screen">
+        <div className="mb-6">
+          <Link
+            href="/create"
+            className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors group"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to options
+          </Link>
         </div>
 
-        {/* Center and Right Sections (Resizable) */}
-        <PanelGroup direction="horizontal" className="flex-1">
-          <Panel defaultSize={45} minSize={38} className="space-y-8 pr-1">
-            <div className="bg-white rounded-lg border border-[#748D92]/20 overflow-y-auto shadow-md scrollbar-hidden flex flex-col" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }}>
-              <div className="flex-1">
-                {renderForm()}
+        <div className="flex gap-2">
+          {/* Left Sidebar (Fixed Navigation) */}
+          <div className="w-48 flex-shrink-0">
+            <div className="sticky top-24 rounded-xl shadow-sm p-3 border border-gray-200 bg-white">
+              <div className="flex items-center gap-2 mb-4 p-2">
+                <Sparkles className="h-4 w-4 text-blue-500" />
+                <h1 className="text-lg font-bold text-gray-900">Sections</h1>
+              </div>
+
+              {/* Fixed Profile Section */}
+              <div
+                onClick={() => setActiveSection("Profile")}
+                className={`cursor-pointer flex items-center px-3 py-2 rounded-full text-sm font-medium ${
+                  activeSection === "Profile"
+                    ? "bg-blue-100 text-blue-600 shadow-sm transition-all duration-500"
+                    : "text-gray-700 hover:text-blue-600 transition-all duration-500"
+                } mb-1`}
+              >
+                Profile
+              </div>
+
+              {/* Draggable Other Sections */}
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="sections">
+                  {(provided) => (
+                    <nav {...provided.droppableProps} ref={provided.innerRef} className="space-y-1">
+                      {sections.map((section, index) => (
+                        <Draggable key={section} draggableId={section} index={index}>
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`flex items-center px-3 py-2 rounded-full text-sm cursor-pointer ${
+                                activeSection === section
+                                  ? "bg-blue-100 text-blue-600 shadow-sm transition-all duration-500"
+                                  : "text-gray-700 hover:text-blue-600 transition-all duration-500"
+                              }`}
+                              onClick={() => setActiveSection(section)}
+                            >
+                              <div {...provided.dragHandleProps} className="mr-2">
+                                <GripVertical className="h-4 w-4" />
+                              </div>
+                              {section}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </nav>
+                  )}
+                </Droppable>
+              </DragDropContext>
+
+              {/* Templates Section */}
+              <div
+                onClick={() => setActiveSection("Templates")}
+                className={`mt-6 w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold transition-all duration-300 focus:outline-none cursor-pointer ${
+                  activeSection === "Templates"
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                }`}
+              >
+                <FileText className="h-4 w-4" />
+                Templates
               </div>
             </div>
-            <div className="flex justify-center w-full">
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-6 py-2 bg-[#124E66] hover:bg-[#124E66]/90 text-[#D3D9D4] 
-                 font-bold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#748D92] focus:ring-offset-2 cursor-pointer
-                 transform hover:-translate-y-1 border-b-[3px] border-[#124E66]/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+          </div>
+
+          {/* Center and Right Sections (Resizable) */}
+          <PanelGroup direction="horizontal" className="flex-1 min-h-0">
+            <Panel defaultSize={45} minSize={38} className="min-h-0 space-y-6">
+              <div
+                className="bg-white rounded-lg border border-gray-200 overflow-y-auto scrollbar-hidden shadow-sm flex flex-col"
+                style={{ height: "600px" }}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Compiling Resume...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Compile Resume</span>
-                    <motion.div
-                      className="ml-1"
-                      initial={{ x: 0 }}
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5 }}
-                    >
-                      <ArrowRight className="h-5 w-5" />
-                    </motion.div>
-                  </>
-                )}
-              </button>
-            </div>
-          </Panel>
+                <div className="flex-1">{renderForm()}</div>
+              </div>
+              <div className="flex justify-center w-full">
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#1f232e] text-[#f1efed] 
+                   font-bold rounded-xl transition-all duration-300 cursor-pointer
+                   transform hover:-translate-y-1 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Compiling Resume...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Compile Resume</span>
+                      <motion.div
+                        className="ml-1"
+                        initial={{ x: 0 }}
+                        animate={{ x: [0, 5, 0] }}
+                        transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1.5 }}
+                      >
+                        <ArrowRight className="h-5 w-5" />
+                      </motion.div>
+                    </>
+                  )}
+                </button>
+              </div>
+            </Panel>
 
-          <PanelResizeHandle className="w-1 bg-gray-200 hover:bg-gray-300 transition-colors rounded-full" style={{ maxHeight: "calc(100vh - 200px)", height: "600px" }} />
+            <PanelResizeHandle
+              className="w-1 bg-gray-200 hover:bg-gray-300 transition-colors rounded-full mx-1"
+              style={{ height: "600px" }}
+            />
 
-          <Panel defaultSize={55} minSize={40} className="pl-1">
-            <div className="sticky top-0 bg-gray-300 rounded-lg shadow-md">
-              <PDFViewer pdfData={pdfUrl} />
-            </div>
-          </Panel>
-        </PanelGroup>
-      </div>
-    </main>
+            <Panel defaultSize={55} minSize={40} className="">
+              <div className="sticky top-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <PDFViewer pdfData={pdfUrl} />
+              </div>
+            </Panel>
+          </PanelGroup>
+        </div>
+      </main>
     </div>
-  );
+  )
 }

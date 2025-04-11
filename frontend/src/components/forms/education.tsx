@@ -2,7 +2,19 @@
 
 import { useResumeContext } from "@/context/ResumeContext"
 import { useState } from "react"
-import { Plus, Trash2, GraduationCap, MapPin, Award, BarChart, Calendar, BookOpen, Users, Pencil, Sparkles } from "lucide-react"
+import {
+  Plus,
+  Trash2,
+  GraduationCap,
+  MapPin,
+  Award,
+  BarChart,
+  Calendar,
+  BookOpen,
+  Users,
+  Pencil,
+  Sparkles,
+} from "lucide-react"
 import FormLabel from "../form-label"
 
 interface Education {
@@ -58,18 +70,17 @@ export default function EducationForm() {
 
   return (
     <div className="h-full space-y-0 max-w-4xl mx-auto">
-      <div className="bg-gradient-to-r from-[#212A31] to-[#124E66] shadow-xl p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-[#124E66]/20 rounded-full blur-3xl"></div>
+      <div className="bg-[#1f232e] text-white p-8 relative overflow-hidden rounded-t-lg">
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#124E66]/20 text-[#D3D9D4] font-semibold text-sm mb-3">
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800 text-blue-400 font-semibold text-sm mb-3">
               <Sparkles className="h-4 w-4 mr-2" /> ACADEMIC BACKGROUND
             </div>
 
             {isEditingTitle ? (
               <input
                 type="text"
-                className="text-3xl font-extrabold text-white tracking-tight bg-transparent border-b-2 border-[#748D92] focus:outline-none focus:border-[#D3D9D4] px-1 py-0.5 w-full"
+                className="text-3xl font-bold text-white tracking-tight bg-transparent border-b-2 border-gray-600 focus:outline-none focus:border-gray-300 px-1 py-0.5 w-full"
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value)
@@ -82,56 +93,57 @@ export default function EducationForm() {
               />
             ) : (
               <div className="flex items-center gap-2">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">{title}</h2>
+                <h2 className="text-3xl font-bold text-white tracking-tight">{title}</h2>
                 <Pencil
-                  className="h-5 w-5 text-[#748D92] hover:text-[#D3D9D4] cursor-pointer transition-colors"
+                  className="h-5 w-5 text-gray-400 hover:text-white cursor-pointer transition-colors"
                   onClick={() => setIsEditingTitle(true)}
                 />
               </div>
             )}
-            <p className="text-[#D3D9D4]/80 mt-2">Add your academic background and achievements</p>
+            <p className="text-gray-300 mt-2">Add your academic background and achievements</p>
           </div>
-          <div className="bg-[#124E66]/20 p-3 rounded-full">
-            <GraduationCap className="h-10 w-10 text-[#D3D9D4]" />
+          <div className="bg-gray-800 p-3 rounded-full">
+            <GraduationCap className="h-10 w-10 text-white" />
           </div>
         </div>
       </div>
 
       {educationList.length === 0 ? (
-        <div className="h-full items-center text-center py-16 bg-white border-2 border-dashed border-[#748D92]/30 shadow-lg hover:border-[#124E66]/50 transition-all duration-300 group">
-          <GraduationCap className="h-16 w-16 text-[#748D92]/70 mx-auto mb-6 group-hover:text-[#124E66]/70 transition-colors duration-300" />
-          <h3 className="text-xl font-bold text-[#212A31] mb-3">No education entries yet</h3>
-          <p className="text-[#2E3944] mb-8 max-w-md mx-auto">
+        <div className="h-full items-center text-center py-16 bg-white border border-dashed border-gray-300 shadow-sm hover:border-blue-300 transition-all duration-300 group rounded-b-lg">
+          <GraduationCap className="h-16 w-16 text-gray-400 mx-auto mb-6 group-hover:text-blue-500 transition-colors duration-300" />
+          <h3 className="text-xl font-bold text-gray-900 mb-3">No education entries yet</h3>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
             Add your educational background to showcase your academic achievements and qualifications.
           </p>
           <button
+            className="inline-flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-[#f1efed] px-5 py-3 text-base font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
             onClick={addEducation}
-            className="inline-flex items-center justify-center rounded-lg bg-[#124E66] px-6 py-3 text-base font-bold text-[#D3D9D4] hover:bg-[#124E66]/90 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#748D92] focus:ring-offset-2 cursor-pointer shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-b-[3px] border-[#124E66]/50"
+            aria-label="Add education entry"
           >
-            <Plus className="mr-2 h-5 w-5" /> Add Education
+            <Plus className="mr-2 h-5 w-5" /> Add Education Entry
           </button>
         </div>
       ) : (
-        <div className="bg-white shadow-xl overflow-hidden">
+        <div className="bg-white shadow-sm rounded-b-lg border border-gray-200 border-t-0">
           <div className="p-6 space-y-6">
             {educationList.map((edu, index) => (
               <div
                 key={edu.id}
-                className="bg-[#D3D9D4]/20 border-2 border-[#748D92]/20 rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-[#124E66]/30 group"
+                className="border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md group"
               >
-                <div className="bg-gradient-to-r from-[#212A31]/5 to-[#124E66]/10 px-6 py-4 border-b border-[#748D92]/20">
+                <div className="bg-[#f1efed] px-6 py-4 border-b border-gray-200">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                      <div className="bg-[#124E66] text-[#D3D9D4] w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md">
+                      <div className="bg-[#1f232e] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-sm">
                         {index + 1}
                       </div>
-                      <h3 className="font-bold text-lg text-[#212A31]">
+                      <h3 className="font-bold text-lg text-gray-900">
                         {edu.schoolName ? edu.schoolName : `Education Entry`}
                       </h3>
                     </div>
                     <button
                       onClick={() => removeEducation(edu.id)}
-                      className="h-9 w-9 rounded-md flex items-center justify-center text-[#748D92] hover:bg-red-100/50 hover:text-red-600 transition-all duration-300 cursor-pointer transform hover:scale-110"
+                      className="h-9 w-9 rounded-md flex items-center justify-center text-gray-500 hover:bg-red-100/50 hover:text-red-600 transition-all duration-300 cursor-pointer transform hover:scale-110"
                       aria-label="Remove education entry"
                     >
                       <Trash2 className="h-5 w-5" />
@@ -139,7 +151,7 @@ export default function EducationForm() {
                   </div>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="bg-white p-6 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormLabel
                       icon={GraduationCap}
@@ -223,11 +235,11 @@ export default function EducationForm() {
 
             <div className="text-center pt-4">
               <button
-                className="inline-flex items-center justify-center w-full rounded-lg border-2 border-dashed border-[#748D92]/30 bg-[#124E66]/5 px-5 py-3 text-base font-bold text-[#124E66] hover:bg-[#124E66]/10 hover:border-[#124E66]/30 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                className="inline-flex items-center justify-center w-full rounded-lg border border-dashed border-gray-300 bg-[#f1efed] px-5 py-3 text-base font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
                 onClick={addEducation}
                 aria-label="Add education entry"
               >
-                <Plus className="mr-2 h-5 w-5" /> Add Another Education Entry
+                <Plus className="mr-2 h-5 w-5" /> Add Education Entry
               </button>
             </div>
           </div>

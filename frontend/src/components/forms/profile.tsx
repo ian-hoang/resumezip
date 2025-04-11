@@ -33,25 +33,22 @@ export default function ProfileForm() {
 
   return (
     <div className="h-full space-y-0 max-w-4xl mx-auto">
-      <div className="bg-gradient-to-r from-[#212A31] to-[#124E66] shadow-xl p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-[#124E66]/20 rounded-full blur-3xl"></div>
+      <div className="bg-[#1f232e] text-white p-8 relative overflow-hidden rounded-t-lg">
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#124E66]/20 text-[#D3D9D4] font-semibold text-sm mb-3">
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800 text-blue-400 font-semibold text-sm mb-3">
               <Sparkles className="h-4 w-4 mr-2" /> PERSONAL INFO
             </div>
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">Profile</h2>
-            <p className="text-[#D3D9D4]/80 mt-2">Add your personal and contact information</p>
+            <h2 className="text-3xl font-bold text-white tracking-tight">Profile</h2>
+            <p className="text-gray-300 mt-2">Add your personal and contact information</p>
           </div>
-          <div className="bg-[#124E66]/20 p-3 rounded-full">
-            <UserCircle className="h-10 w-10 text-[#D3D9D4]" />
+          <div className="bg-gray-800 p-3 rounded-full">
+            <UserCircle className="h-10 w-10 text-white" />
           </div>
         </div>
       </div>
 
-      <div className="h-full bg-white p-8 shadow-xl space-y-8 mb-8 relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#124E66] to-[#748D92]"></div>
-
+      <div className="h-full bg-white p-8 shadow-sm space-y-8 mb-8 relative border border-gray-200 border-t-0 rounded-b-lg">
         {/* Full Name */}
         <FormLabel
           icon={User}
@@ -115,4 +112,3 @@ export default function ProfileForm() {
     </div>
   )
 }
-
