@@ -208,7 +208,7 @@ export default function Navbar() {
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setShowLogoutModal(false)}
-                  className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-sm"
+                  className="cursor-pointer px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-sm"
                 >
                   Cancel
                 </button>
@@ -218,7 +218,7 @@ export default function Navbar() {
                     setShowLogoutModal(false)
                     router.push("/")
                   }}
-                  className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-sm"
+                  className="cursor-pointer px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-sm"
                 >
                   Log Out
                 </button>

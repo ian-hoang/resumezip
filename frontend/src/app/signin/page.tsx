@@ -75,8 +75,7 @@ export default function LoginPage() {
 
             <div className="space-y-4 text-gray-700 text-lg">
               <p>Create professional resumes in minutes</p>
-              <p>Access to premium templates</p>
-              <p>AI-powered resume optimization</p>
+              <p>Access to various templates</p>
               <p>Download in multiple formats</p>
             </div>
           </div>

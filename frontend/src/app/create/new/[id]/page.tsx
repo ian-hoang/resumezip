@@ -19,6 +19,10 @@ import { v4 as uuidv4 } from "uuid"
 import { motion } from "framer-motion"
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
 import { useParams } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth"
+import { useRouter } from "next/navigation"
+import { auth } from "@/lib/firebaseClient"
+import { supabase } from "@/lib/supabaseClient"
 
 const defaultSections = ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"]
 
@@ -29,6 +33,7 @@ export default function NewResumePage() {
   const [loading, setLoading] = useState(false)
   const [sections, setSections] = useState<string[]>(formData.sectionOrder || defaultSections)
   const [isClient, setIsClient] = useState(false)
+  const router = useRouter()
 
   const { id } = useParams();
 
@@ -40,6 +45,21 @@ export default function NewResumePage() {
     setIsClient(true)
   }, [])
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/signin")
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  if (loading) {
+    return <div className="text-white p-4">Loading...</div> // optional loading screen
+  }
+
   if (!isClient) {
     return null // Prevent server-side rendering of drag-and-drop component
   }
@@ -47,11 +67,37 @@ export default function NewResumePage() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
       let id = formData.id
       if (!id) {
         id = uuidv4()
         updateFormData("id", id)
       }
+
+      await supabase.from("resumes").insert([
+        {
+          id: id,
+          uid: user.uid,
+          resume_title: formData.resumeTitle || "Untitled Resume",
+          resume_tag: formData.resumeTag || "personal",
+          selected_template: formData.selectedTemplate || "jack",
+          profile_section: formData.profileSection,
+          education_section: formData.educationSection,
+          work_experience_section: formData.workExperienceSection,
+          projects_section: formData.projectsSection,
+          skills_section: formData.skillsSection,
+          leadership_experience_section: formData.leadershipExperienceSection,
+          volunteer_experience_section: formData.volunteerExperienceSection,
+          awards_section: formData.awardsSection,
+          headings: formData.headings,
+          section_order: formData.sectionOrder || defaultSections,
+        }
+      ])
 
       const payload = {
         id,
