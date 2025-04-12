@@ -13,7 +13,6 @@ export default function TermsAndPrivacy() {
         {/* Header Section - Dark Theme */}
         <section className="bg-black text-white py-16 px-4 md:px-6 lg:px-8 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]"></div>
-          <div className="absolute inset-0 bg-[url('/dots-pattern.png')] bg-repeat opacity-20"></div>
           <div className="container mx-auto max-w-6xl relative z-10">
             <div className="flex flex-col items-center text-center gap-6">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">

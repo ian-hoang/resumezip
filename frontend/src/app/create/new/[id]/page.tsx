@@ -18,16 +18,23 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 import { v4 as uuidv4 } from "uuid"
 import { motion } from "framer-motion"
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
+import { useParams } from "next/navigation";
 
 const defaultSections = ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"]
 
 export default function NewResumePage() {
   const [activeSection, setActiveSection] = useState<string>("Profile")
-  const { formData, updateFormData } = useResumeContext()
+  const { setCurrentResumeId, formData, updateFormData } = useResumeContext()
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [sections, setSections] = useState<string[]>(formData.sectionOrder || defaultSections)
   const [isClient, setIsClient] = useState(false)
+
+  const { id } = useParams();
+
+  useEffect(() => {
+    if (id) setCurrentResumeId(id as string);
+  }, [id]);
 
   useEffect(() => {
     setIsClient(true)
@@ -125,7 +132,7 @@ export default function NewResumePage() {
       <main className="container mx-auto max-w-7xl py-8 min-h-screen">
         <div className="mb-6">
           <Link
-            href="/create"
+            href="/create/dashboard"
             className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors group"
           >
             <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />

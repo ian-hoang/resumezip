@@ -1,7 +1,7 @@
 "use client"
 
 import { useResumeContext } from "@/context/ResumeContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Trash2, Briefcase, MapPin, User, Calendar, Pencil, Sparkles } from "lucide-react"
 import FormLabel from "../form-label"
 import FormDescription from "../form-description"
@@ -21,6 +21,11 @@ export default function WorkExperienceForm() {
   const [workExperienceList, setWorkExperienceList] = useState<WorkExperience[]>(formData?.workExperienceSection || [])
   const [title, setTitle] = useState<string>(formData?.headings?.work || "Work Experience")
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
+
+  useEffect(() => {
+    setWorkExperienceList(formData?.workExperienceSection || [])
+    setTitle(formData?.headings?.work || "Work Experience")
+  }, [formData])
 
   const addWorkExperience = () => {
     const newId = workExperienceList.length > 0 ? Math.max(...workExperienceList.map((exp) => exp.id)) + 1 : 1
