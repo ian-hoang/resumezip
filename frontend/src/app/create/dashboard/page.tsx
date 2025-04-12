@@ -36,9 +36,8 @@ export default function DashboardPage() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
         router.push("/signin")
-      } else {
-        setLoading(false)
       }
+      setLoading(false)
     })
 
     return () => unsubscribe()
