@@ -9,10 +9,13 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth"
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
+      setLoading(false)
     })
 
     return () => unsubscribe()
@@ -87,20 +90,22 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
-              >
-                Log Out
-              </button>
-            ) : (
-              <Link href="/signin">
-                <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
-                  Sign In
-                  <ArrowRight className="h-4 w-4 ml-1" />
+            {!loading && (
+              user ? (
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
+                >
+                  Log Out
                 </button>
-              </Link>
+              ) : (
+                <Link href="/signin">
+                  <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                    Sign In
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </button>
+                </Link>
+              )
             )}
           </div>
 
@@ -169,24 +174,51 @@ export default function Navbar() {
                 Contact
               </Link>
               <div className="pt-3 border-t border-gray-800">
-                {user ? (
-                  <button
-                    onClick={() => {
-                      handleLogout()
-                      toggleMenu()
-                    }}
-                    className="w-full inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
-                  >
-                    Log Out
-                  </button>
-                ) : (
-                  <Link href="/signin" onClick={toggleMenu}>
-                    <button className="w-full inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
-                      Sign In
-                      <ArrowRight className="h-4 w-4 ml-1" />
+                {!loading && (
+                  user ? (
+                    <button
+                      onClick={() => {
+                        setShowLogoutModal(true)
+                        setIsMenuOpen(false)
+                      }}
+                      className="w-full inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
+                    >
+                      Log Out
                     </button>
-                  </Link>
+                  ) : (
+                    <Link href="/signin" onClick={toggleMenu}>
+                      <button className="w-full inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                        Sign In
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </button>
+                    </Link>
+                  )
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+        {showLogoutModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-[#1f232e] rounded-2xl shadow-lg p-6 w-full max-w-sm mx-4 text-white">
+              <h2 className="text-lg font-semibold mb-4">Log Out</h2>
+              <p className="text-sm mb-6">Are you sure you want to log out?</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await signOut(auth)
+                    setShowLogoutModal(false)
+                  }}
+                  className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-sm"
+                >
+                  Log Out
+                </button>
               </div>
             </div>
           </div>
