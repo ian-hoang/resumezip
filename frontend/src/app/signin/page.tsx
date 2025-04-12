@@ -29,7 +29,6 @@ export default function LoginPage() {
       }
 
       await signInWithRedirect(auth, provider)
-      // No need to handle redirect here — handled in /dashboard
     } catch (error: any) {
       console.error("Firebase Auth error:", error.message)
     } finally {

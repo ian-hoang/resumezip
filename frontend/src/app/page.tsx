@@ -3,17 +3,19 @@
 import { useEffect } from "react"
 import { getRedirectResult } from "firebase/auth"
 import { auth } from "@/lib/firebaseClient"
-
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Cpu, Network, BarChart, Server, Shield, Zap, ArrowRight } from "lucide-react"
 
 export default function Home() {
+  const router = useRouter()
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
           console.log("✅ Logged in as:", result.user.email)
+          router.push("/create/dashboard")
         } else {
           console.log("🕵️ No user from redirect")
         }
