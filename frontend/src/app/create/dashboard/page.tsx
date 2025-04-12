@@ -5,7 +5,9 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Plus, Clock, Edit, Download, Trash2, Sparkles, ChevronDown, X } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
-import { useAuthGuard } from "@/hooks/useAuthGuard"
+import { onAuthStateChanged } from "firebase/auth"
+import { auth } from "@/lib/firebaseClient"
+
 
 interface Resume {
   id: string
@@ -28,9 +30,23 @@ export default function DashboardPage() {
   const { resumes, formData, updateFormData, deleteResume, createNewResume, currentResumeId, setCurrentResumeId } = useResumeContext()
   const modalRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const loading = useAuthGuard()
 
-  if (loading) return <div className="text-white p-4">Loading...</div>
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/signin")
+      } else {
+        setLoading(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  if (loading) {
+    return <div className="text-white p-4">Loading...</div> // optional loading screen
+  }
 
 
   const tags: Tag[] = [
