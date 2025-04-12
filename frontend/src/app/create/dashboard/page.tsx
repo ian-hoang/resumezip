@@ -30,22 +30,7 @@ export default function DashboardPage() {
   const { resumes, formData, updateFormData, deleteResume, createNewResume, currentResumeId, setCurrentResumeId } = useResumeContext()
   const modalRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-
   const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/signin")
-      }
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
-  }, [router])
-
-  if (loading) {
-    return <div className="text-white p-4">Loading...</div> // optional loading screen
-  }
 
 
   const tags: Tag[] = [
@@ -69,6 +54,7 @@ export default function DashboardPage() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [isModalOpen])
+  
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -85,6 +71,21 @@ export default function DashboardPage() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [isDropdownOpen])
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.push("/signin")
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  if (loading) {
+    return <div className="text-white p-4">Loading...</div> // optional loading screen
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
