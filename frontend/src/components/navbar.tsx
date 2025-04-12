@@ -5,12 +5,14 @@ import { useEffect, useState } from "react"
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react"
 import { auth } from "@/lib/firebaseClient"
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
+import { useRouter } from "next/navigation"
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -214,6 +216,7 @@ export default function Navbar() {
                   onClick={async () => {
                     await signOut(auth)
                     setShowLogoutModal(false)
+                    router.push("/")
                   }}
                   className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-500 text-sm"
                 >
