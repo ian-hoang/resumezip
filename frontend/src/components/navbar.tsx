@@ -1,14 +1,33 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react"
+import { auth } from "@/lib/firebaseClient"
+import { onAuthStateChanged, signOut, User } from "firebase/auth"
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth)
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
   }
 
   return (
@@ -68,12 +87,21 @@ export default function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link href="/signin">
-              <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
-                Sign In
-                <ArrowRight className="h-4 w-4 ml-1" />
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
+              >
+                Log Out
               </button>
-            </Link>
+            ) : (
+              <Link href="/signin">
+                <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                  Sign In
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -141,12 +169,24 @@ export default function Navbar() {
                 Contact
               </Link>
               <div className="pt-3 border-t border-gray-800">
-                <Link href="/signin" onClick={toggleMenu}>
-                  <button className="w-full inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
-                    Sign In
-                    <ArrowRight className="h-4 w-4 ml-1" />
+                {user ? (
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      toggleMenu()
+                    }}
+                    className="w-full inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
+                  >
+                    Log Out
                   </button>
-                </Link>
+                ) : (
+                  <Link href="/signin" onClick={toggleMenu}>
+                    <button className="w-full inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                      Sign In
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
