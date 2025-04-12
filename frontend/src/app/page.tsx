@@ -15,7 +15,6 @@ export default function Home() {
       .then((result) => {
         if (result?.user) {
           console.log("✅ Logged in as:", result.user.email)
-          router.push("/create/dashboard")
         } else {
           console.log("🕵️ No user from redirect")
         }

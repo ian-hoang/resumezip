@@ -1,20 +1,44 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   auth,
   GoogleAuthProvider,
   GithubAuthProvider,
   signInWithRedirect,
 } from "@/lib/firebaseClient"
+import { getRedirectResult } from "firebase/auth"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  
+  useEffect(() => {
+    // Handle the OAuth redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          router.push("/create/dashboard")
+        }
+      })
+      .catch((error) => {
+        console.error("Error in getRedirectResult:", error.message)
+      })
+
+    // Redirect to dashboard if already logged in
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        router.push("/create/dashboard")
+      }
+    })
+
+    return () => unsubscribe()
+  }, [router])
 
   const signInWithFirebase = async (providerType: "google" | "github") => {
     setIsLoading(true)
-
     try {
       const provider =
         providerType === "google"
