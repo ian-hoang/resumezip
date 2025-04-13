@@ -1,14 +1,17 @@
-import type { NextConfig } from "next"
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // Your config here
   async rewrites() {
-    return [
-      {
-        source: "/__/auth/:path*", // Match any Firebase auth helper route
-        destination: "https://resumezip-io.firebaseapp.com/__/auth/:path*", // Proxy to Firebase hosting
-      },
-    ]
-  },
+    return {
+      beforeFiles: [
+        {
+          source: '/__/auth/:path*',
+          destination: `https://myapp.firebaseapp.com/__/auth/:path*`
+        }
+      ]
+    }
+  }
 }
 
 export default nextConfig
