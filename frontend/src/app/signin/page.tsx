@@ -10,6 +10,7 @@ import {
 } from "@/lib/firebaseClient"
 import { getRedirectResult } from "firebase/auth"
 import { useRouter } from "next/navigation"
+import { syncAllResumesToLocalStorage } from "@/lib/sync"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -20,6 +21,7 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
+          syncAllResumesToLocalStorage(result.user.uid)
           router.push("/create/dashboard")
         }
       })
@@ -28,8 +30,9 @@ export default function LoginPage() {
       })
 
     // Redirect to dashboard if already logged in
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
+        await syncAllResumesToLocalStorage(user.uid)
         router.push("/create/dashboard")
       }
     })

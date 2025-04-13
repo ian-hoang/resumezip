@@ -7,7 +7,7 @@ import { ArrowLeft, Plus, Clock, Edit, Download, Trash2, Sparkles, ChevronDown, 
 import { useResumeContext } from "@/context/ResumeContext"
 import { onAuthStateChanged } from "firebase/auth"
 import { auth } from "@/lib/firebaseClient"
-
+import { syncAllResumesToLocalStorage } from "@/lib/sync"
 
 interface Resume {
   id: string
@@ -75,10 +75,13 @@ export default function DashboardPage() {
   }, [isDropdownOpen])
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.push("/signin")
+        return
       }
+    
+      await syncAllResumesToLocalStorage(user.uid)
       setLoading(false)
     })
 

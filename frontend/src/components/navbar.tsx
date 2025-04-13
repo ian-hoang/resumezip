@@ -215,6 +215,7 @@ export default function Navbar() {
                 <button
                   onClick={async () => {
                     await signOut(auth)
+                    localStorage.removeItem("allResumes")
                     setShowLogoutModal(false)
                     router.push("/")
                   }}

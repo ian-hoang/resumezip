@@ -57,7 +57,7 @@ export default function NewResumePage() {
   }, [router])
 
   if (loading) {
-    return <div className="text-white p-4">Loading...</div> // optional loading screen
+    return <div className="text-black p-4">Loading...</div> // optional loading screen
   }
 
   if (!isClient) {
