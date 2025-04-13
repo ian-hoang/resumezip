@@ -1,8 +1,9 @@
 {
     "rewrites": [
       {
-        "source": "https://login.resumezip.io/__/auth/(.*)",
+        "source": "/__/auth/(.*)",
         "destination": "https://resumezip-io.firebaseapp.com/__/auth/$1"
       }
     ]
   }
+  
