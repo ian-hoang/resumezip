@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: '/__/auth/:path*',
-          destination: `https://myapp.firebaseapp.com/__/auth/:path*`
+          destination: `https://resumezip-io.firebaseapp.com/__/auth/:path*`
         }
       ]
     }
