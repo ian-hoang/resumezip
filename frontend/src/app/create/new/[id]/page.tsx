@@ -79,7 +79,7 @@ export default function NewResumePage() {
         updateFormData("id", id)
       }
 
-      const { error, data } = await supabase.from("resumes").insert([
+      const { error, data } = await supabase.from("resumes").upsert([
         {
           id: formData.id || uuidv4(),
           uid: user.uid,

@@ -2,42 +2,8 @@
 "use client";
 import React, { createContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid"
+import { supabase } from "@/lib/supabaseClient"
 
-// const ResumeContext = createContext<any>(null);
-
-// export const FormProvider = ({ children }: { children: React.ReactNode }) => {
-//   const [formData, setFormData] = useState<any>(() => {
-//     // Load the data from LocalStorage, if available
-//     if (typeof window !== "undefined") {
-//       const savedData = localStorage.getItem("resumeData");
-//       return savedData ? JSON.parse(savedData) : {};
-//     }
-//     return {}; // Return empty object if no localStorage available
-//   });
-
-//   useEffect(() => {
-//     // Save form data to LocalStorage every time it changes
-//     if (typeof window !== "undefined") {
-//       localStorage.setItem("resumeData", JSON.stringify(formData));
-//     }
-//   }, [formData]);
-
-//   // Function to update specific sections of the form data
-//   const updateFormData = (section: string, data: any) => {
-//     setFormData((prevData: any) => ({
-//       ...prevData,
-//       [section]: data, // Update specific section of the data
-//     }));
-//   };
-
-//   return (
-//     <ResumeContext.Provider value={{ formData, updateFormData }}>
-//       {children}
-//     </ResumeContext.Provider>
-//   );
-// };
-
-// export const useResumeContext = () => React.useContext(ResumeContext);
 const ResumeContext = createContext<any>(null);
 
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {
@@ -88,7 +54,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     return newId;
   };
 
-  const deleteResume = (id: string) => {
+  const deleteResume = async (id: string) => {
     setResumes(prev => {
       const updated = { ...prev };
       delete updated[id];
@@ -97,6 +63,16 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     if (currentResumeId === id) {
       setCurrentResumeId(null);
     }
+    const { error } = await supabase
+    .from("resumes")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    console.error("❌ Failed to delete resume:", error)
+  } else {
+    console.log("✅ Resume deleted:", id)
+  }
   };
 
   const updateFormData = (section: string, data: any) => {
