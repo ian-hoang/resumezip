@@ -11,12 +11,30 @@ export async function syncAllResumesToLocalStorage(uid: string) {
     return
   }
 
+  const keyMap: Record<string, string> = {
+    education_section: "educationSection",
+    profile_section: "profileSection",
+    resume_title: "resumeTitle",
+    awards_section: "awardsSection",
+    work_section: "workExperienceSection",
+    skills_section: "skillsSection",
+    volunteer_section: "volunteerExperienceSection",
+    leadership_section: "leadershipExperienceSection",
+    projects_section: "projectsSection",
+    created_at: "updatedAt",
+    selected_template: "selectedTemplate",
+    resume_tag: "resumeTag",
+    section_order: "sectionOrder",
+    headings: "headings",
+  }
+
   // Build dictionary: resumeId => resumeObject
   const resumeMap: Record<string, any> = {}
 
   for (const resume of resumes) {
     if (resume.id) {
-      resumeMap[resume.id] = resume
+      const key = keyMap[resume.id] || resume.id
+      resumeMap[key] = resume
     }
   }
 
