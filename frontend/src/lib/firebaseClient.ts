@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider, GithubAuthProvider, signInWithRedirect } f
 
 const firebaseConfig = {
     apiKey: "AIzaSyASPtFrMu5P7kmk9CYyc2F692-nwSFx8e4",
-    authDomain: "login.resumezip.io",
+    authDomain: "resumezip.io",
     projectId: "resumezip-io",
     storageBucket: "resumezip-io.firebasestorage.app",
     messagingSenderId: "303685862121",
