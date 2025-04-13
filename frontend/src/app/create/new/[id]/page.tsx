@@ -79,25 +79,31 @@ export default function NewResumePage() {
         updateFormData("id", id)
       }
 
-      await supabase.from("resumes").insert([
+      const { error, data } = await supabase.from("resumes").insert([
         {
-          id: id,
+          id: formData.id || uuidv4(),
           uid: user.uid,
           resume_title: formData.resumeTitle || "Untitled Resume",
           resume_tag: formData.resumeTag || "personal",
           selected_template: formData.selectedTemplate || "jack",
-          profile_section: formData.profileSection,
-          education_section: formData.educationSection,
-          work_section: formData.workExperienceSection,
-          projects_section: formData.projectsSection,
-          skills_section: formData.skillsSection,
-          leadership_section: formData.leadershipExperienceSection,
-          volunteer_section: formData.volunteerExperienceSection,
-          awards_section: formData.awardsSection,
-          headings: formData.headings,
-          section_order: formData.sectionOrder || defaultSections,
+          profile_section: formData.profileSection ?? null,
+          education_section: formData.educationSection ?? null,
+          work_section: formData.workExperienceSection ?? null,
+          skills_section: formData.skillsSection ?? null,
+          projects_section: formData.projectsSection ?? null,
+          volunteer_section: formData.volunteerExperienceSection ?? null,
+          leadership_section: formData.leadershipExperienceSection ?? null,
+          awards_section: formData.awardsSection ?? null,
+          headings: formData.headings ?? null,
+          section_order: formData.sectionOrder ?? defaultSections,
         }
       ])
+      
+      if (error) {
+        console.error("🔥 Supabase insert error:", error)
+      } else {
+        console.log("✅ Supabase insert success:", data)
+      }      
 
       const payload = {
         id,
