@@ -28,16 +28,21 @@ export async function syncAllResumesToLocalStorage(uid: string) {
     headings: "headings",
   }
 
-  // Build dictionary: resumeId => resumeObject
   const resumeMap: Record<string, any> = {}
 
   for (const resume of resumes) {
     if (resume.id) {
-      const key = keyMap[resume.id] || resume.id
-      resumeMap[key] = resume
+      const transformedResume: Record<string, any> = {}
+
+      for (const key in resume) {
+        const newKey = keyMap[key] || key
+        transformedResume[newKey] = resume[key]
+      }
+
+      resumeMap[resume.id] = transformedResume
     }
   }
 
   localStorage.setItem("allResumes", JSON.stringify(resumeMap))
-  console.log("✅ Resumes synced to localStorage")
+  console.log("✅ Resumes synced to localStorage with mapped field names")
 }
