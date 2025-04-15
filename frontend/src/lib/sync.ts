@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabaseClient"
-import { useResumeContext } from "@/context/ResumeContext"
 
 export async function syncAllResumesToLocalStorage(uid: string) {
-  const { setResumes } = useResumeContext();
   const { data: resumes, error } = await supabase
     .from("resumes")
     .select("*")
@@ -45,6 +43,6 @@ export async function syncAllResumesToLocalStorage(uid: string) {
   }
 
   localStorage.setItem("allResumes", JSON.stringify(resumeMap))
-  setResumes(resumeMap)
   console.log("✅ Resumes synced to localStorage with mapped field names")
+  return resumeMap;
 }

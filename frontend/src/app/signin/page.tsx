@@ -11,16 +11,20 @@ import {
 import { getRedirectResult } from "firebase/auth"
 import { useRouter } from "next/navigation"
 import { syncAllResumesToLocalStorage } from "@/lib/sync"
+import { useResumeContext } from "@/context/ResumeContext"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const { setResumes } = useResumeContext()
   const router = useRouter()
 
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
-          syncAllResumesToLocalStorage(result.user.uid)
+          const resumeMap = syncAllResumesToLocalStorage(result.user.uid)
+          setResumes(resumeMap)
+          // Redirect to dashboard after successful sign-in
           router.push("/create/dashboard")
         }
       })
@@ -28,7 +32,8 @@ export default function LoginPage() {
   
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        await syncAllResumesToLocalStorage(user.uid)
+        const resumeMap = await syncAllResumesToLocalStorage(user.uid)
+        setResumes(resumeMap)
         router.push("/create/dashboard")
       }
     })

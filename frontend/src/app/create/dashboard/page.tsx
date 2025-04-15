@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [newResumeName, setNewResumeName] = useState("My Resume")
   const [selectedTag, setSelectedTag] = useState("default")
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { resumes, deleteResume, createNewResume, currentResumeId, setCurrentResumeId } = useResumeContext()
+  const { resumes, deleteResume, createNewResume, setResumes, setCurrentResumeId } = useResumeContext()
   const modalRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
@@ -81,7 +81,8 @@ export default function DashboardPage() {
         return
       }
     
-      await syncAllResumesToLocalStorage(user.uid)
+      const resumeMap = await syncAllResumesToLocalStorage(user.uid)
+      setResumes(resumeMap)
       setLoading(false)
     })
 
