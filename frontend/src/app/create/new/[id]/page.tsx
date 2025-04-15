@@ -56,10 +56,6 @@ export default function NewResumePage() {
     return () => unsubscribe()
   }, [router])
 
-  if (loading) {
-    return <div className="text-black p-4">Loading...</div> // optional loading screen
-  }
-
   if (!isClient) {
     return null // Prevent server-side rendering of drag-and-drop component
   }

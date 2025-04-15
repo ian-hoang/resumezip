@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [newResumeName, setNewResumeName] = useState("My Resume")
   const [selectedTag, setSelectedTag] = useState("default")
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { resumes, formData, updateFormData, deleteResume, createNewResume, currentResumeId, setCurrentResumeId } = useResumeContext()
+  const { resumes, deleteResume, createNewResume, currentResumeId, setCurrentResumeId } = useResumeContext()
   const modalRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)

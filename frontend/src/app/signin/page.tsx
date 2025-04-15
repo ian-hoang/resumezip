@@ -17,32 +17,25 @@ export default function LoginPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Wait for Firebase to fully initialize
-    const timeout = setTimeout(() => {
-      getRedirectResult(auth)
-        .then((result) => {
-          if (result?.user) {
-            syncAllResumesToLocalStorage(result.user.uid)
-            router.push("/create/dashboard")
-          }
-        })
-        .catch((error) => {
-          console.error("Error in getRedirectResult:", error.message)
-        })
-  
-      // Redirect to dashboard if already logged in
-      const unsubscribe = auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          await syncAllResumesToLocalStorage(user.uid)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          syncAllResumesToLocalStorage(result.user.uid)
           router.push("/create/dashboard")
         }
       })
+      .catch((error) => console.error("Error in getRedirectResult:", error.message))
   
-      return () => unsubscribe()
-    }, 500) // delay by 500ms
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        await syncAllResumesToLocalStorage(user.uid)
+        router.push("/create/dashboard")
+      }
+    })
   
-    return () => clearTimeout(timeout)
+    return () => unsubscribe()
   }, [router])
+  
 
   const signInWithFirebase = async (providerType: "google" | "github") => {
     setIsLoading(true)

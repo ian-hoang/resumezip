@@ -94,7 +94,8 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentResumeId,
       createNewResume,
       updateFormData,
-      deleteResume
+      deleteResume,
+      setResumes
     }}>
       {children}
     </ResumeContext.Provider>
