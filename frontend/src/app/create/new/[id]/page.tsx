@@ -113,6 +113,7 @@ export default function NewResumePage() {
         awardsSection: formData.awardsSection,
         sectionOrder: ["Profile", ...sections], // Include the current section order
         sectionHeadings: formData.headings,
+        selectedTemplate: formData.selectedTemplate,
       }
 
       console.log("Submitting payload:", payload)
