@@ -36,13 +36,6 @@ func init() {
 	log.Printf("AWS_ACCESS_KEY_ID: %s", awsAccessKeyID)
 	log.Printf("AWS_SECRET_ACCESS_KEY: %s", awsSecretAccessKey)
 	log.Printf("AWS_REGION: %s", awsRegion)
-
-	// Load the LaTeX template
-	// var err error
-	tmpl, err = template.ParseFiles("templates/overleaf1.tex")
-	if err != nil {
-		log.Fatalf("Failed to parse LaTeX template: %v", err)
-	}
 }
 
 func handleResumeSubmission(c *gin.Context) {
@@ -55,6 +48,31 @@ func handleResumeSubmission(c *gin.Context) {
 	}
 
 	sanitizeResume(&resume)
+	log.Printf("Resume data: %+v", resume)
+
+	var err error
+	if resume.Template == "jake" {
+		log.Printf("Inside jake's resume")
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf1.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	} else if resume.Template == "modernjack" {
+		log.Printf("Inside modernjack's resume")
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf2.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	} else {
+		log.Printf("Inside default resume")
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf4.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	}
 	pdfPath, err := generatePDF(resume)
 	if err != nil {
 		log.Printf("Failed to generate PDF: %v", err)

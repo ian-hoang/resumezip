@@ -159,6 +159,14 @@ func sanitizeResume(resume *ResumeData) {
 	resume.Profile.Github = escapeLaTeX(resume.Profile.Github)
 	resume.Profile.Website = escapeLaTeX(resume.Profile.Website)
 
+	resume.Headings.EduHeading = escapeLaTeX(resume.Headings.EduHeading)
+	resume.Headings.WorkHeading = escapeLaTeX(resume.Headings.WorkHeading)
+	resume.Headings.ProjHeading = escapeLaTeX(resume.Headings.ProjHeading)
+	resume.Headings.SkillHeading = escapeLaTeX(resume.Headings.SkillHeading)
+	resume.Headings.LeadHeading = escapeLaTeX(resume.Headings.LeadHeading)
+	resume.Headings.VolHeading = escapeLaTeX(resume.Headings.VolHeading)
+	resume.Headings.AwardHeading = escapeLaTeX(resume.Headings.AwardHeading)
+
 	for i := range resume.Educations {
 		resume.Educations[i].School = escapeLaTeX(resume.Educations[i].School)
 		resume.Educations[i].Location = escapeLaTeX(resume.Educations[i].Location)

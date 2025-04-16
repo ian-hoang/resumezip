@@ -13,6 +13,7 @@ type ResumeData struct {
 	Awards          []Award          `json:"awardsSection"`
 	Order           []string         `json:"sectionOrder"`
 	Headings        HeadingsStruct   `json:"sectionHeadings"`
+	Template        string           `json:"selectedTemplate"`
 }
 
 type ProfileStruct struct {

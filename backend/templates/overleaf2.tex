@@ -1,7 +1,14 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
 \documentclass[letterpaper,11pt]{article}
 
-\usepackage{fontawesome5}
 \usepackage{latexsym}
+\usepackage{fontawesome5}
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
 \usepackage{marvosym}
@@ -14,8 +21,18 @@
 \usepackage{tabularx}
 \input{glyphtounicode}
 
-% Custom font
-\usepackage[default]{lato}
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
 
 \pagestyle{fancy}
 \fancyhf{} % clear all header and footer fields
@@ -38,16 +55,13 @@
 
 % Sections formatting
 \titleformat{\section}{
-  \vspace{-4pt}\bfseries\large % Removed \scshape
-}{}{0em}{}[\color{black}\titlerule\vspace{-5pt}]
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
 
 % Ensure that generate pdf is machine readable/ATS parsable
 \pdfgentounicode=1
 
-%-------------------------%
-% Custom commands
-\begin{document}
-%-------------------------%
+%-------------------------
 % Custom commands
 \newcommand{\resumeItem}[1]{
   \item\small{
@@ -86,23 +100,31 @@
 \newcommand{\resumeItemListStart}{\begin{itemize}}
 \newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
 
-\definecolor{Black}{RGB}{0, 0, 0}
 \newcommand{\seticon}[1]{\textcolor{Black}{\csname #1\endcsname}}
-%-------------------------------------------%
-%%%%%%  RESUME STARTS HERE  %%%%%
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%----------HEADING----------%
+
+\begin{document}
+
+%----------HEADING----------
+% \begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
+%   \textbf{\href{http://sourabhbajaj.com/}{\Large Sourabh Bajaj}} & Email : \href{mailto:sourabh@sourabhbajaj.com}{sourabh@sourabhbajaj.com}\\
+%   \href{http://sourabhbajaj.com/}{http://www.sourabhbajaj.com} & Mobile : +1-123-456-7890 \\
+% \end{tabular*}
+
 \begin{center}
-  \textbf{\Huge {{ .Profile.Name }}} \\ \vspace{1pt}
-  {{- if .Profile.Phone }} \seticon{faPhone} \ \small {{- .Profile.Phone -}} \quad {{- end}}
-  {{- if .Profile.Email }} \href{mailto:{{- .Profile.Email -}}}{\seticon{faEnvelope} \underline{ {{- .Profile.Email -}} }} \quad {{- end}}
-  {{- if .Profile.LinkedIn }} \href{ {{- .Profile.LinkedIn -}} }{\seticon{faLinkedin} \underline{ {{- .Profile.LinkedIn -}} }} \quad {{- end}}
-  {{- if .Profile.Website }} \href{ {{- .Profile.Website -}} }{\seticon{faGlobe} \underline{ {{- .Profile.Website -}} }} \quad {{- end}}
-  {{- if .Profile.Github }} \href{ {{- .Profile.Github -}} }{\seticon{faGithub} \underline{ {{- .Profile.Github -}}}} {{- end}}
+    \textbf{\Huge \scshape {{ .Profile.Name }}} \\ \vspace{1pt}
+    {{- if .Profile.Phone }} \small {{- .Profile.Phone }} $|$ {{- end}}
+    {{- if .Profile.Email }} \href{mailto:{{- .Profile.Email -}}}{\underline{ {{- .Profile.Email -}} }} $|$ {{- end}}
+    {{- if .Profile.LinkedIn }} \href{ {{- .Profile.LinkedIn -}} }{\underline{ {{- .Profile.LinkedIn -}} }} $|$ {{- end}}
+    {{- if .Profile.Website }} \href{ {{- .Profile.Website -}} }{\underline{ {{- .Profile.Website -}} }} $|$ {{- end}}
+    {{- if .Profile.Github }} \href{ {{- .Profile.Github -}} }{\underline{ {{- .Profile.Github -}} }} {{- end}}
+
 \end{center}
 
 {{- range .Order }}
-    %-----------EDUCATION-----------%
+    %-----------EDUCATION-----------
     {{- if eq . "Education" }}
         {{- if $.Educations }}
         \section{ {{- if $.Headings.EduHeading }} {{ $.Headings.EduHeading }} {{ else }} Education {{ end -}} }
@@ -125,16 +147,18 @@
             \resumeSubHeadingListEnd
         {{- end}}
     {{- end}}
+        
 
-    %-----------EXPERIENCE-----------%
+
+    %-----------EXPERIENCE-----------
     {{- if eq . "Work" }}
         {{if $.WorkExperiences}}
         \section{ {{- if $.Headings.WorkHeading }} {{ $.Headings.WorkHeading }} {{ else }} Work Experience {{ end -}} }
         \resumeSubHeadingListStart
             {{- range $.WorkExperiences}}
             \resumeSubheading
-            { {{- .CompanyName -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
-            { {{- .Role -}}}{ {{- .Location -}} }
+            { {{- .Role -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}}}
+            { {{- .CompanyName -}}}{ {{- .Location -}} }
                 {{- if .Description}}
                     {{- if gt (len .Description) 0 }}
                     \resumeItemListStart
@@ -159,8 +183,7 @@
             {\textbf{ {{- .Name -}} } \hspace{0.1em}
                 {{- if .Github }} \href{ {{- .Github -}} }{\seticon{faGithub}} {{- end}} 
                 {{- if .Website }} \href{ {{- .Website -}} }{\seticon{faGlobe}} {{- end}} 
-                {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}
-            { {{- .Date }} }
+                {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}{ {{- .Date }} }
             
             {{- if gt (len .Description) 0 }}
             \resumeItemListStart
@@ -187,6 +210,7 @@
             \end{itemize}
         {{- end}}
     {{- end}}
+
 
     %-----------LEADERSHIP-----------%
     {{- if eq . "Leadership" }}
@@ -243,6 +267,7 @@
         \resumeSubHeadingListEnd
         {{- end}}
     {{- end}}
+    
 {{- end}}
 
 %-------------------------------------------
