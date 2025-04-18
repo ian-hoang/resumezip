@@ -42,10 +42,14 @@ export default function NewResumePage() {
   }, [id]);
 
   useEffect(() => {
+    if (!formData.id) return // Don't proceed if id isn't ready
     const resumeId = formData.id
     const timestamp = new Date().getTime()
     const pdfUrl = `https://resume-generator-pdfs.s3.amazonaws.com/resumes/${resumeId}.pdf?timestamp=${timestamp}`
     setPdfUrl(pdfUrl)
+  }, [formData.id])
+
+  useEffect(() => {
     setIsClient(true)
   }, [])
 
@@ -61,7 +65,7 @@ export default function NewResumePage() {
   }, [router])
 
   if (!isClient) {
-    return null // Prevent server-side rendering of drag-and-drop component
+    return null
   }
 
   const handleSubmit = async () => {
