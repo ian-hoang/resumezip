@@ -24,8 +24,8 @@ interface Tag {
 export default function DashboardPage() {
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [newResumeName, setNewResumeName] = useState("My Resume")
-  const [selectedTag, setSelectedTag] = useState("default")
+  const [newResumeName, setNewResumeName] = useState("")
+  const [selectedTag, setSelectedTag] = useState("personal")
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const { resumes, deleteResume, createNewResume, setResumes, setCurrentResumeId } = useResumeContext()
   const modalRef = useRef<HTMLDivElement>(null)
@@ -36,10 +36,9 @@ export default function DashboardPage() {
 
 
   const tags: Tag[] = [
-    { id: "academic", name: "Academic" },
     { id: "personal", name: "Personal" },
+    { id: "academic", name: "Academic" },
     { id: "professional", name: "Professional" },
-    { id: "targeted", name: "Targeted" },
   ]
   // Close modal when clicking outside
   useEffect(() => {
@@ -117,7 +116,7 @@ export default function DashboardPage() {
   };
 
   const getSelectedTag = () => {
-    return tags.find((tag) => tag.id === selectedTag)?.name || "Select a template"
+    return tags.find((tag) => tag.id === selectedTag)?.name || "Personal"
   }
 
   return (
@@ -243,13 +242,13 @@ export default function DashboardPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-gray-600 mt-2 text-sm">
+              {/* <p className="text-gray-600 mt-2 text-sm">
                 If you want to create a resume from a template, go clone one on the{" "}
                 <Link href="/templates" className="text-blue-500 hover:underline">
                   Templates
                 </Link>{" "}
                 page.
-              </p>
+              </p> */}
             </div>
 
             {/* Modal Body */}
@@ -264,6 +263,7 @@ export default function DashboardPage() {
                     type="text"
                     id="resume-name"
                     value={newResumeName}
+                    placeholder="My Resume"
                     onChange={(e) => setNewResumeName(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -290,7 +290,7 @@ export default function DashboardPage() {
                         {tags.map((tag) => (
                           <button
                             key={tag.id}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                            className="cursor-pointer w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                             onClick={() => {
                               setSelectedTag(tag.id)
                               setIsDropdownOpen(false)
@@ -316,7 +316,9 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleCreateResume}
-                className="cursor-pointer px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={!newResumeName.trim()}
+                className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2
+                  ${!newResumeName.trim() ? "bg-blue-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-500 focus:ring-blue-500"}`}
               >
                 Create
               </button>

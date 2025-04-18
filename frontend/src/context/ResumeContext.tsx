@@ -3,6 +3,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid"
 import { supabase } from "@/lib/supabaseClient"
+import { auth } from "@/lib/firebaseClient"
 
 const ResumeContext = createContext<any>(null);
 
@@ -31,8 +32,15 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [resumes]);
 
-  const createNewResume = (title: string, tag: string): string => {
+  const createNewResume = async (title: string, tag: string): Promise<string> => {
     const newId = uuidv4();
+
+    const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return ""
+      }
+
     const newResumeData = {
       id: newId,
       resumeTag: tag,
@@ -49,6 +57,26 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       leadershipExperienceSection: [],
       awardsSection: [],
     };
+
+    const { error, data } = await supabase.from("resumes").upsert([
+      {
+        id: newId,
+        uid: user.uid,
+        resume_title: newResumeData.resumeTitle,
+        resume_tag: newResumeData.resumeTag,
+        selected_template: newResumeData.selectedTemplate,
+        profile_section: newResumeData.profileSection,
+        education_section: newResumeData.educationSection,
+        work_section: newResumeData.workExperienceSection,
+        skills_section: newResumeData.skillsSection,
+        projects_section: newResumeData.projectsSection,
+        volunteer_section: newResumeData.volunteerExperienceSection,
+        leadership_section: newResumeData.leadershipExperienceSection,
+        awards_section: newResumeData.awardsSection,
+        headings: newResumeData.headings,
+        section_order: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
+      }
+    ])
     setResumes(prev => ({ ...prev, [newId]: newResumeData }));
     setCurrentResumeId(newId);
     return newId;
