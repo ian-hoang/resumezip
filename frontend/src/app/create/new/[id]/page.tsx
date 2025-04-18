@@ -42,6 +42,12 @@ export default function NewResumePage() {
   }, [id]);
 
   useEffect(() => {
+    const pdfUrl = formData.pdfUrl
+    if (pdfUrl) {
+      const timestamp = new Date().getTime()
+      const updatedPdfUrl = `${pdfUrl}?timestamp=${timestamp}`
+      setPdfUrl(updatedPdfUrl)
+    }
     setIsClient(true)
   }, [])
 
@@ -77,7 +83,7 @@ export default function NewResumePage() {
 
       const { error, data } = await supabase.from("resumes").upsert([
         {
-          id: formData.id || uuidv4(),
+          id: formData.id || id,
           uid: user.uid,
           resume_title: formData.resumeTitle || "Untitled Resume",
           resume_tag: formData.resumeTag || "personal",
@@ -130,6 +136,7 @@ export default function NewResumePage() {
       if (!response.ok) throw new Error("Failed to submit resume data")
 
       const responseData = await response.json()
+      updateFormData("pdfUrl", responseData.pdf_url)
       const timestamp = new Date().getTime()
       const updatedPdfUrl = `${responseData.pdf_url}?timestamp=${timestamp}`
       setPdfUrl(updatedPdfUrl)
