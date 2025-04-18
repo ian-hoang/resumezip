@@ -42,12 +42,10 @@ export default function NewResumePage() {
   }, [id]);
 
   useEffect(() => {
-    const pdfUrl = formData.pdfUrl
-    if (pdfUrl) {
-      const timestamp = new Date().getTime()
-      const updatedPdfUrl = `${pdfUrl}?timestamp=${timestamp}`
-      setPdfUrl(updatedPdfUrl)
-    }
+    const resumeId = formData.id
+    const timestamp = new Date().getTime()
+    const pdfUrl = `https://resume-generator-pdfs.s3.amazonaws.com/resumes/${resumeId}.pdf?timestamp=${timestamp}`
+    setPdfUrl(pdfUrl)
     setIsClient(true)
   }, [])
 
@@ -136,7 +134,6 @@ export default function NewResumePage() {
       if (!response.ok) throw new Error("Failed to submit resume data")
 
       const responseData = await response.json()
-      updateFormData("pdfUrl", responseData.pdf_url)
       const timestamp = new Date().getTime()
       const updatedPdfUrl = `${responseData.pdf_url}?timestamp=${timestamp}`
       setPdfUrl(updatedPdfUrl)
