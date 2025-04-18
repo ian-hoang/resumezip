@@ -30,10 +30,15 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
   const [scale, setScale] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const pdfContainerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<HTMLDivElement>(null)
   const baseWidth = 600 // Base width for the PDF
+
+  useEffect(() => {
+    setLoadError(false)
+  }, [pdfData])
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     try {
@@ -272,7 +277,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
 
       {/* PDF Viewer */}
       <div ref={pdfContainerRef} className="flex-1 overflow-auto bg-gray-200 relative">
-        {pdfData ? (
+        {pdfData && !loadError ? (
           <>
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-10">
@@ -293,7 +298,11 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
                 key={pdfData}
                 file={pdfData}
                 onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={() => setIsLoading(false)}
+                onLoadError={(error) => {
+                  console.error("❌ PDF Load Error:", error)
+                  setIsLoading(false)
+                  setLoadError(true)
+                }}
                 loading={
                   <div className="flex items-center justify-center h-full">
                     <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
