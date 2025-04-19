@@ -39,7 +39,9 @@ export default function NewResumePage() {
   const { id } = useParams();
 
   useEffect(() => {
-    if (id) setCurrentResumeId(id as string);
+    if (id) {
+      setCurrentResumeId(id as string)
+    };
   }, [id]);
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function NewResumePage() {
   }, [formData.id])
 
   useEffect(() => {
+    setCurrentResumeId(id as string)
     setIsClient(true)
   }, [])
 
