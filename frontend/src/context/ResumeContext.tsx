@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 "use client";
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid"
 import { supabase } from "@/lib/supabaseClient"
 import { auth } from "@/lib/firebaseClient"
@@ -24,6 +24,10 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
   }, []);
+
+  const formData = useMemo(() => {
+    return currentResumeId ? resumes[currentResumeId] || {} : {};
+  }, [currentResumeId, resumes]);
 
   // Save to localStorage on change
   useEffect(() => {
@@ -119,7 +123,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     <ResumeContext.Provider value={{
       resumes,
       currentResumeId,
-      formData: currentResumeId ? resumes[currentResumeId] : {},
+      formData,
       setCurrentResumeId,
       createNewResume,
       updateFormData,
