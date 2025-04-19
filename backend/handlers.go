@@ -52,23 +52,32 @@ func handleResumeSubmission(c *gin.Context) {
 
 	var err error
 	if resume.Template == "jake" {
-		log.Printf("Inside jake's resume")
-		log.Printf("Template: %s", resume.Template)
-		tmpl, err = template.ParseFiles("templates/overleaf1.tex")
-		if err != nil {
-			log.Fatalf("Failed to parse LaTeX template: %v", err)
-		}
-	} else if resume.Template == "modernjack" {
-		log.Printf("Inside modernjack's resume")
 		log.Printf("Template: %s", resume.Template)
 		tmpl, err = template.ParseFiles("templates/overleaf2.tex")
 		if err != nil {
 			log.Fatalf("Failed to parse LaTeX template: %v", err)
 		}
-	} else {
-		log.Printf("Inside default resume")
+	} else if resume.Template == "modernjack" {
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf1.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	} else if resume.Template == "levelsfyi" {
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf3.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	} else if resume.Template == "referme" {
 		log.Printf("Template: %s", resume.Template)
 		tmpl, err = template.ParseFiles("templates/overleaf4.tex")
+		if err != nil {
+			log.Fatalf("Failed to parse LaTeX template: %v", err)
+		}
+	} else {
+		log.Printf("Template: %s", resume.Template)
+		tmpl, err = template.ParseFiles("templates/overleaf2.tex")
 		if err != nil {
 			log.Fatalf("Failed to parse LaTeX template: %v", err)
 		}
@@ -91,7 +100,7 @@ func handleResumeSubmission(c *gin.Context) {
 	}
 
 	// Delete local files
-	texFilePath := "templates/generated_resume.tex"
+	texFilePath := "templates/generated_resume_" + resume.ID + ".tex"
 	tempFiles := listTemporaryFiles(strings.TrimSuffix(pdfPath, ".pdf"))
 	allFiles := append([]string{pdfPath, texFilePath}, tempFiles...)
 	err = deleteLocalFiles(allFiles...)
@@ -109,7 +118,7 @@ func handleResumeSubmission(c *gin.Context) {
 // generatePDF generates a PDF from the resume data
 func generatePDF(resume ResumeData) (string, error) {
 	// Generate .tex file
-	texFilePath := "templates/generated_resume.tex"
+	texFilePath := "templates/generated_resume_" + resume.ID + ".tex"
 	texFile, err := os.Create(texFilePath)
 	if err != nil {
 		return "", err
@@ -123,7 +132,7 @@ func generatePDF(resume ResumeData) (string, error) {
 	}
 
 	// Compile .tex to PDF
-	pdfFilePath := "templates/generated_resume.pdf"
+	pdfFilePath := "templates/generated_resume_" + resume.ID + ".pdf"
 	cmd := exec.Command("pdflatex", "-output-directory", "templates", texFilePath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

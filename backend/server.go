@@ -23,7 +23,6 @@ func corsMiddleware() gin.HandlerFunc {
 		// Check if the request's origin is allowed
 		for _, allowedOrigin := range allowedOrigins {
 			if origin == allowedOrigin {
-				// Set the Access-Control-Allow-Origin header
 				c.Header("Access-Control-Allow-Origin", origin)
 				break
 			}
@@ -61,8 +60,8 @@ func StartServer() {
 	r.Use(corsMiddleware())
 
 	// Define routes
-	r.POST("/api/resume", handleResumeSubmission)      // Route for resume submission
-	r.POST("/improve-job-desc", improveJobDescHandler) // Route for improving job descriptions using Together AI
+	r.POST("/api/resume", handleResumeSubmission)
+	r.POST("/improve-job-desc", improveJobDescHandler)
 
 	// Add a health check endpoint (this will be used by ALB)
 	r.GET("/health", healthCheckHandler) // Health check route

@@ -1,11 +1,17 @@
-\documentclass[10pt]{article}
+\documentclass[11pt]{article}
 \usepackage[margin=0.5in]{geometry}
 \usepackage{enumitem}
 \setlist[itemize]{noitemsep, topsep=1pt, left=12pt}
-
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    urlcolor=black,
+    linkcolor=black,
+    citecolor=black,
+    filecolor=black
+}
 \usepackage{titlesec}
 \usepackage{fontawesome}
-\usepackage{hyperref}
 \usepackage{setspace}
 \usepackage{multicol}
 \usepackage{helvet}
@@ -23,86 +29,146 @@
 %====================
 \begin{center}
     {\huge \textbf{ {{ .Profile.Name }} }}\\
-    {{- if .Profile.Phone }} {{- .Profile.Phone -}} • {{- end}} 
-    {{- if .Profile.Email }} \href{mailto:{{- .Profile.Email -}}}{{- .Profile.Email -}} • {{- end}}
-    {{- if .Profile.LinkedIn }} \href{ {- .Profile.LinkedIn -} }{ {- .Profile.LinkedIn -} } • {{- end}}
-    {{- if .Profile.Website }} \href{ {- .Profile.Website -} }{ {- .Profile.Website -} } • {{- end}}
-    {{- if .Profile.Github }} \href{ {- .Profile.Github -} }{ {- .Profile.Github -} } • {{- end}}
+    {{- $printed := false -}}
+    {{- if .Profile.Phone }}{{ .Profile.Phone }}{{ $printed = true }}{{- end -}}
+    {{- if .Profile.Email }}{{ if $printed }} • {{ end }}\href{mailto:{{ .Profile.Email }}}{\underline{ {{ .Profile.Email }} }}{{ $printed = true }}{{- end -}}
+    {{- if .Profile.LinkedIn }}{{ if $printed }} • {{ end }}\href{https://{{ .Profile.LinkedIn }}}{\underline{ {{ .Profile.LinkedIn }} }}{{ $printed = true }}{{- end -}}
+    {{- if .Profile.Website }}{{ if $printed }} • {{ end }}\href{https://{{ .Profile.Website }}}{\underline{ {{ .Profile.Website }} }}{{ $printed = true }}{{- end -}}
+    {{- if .Profile.Github }}{{ if $printed }} • {{ end }}\href{https://{{ .Profile.Github }}}{\underline{ {{ .Profile.Github }} }}{{- end }}
 \end{center}
 
-%====================
-% Education
-%====================
-\section*{EDUCATION}
-\textbf{B.S.E., Mechanical Engineering} \hfill \textbf{Graduating May 2020}\\
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l r}
-Arizona State University, Tempe, AZ & \textit{GPA: 3.82} \\
-\end{tabular*}
-Relevant Coursework: Hardware Design Languages and Programmable Logic, Advanced Excel in Business
+{{- range .Order }}
+    %-----------EDUCATION-----------
+    {{- if eq . "Education" }}
+        {{- if $.Educations }}
+        \section*{ {{- if $.Headings.EduHeading }} \MakeUppercase{ {{ $.Headings.EduHeading }} } {{ else }} EDUCATION {{ end -}} }
+            {{- range $.Educations}}
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                \item[] \textbf{ {{- .Degree -}} } \hfill \textbf{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} } \\
+                \textit{ {{- .School -}} {{- if .Location }}, {{ .Location }}{{ end -}} } {{- if .GPA }} \hfill \textit{GPA: {{ .GPA }} } {{- end -}} \\
+                {{- if .Coursework }} \textit{Relevant Coursework: } {{ .Coursework }} \\ {{- end -}}
+                {{- if .Involvement }} \textit{Involvement: } {{ .Involvement }} {{- end -}}
+            \end{itemize}
+            {{- end}}
+        {{- end}}
+    {{- end}}
 
-%====================
-% Skills
-%====================
-\section*{TECHNICAL SKILLS}
-\textbf{Data Analysis and Statistics:} JMP, Minitab \\
-\textbf{Design and Modeling Tools:} SOLIDWORKS, LabVIEW, MATLAB, Microsoft Office \\
-\textbf{Programming:} Python, C, C++ \\
-\textbf{Certifications:} National Instruments Certified LabVIEW Associate Developer (CLAD) – August 2019
+    %-----------PROGRAMMING SKILLS-----------%
+    {{- if eq . "Skills" }}
+        {{if $.Skills}}
+        \section*{ {{- if $.Headings.SkillHeading }} \MakeUppercase{ {{ $.Headings.SkillHeading }} } {{ else }} SKILLS {{ end -}} }
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                {{- range $.Skills}}
+                \item[] \textbf{ {{- if .Name }} {{- .Name}}: {{ end }}}{{ .Details -}}
+                {{- end}}
+            \end{itemize}
+        {{- end}}
+    {{- end}}
 
-%====================
-% Experience
-%====================
-\section*{PROFESSIONAL EXPERIENCE}
-\noindent \textbf{Stryker Solutions, Phoenix, AZ:} \textit{Research \& Dev Development Intern} \hfill \textit{May 2019 – Aug 2019}
-\begin{itemize}[leftmargin=*]
-    \item Applied measurement system analysis (MSA) to qualify relocated test equipment (JMP, Python)
-    \item Authored technical reports for relocated packaging equipment, following IQOQPQ guides (JMP, Excel)
-\end{itemize}
+    %-----------EXPERIENCE-----------
+    {{- if eq . "Work" }}
+        {{if $.WorkExperiences}}
+        \section*{ {{- if $.Headings.WorkHeading }} \MakeUppercase{ {{ $.Headings.WorkHeading }} } {{ else }} WORK EXPERIENCE {{ end -}} }
+            {{- range $.WorkExperiences}}
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                \item[] \textbf{ {{- .CompanyName -}} {{- if and .CompanyName .Location }}, {{ end -}} {{- .Location}} {{- if or .CompanyName .Location }}: {{ end -}} } \textit{ {{- .Role -}} } \hfill \textit{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+                {{- if .Description}}
+                    {{- if gt (len .Description) 0 }}
+                    \begin{itemize}[label=\textbullet]
+                        {{ range .Description -}}
+                        \item{ {{ . }} }
+                        {{- end}}
+                    \end{itemize}
+                    {{- end}}
+                {{- end}}
+            \end{itemize}
+            {{- end}}
+        {{- end}}
+    {{- end}}
 
-\noindent \textbf{Stryker Solutions, Phoenix, AZ: Research \& Dev Development Intern} \hfill \textit{May 2019 – Aug 2019}
-\begin{itemize}[leftmargin=*]
-    \item Applied measurement system analysis (MSA) to qualify relocated test equipment (JMP, Python)
-    \item Authored technical reports for relocated packaging equipment, following IQOQPQ guides (JMP, Excel)
-\end{itemize}
+    %-----------PROJECTS-----------%
+    {{- if eq . "Projects" }}
+        {{if $.Projects}}
+        \section*{ {{- if $.Headings.ProjHeading }} \MakeUppercase{ {{ $.Headings.ProjHeading }} } {{ else }} PROJECTS {{ end -}} }
+            {{- range $.Projects}}
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                \item[] \textbf{ {{- .Name -}} } 
+                \mbox{
+                    {{- if or .Github .Website }}\hspace{0.5em}{{- end -}}
+                    {{- if .Github }}\href{https://{{ .Github }}}{\faGithub}{{- end -}}
+                    {{- if and .Github .Website }}\hspace{0.5em}{{- end -}}
+                    {{- if .Website }}\href{https://{{ .Website }}}{\faExternalLink}{{- end }}
+                }
+                \hfill \textit{ {{- .Date}} } \\
+                \textit{ {{- .TechStack -}} }
+                {{- if .Description}}
+                    {{- if gt (len .Description) 0 }}
+                    \begin{itemize}[label=\textbullet]
+                        {{ range .Description -}}
+                        \item{ {{ . }} }
+                        {{- end}}
+                    \end{itemize}
+                    {{- end}}
+                {{- end}}
+            \end{itemize}
+            {{- end}}
+        {{- end}}
+    {{- end}}
 
-%====================
-% Academic Projects
-%====================
-\section*{ACADEMIC PROJECTS}
-\noindent \textbf{Hand Cycle for Polio Victims} \hfill \textit{Fall 2019 – Spring 2020}
-\begin{itemize}[leftmargin=*]
-    \item Collaborated in a team of three to design model of custom hand cycle for polio victims (SOLIDWORKS)
-    \item Developed team schedule, including quality measurement for each major milestone (Microsoft Project)
-    \item Ensured team compliance to Design Control Procedures according to Code of Federal Regulations (CFR)
-    \item Recognized by faculty audience as “Best Presentation” out of 15 teams
-\end{itemize}
+    %-----------LEADERSHIP-----------
+    {{- if eq . "Leadership" }}
+        {{if $.Leaderships}}
+        \section*{ {{- if $.Headings.LeadHeading }} \MakeUppercase{ {{ $.Headings.LeadHeading }} } {{ else }} LEADERSHIP EXPERIENCE {{ end -}} }
+            {{- range $.Leaderships}}
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                \item[] \textbf{ {{- .Organization -}} {{- if and .Organization .Location }}, {{ end -}} {{- .Location}} {{- if or .Organization .Location }}: {{ end -}} } \textit{ {{- .Role -}} } \hfill \textit{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+                {{- if .Description}}
+                    {{- if gt (len .Description) 0 }}
+                    \begin{itemize}[label=\textbullet]
+                        {{ range .Description -}}
+                        \item{ {{ . }} }
+                        {{- end}}
+                    \end{itemize}
+                    {{- end}}
+                {{- end}}
+            \end{itemize}
+            {{- end}}
+        {{- end}}
+    {{- end}}
 
-\noindent \textbf{Sensor for Quadriplegic Patients} \hfill \textit{Spring 2019}
-\begin{itemize}[leftmargin=*]
-    \item Led team of three to design and develop a mouse-like device to allow quadriplegic patients to use websites
-    \item Assessed range-of-motion data to determine feasible solutions (Python)
-    \item Created device to detect muscle flexion in neck to control mouse click (Arduino, FPGA)
-\end{itemize}
+    %-----------VOLUNTEER-----------
+    {{- if eq . "Volunteership" }}
+        {{if $.Volunteerships}}
+        \section*{ {{- if $.Headings.VolHeading }} \MakeUppercase{ {{ $.Headings.VolHeading }} } {{ else }} VOLUNTEER EXPERIENCE {{ end -}} }
+            {{- range $.Volunteerships}}
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                \item[] \textbf{ {{- .Organization -}} {{- if and .Organization .Location }}, {{ end -}} {{- .Location}} {{- if or .Organization .Location }}: {{ end -}} } \textit{ {{- .Role -}} } \hfill \textit{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+                {{- if .Description}}
+                    {{- if gt (len .Description) 0 }}
+                    \begin{itemize}[label=\textbullet]
+                        {{ range .Description -}}
+                        \item{ {{ . }} }
+                        {{- end}}
+                    \end{itemize}
+                    {{- end}}
+                {{- end}}
+            \end{itemize}
+            {{- end}}
+        {{- end}}
+    {{- end}}
 
-%====================
-% Other Work
-%====================
-\section*{OTHER WORK EXPERIENCE}
-\noindent \textbf{Arizona State University, Tempe, AZ: Tutor (10 hrs/week)} \hfill \textit{Aug 2018 – May 2019}\\
-Tutored 10–15 undergraduate engineering students per week in MATLAB programming and math coursework
+    %-----------AWARDS-----------%
+    {{- if eq . "Awards" }}
+        {{if $.Awards}}
+        \section*{ {{- if $.Headings.AwardHeading }} \MakeUppercase{ {{ $.Headings.AwardHeading }} } {{ else }} CERTIFICATIONS & AWARDS {{ end -}} }
+            \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+                {{- range $.Awards}}
+                \item[] { \textbf{ {{- .Name -}} } {{- if and .Name .Organization }}, {{ end -}} {{- .Organization}} } \hfill \textit{ {{- .Date -}} }
+                {{- end}}
+            \end{itemize}
+        {{- end}}
+    {{- end}}
 
-\noindent \textbf{Kohl’s, Gilbert, AZ: Sales Associate, Jewelry Department (16–24 hrs/week)} \hfill \textit{Aug 2017 – Dec 2017}\\
-Achieved \#2 highest selling associate within one month of hire date
-
-%====================
-% Activities
-%====================
-\section*{ACTIVITIES}
-\textbf{ASU Society of Women Engineers (SWE)} \hfill \textit{Aug 2017 – Present}
-\noindent \begin{itemize}[leftmargin=*]
-    \item Multiple leadership roles, including vice-president and industry relations chair (300 members, \$75k annual budget)
-    \item Tutored 10–15 undergraduate engineering students per week in MATLAB programming and math coursework
-    \item Organized 2018 annual conference participation, including 8 student poster submissions
-\end{itemize}
+{{- end}}
 
 \end{document}

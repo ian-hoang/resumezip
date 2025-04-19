@@ -1,6 +1,6 @@
 \documentclass[letterpaper,11pt]{article}
 
-\usepackage{fontawesome5}
+\usepackage{fontawesome}
 \usepackage{latexsym}
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
@@ -96,9 +96,9 @@
   \textbf{\Huge {{ .Profile.Name }}} \\ \vspace{1pt}
   {{- if .Profile.Phone }} \seticon{faPhone} \ \small {{- .Profile.Phone -}} \quad {{- end}}
   {{- if .Profile.Email }} \href{mailto:{{- .Profile.Email -}}}{\seticon{faEnvelope} \underline{ {{- .Profile.Email -}} }} \quad {{- end}}
-  {{- if .Profile.LinkedIn }} \href{ {{- .Profile.LinkedIn -}} }{\seticon{faLinkedin} \underline{ {{- .Profile.LinkedIn -}} }} \quad {{- end}}
-  {{- if .Profile.Website }} \href{ {{- .Profile.Website -}} }{\seticon{faGlobe} \underline{ {{- .Profile.Website -}} }} \quad {{- end}}
-  {{- if .Profile.Github }} \href{ {{- .Profile.Github -}} }{\seticon{faGithub} \underline{ {{- .Profile.Github -}}}} {{- end}}
+  {{- if .Profile.LinkedIn }} \href{https://{{- .Profile.LinkedIn -}} }{\seticon{faLinkedin} \underline{ {{- .Profile.LinkedIn -}} }} \quad {{- end}}
+  {{- if .Profile.Website }} \href{https://{{- .Profile.Website -}} }{\seticon{faGlobe} \underline{ {{- .Profile.Website -}} }} \quad {{- end}}
+  {{- if .Profile.Github }} \href{https://{{- .Profile.Github -}} }{\seticon{faGithub} \underline{ {{- .Profile.Github -}}}} {{- end}}
 \end{center}
 
 {{- range .Order }}
@@ -156,9 +156,10 @@
         \resumeSubHeadingListStart
             {{- range $.Projects}}
             \resumeProjectHeading
-            {\textbf{ {{- .Name -}} } \hspace{0.1em}
-                {{- if .Github }} \href{ {{- .Github -}} }{\seticon{faGithub}} {{- end}} 
-                {{- if .Website }} \href{ {{- .Website -}} }{\seticon{faGlobe}} {{- end}} 
+            {\textbf{ {{- .Name -}} }
+                {{- if or .Github .Website }}  {{ end -}}
+                {{- if .Github }} \href{https://{{- .Github -}} }{\seticon{faGithub}} {{- end}} 
+                {{- if .Website }} \href{https://{{- .Website -}} }{\seticon{faExternalLink}} {{- end}} 
                 {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}
             { {{- .Date }} }
             
@@ -234,13 +235,14 @@
     {{- if eq . "Awards" }}
         {{if $.Awards}}
         \section{ {{- if $.Headings.AwardHeading }} {{ $.Headings.AwardHeading }} {{ else }} Awards/Certifications {{ end -}} }
-        \resumeSubHeadingListStart
-            {{- range $.Awards}}
-            \resumeSubheading
-            { {{- .Name -}} }{ {{- .Date -}} }
-            { {{- .Organization -}} }{}
-            {{- end}}
-        \resumeSubHeadingListEnd
+            \resumeSubHeadingListStart
+                {{- range $.Awards}}
+                \item
+                \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+                    \textbf{ {{ .Name }}}, {{ .Organization }} & {{ .Date }}
+                \end{tabular*} \vspace{-8pt}
+                {{- end}}
+            \resumeSubHeadingListEnd
         {{- end}}
     {{- end}}
 {{- end}}

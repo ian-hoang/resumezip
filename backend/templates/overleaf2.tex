@@ -8,7 +8,7 @@
 \documentclass[letterpaper,11pt]{article}
 
 \usepackage{latexsym}
-\usepackage{fontawesome5}
+\usepackage{fontawesome}
 \usepackage[empty]{fullpage}
 \usepackage{titlesec}
 \usepackage{marvosym}
@@ -115,12 +115,12 @@
 
 \begin{center}
     \textbf{\Huge \scshape {{ .Profile.Name }}} \\ \vspace{1pt}
-    {{- if .Profile.Phone }} \small {{- .Profile.Phone }} $|$ {{- end}}
-    {{- if .Profile.Email }} \href{mailto:{{- .Profile.Email -}}}{\underline{ {{- .Profile.Email -}} }} $|$ {{- end}}
-    {{- if .Profile.LinkedIn }} \href{ {{- .Profile.LinkedIn -}} }{\underline{ {{- .Profile.LinkedIn -}} }} $|$ {{- end}}
-    {{- if .Profile.Website }} \href{ {{- .Profile.Website -}} }{\underline{ {{- .Profile.Website -}} }} $|$ {{- end}}
-    {{- if .Profile.Github }} \href{ {{- .Profile.Github -}} }{\underline{ {{- .Profile.Github -}} }} {{- end}}
-
+    {{- $printed := false -}}
+    {{- if .Profile.Phone }} \small {{- .Profile.Phone }}{{ $printed = true }}{{- end}}
+    {{- if .Profile.Email }}{{ if $printed }} $|$ {{ end }}\href{mailto:{{- .Profile.Email -}}}{\underline{ {{- .Profile.Email -}} }}{{ $printed = true }}{{- end}}
+    {{- if .Profile.LinkedIn }}{{ if $printed }} $|$ {{ end }}\href{https://{{- .Profile.LinkedIn -}} }{\underline{ {{- .Profile.LinkedIn -}} }}{{ $printed = true }}{{- end}}
+    {{- if .Profile.Website }}{{ if $printed }} $|$ {{ end }}\href{https://{{- .Profile.Website -}} }{\underline{ {{- .Profile.Website -}} }}{{ $printed = true }}{{- end}}
+    {{- if .Profile.Github }}{{ if $printed }} $|$ {{ end }}\href{https://{{- .Profile.Github -}} }{\underline{ {{- .Profile.Github -}} }}{{ $printed = true }}{{- end}}
 \end{center}
 
 {{- range .Order }}
@@ -180,11 +180,11 @@
         \resumeSubHeadingListStart
             {{- range $.Projects}}
             \resumeProjectHeading
-            {\textbf{ {{- .Name -}} } \hspace{0.1em}
-                {{- if .Github }} \href{ {{- .Github -}} }{\seticon{faGithub}} {{- end}} 
-                {{- if .Website }} \href{ {{- .Website -}} }{\seticon{faGlobe}} {{- end}} 
+            {\textbf{ {{- .Name -}} }
+                {{- if or .Github .Website }} {{ end -}}
+                {{- if .Github }} \href{https://{{- .Github -}} }{\seticon{faGithub}} {{- end}} 
+                {{- if .Website }} \href{https://{{- .Website -}} }{\seticon{faExternalLink}} {{- end}} 
                 {{- if .Name }} $|$ {{ end }} \emph{ {{- .TechStack -}} }}{ {{- .Date }} }
-            
             {{- if gt (len .Description) 0 }}
             \resumeItemListStart
                 {{- range .Description -}}
@@ -258,13 +258,14 @@
     {{- if eq . "Awards" }}
         {{if $.Awards}}
         \section{ {{- if $.Headings.AwardHeading }} {{ $.Headings.AwardHeading }} {{ else }} Awards/Certifications {{ end -}} }
-        \resumeSubHeadingListStart
-            {{- range $.Awards}}
-            \resumeSubheading
-            { {{- .Name -}} }{ {{- .Date -}} }
-            { {{- .Organization -}} }{}
-            {{- end}}
-        \resumeSubHeadingListEnd
+            \resumeSubHeadingListStart
+                {{- range $.Awards}}
+                \item
+                \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+                    \textbf{ {{ .Name }}}, {{ .Organization }} & {{ .Date }}
+                \end{tabular*} \vspace{-8pt}
+                {{- end}}
+            \resumeSubHeadingListEnd
         {{- end}}
     {{- end}}
     

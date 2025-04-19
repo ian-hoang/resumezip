@@ -7,6 +7,13 @@
 \usepackage{array}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    urlcolor=black,
+    linkcolor=black,
+    citecolor=black,
+    filecolor=black
+}
 \usepackage{fontawesome}
 \usepackage{graphicx}
 
@@ -46,74 +53,134 @@
 \begin{document}
 
 % Header
-\name{First Last}
+\name{ {{ .Profile.Name }} }
 
-\headerinfo{+1 (352) 284-0205}{resume@levels.fyi}
-         {\href{https://www.linkedin.com/in/linkedin-handle}{linkedin.com/in/linkedin-handle}}
-         {\href{https://github.com/github-handle}{github.com/github-handle}}
+\headerinfo{ {{ .Profile.Phone }} }{\href{mailto:{{ .Profile.Email }}}{ {{ .Profile.Email }} }}
+          {\href{https://{{ .Profile.LinkedIn }}}{ {{ .Profile.LinkedIn }} }}{\href{https://{{ .Profile.Github }}}{ {{ .Profile.Github }} }}
 
-% Education
-\sectionheader{Education}
+{{ range .Order }}
+  {{- if eq . "Education" }}
+    %-----------EDUCATION-----------
+    {{- if $.Educations }}
+    \sectionheader{ {{- if $.Headings.EduHeading }}{{$.Headings.EduHeading}}{{ else }}Education{{ end -}} }
+      {{ range $.Educations}}
+        \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
+          \item[] \textbf{ {{- .Degree -}}, }{ {{.School}}, {{.Location}} }  \hfill \textbf{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+          \vspace{2pt}
+          \begin{itemize}[leftmargin=0.2in]
+            \item { {{- if .GPA }}GPA: {{ .GPA }}{{- end -}} }
+            \item { {{- if .Coursework }}Relevant Coursework: {{ .Coursework }}{{- end -}} }
+            \item { {{- if .Involvement }}Involvements: {{ .Involvement }}{{- end -}} }
+          \end{itemize}
+        \end{itemize}
+      {{- end}}
+    {{- end}}
+  {{- end}}
 
-\begin{itemize}
-  \item \textbf{Masters of Science, Computer Science,} University of Munich, Germany \hfill \textbf{2022 -- 2023}
-  \begin{itemize}
-    \item \textsc{Gpa :} 3.9/4.0
-    \item \textsc{Relevant Coursework:} Distributed Systems, Machine Learning, Advanced Algorithms
-    \item \textsc{Involvements:} Teaching Assistant for Data Structures, Member of AI Club
-  \end{itemize}
-\end{itemize}
+  {{- if eq . "Work" }}
+    %-----------EXPERIENCE-----------
+    {{- if $.WorkExperiences }}
+    \sectionheader{ {{- if $.Headings.WorkHeading}}{{$.Headings.WorkHeading}}{{else}}Work Experience{{ end -}} }
+      {{ range $.WorkExperiences}}
+        \threecolumns{ {{- .Role -}} }{ {{- .CompanyName -}} }{ {{- .Location -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+          {{- if .Description}}
+              {{- if gt (len .Description) 0 }}
+              \begin{itemize}
+                {{ range .Description -}}
+                  \item {{ . }}
+                {{- end}}
+              \end{itemize}
+              {{- end}}
+          {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end}}
 
-% Work Experience
-\sectionheader{Work Experience}
+  {{- if eq . "Leadership" }}
+    %-----------LEADERSHIP-----------
+    {{- if $.Leaderships }}
+    \sectionheader{ {{- if $.Headings.LeadHeading}}{{$.Headings.LeadHeading}}{{else}}Leadership Experience{{ end -}} }
+      {{ range $.Leaderships}}
+        \threecolumns{ {{- .Role -}} }{ {{- .Organization -}} }{ {{- .Location -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+          {{- if .Description}}
+              {{- if gt (len .Description) 0 }}
+              \begin{itemize}
+                {{ range .Description -}}
+                  \item {{ . }}
+                {{- end}}
+              \end{itemize}
+              {{- end}}
+          {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end}}
 
-\threecolumns{Senior Software Engineer}{Levels.fyi}{San Francisco, CA}{Sep 2018 -- Present}
-\begin{itemize}
-    \item Worked as Senior Engineer on (company names) (backend/frontend, etc) product with XXX functionality and XXX technologies. First bullet should summarize experience
-    \item Add at numbers to the impact, use active languages and mention specifics like the languages used.
-    \item The more recent the position, the more details you usually want to share.
-    \item Bullets should include business impact like bolding some \textbf{40\%} percentages, or share your tech impact
-    \item Collaborated with other teams (other engineering teams, design, data, product, etc.)
-\end{itemize}
+  {{- if eq . "Volunteership" }}
+    %-----------VOLUNTEER-----------
+    {{- if $.Volunteerships }}
+    \sectionheader{ {{- if $.Headings.VolHeading}}{{$.Headings.VolHeading}}{{else}}Volunteer Experience{{ end -}} }
+      {{ range $.Volunteerships}}
+        \threecolumns{ {{- .Role -}} }{ {{- .Organization -}} }{ {{- .Location -}} }{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
+          {{- if .Description}}
+              {{- if gt (len .Description) 0 }}
+              \begin{itemize}
+                {{ range .Description -}}
+                  \item {{ . }}
+                {{- end}}
+              \end{itemize}
+              {{- end}}
+          {{- end}}
+      {{- end}}
+    {{- end}}
+  {{- end}}
 
-% Projects
-\sectionheader{Projects}
+  {{- if eq . "Projects" }}
+    %-----------PROJECTS-----------
+    {{- if $.Projects }}
+    \sectionheader{ {{- if $.Headings.ProjHeading}}{{$.Headings.ProjHeading}}{{else}}Technical Projects{{ end -}} }
+      \begin{itemize} [leftmargin=0pt, itemsep=0pt, topsep=0pt]
+        {{ range $.Projects}}
+          \item[] \textbf{ {{- .Name -}} }  \hspace{0pt}
+          {{- if .Github }} \href{https://{{ .Github }}}{\scalebox{1.1}{\faGithub}} \hspace{-1pt} {{- end}} 
+          {{- if .Website }} \href{https://{{ .Website }}}{\scalebox{1.1}{\faExternalLink}} {{- end}} 
+          {{- if .TechStack }} \hspace{1pt} \textbar{} \hspace{1pt} \textit{ {{- .TechStack -}} } {{- end}} 
+          \hfill \textbf{ {{- .Date -}} }
+          \vspace{2pt}
+          \begin{itemize}
+            {{ range .Description -}}
+              \item {{ . }}
+            {{- end}}
+          \end{itemize}
+        {{- end}}
+      \end{itemize}
+    {{- end}}
+  {{- end}}
 
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l r}
-  \textbf{Hydrohomie}  \hspace{1pt}
-  \href{https://github.com/youruser/resume.lol}{\scalebox{1.1}{\faGithub}} \hspace{-1pt}
-  \href{https://resume.lol}{\scalebox{1.1}{\faExternalLink}}
-  \hspace{1pt} \textbar{} \hspace{1pt} 
-  \textit{React, TypeScript, Next.js} 
-  & \textbf{2022} \\
-\end{tabular*}
-\begin{itemize}
-    \item Architected a fullstack application that sends a text message to users every hour to remind them to hydrate
-    \item Conducted user interviews with \textbf{30 users} and used the feedback to iterate and improve the product
-    \item Technologies used: React, CSS, TypeScript, NextJS
-\end{itemize}
+  {{- if eq . "Skills" }}
+    %-----------PROGRAMMING SKILLS-----------%
+    {{- if $.Skills }}
+    \sectionheader{ {{- if $.Headings.SkillHeading }}{{$.Headings.SkillHeading}}{{ else }}Skills{{ end -}} }
+      \begin{itemize}
+          {{- range $.Skills}}
+          \item \textbf{ {{- if .Name }} {{- .Name}}: {{ end }} } {{ .Details -}}
+          {{- end}}
+      \end{itemize}
+    {{- end}}
+  {{- end}}
 
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l r}
-  \textbf{resume.lol}  \hspace{1pt}
-  \href{https://github.com/youruser/resume.lol}{\scalebox{1.1}{\faGithub}} \hspace{-1pt}
-  \href{https://resume.lol}{\scalebox{1.1}{\faExternalLink}}
-  \hspace{1pt} \textbar{} \hspace{1pt} 
-  \textit{React, TypeScript, Next.js} 
-  & \textbf{2022} \\
-\end{tabular*}
-\begin{itemize}
-    \item Built a fullstack application where users can create their resumes using Markdown and CSS
-    \item More bullets points talking about your actual project. Ideally use the "what is it", "how I did it", and "why should I care"
-    \item Technologies used: React, CSS, TypeScript, NextJS
-\end{itemize}
+  {{- if eq . "Awards" }}
+    %-----------AWARDS-----------
+    {{- if $.Awards }}
+    \sectionheader{ {{- if $.Headings.AwardHeading }}{{$.Headings.AwardHeading}}{{ else }}Awards & Certifications{{ end -}} }
+      \begin{itemize}
+        {{ range $.Awards}}
+        \item \textbf{ {{- .Name -}} }, { {{- .Organization -}} } \hfill \textbf{ {{- .Date -}} }
+        {{- end}}
+      \end{itemize}
+    {{- end}}
+  {{- end}}
 
-% Technical Skills
-\sectionheader{Technical Skills}
 
-\begin{itemize}
-    \item \textbf{Languages}: Java, Python, C++, HTML, CSS, JavaScript
-    \item \textbf{Technologies}: React, MongoDB, Express, Node.Js
-    \item \textbf{Other}: Put whatever you want here that you think is relevant (ie AWS)
-\end{itemize}
+{{- end}}
 
 \end{document}

@@ -6,6 +6,17 @@ import (
 	"strings"
 )
 
+func sanitizeURL(url string) string {
+	if url == "" {
+		return ""
+	}
+	url = strings.TrimPrefix(url, "https://www.")
+	url = strings.TrimPrefix(url, "http://www.")
+	url = strings.TrimPrefix(url, "https://")
+	url = strings.TrimPrefix(url, "http://")
+	return url
+}
+
 // Custom unmarshaler for WorkExperience
 func (we *WorkExperience) UnmarshalJSON(data []byte) error {
 	// Define a temporary struct to parse the raw JSON
@@ -156,8 +167,11 @@ func sanitizeResume(resume *ResumeData) {
 	resume.Profile.Email = escapeLaTeX(resume.Profile.Email)
 	resume.Profile.Phone = escapeLaTeX(resume.Profile.Phone)
 	resume.Profile.LinkedIn = escapeLaTeX(resume.Profile.LinkedIn)
+	resume.Profile.LinkedIn = sanitizeURL(resume.Profile.LinkedIn)
 	resume.Profile.Github = escapeLaTeX(resume.Profile.Github)
+	resume.Profile.Github = sanitizeURL(resume.Profile.Github)
 	resume.Profile.Website = escapeLaTeX(resume.Profile.Website)
+	resume.Profile.Website = sanitizeURL(resume.Profile.Website)
 
 	resume.Headings.EduHeading = escapeLaTeX(resume.Headings.EduHeading)
 	resume.Headings.WorkHeading = escapeLaTeX(resume.Headings.WorkHeading)
@@ -198,7 +212,9 @@ func sanitizeResume(resume *ResumeData) {
 		resume.Projects[i].Name = escapeLaTeX(resume.Projects[i].Name)
 		resume.Projects[i].TechStack = escapeLaTeX(resume.Projects[i].TechStack)
 		resume.Projects[i].Github = escapeLaTeX(resume.Projects[i].Github)
+		resume.Projects[i].Github = sanitizeURL(resume.Projects[i].Github)
 		resume.Projects[i].Website = escapeLaTeX(resume.Projects[i].Website)
+		resume.Projects[i].Website = sanitizeURL(resume.Projects[i].Website)
 		for j := range resume.Projects[i].Description {
 			resume.Projects[i].Description[j] = escapeLaTeX(resume.Projects[i].Description[j])
 		}
