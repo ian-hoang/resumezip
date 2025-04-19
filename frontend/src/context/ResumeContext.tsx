@@ -18,11 +18,6 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       if (savedResumes) {
         const parsed = JSON.parse(savedResumes);
         setResumes(parsed);
-        // Only auto-select the first resume if none is already selected
-        if (!currentResumeId) {
-          const firstId = Object.keys(parsed)[0];
-          setCurrentResumeId(firstId || null);
-        }
       }
     }
   }, []);
