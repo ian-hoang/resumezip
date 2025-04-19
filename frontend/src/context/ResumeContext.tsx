@@ -56,6 +56,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       skillsSection: [],
       leadershipExperienceSection: [],
       awardsSection: [],
+      sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
     };
 
     const { error, data } = await supabase.from("resumes").upsert([
