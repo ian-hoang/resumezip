@@ -31,7 +31,8 @@ export default function NewResumePage() {
   const { setCurrentResumeId, formData, updateFormData } = useResumeContext()
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [sections, setSections] = useState<string[]>(formData.sectionOrder || defaultSections)
+  const isDataReady = formData && formData.sectionOrder && formData.id
+  const [sections, setSections] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
@@ -64,8 +65,21 @@ export default function NewResumePage() {
     return () => unsubscribe()
   }, [router])
 
-  if (!isClient) {
-    return null
+  useEffect(() => {
+    if (formData.sectionOrder && Array.isArray(formData.sectionOrder)) {
+      setSections(formData.sectionOrder)
+    }
+  }, [formData.sectionOrder])
+
+  if (!isClient || !isDataReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f1efed] text-gray-700 transition-opacity duration-500">
+        <div className="flex items-center gap-2 animate-fadeIn">
+          <Loader2 className="animate-spin w-5 h-5" />
+          <span>Loading resume editor...</span>
+        </div>
+      </div>
+    )
   }
 
   const handleSubmit = async () => {
