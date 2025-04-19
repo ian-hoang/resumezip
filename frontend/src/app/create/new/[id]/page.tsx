@@ -40,8 +40,9 @@ export default function NewResumePage() {
 
   useEffect(() => {
     if (id) {
-      setCurrentResumeId(id as string)
-    };
+      setCurrentResumeId(id as string);
+    }
+    setIsClient(true);
   }, [id]);
 
   useEffect(() => {
@@ -52,10 +53,6 @@ export default function NewResumePage() {
     setPdfUrl(pdfUrl)
   }, [formData.id])
 
-  useEffect(() => {
-    setCurrentResumeId(id as string)
-    setIsClient(true)
-  }, [])
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
