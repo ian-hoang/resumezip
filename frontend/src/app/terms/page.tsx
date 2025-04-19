@@ -39,7 +39,7 @@ export default function TermsAndPrivacy() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <button
                 onClick={() => setActiveTab("terms")}
-                className={`inline-flex items-center justify-center rounded-md px-6 py-3 text-base font-medium ${
+                className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-medium ${
                   activeTab === "terms"
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -50,7 +50,7 @@ export default function TermsAndPrivacy() {
               </button>
               <button
                 onClick={() => setActiveTab("privacy")}
-                className={`inline-flex items-center justify-center rounded-md px-6 py-3 text-base font-medium ${
+                className={`inline-flex items-center justify-center rounded-full px-6 py-3 text-base font-medium ${
                   activeTab === "privacy"
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -97,25 +97,30 @@ export default function TermsAndPrivacy() {
 
         {/* Privacy Policy Section */}
         {activeTab === "privacy" && (
-          <section id="privacy" className="bg-black text-white py-16 px-4 md:px-6 lg:px-8 relative">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]"></div>
-            <div className="container mx-auto max-w-4xl relative z-10">
-              <div className="bg-gray-900 rounded-xl shadow-lg p-8">
+          <section id="privacy" className="bg-[#f1efed] py-16 px-4 md:px-6 lg:px-8 border-b border-gray-300">
+            <div className="container mx-auto max-w-4xl">
+              <div className="bg-white rounded-xl shadow-sm p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <Shield className="h-8 w-8 text-blue-500" />
                   <h2 className="text-3xl font-bold">Privacy Policy</h2>
                 </div>
 
-                <div className="space-y-6 text-gray-300">
+                <div className="space-y-6 text-gray-700">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2 text-white">1. Information We Collect</h3>
+                    <h3 className="text-xl font-semibold mb-2">1. Acceptance of Terms</h3>
                     <p>
-                      We collect information you provide directly to us when you create an account or use our service,
-                      including your name, email address, and resume content. We also collect certain information
-                      automatically when you use our service, such as your IP address and browser information.
+                      By accessing or using the AI Resume Builder service, you agree to be bound by these Terms of
+                      Service. If you do not agree to these terms, please do not use our service.
                     </p>
                   </div>
-                  {/* Add other privacy sections here */}
+                  
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">2. Description of Service</h3>
+                    <p>
+                      AI Resume Builder provides tools and resources to help users create professional resumes. We offer
+                      various templates, AI-powered suggestions, and export capabilities.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -135,9 +140,9 @@ export default function TermsAndPrivacy() {
               </p>
             </div>
 
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-8 ">
               <Link href="/contact">
-                <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
+                <button className="cursor-pointer inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
                   Contact Support
                 </button>
               </Link>
