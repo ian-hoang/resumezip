@@ -109,9 +109,9 @@ export default function DashboardPage() {
     }
   }
 
-  const handleCreateResume = () => {
+  const handleCreateResume = async () => {
     setIsModalOpen(false);
-    const newId = createNewResume(newResumeName, getSelectedTag());
+    const newId = await createNewResume(newResumeName, getSelectedTag());
     router.push(`/create/new/${newId}`);
   };
 
