@@ -14,13 +14,13 @@ export default function Home() {
     getRedirectResult(auth)
       .then((result) => {
         if (result?.user) {
-          console.log("✅ Logged in as:", result.user.email)
+          // console.log("✅ Logged in as:", result.user.email)
         } else {
-          console.log("🕵️ No user from redirect")
+          // console.log("🕵️ No user from redirect")
         }
       })
       .catch((error) => {
-        console.error("❌ Error in getRedirectResult:", error.message)
+        // console.error("❌ Error in getRedirectResult:", error.message)
       })
   }, [])
   return (

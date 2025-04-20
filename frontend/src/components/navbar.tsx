@@ -92,7 +92,7 @@ export default function Navbar() {
                     </div>
                   </div>
                   <div className="border-t border-gray-700 p-2">
-                    <Link href="/all-products" className="flex items-center justify-between p-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                    <Link href="/feed" className="flex items-center justify-between p-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
                       View all products
                       <ArrowRight className="h-3 w-3" />
                     </Link>
@@ -165,83 +165,50 @@ export default function Navbar() {
                 {mobileProductsOpen && (
                   <div className="mt-2 pl-4 border-l border-gray-700 space-y-2">
                     <Link
-                      href="/resume-builder"
+                      href="/create/dashboard"
                       className="block py-2 text-sm text-gray-400 hover:text-white"
                       onClick={toggleMenu}
                     >
                       Resume Builder
                     </Link>
                     <Link
-                      href="/resume-templates"
+                      href="/templates"
                       className="block py-2 text-sm text-gray-400 hover:text-white"
                       onClick={toggleMenu}
                     >
                       Templates
                     </Link>
                     <Link
-                      href="/resume-checker"
+                      href="/feed"
                       className="block py-2 text-sm text-gray-400 hover:text-white"
                       onClick={toggleMenu}
                     >
-                      Resume Checker
-                    </Link>
-                    <Link
-                      href="/all-products"
-                      className="block py-2 text-sm text-gray-400 hover:text-white"
-                      onClick={toggleMenu}
-                    >
-                      View all products
+                      Resume Feed (coming soon)
                     </Link>
                   </div>
                 )}
               </div>
-              <div className="py-2">
-                <button 
-                  onClick={() => setMobilePricingOpen(!mobilePricingOpen)}
-                  className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
-                >
-                  Pricing
-                  <ChevronDown className={`h-4 w-4 opacity-70 transition-transform ${mobilePricingOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {mobilePricingOpen && (
-                  <div className="mt-2 pl-4 border-l border-gray-700 space-y-2">
-                    <Link
-                      href="/pricing/individual"
-                      className="block py-2 text-sm text-gray-400 hover:text-white"
-                      onClick={toggleMenu}
-                    >
-                      Individual
-                    </Link>
-                    <Link
-                      href="/pricing/teams"
-                      className="block py-2 text-sm text-gray-400 hover:text-white"
-                      onClick={toggleMenu}
-                    >
-                      Teams
-                    </Link>
-                    <Link
-                      href="/pricing/enterprise"
-                      className="block py-2 text-sm text-gray-400 hover:text-white"
-                      onClick={toggleMenu}
-                    >
-                      Enterprise
-                    </Link>
-                    <Link
-                      href="/compare-plans"
-                      className="block py-2 text-sm text-gray-400 hover:text-white"
-                      onClick={toggleMenu}
-                    >
-                      Compare all plans
-                    </Link>
-                  </div>
-                )}
-              </div>
+              <Link
+                href="/create/dashboard"
+                className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
+                onClick={toggleMenu}
+              >
+                Dashboard
+              </Link>
+
               <Link
                 href="/contact"
                 className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
                 onClick={toggleMenu}
               >
                 Contact
+              </Link>
+              <Link
+                href="/about"
+                className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
+                onClick={toggleMenu}
+              >
+                About
               </Link>
               <div className="pt-3 border-t border-gray-800">
                 {!loading && (

@@ -1,8 +1,10 @@
 "use client"
 
 import type React from "react"
-import { type FC, useState } from "react"
+import { type FC, useState, useEffect } from "react"
 import { FileText, WandSparkles, Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabaseClient" // make sure this import exists
+import { auth } from "@/lib/firebaseClient" // make sure this import exists
 
 interface FormDescriptionProps {
   title: string
@@ -12,8 +14,13 @@ interface FormDescriptionProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
 }
 
+const DAILY_LIMIT = 5
+
 const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id, value, onChange }) => {
   const [loading, setLoading] = useState(false)
+  const [usageLeft, setUsageLeft] = useState(DAILY_LIMIT)
+
+  const getToday = () => new Date().toISOString().split("T")[0]
 
   const normalizeText = (text: string) => {
     return text
@@ -31,6 +38,59 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
         return line
       })
       .join("\n")
+  }
+
+  useEffect(() => {
+    const encoded = localStorage.getItem("usageCountObf")
+    const today = getToday()
+
+    if (encoded) {
+      try {
+        const decoded = atob(encoded)
+        const [countStr, storedDate] = decoded.split("|")
+        if (storedDate === today) {
+          const count = parseInt(countStr)
+          setUsageLeft(Math.max(DAILY_LIMIT - count, 0))
+          return
+        }
+      } catch (err) {
+        console.error("⚠️ Failed to decode usageCountObf:", err)
+      }
+    }
+
+    // reset usage for today
+    const reset = btoa(`0|${today}`)
+    localStorage.setItem("usageCountObf", reset)
+    setUsageLeft(DAILY_LIMIT)
+  }, [])
+
+  const updateUsage = async () => {
+    const encoded = localStorage.getItem("usageCountObf")
+    const today = getToday()
+    let count = 0
+
+    if (encoded) {
+      try {
+        const [storedCount, storedDate] = atob(encoded).split("|")
+        if (storedDate === today) {
+          count = parseInt(storedCount)
+        }
+      } catch (_) {}
+    }
+ 
+    const newCount = count + 1
+    const newEncoded = btoa(`${newCount}|${today}`)
+    localStorage.setItem("usageCountObf", newEncoded)
+    setUsageLeft(Math.max(DAILY_LIMIT - newCount, 0))
+
+    const uid = auth.currentUser?.uid
+    if (!uid) return
+
+    await supabase.from("ai_usage").upsert({
+      user_id: uid,
+      date_used: today,
+      usage_count: newCount,
+    })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -56,7 +116,7 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
   }
 
   const onAiFinish = async () => {
-    if (!value.trim()) return
+    if (!value.trim() || usageLeft <= 0) return
 
     setLoading(true)
 
@@ -75,6 +135,8 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
 
       const data = await response.json()
       onChange({ target: { value: data.optimizedText } } as React.ChangeEvent<HTMLTextAreaElement>)
+
+      await updateUsage()
     } catch (error) {
       console.error("Error optimizing text:", error)
     } finally {
@@ -101,12 +163,14 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
         className="cursor-pointer w-full min-h-[120px] rounded-lg border border-2 border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:border-blue-500 transition-all duration-300 resize-none"
       />
 
-      {/* AI Button with Loading Spinner */}
+      {/* AI Button with usage count */}
       <button
         onClick={onAiFinish}
-        disabled={loading}
+        disabled={loading || usageLeft <= 0}
         className={`absolute bottom-3 right-3 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-md shadow-sm transition-all duration-300 ${
-          loading ? "opacity-75 cursor-not-allowed" : "hover:-translate-y-0.5 hover:shadow-md active:scale-105"
+          loading || usageLeft <= 0
+            ? "opacity-75 cursor-not-allowed"
+            : "hover:-translate-y-0.5 hover:shadow-md active:scale-105"
         }`}
       >
         {loading ? (
@@ -114,7 +178,7 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
         ) : (
           <>
             <WandSparkles className="h-4 w-4" />
-            Zip It
+            Zip It ({usageLeft})
           </>
         )}
       </button>

@@ -99,9 +99,9 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     .eq("id", id)
 
   if (error) {
-    console.error("❌ Failed to delete resume:", error)
+    // console.error("❌ Failed to delete resume:", error)
   } else {
-    console.log("✅ Resume deleted:", id)
+    // console.log("✅ Resume deleted:", id)
   }
   };
 

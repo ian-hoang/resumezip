@@ -299,7 +299,7 @@ export default function PDFViewer({ pdfData }: PDFViewerProps) {
                 file={pdfData}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={(error) => {
-                  console.error("❌ PDF Load Error:", error)
+                  // console.error("❌ PDF Load Error:", error)
                   setIsLoading(false)
                   setLoadError(true)
                 }}
