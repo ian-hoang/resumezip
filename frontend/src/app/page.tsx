@@ -39,17 +39,29 @@ export default function Home() {
                 <br />
                 Zip through the process with no cost, no hassle.
               </p>
-              <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-4 relative">
+                {/* Get Started Button */}
                 <Link href="/create/dashboard">
                   <button className="inline-flex cursor-pointer items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
                     Get Started
                   </button>
                 </Link>
-                <Link href="/contact-sales">
-                  <button className="inline-flex cursor-pointer items-center justify-center rounded-md border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 hover:bg-gray-800 transition-colors duration-300">
+
+                {/* Doodle above Pricing Plan */}
+                <div className="relative">
+                  {/* Doodle Image */}
+                  <Image
+                    src="/doddle.png"
+                    alt="doddle"
+                    width={160}
+                    height={160}
+                    className="absolute -top-12 left-[3%] -translate-x-1/2"
+                  />
+                  {/* Pricing Plan Button */}
+                  <button className="inline-flex cursor-pointer items-center justify-center rounded-md border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 transition-colors duration-300">
                     Pricing Plan
                   </button>
-                </Link>
+                </div>
               </div>
               <div className="flex justify-center">
                 <Image
@@ -117,9 +129,9 @@ export default function Home() {
                 <div className="text-blue-500 mb-4">
                   <Zap className="h-10 w-10 transition-transform duration-200 hover:scale-110" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Instant Live Preview</h3>
+                <h3 className="text-xl font-bold mb-2">Instant Compilation</h3>
                 <p className="text-gray-600 text-sm">
-                  See changes in real time as you edit — no reloading or waiting around.
+                  See changes as you edit.
                 </p>
               </div>
 
@@ -144,14 +156,6 @@ export default function Home() {
                   Your data stays secure. We don’t store resumes or personal info without your consent.
                 </p>
               </div>
-            </div>
-
-            <div className="flex justify-center mt-16">
-              <Link href="/create">
-                <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
-                  Create My Resume
-                </button>
-              </Link>
             </div>
           </div>
         </section>
@@ -208,8 +212,8 @@ export default function Home() {
             </div>
 
             <div className="flex justify-center mt-16">
-              <Link href="/create">
-                <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
+              <Link href="/create/dashboard">
+                <button className="cursor-pointer inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
                   Start Building
                 </button>
               </Link>

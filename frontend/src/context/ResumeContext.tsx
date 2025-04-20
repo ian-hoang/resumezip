@@ -17,7 +17,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       const savedResumes = localStorage.getItem("allResumes");
       if (savedResumes) {
         const parsed = JSON.parse(savedResumes);
-        setResumes(parsed);
+        setResumes(parsed)
       }
     }
   }, []);

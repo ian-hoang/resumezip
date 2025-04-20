@@ -127,7 +127,7 @@ export default function LoginPage() {
 
             {/* Terms */}
             <p className="text-sm text-gray-500 text-center mt-6">
-              By signing up, I agree to the Resume Builder{" "}
+              By signing up, I agree to the resumezip.io{" "}
               <Link href="/terms" className="text-blue-500 hover:underline">
                 privacy policy
               </Link>{" "}

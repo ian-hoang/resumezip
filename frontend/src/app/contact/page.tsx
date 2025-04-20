@@ -67,7 +67,7 @@ export default function ContactPage() {
           </div>
           <div className="flex flex-col items-center text-center gap-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Contact <span className="text-blue-500">Us</span>
+              resumezip<span className="text-blue-500">.contact</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-3xl font-medium">
               Have questions or feedback? We'd love to hear from you. Fill out the form below and our team will get back

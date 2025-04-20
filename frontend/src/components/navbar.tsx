@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { ArrowRight, ChevronDown, Menu, X } from "lucide-react"
+import { ArrowRight, ChevronDown, Menu, X } from 'lucide-react'
 import { auth } from "@/lib/firebaseClient"
 import { onAuthStateChanged, signOut, User } from "firebase/auth"
 import { useRouter } from "next/navigation"
@@ -12,6 +12,8 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const [mobileProductsOpen, setMobileProductsOpen] = useState(false)
+  const [mobilePricingOpen, setMobilePricingOpen] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function Navbar() {
       <div className="w-full bg-blue-600 py-2 px-4 text-center text-white">
         <div className="container mx-auto flex items-center justify-center">
           <span className="text-sm font-medium">🎉 New templates are here! Now available on resumezip.io</span>
-          <Link href="/api" className="ml-2 text-sm font-medium underline flex items-center">
+          <Link href="/templates" className="ml-2 text-sm font-medium underline flex items-center">
             <ArrowRight className="h-4 w-4 ml-1" />
           </Link>
         </div>
@@ -64,30 +66,57 @@ export default function Navbar() {
                 Products
                 <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
               </button>
+              <div className="absolute left-0 top-full w-64 pt-2 hidden group-hover:block">
+                <div className="bg-[#2a2f3d] rounded-lg shadow-lg border border-gray-700 overflow-hidden">
+                  <div className="p-4">
+                    <h3 className="text-sm font-medium text-gray-200 mb-2">Resume Tools</h3>
+                    <div className="space-y-2">
+                      <Link href="/create/dashboard" className="flex items-start p-2 rounded-md hover:bg-gray-700/50 transition-colors">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Resume Builder</div>
+                          <div className="text-xs text-gray-400">Create professional resumes</div>
+                        </div>
+                      </Link>
+                      <Link href="/templates" className="flex items-start p-2 rounded-md hover:bg-gray-700/50 transition-colors">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Templates</div>
+                          <div className="text-xs text-gray-400">Browse resume templates</div>
+                        </div>
+                      </Link>
+                      <Link href="/resume-checker" className="flex items-start p-2 rounded-md hover:bg-gray-700/50 transition-colors">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Resume Checker</div>
+                          <div className="text-xs text-gray-400">Get feedback on your resume</div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-700 p-2">
+                    <Link href="/all-products" className="flex items-center justify-between p-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                      View all products
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="relative group">
-              <button className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1">
-                For Business
-                <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
-              </button>
-            </div>
-            <div className="relative group">
-              <button className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1">
-                For Developers
-                <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
-              </button>
-            </div>
-            <div className="relative group">
-              <button className="flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1">
-                Pricing
-                <ChevronDown className="h-4 w-4 ml-1 opacity-70" />
-              </button>
-            </div>
+            <Link
+              href="/create/dashboard"
+              className="text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1"
+            >
+              Dashboard
+            </Link>
             <Link
               href="/contact"
               className="text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1"
             >
               Contact
+            </Link>
+            <Link
+              href="/about"
+              className="text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer px-2 py-1"
+            >
+              About
             </Link>
           </nav>
 
@@ -125,49 +154,87 @@ export default function Navbar() {
           <div className="md:hidden border-t border-gray-800 bg-[#1f232e]">
             <div className="container mx-auto px-4 py-4 space-y-4">
               <div className="py-2">
-                <button className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer">
+                <button 
+                  onClick={() => setMobileProductsOpen(!mobileProductsOpen)}
+                  className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
+                >
                   Products
-                  <ChevronDown className="h-4 w-4 opacity-70" />
+                  <ChevronDown className={`h-4 w-4 opacity-70 transition-transform ${mobileProductsOpen ? 'rotate-180' : ''}`} />
                 </button>
+                {mobileProductsOpen && (
+                  <div className="mt-2 pl-4 border-l border-gray-700 space-y-2">
+                    <Link
+                      href="/resume-builder"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Resume Builder
+                    </Link>
+                    <Link
+                      href="/resume-templates"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Templates
+                    </Link>
+                    <Link
+                      href="/resume-checker"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Resume Checker
+                    </Link>
+                    <Link
+                      href="/all-products"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      View all products
+                    </Link>
+                  </div>
+                )}
               </div>
               <div className="py-2">
-                <button className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer">
-                  For Business
-                  <ChevronDown className="h-4 w-4 opacity-70" />
-                </button>
-              </div>
-              <div className="py-2">
-                <button className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer">
-                  For Developers
-                  <ChevronDown className="h-4 w-4 opacity-70" />
-                </button>
-              </div>
-              <div className="py-2">
-                <button className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer">
+                <button 
+                  onClick={() => setMobilePricingOpen(!mobilePricingOpen)}
+                  className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
+                >
                   Pricing
-                  <ChevronDown className="h-4 w-4 opacity-70" />
+                  <ChevronDown className={`h-4 w-4 opacity-70 transition-transform ${mobilePricingOpen ? 'rotate-180' : ''}`} />
                 </button>
+                {mobilePricingOpen && (
+                  <div className="mt-2 pl-4 border-l border-gray-700 space-y-2">
+                    <Link
+                      href="/pricing/individual"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Individual
+                    </Link>
+                    <Link
+                      href="/pricing/teams"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Teams
+                    </Link>
+                    <Link
+                      href="/pricing/enterprise"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Enterprise
+                    </Link>
+                    <Link
+                      href="/compare-plans"
+                      className="block py-2 text-sm text-gray-400 hover:text-white"
+                      onClick={toggleMenu}
+                    >
+                      Compare all plans
+                    </Link>
+                  </div>
+                )}
               </div>
-              <Link
-                href="/research"
-                className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
-                onClick={toggleMenu}
-              >
-                Research
-              </Link>
-              <div className="py-2">
-                <button className="flex items-center justify-between w-full text-sm font-medium text-gray-300 hover:text-white cursor-pointer">
-                  Company
-                  <ChevronDown className="h-4 w-4 opacity-70" />
-                </button>
-              </div>
-              <Link
-                href="/docs"
-                className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
-                onClick={toggleMenu}
-              >
-                Docs
-              </Link>
               <Link
                 href="/contact"
                 className="block py-2 text-sm font-medium text-gray-300 hover:text-white cursor-pointer"
