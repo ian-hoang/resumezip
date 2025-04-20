@@ -41,11 +41,13 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4 relative">
                 {/* Get Started Button */}
-                <Link href="/create/dashboard">
-                  <button className="inline-flex cursor-pointer items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
-                    Get Started
-                  </button>
+                <Link
+                  href="/create/dashboard"
+                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-base text-white hover:bg-blue-500 transition-colors duration-300"
+                >
+                  Get Started
                 </Link>
+                
 
                 {/* Doodle above Pricing Plan */}
                 <div className="relative">
@@ -58,7 +60,7 @@ export default function Home() {
                     className="absolute -top-12 left-[3%] -translate-x-1/2"
                   />
                   {/* Pricing Plan Button */}
-                  <button className="inline-flex cursor-pointer items-center justify-center rounded-md border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 transition-colors duration-300">
+                  <button className="inline-flex cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 transition-colors duration-300">
                     Pricing Plan
                   </button>
                 </div>
@@ -212,10 +214,11 @@ export default function Home() {
             </div>
 
             <div className="flex justify-center mt-16">
-              <Link href="/create/dashboard">
-                <button className="cursor-pointer inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300">
-                  Start Building
-                </button>
+              <Link
+                href="/create/dashboard"
+                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-base text-white hover:bg-blue-500 transition-colors duration-300"
+              >
+                START BUILDING
               </Link>
             </div>
           </div>

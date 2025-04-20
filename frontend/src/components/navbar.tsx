@@ -83,10 +83,10 @@ export default function Navbar() {
                           <div className="text-xs text-gray-400">Browse resume templates</div>
                         </div>
                       </Link>
-                      <Link href="/resume-checker" className="flex items-start p-2 rounded-md hover:bg-gray-700/50 transition-colors">
+                      <Link href="/feed" className="flex items-start p-2 rounded-md hover:bg-gray-700/50 transition-colors">
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">Resume Checker</div>
-                          <div className="text-xs text-gray-400">Get feedback on your resume</div>
+                          <div className="text-sm font-medium text-white">Resume Feed (coming soon) </div>
+                          <div className="text-xs text-gray-400">Upload and get feedback for your resume from others</div>
                         </div>
                       </Link>
                     </div>
@@ -125,17 +125,18 @@ export default function Navbar() {
               user ? (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors cursor-pointer"
                 >
                   Log Out
                 </button>
               ) : (
                 <Link href="/signin">
-                  <button className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                  <button className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors cursor-pointer">
                     Sign In
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </button>
                 </Link>
+                
               )
             )}
           </div>

@@ -24,7 +24,7 @@ export default function AboutPage() {
               resumezip<span className="text-blue-500">.about</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-3xl font-medium">
-              A personal project built to help job seekers create professional resumes easily and effectively.
+              A platform built to help job seekers create professional resumes easily and effectively.
             </p>
           </div>
         </div>
@@ -49,18 +49,20 @@ export default function AboutPage() {
                     Hi, I'm Ian Hoang.
                   </h2>
                   <p className="text-gray-600">
-                    I built resumezip.io because I wanted to help people, especially developers, create their resumes with ease and zero cost.
+                  I built resumezip.io because writing resumes sucks. Especially as a developer, formatting a PDF shouldn’t feel harder than fixing CORS issues. So in February 2025, I said “enough is enough” and built the tool I wish I had.
                   </p>
                 </div>
               </div>
 
               <div className="space-y-4 text-gray-700">
                 <p>
-                  This started as a personal project in March 2025. As someone who has difficulty writing resumes, I often found myself spending hours trying to format my resume correctly and make it look professional. I know how frustrating it can be to have a great skill set but struggle to present it effectively on paper.
+                This started as a personal project fueled by the pain of trying to align bullet points in Word and figuring out Latex syntax on Overleaf. 
+                I know I’m not alone, that's why I built this.
                 </p>
 
                 <p>
-                  resumezip.io isn't about making profits. It's about helping people. The tool combines clean design templates with helpful suggestions to help you create a professional resume quickly and easily. I'm constantly working to improve it based on user feedback and the latest best practices in resume writing.
+                  resumezip.io isn't here to make profits. It's here to help people. The tool combines clean templates with helpful suggestions to help you create a professional resume quickly. 
+                  I'm constantly working to improve it based on your feedback and bug reports.
                 </p>
               </div>
             </div>
@@ -78,7 +80,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Simple Templates</h3>
               <p className="text-gray-600 text-sm">
-                Clean, professional templates designed to highlight your experience
+                Clean, professional templates designed for you
               </p>
             </div>
 
@@ -87,7 +89,7 @@ export default function AboutPage() {
                 <Code className="h-6 w-6 text-blue-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Easy to Use</h3>
-              <p className="text-gray-600 text-sm">Built with simplicity in mind so you can focus on your content</p>
+              <p className="text-gray-600 text-sm">Built with simplicity in mind so you can focus on content</p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm text-center">
@@ -96,7 +98,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Free to Use</h3>
               <p className="text-gray-600 text-sm">
-                I have no plans to charge for this tool.
+                100% free to use. No sign-up fees, no upsells
               </p>
             </div>
           </div>
@@ -115,22 +117,22 @@ export default function AboutPage() {
 
           <div className="space-y-6 text-gray-700">
             <p>
-              This tool is completely free to use, and I have no plans to charge for it. However, if you find it helpful and want to support its development, here are a few ways you can help:
+              This tool is completely free to use, and I have no plans to charge for it cause I'm awesome. However, if you find it helpful and want to support its development, here are a few ways you can help:
             </p>
             <p>
-                <strong>1. Provide feedback.</strong> I want to hear your thoughts on how to improve the tool. Your feedback is invaluable.
+                <strong>1. Tell me what’s broken (or brilliant).</strong> Got feedback? Found a bug? Thought “why does this button look like that?”, "why is the guy who built this so considerate and smart?" I want to know.
             </p>
             <p>
-                <strong>2. Spread the word.</strong> If you know someone who could benefit from this tool, please share it with them. The more people we can help, the better.
+                <strong>2. Spread the word.</strong> Know a developer, student, or AI (ffs I hope not) trying to land a job? Send them this link. The more people it helps, the better.
             </p>
             <p>
-                <strong>3. Contribute to the code.</strong> If you're a developer and interested in our mission, email me to be part of the team and contribute.
+                <strong>3. Contribute to the code.</strong> If you're a dev and want to build cool stuff with me, shoot me an email. We'll write code and debug together.
             </p>
             <p>
-                <strong>4. Follow me on social media and dm me.</strong> I love to connect with people and share updates about the project. You can find me on LinkedIn or GitHub.
+                <strong>4. Stalk me online.</strong>  I will post updates and project ramblings on LinkedIn. Come say hi, or just follow along so I feel famous.
             </p>
             <p>
-                <strong>5. Give back to the community.</strong> Build your own projects and share them with others. I believe in the power of community-driven projects.
+                <strong>5. Pay it forward.</strong> Build your own thing. Share it with the world. I believe in the power of community-driven projects. If you don't know how to code, be kind i guess.
             </p>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function AboutPage() {
           <p className="text-gray-300 mb-6">It's free, simple, and designed to help you put your best foot forward.</p>
           <Link
             href="/create/dashboard"
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300 shadow-sm"
+            className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300 shadow-sm"
           >
             Get Started
           </Link>

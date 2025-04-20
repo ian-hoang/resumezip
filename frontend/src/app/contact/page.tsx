@@ -70,8 +70,7 @@ export default function ContactPage() {
               resumezip<span className="text-blue-500">.contact</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-3xl font-medium">
-              Have questions or feedback? We'd love to hear from you. Fill out the form below and our team will get back
-              to you as soon as possible.
+              Have questions or feedback? We'd love to hear from you. Fill out the form below.
             </p>
           </div>
         </div>
@@ -206,7 +205,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="cursor-pointer w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg px-6 py-3 transition-colors duration-300 shadow-sm disabled:opacity-70"
+                    className="cursor-pointer w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-full px-6 py-3 transition-colors duration-300 shadow-sm disabled:opacity-70"
                   >
                     {isSubmitting ? (
                       <>
@@ -252,7 +251,7 @@ export default function ContactPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Email Us</h3>
               <p className="text-gray-600 mb-4">
-                For any inquiries, you can reach our support team directly via email.
+                For any inquiries, you can reach us via email.
               </p>
               <a
                 href="mailto:resumezipio@gmail.com"
@@ -266,9 +265,9 @@ export default function ContactPage() {
           {/* FAQ Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-                Want to know how your privacy is protected?{" "}
+                Want to know how your privacy is protected? Check our{" "}
               <Link href="/terms" className="text-blue-600 hover:underline font-medium">
-                Check our terms and privacy
+                Terms and Privacy
               </Link>
             </p>
           </div>
