@@ -24,21 +24,21 @@ export default function TemplatesPage() {
       name: "Classic Professional",
       category: "Professional",
       popular: true,
-      image: "/jakeresume.png",
+      image: "/jakeresume.webp",
     },
     {
       id: "modern-minimal",
       name: "Modern Minimal",
       category: "Modern",
       popular: true,
-      image: "/levelsfyi.jpeg",
+      image: "/levelsfyi.webp",
     },
     {
       id: "creative-bold",
       name: "Creative Bold",
       category: "Creative",
       popular: false,
-      image: "/modernjack.jpeg",
+      image: "/modernjack.webp",
     },
   ]
 

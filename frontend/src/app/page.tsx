@@ -54,11 +54,12 @@ export default function Home() {
                   {/* Doodle Image */}
                   <Image
                     src="/doddle.png"
-                    alt="doddle"
-                    width={160}
+                    alt="Decorative Doodle"
+                    width={160} // adjust size as you like
                     height={160}
-                    className="absolute -top-12 left-[3%] -translate-x-1/2"
+                    className="absolute -top-12 mx-auto"
                   />
+
                   {/* Pricing Plan Button */}
                   <button className="inline-flex cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 transition-colors duration-300">
                     Pricing Plan

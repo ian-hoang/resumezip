@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 \usepackage[margin=0.5in]{geometry}
 \usepackage{enumitem}
 \setlist[itemize]{noitemsep, topsep=1pt, left=12pt}
@@ -46,7 +46,7 @@
             \begin{itemize}[leftmargin=0pt, itemsep=0pt, topsep=0pt]
                 \item[] \textbf{ {{- .Degree -}} } \hfill \textbf{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} } \\
                 \textit{ {{- .School -}} {{- if .Location }}, {{ .Location }}{{ end -}} } {{- if .GPA }} \hfill \textit{GPA: {{ .GPA }} } {{- end -}} \\
-                {{- if .Coursework }} \textit{Relevant Coursework: } {{ .Coursework }} \\ {{- end -}}
+                {{- if .Coursework }} \textit{Relevant Coursework: } {{ .Coursework }} {{- end -}}{{- if .Involvement }} \\ {{- end -}}
                 {{- if .Involvement }} \textit{Involvement: } {{ .Involvement }} {{- end -}}
             \end{itemize}
             {{- end}}

@@ -20,22 +20,22 @@ export default function TemplatesForm() {
     {
       id: "jake",
       name: "Jake's Resume",
-      imageSrc: "/jakeresume.png",
+      imageSrc: "/jakeresume.webp",
     },
     {
       id: "modernjack",
       name: "Modern Jack's",
-      imageSrc: "/modernjack.jpeg",
+      imageSrc: "/modernjack.webp",
     },
     {
       id: "levelsfyi",
       name: "levels.fyi",
-      imageSrc: "/levelsfyi.jpeg",
+      imageSrc: "/levelsfyi.webp",
     },
     {
       id: "referme",
       name: "refer.me",
-      imageSrc: "/referme.jpeg",
+      imageSrc: "/referme.webp",
     },
   ]
 

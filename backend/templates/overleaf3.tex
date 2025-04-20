@@ -46,6 +46,7 @@
 \setlist[itemize]{leftmargin=2em,label=\textbullet,noitemsep,topsep=0pt}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
+\pagenumbering{gobble}
 
 % Use Helvetica (similar to Open Sans)
 \renewcommand{\familydefault}{\sfdefault}
@@ -68,9 +69,9 @@
           \item[] \textbf{ {{- .Degree -}}, }{ {{.School}}, {{.Location}} }  \hfill \textbf{ {{- .StartDate }} {{- if and .StartDate .EndDate }} - {{ end -}} {{ .EndDate -}} }
           \vspace{2pt}
           \begin{itemize}[leftmargin=0.2in]
-            \item { {{- if .GPA }}GPA: {{ .GPA }}{{- end -}} }
-            \item { {{- if .Coursework }}Relevant Coursework: {{ .Coursework }}{{- end -}} }
-            \item { {{- if .Involvement }}Involvements: {{ .Involvement }}{{- end -}} }
+            {{- if .GPA }} \item {GPA: {{ .GPA }} } {{- end -}}
+            {{- if .Coursework }} \item {Relevant Coursework: {{ .Coursework }} } {{- end -}}
+            {{- if .Involvement }} \item {Involvement: {{ .Involvement }} } {{- end -}}
           \end{itemize}
         \end{itemize}
       {{- end}}
@@ -143,7 +144,7 @@
           \item[] \textbf{ {{- .Name -}} }  \hspace{0pt}
           {{- if .Github }} \href{https://{{ .Github }}}{\scalebox{1.1}{\faGithub}} \hspace{-1pt} {{- end}} 
           {{- if .Website }} \href{https://{{ .Website }}}{\scalebox{1.1}{\faExternalLink}} {{- end}} 
-          {{- if .TechStack }} \hspace{1pt} \textbar{} \hspace{1pt} \textit{ {{- .TechStack -}} } {{- end}} 
+          {{- if .TechStack }} \hspace{0.5pt} \textbar{} \hspace{0.5pt} \textit{ {{- .TechStack -}} } {{- end}} 
           \hfill \textbf{ {{- .Date -}} }
           \vspace{2pt}
           \begin{itemize}

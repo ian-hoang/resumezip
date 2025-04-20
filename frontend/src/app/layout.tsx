@@ -9,7 +9,7 @@ import { FormProvider } from "@/context/ResumeContext";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ResumeZip - AI-Powered Resume Builder",
+  title: "resumezip.io",
   description: "Create professional resumes with AI at no cost",
 }
 
