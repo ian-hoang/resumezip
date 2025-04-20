@@ -92,9 +92,9 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
       usage_count: newCount,
     })
     if (error) {
-      console.error("❌ Failed to update AI usage:", error.message)
+      // console.error("❌ Failed to update AI usage:", error.message)
     }
-    console.log("✅ AI usage updated:", newCount)
+    // console.log("✅ AI usage updated:", newCount)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

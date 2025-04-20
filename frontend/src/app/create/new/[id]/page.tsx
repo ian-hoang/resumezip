@@ -138,7 +138,7 @@ export default function NewResumePage() {
         selectedTemplate: formData.selectedTemplate,
       }
 
-      // console.log("Submitting payload:", payload)
+      console.log("Submitting payload:", payload)
 
       const response = await fetch("https://api.resumezip.io/api/resume", {
       // const response = await fetch("http://localhost:8080/api/resume", {
