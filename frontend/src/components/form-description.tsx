@@ -86,11 +86,15 @@ const FormDescription: FC<FormDescriptionProps> = ({ title, placeholderText, id,
     const uid = auth.currentUser?.uid
     if (!uid) return
 
-    await supabase.from("ai_usage").upsert({
+    const { error } = await supabase.from("ai_usage").upsert({
       user_id: uid,
       date_used: today,
       usage_count: newCount,
     })
+    if (error) {
+      console.error("❌ Failed to update AI usage:", error.message)
+    }
+    console.log("✅ AI usage updated:", newCount)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
