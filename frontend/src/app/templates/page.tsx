@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
-import { ArrowLeft, Search, Filter } from "lucide-react"
+import { ArrowLeft, Search } from "lucide-react"
 
 interface Template {
   id: string
@@ -15,52 +15,43 @@ interface Template {
 
 export default function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeCategory, setActiveCategory] = useState<string>("all")
 
   // Template data
   const templates: Template[] = [
     {
-      id: "classic-pro",
-      name: "Classic Professional",
+      id: "jake",
+      name: "Jake's Resume",
       category: "Professional",
       popular: true,
       image: "/jakeresume.webp",
     },
     {
-      id: "modern-minimal",
-      name: "Modern Minimal",
+      id: "levelsfyi",
+      name: "levels.fyi",
       category: "Modern",
       popular: true,
       image: "/levelsfyi.webp",
     },
     {
-      id: "creative-bold",
-      name: "Creative Bold",
+      id: "modernjack",
+      name: "Modern Jack's",
       category: "Creative",
       popular: false,
       image: "/modernjack.webp",
     },
+    {
+      id: "referme",
+      name: "refer.me",
+      category: "Simple",
+      popular: false,
+      image: "/referme.webp",
+    },
   ]
 
-
-  // Filter templates based on search query and active category
+  // Filter templates based on search query only
   const filteredTemplates = templates.filter((template) => {
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = activeCategory === "all" || template.category.toLowerCase() === activeCategory.toLowerCase()
-    const matchesPopular = activeCategory === "popular" ? template.popular : true
-
-    return matchesSearch && matchesCategory && matchesPopular
+    return template.name.toLowerCase().includes(searchQuery.toLowerCase())
   })
-
-  // Categories for filter
-  const categories = [
-    { id: "all", name: "All Templates" },
-    { id: "popular", name: "Popular" },
-    { id: "professional", name: "Professional" },
-    { id: "creative", name: "Creative" },
-    { id: "simple", name: "Simple" },
-    { id: "modern", name: "Modern" },
-  ]
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -89,40 +80,22 @@ export default function TemplatesPage() {
         </div>
       </section>
 
-      {/* Search and Filter Section */}
+      {/* Search Section */}
       <section className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto max-w-6xl px-4 py-4 md:py-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex justify-center">
             {/* Search Bar */}
-            <div className="relative w-full md:w-auto md:min-w-[300px]">
+            <div className="relative w-full max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
-                placeholder="Search templates..."
+                placeholder="Search templates by name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-            </div>
-
-            {/* Category Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 no-scrollbar">
-              <Filter className="h-5 w-5 text-gray-500 flex-shrink-0" />
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium ${
-                    activeCategory === category.id
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
             </div>
           </div>
         </div>
@@ -137,7 +110,7 @@ export default function TemplatesPage() {
                 <Search className="h-8 w-8 text-gray-500" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No templates found</h2>
-              <p className="text-gray-600">Try adjusting your search or filter to find what you're looking for.</p>
+              <p className="text-gray-600">Try adjusting your search to find what you're looking for.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
