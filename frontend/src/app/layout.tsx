@@ -7,10 +7,24 @@ import Footer from "@/components/footer"
 import { FormProvider } from "@/context/ResumeContext";
 
 const inter = Inter({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
   title: "resumezip.io",
   description: "Create professional resumes with AI at no cost",
+  openGraph: {
+    title: "resumezip.io",
+    description: "Create professional resumes with AI at no cost",
+    url: "https://resumezip.io", // replace with your actual domain
+    siteName: "resumezip.io",
+    images: [
+      {
+        url: "https://resumezip.io/ThreeResumesFinal.webp", // full absolute URL to your image
+        width: 1200,
+        height: 630,
+        alt: "A preview image showing how ResumeZip looks",
+      },
+    ],
+    type: "website",
+  },
 }
 
 export default function RootLayout({
