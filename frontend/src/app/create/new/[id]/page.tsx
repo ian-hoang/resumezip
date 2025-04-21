@@ -32,7 +32,7 @@ export default function NewResumePage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const isDataReady = formData && formData.sectionOrder && formData.id
-  const [sections, setSections] = useState<string[]>([])
+  const [sections, setSections] = useState<string[]>(defaultSections)
   const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
@@ -54,16 +54,16 @@ export default function NewResumePage() {
   }, [formData.id])
 
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/signin")
-      }
-      setLoading(false)
-    })
+  // useEffect(() => {
+  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
+  //     if (!user) {
+  //       router.push("/signin")
+  //     }
+  //     setLoading(false)
+  //   })
 
-    return () => unsubscribe()
-  }, [router])
+  //   return () => unsubscribe()
+  // }, [router])
 
   useEffect(() => {
     if (formData.sectionOrder && Array.isArray(formData.sectionOrder)) {
@@ -71,16 +71,16 @@ export default function NewResumePage() {
     }
   }, [formData.sectionOrder])
 
-  if (!isClient || !isDataReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f1efed] text-gray-700 transition-opacity duration-500">
-        <div className="flex items-center gap-2 animate-fadeIn">
-          <Loader2 className="animate-spin w-5 h-5" />
-          <span>Loading resume editor...</span>
-        </div>
-      </div>
-    )
-  }
+  // if (!isClient || !isDataReady) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-[#f1efed] text-gray-700 transition-opacity duration-500">
+  //       <div className="flex items-center gap-2 animate-fadeIn">
+  //         <Loader2 className="animate-spin w-5 h-5" />
+  //         <span>Loading resume editor...</span>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   const handleSubmit = async () => {
     setLoading(true)

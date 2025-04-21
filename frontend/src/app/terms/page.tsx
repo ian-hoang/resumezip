@@ -93,8 +93,8 @@ export default function TermsAndPrivacy() {
                   <div>
                     <h3 className="text-xl font-semibold mb-2">3. Resume Storage: Here Today, Gone Tomorrow</h3>
                     <p>
-                    When you generate a resume, it gets stored temporarily on our AWS S3 server. It self-destructs after 24 hours like your date's interest in you. 
-                    We don’t keep backups unlike your ex, so if you love it, download it!
+                    When you generate a resume, it gets stored temporarily on our AWS S3 server. It self-destructs after 24 hours. 
+                    We don’t keep backups (unlike your ex), so if you love it, download it!
                     </p>
                   </div>
 
@@ -209,9 +209,7 @@ export default function TermsAndPrivacy() {
                   <div>
                     <h3 className="text-xl font-semibold mb-2">Q: Do I need an account?</h3>
                     <p>
-                    Yes but just your Google or Github account. No need to create a new password or remember another login. 
-                    We won’t ask for your shoe size or political candidate preference so no worries.
-                    </p>
+                    Yes but just your Google or Github account. No need to create a new password or remember another login.                     </p>
                   </div>
                 </div>
               </div>

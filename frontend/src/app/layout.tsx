@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "resumezip.io",
     images: [
       {
-        url: "https://resumezip.io/ThreeResumesFinal.webp", // full absolute URL to your image
+        url: "https://resumezip.io/ThreeResumesFinal.png", // full absolute URL to your image
         width: 1200,
         height: 630,
         alt: "A preview image showing how ResumeZip looks",

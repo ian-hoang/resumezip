@@ -190,12 +190,16 @@ export default function DashboardPage() {
                       Edit
                     </Link>
                     <div className="flex items-center gap-3">
-                      <button
+                      <a
+                        href={`https://resume-generator-pdfs.s3.amazonaws.com/resumes/${resume.id}.pdf`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
                         aria-label="Download resume"
                       >
                         <Download className="h-4 w-4" />
-                      </button>
+                      </a>
                       <button
                         onClick={() => {
                           setResumeToDelete(resume)

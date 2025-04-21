@@ -1,9 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
-import { ArrowLeft, Search } from "lucide-react"
+import { ArrowLeft, Search, X, ExternalLink } from "lucide-react"
 
 interface Template {
   id: string
@@ -15,6 +17,7 @@ interface Template {
 
 export default function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
 
   // Template data
   const templates: Template[] = [
@@ -52,6 +55,15 @@ export default function TemplatesPage() {
   const filteredTemplates = templates.filter((template) => {
     return template.name.toLowerCase().includes(searchQuery.toLowerCase())
   })
+
+  const handleImageClick = (image: string, e: React.MouseEvent) => {
+    e.preventDefault() // Prevent the Link navigation
+    setPreviewImage(image)
+  }
+
+  const closePreview = () => {
+    setPreviewImage(null)
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -115,12 +127,15 @@ export default function TemplatesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemplates.map((template) => (
-                <Link
+                <div
                   key={template.id}
-                  href={`/create/dashboard`}
                   className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 group"
                 >
-                  <div className="relative h-80 bg-gray-100">
+                  {/* Image Container with Preview Functionality */}
+                  <div
+                    className="relative h-64 bg-gray-100 cursor-pointer"
+                    onClick={(e) => handleImageClick(template.image, e)}
+                  >
                     <Image
                       src={template.image || "/placeholder.svg"}
                       alt={template.name}
@@ -137,24 +152,58 @@ export default function TemplatesPage() {
                         Popular
                       </div>
                     )}
+
+                    {/* Preview hint overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="bg-white/90 rounded-full p-2 shadow-lg">
+                        <ExternalLink className="h-6 w-6 text-blue-600" />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Template Info and Use Button */}
                   <div className="p-4 border-t border-gray-200">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-bold text-gray-900">{template.name}</h3>
                         <p className="text-sm text-gray-500">{template.category}</p>
                       </div>
-                      <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        Use
-                      </span>
+                      <Link href="/create/dashboard">
+                        <span className="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-500 transition-colors">
+                          Use
+                        </span>
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}
         </div>
       </section>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={closePreview}>
+          <div className="relative max-w-3xl w-full max-h-[80vh] bg-gray-100 rounded-lg shadow-2xl overflow-hidden">
+            <button
+              onClick={closePreview}
+              className="cursor-pointer absolute top-4 right-4 bg-black/50 hover:bg-black text-white rounded-full p-1 transition-colors z-10"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <div className="relative h-[70vh] w-full">
+              <Image
+                src={previewImage || "/placeholder.svg"}
+                alt="Template Preview"
+                fill
+                className="object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
