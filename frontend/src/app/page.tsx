@@ -32,7 +32,7 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl relative z-10">
             <div className="flex flex-col items-center text-center gap-5">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-                AI <span className="text-blue-500"> Resume </span> Builder
+                Zip <span className="text-blue-500"> Resume </span> Up
               </h1>
               <p className="text-xl text-gray-300 max-w-3xl font-medium">
                 Create professional resumes in minutes with our platform.
@@ -50,8 +50,7 @@ export default function Home() {
                 
 
                 {/* Doodle above Pricing Plan */}
-                <div className="relative">
-                  {/* Doodle Image */}
+                {/* <div className="relative">
                   <Image
                     src="/doddle.png"
                     alt="Decorative Doodle"
@@ -60,11 +59,10 @@ export default function Home() {
                     className="absolute -top-12 mx-auto"
                   />
 
-                  {/* Pricing Plan Button */}
                   <button className="inline-flex cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-transparent px-6 py-3 text-base font-medium text-gray-300 transition-colors duration-300">
                     Pricing Plan
                   </button>
-                </div>
+                </div> */}
               </div>
               <div className="flex justify-center">
                 <Image
@@ -101,7 +99,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">AI-Powered Suggestions</h3>
                 <p className="text-gray-600 text-sm">
-                  Get tailored bullet points and phrasing based on your experience, powered by intelligent language models.
+                  Get tailored bullet points and phrasing based on your experience, powered by large language models.
                 </p>
               </div>
 
