@@ -32,12 +32,12 @@ export default function Home() {
           <div className="container mx-auto max-w-6xl relative z-10">
             <div className="flex flex-col items-center text-center gap-5">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-                Zip <span className="text-blue-500"> Resume </span> Up
+              Build <span className="text-blue-500"> Resume </span> in a Zip
               </h1>
               <p className="text-xl text-gray-300 max-w-3xl font-medium">
-                Create professional resumes in minutes with our platform.
+              Create a professional resume in minutes.
                 <br />
-                Zip through the process with no cost, no hassle.
+                Fast, easy, and completely free.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4 relative">
                 {/* Get Started Button */}
