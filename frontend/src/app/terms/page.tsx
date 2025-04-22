@@ -94,7 +94,7 @@ export default function TermsAndPrivacy() {
                     <h3 className="text-xl font-semibold mb-2">3. Resume Storage: Here Today, Gone Tomorrow</h3>
                     <p>
                     When you generate a resume, it gets stored temporarily on our AWS S3 server. It self-destructs after 24 hours. 
-                    We don’t keep backups (unlike your ex), so if you love it, download it!
+                    We don’t keep backups, so if you love it, download it!
                     </p>
                   </div>
 
@@ -202,7 +202,7 @@ export default function TermsAndPrivacy() {
                   <div>
                     <h3 className="text-xl font-semibold mb-2">Q: Do you share or sell my data?</h3>
                     <p>
-                    Again, I don't even know how to sell data. Your data stays private. Period!!
+                    Again, I don't even know how to sell data. Your data stays private and secure!
                     </p>
                   </div>
 

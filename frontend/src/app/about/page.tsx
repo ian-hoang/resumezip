@@ -120,7 +120,7 @@ export default function AboutPage() {
               This tool is completely free to use, and I have no plans to charge for it cause I'm awesome. However, if you find it helpful and want to support its development, here are a few ways you can help:
             </p>
             <p>
-                <strong>1. Tell me what’s broken (or brilliant).</strong> Got feedback? Found a bug? Thought “why does this button look like that?”, "why is the guy who built this so considerate and smart?" I want to know.
+                <strong>1. Tell me what’s broken (or brilliant).</strong> Got feedback? Found a bug? Thought “why does this button look like that?”, "why is the guy who built this awesome" I want to know.
             </p>
             <p>
                 <strong>2. Spread the word.</strong> Know a developer, student, or AI (ffs I hope not) trying to land a job? Send them this link. The more people it helps, the better.
@@ -129,7 +129,9 @@ export default function AboutPage() {
                 <strong>3. Contribute to the code.</strong> If you're a dev and want to build cool stuff with me, shoot me an email. We'll write code and debug together.
             </p>
             <p>
-                <strong>4. Stalk me online.</strong>  I will post updates and project ramblings on LinkedIn. Come say hi, or just follow along so I feel famous.
+              <strong>4. Stalk me online.</strong>  
+                I will post updates and project ramblings on <a href="https://www.linkedin.com/in/ianhoangdev" target="_blank" rel="noopener noreferrer" style={{ color: "#4da6ff", textDecoration: "underline" }}>LinkedIn</a>.  
+                Come say hi, or just follow along so I feel famous.
             </p>
             <p>
                 <strong>5. Pay it forward.</strong> Build your own thing. Share it with the world. I believe in the power of community-driven projects. If you don't know how to code, be kind i guess.

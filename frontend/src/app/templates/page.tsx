@@ -83,7 +83,7 @@ export default function TemplatesPage() {
           </div>
           <div className="flex flex-col items-center text-center gap-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Resume <span className="text-blue-500">Templates</span>
+              resumezip<span className="text-blue-500">.templates</span>
             </h1>
             <p className="text-lg text-gray-300 max-w-3xl font-medium">
               Browse our collection of professionally designed templates to create your perfect resume.
