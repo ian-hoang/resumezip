@@ -97,12 +97,6 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     .from("resumes")
     .delete()
     .eq("id", id)
-
-  if (error) {
-    // console.error("❌ Failed to delete resume:", error)
-  } else {
-    // console.log("✅ Resume deleted:", id)
-  }
   };
 
   const updateFormData = (section: string, data: any) => {
