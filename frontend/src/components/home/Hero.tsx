@@ -13,7 +13,7 @@ export default function Hero() {
           <p className="text-xl text-gray-300 max-w-3xl font-medium">
             Create a professional resume in minutes.
             <br />
-            Easy, free, and saved on your local browser forever.
+            Easy, free, and saved in your browser.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4 relative">
             <Link
