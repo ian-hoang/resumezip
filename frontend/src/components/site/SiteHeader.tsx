@@ -8,6 +8,7 @@ import { StartWritingLink } from "./StartWriting"
 
 const LINKS = [
   { href: "/templates", label: "Templates" },
+  { href: "/about", label: "About" },
   { href: "/create/dashboard", label: "Your resumes" },
 ]
 
