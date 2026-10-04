@@ -85,6 +85,8 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
   const profile = resume.profileSection ?? {}
   const headings = resume.headings ?? {}
   const order = Array.isArray(resume.sectionOrder) ? resume.sectionOrder : DEFAULT_SECTION_ORDER
+  // Project links are printed as text, unless the user chose to link each project's name.
+  const linkTitles = resume.projectLinks === "title"
 
   return {
     profile: {
@@ -125,14 +127,20 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
       end: text(e.workEndDate),
       bullets: bullets(e.workDescription),
     })),
-    projects: entries(resume.projectsSection, (e) => ({
-      name: text(e.projectName),
-      link: "",
-      links: [bareUrl(e.projectGithub), bareUrl(e.additionalLink)].filter(Boolean),
-      techStack: text(e.techStack),
-      date: text(e.projectDate),
-      bullets: bullets(e.projectDescription),
-    })),
+    projects: entries(resume.projectsSection, (e) => {
+      const urls = [bareUrl(e.projectGithub), bareUrl(e.additionalLink)].filter(Boolean)
+      const name = text(e.projectName)
+      // A project without a name has nothing to link, so its links are printed.
+      const titled = linkTitles && name !== ""
+      return {
+        name,
+        link: titled ? (urls[0] ?? "") : "",
+        links: titled ? [] : urls,
+        techStack: text(e.techStack),
+        date: text(e.projectDate),
+        bullets: bullets(e.projectDescription),
+      }
+    }),
     publications: entries(resume.publicationsSection, (e) => ({
       title: text(e.publicationTitle),
       authors: text(e.publicationAuthors),

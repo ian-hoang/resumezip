@@ -14,6 +14,14 @@ export interface FieldDef {
   type?: "text" | "bullets"
 }
 
+/** A choice that applies to the whole section, stored on the resume under `key`. */
+export interface ChoiceDef {
+  key: string
+  label: string
+  /** The first option is the default. */
+  options: { value: string; label: string; hint: string }[]
+}
+
 export interface SectionDef {
   name: SectionName
   /** Shown in the editor; the resume uses the user's heading or the template's default. */
@@ -24,6 +32,7 @@ export interface SectionDef {
   fields: FieldDef[]
   /** Fields shown, in order, when an entry is collapsed. */
   summary: string[]
+  choice?: ChoiceDef
 }
 
 /** The profile's fields, stored on the resume under `profileSection`. */
@@ -103,6 +112,14 @@ export const SECTIONS: Record<SectionName, SectionDef> = {
     headingKey: "projects",
     addLabel: "Add project",
     summary: ["projectName", "techStack"],
+    choice: {
+      key: "projectLinks",
+      label: "Links",
+      options: [
+        { value: "show", label: "Show the link", hint: "Printed as text, like github.com/you/project. Easiest for ATS to read." },
+        { value: "title", label: "Link the title", hint: "The project name links to its GitHub, or to its website if it has no GitHub." },
+      ],
+    },
     fields: [
       { key: "projectName", label: "Name", placeholder: "Gitlytics", size: "md" },
       { key: "projectDate", label: "Dates", placeholder: "Jun – Aug 2025", size: "md" },

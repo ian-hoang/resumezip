@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Plus } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
 import { BulletsField, Field, SectionHeading } from "./fields"
-import { FIELD_SPAN, type SectionDef } from "./sections"
+import { FIELD_SPAN, type ChoiceDef, type SectionDef } from "./sections"
 
 type Entry = { id: number; [field: string]: any }
 
@@ -173,6 +173,14 @@ export default function SectionForm({ section, position }: SectionFormProps) {
         onRename={(name) => updateFormData("headings", { ...formData.headings, [section.headingKey]: name })}
       />
 
+      {section.choice && (
+        <SectionChoice
+          choice={section.choice}
+          value={formData[section.choice.key]}
+          onChange={(value) => updateFormData(section.choice!.key, value)}
+        />
+      )}
+
       {entries.length === 0 && (
         <p className="border-t border-ink pt-5 text-[15px] text-ink-2">Nothing here yet.</p>
       )}
@@ -320,6 +328,41 @@ export default function SectionForm({ section, position }: SectionFormProps) {
         <Plus className="h-3.5 w-3.5" aria-hidden="true" />
         {section.addLabel}
       </button>
+    </div>
+  )
+}
+
+/** A choice that applies to the whole section, like how project links are printed. */
+function SectionChoice({ choice, value, onChange }: { choice: ChoiceDef; value: unknown; onChange: (value: string) => void }) {
+  const selected = choice.options.find((option) => option.value === value) ?? choice.options[0]
+  return (
+    <div className="-mt-3 flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span id={`${choice.key}-label`} className="label-mono text-ink-2">
+          {choice.label}
+        </span>
+        <div role="radiogroup" aria-labelledby={`${choice.key}-label`} className="flex flex-wrap gap-2">
+          {choice.options.map((option) => (
+            <label
+              key={option.value}
+              className={`cursor-pointer rounded-[4px] border px-3 py-1.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+                option === selected ? "border-ink bg-ink text-white" : "border-rule-strong text-ink hover:border-ink"
+              }`}
+            >
+              <input
+                type="radio"
+                name={choice.key}
+                value={option.value}
+                checked={option === selected}
+                onChange={() => onChange(option.value)}
+                className="sr-only"
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </div>
+      <p className="text-[13px] leading-normal text-ink-2">{selected.hint}</p>
     </div>
   )
 }

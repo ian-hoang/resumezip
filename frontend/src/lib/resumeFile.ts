@@ -73,7 +73,10 @@ export function cleanResume(input: unknown): ResumeContent {
   }
 
   for (const name of SECTION_NAMES) {
-    const { dataKey, fields } = SECTIONS[name]
+    const { dataKey, fields, choice } = SECTIONS[name]
+    if (choice && choice.options.some((option) => option.value === resume[choice.key])) {
+      clean[choice.key] = resume[choice.key]
+    }
     const entries = Array.isArray(resume[dataKey]) ? (resume[dataKey] as unknown[]).slice(0, 100) : []
     clean[dataKey] = entries.map((entry, index) => ({
       id: index + 1,
