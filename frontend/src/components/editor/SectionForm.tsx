@@ -42,12 +42,28 @@ function reveal(element: HTMLElement, scroller: HTMLElement, reduced: boolean) {
 export default function SectionForm({ section, position }: SectionFormProps) {
   const { formData, updateFormData } = useResumeContext()
   const entries: Entry[] = Array.isArray(formData[section.dataKey]) ? formData[section.dataKey] : []
+  const latest = useRef(entries)
+  latest.current = entries
 
   // One entry is open at a time; the rest collapse to a one-line summary.
   const [openId, setOpenId] = useState<number | null>(entries[0]?.id ?? null)
   // Follows openId a frame later, so a newly added entry slides open too.
   const [shownId, setShownId] = useState<number | null>(openId)
+  const [confirmingId, setConfirmingId] = useState<number | null>(null)
+  const [removingId, setRemovingId] = useState<number | null>(null)
   const elements = useRef(new Map<number, HTMLElement>())
+  const addButton = useRef<HTMLButtonElement>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
+
+  // Asking to confirm a delete moves focus to Cancel, so Escape or Enter backs out.
+  useEffect(() => {
+    if (confirmingId !== null) cancelButton.current?.focus()
+  }, [confirmingId])
+
+  const cancelDelete = (id: number) => {
+    setConfirmingId(null)
+    requestAnimationFrame(() => elements.current.get(id)?.querySelector<HTMLElement>("[data-delete]")?.focus())
+  }
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShownId(openId))
@@ -67,6 +83,7 @@ export default function SectionForm({ section, position }: SectionFormProps) {
    * still on screen while the entries around it slide open or closed.
    */
   const open = (id: number | null, clicked: number) => {
+    setConfirmingId(null)
     setOpenId(id)
     // One entry closes as the other opens, in the same frame, so the page's height barely changes.
     setShownId(id)
@@ -98,6 +115,7 @@ export default function SectionForm({ section, position }: SectionFormProps) {
     const id = entries.length > 0 ? Math.max(...entries.map((entry) => entry.id)) + 1 : 1
     const blank = Object.fromEntries(section.fields.map((field) => [field.key, ""]))
     save([...entries, { ...blank, id } as Entry])
+    setConfirmingId(null)
     setOpenId(id)
     // Once it has slid open, bring it into view.
     setTimeout(
@@ -111,12 +129,27 @@ export default function SectionForm({ section, position }: SectionFormProps) {
   }
 
   // Ids are renumbered so they stay 1..n, as the stored data always has been.
-  const remove = (id: number) => save(entries.filter((entry) => entry.id !== id).map((entry, i) => ({ ...entry, id: i + 1 })))
+  const remove = (id: number) => {
+    const hadFocus = elements.current.get(id)?.contains(document.activeElement) ?? false
+    save(latest.current.filter((entry) => entry.id !== id).map((entry, i) => ({ ...entry, id: i + 1 })))
+    setRemovingId(null)
+    setOpenId((current) => (current === null || current === id ? null : current > id ? current - 1 : current))
+    if (hadFocus) addButton.current?.focus({ preventScroll: true })
+  }
+
+  // The entry slides away, then it's deleted.
+  const confirmRemove = (id: number) => {
+    setConfirmingId(null)
+    if (reducedMotion()) return remove(id)
+    setRemovingId(id)
+    setTimeout(() => remove(id), SLIDE_MS)
+  }
 
   const update = (id: number, key: string, value: string) =>
     save(entries.map((entry) => (entry.id === id ? { ...entry, [key]: value } : entry)))
 
   const title = formData.headings?.[section.headingKey] || section.title
+  const quiet = "py-2 text-sm text-ink-2 transition-colors hover:text-ink"
 
   return (
     <div className="flex flex-col gap-8">
@@ -134,6 +167,7 @@ export default function SectionForm({ section, position }: SectionFormProps) {
         <div className="flex flex-col">
           {entries.map((entry, index) => {
             const isOpen = entry.id === openId
+            const confirming = entry.id === confirmingId
             const summary = section.summary.map((key) => entry[key]?.trim()).filter(Boolean).join(", ")
             const name = `entry ${index + 1}`
 
@@ -144,8 +178,12 @@ export default function SectionForm({ section, position }: SectionFormProps) {
                   if (element) elements.current.set(entry.id, element)
                   else elements.current.delete(entry.id)
                 }}
+                className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none ${
+                  entry.id === removingId ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]"
+                }`}
               >
-                <section>
+                {/* Room on the sides so focus outlines aren't clipped while it slides. */}
+                <section className="-mx-1 min-h-0 overflow-hidden px-1">
                   <div
                     className={`border-t pb-7 pt-4 transition-colors duration-300 ${isOpen ? "border-ink" : "border-rule"}`}
                   >
@@ -159,7 +197,15 @@ export default function SectionForm({ section, position }: SectionFormProps) {
                         )}
                       </div>
 
-                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-x-4">
+                      <div
+                        className="flex shrink-0 flex-wrap items-center justify-end gap-x-4"
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape" && confirming) {
+                            event.stopPropagation()
+                            cancelDelete(entry.id)
+                          }
+                        }}
+                      >
                         {!isOpen ? (
                           <button
                             key="edit"
@@ -170,16 +216,40 @@ export default function SectionForm({ section, position }: SectionFormProps) {
                           >
                             Edit
                           </button>
+                        ) : confirming ? (
+                          <>
+                            <span key="question" className="py-2 text-sm text-ink" role="status">
+                              Delete this entry?
+                            </span>
+                            <button
+                              key="cancel"
+                              ref={cancelButton}
+                              type="button"
+                              onClick={() => cancelDelete(entry.id)}
+                              className={quiet}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              key="confirm"
+                              type="button"
+                              onClick={() => confirmRemove(entry.id)}
+                              className="py-2 text-sm font-medium text-[#b42318] underline-offset-4 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </>
                         ) : (
                           <>
                             <button
-                              key="remove"
+                              key="delete"
+                              data-delete
                               type="button"
-                              onClick={() => remove(entry.id)}
-                              aria-label={`Remove ${name}`}
+                              onClick={() => setConfirmingId(entry.id)}
+                              aria-label={`Delete ${name}`}
                               className="py-2 text-sm text-ink-2 transition-colors hover:text-[#b42318]"
                             >
-                              Remove
+                              Delete
                             </button>
                             <button
                               key="done"
@@ -228,6 +298,7 @@ export default function SectionForm({ section, position }: SectionFormProps) {
       )}
 
       <button
+        ref={addButton}
         type="button"
         onClick={add}
         className="inline-flex h-10 items-center gap-2 self-start rounded-[4px] border border-rule-strong px-3.5 text-sm text-ink transition-colors hover:border-ink"
