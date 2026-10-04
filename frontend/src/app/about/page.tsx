@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import { Coffee } from "lucide-react"
 import PageIntro from "@/components/site/PageIntro"
@@ -24,15 +23,6 @@ export default function AboutPage() {
         <PageIntro
           label="About"
           title="Hi, I’m Ian."
-          actions={
-            <Image
-              src="/myself.webp"
-              alt="Ian Hoang"
-              width={160}
-              height={160}
-              className="h-32 w-32 object-cover ring-1 ring-rule md:h-40 md:w-40"
-            />
-          }
         >
           I built resumezip because formatting a resume shouldn’t be harder than writing it. It’s free, there’s no
           sign-up, and your resume never leaves your browser.
