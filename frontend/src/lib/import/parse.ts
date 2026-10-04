@@ -760,6 +760,18 @@ const tidyCitation = (text: string) => tidy(text.replace(/(\s*,\s*)+/g, ", ").re
 function readCitation(text: string, italics: string[] = []): Record<string, string> {
   const fields = blankEntry("Publications")
   let rest = text.replace(NUMBERED, "")
+  // Links come out before the date, since DOIs and URLs often hold a year
+  // ("10.1109/CVPR.2016.90").
+  const doi = rest.match(/\bdoi:\s*(10\.\d{4,9}\/\S+)/i)
+  if (doi) {
+    fields.publicationLink = `doi.org/${doi[1].replace(/[.,;]$/, "")}`
+    rest = rest.replace(doi[0], " ")
+  }
+  const link = fields.publicationLink ? null : rest.match(new RegExp(`(?:https?://|doi\\.org/|www\\.)\\S+|${URL.source}`, "i"))
+  if (link && (link[0].includes("/") || /^www\./i.test(link[0]))) {
+    fields.publicationLink = bare(link[0].replace(/[.,;]$/, ""))
+    rest = rest.replace(link[0], " ")
+  }
   // The year usually comes last; a year in a title shouldn't count.
   let date: ReturnType<typeof findDate> = null
   for (let found = findDate(rest), offset = 0; found; ) {
@@ -770,16 +782,6 @@ function readCitation(text: string, italics: string[] = []): Record<string, stri
   if (date) {
     fields.publicationDate = date.text
     rest = rest.slice(0, date.index) + " " + rest.slice(date.index + date.length)
-  }
-  const doi = rest.match(/\bdoi:\s*(10\.\d{4,9}\/\S+)/i)
-  if (doi) {
-    fields.publicationLink = `doi.org/${doi[1].replace(/[.,;]$/, "")}`
-    rest = rest.replace(doi[0], " ")
-  }
-  const link = fields.publicationLink ? null : rest.match(new RegExp(`(?:https?://|doi\\.org/|www\\.)\\S+|${URL.source}`, "i"))
-  if (link && (link[0].includes("/") || /^www\./i.test(link[0]))) {
-    fields.publicationLink = bare(link[0].replace(/[.,;]$/, ""))
-    rest = rest.replace(link[0], " ")
   }
   const quoted = rest.match(/["“]([^"”]+)["”]/)
   if (quoted) {
