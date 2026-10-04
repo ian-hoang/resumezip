@@ -76,11 +76,11 @@
       subheading(e.school, date-range(e.start, e.end), degree, e.location, items: items)
     })))
   } else if name == "Work" and data.work.len() > 0 {
-    section(heading-or(hd.work, "Work Experience"), entries(data.work.map(w => {
+    section(heading-or(hd.work, "Experience"), entries(data.work.map(w => {
       subheading(w.role, date-range(w.start, w.end), w.company, w.location, items: w.bullets)
     })))
   } else if name == "Projects" and data.projects.len() > 0 {
-    section(heading-or(hd.projects, "Technical Projects"), entries(data.projects.map(pr => {
+    section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
       block(sticky: true, row(
         text(size: 10pt, {
           strong(pr.name)

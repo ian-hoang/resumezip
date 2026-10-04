@@ -107,13 +107,13 @@
       )
     }).join(v(8.4pt)) + v(1.4pt))
   } else if name == "Work" and data.work.len() > 0 {
-    section(heading-or(hd.work, "Work Experience"), experience(data.work, "company"))
+    section(heading-or(hd.work, "Experience"), experience(data.work, "company"))
   } else if name == "Leadership" and data.leadership.len() > 0 {
     section(heading-or(hd.leadership, "Leadership Experience"), experience(data.leadership, "organization"))
   } else if name == "Volunteership" and data.volunteer.len() > 0 {
     section(heading-or(hd.volunteer, "Volunteer Experience"), experience(data.volunteer, "organization"))
   } else if name == "Projects" and data.projects.len() > 0 {
-    section(heading-or(hd.projects, "Technical Projects"), data.projects.map(pr => entry(
+    section(heading-or(hd.projects, "Projects"), data.projects.map(pr => entry(
       row(
         {
           strong(pr.name)

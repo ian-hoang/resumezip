@@ -81,7 +81,7 @@
       s.details
     }).join(parbreak()))
   } else if name == "Work" and data.work.len() > 0 {
-    section(heading-or(hd.work, "Work Experience"), experience(data.work, "company"))
+    section(heading-or(hd.work, "Experience"), experience(data.work, "company"))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => {
       block(sticky: true, {
