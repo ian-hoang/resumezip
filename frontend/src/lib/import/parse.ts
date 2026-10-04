@@ -749,8 +749,15 @@ function publicationFields(pieces: string[], fields: Record<string, string>) {
   fields.publicationVenue = rest.join(". ")
 }
 
-/** "[1] A. Smith, B. Lee. Title of the paper. NeurIPS 2025." */
-function readCitation(text: string): Record<string, string> {
+/** Tidies what's left of a citation once pieces are cut out: no doubled or dangling commas. */
+const tidyCitation = (text: string) => tidy(text.replace(/(\s*,\s*)+/g, ", ").replace(/^[\s,.;:]+|[\s,.;:]+$/g, ""))
+
+/**
+ * "[1] A. Smith, B. Lee. Title of the paper. NeurIPS 2025.", or IEEE style:
+ * "[1] A. Smith and B. Lee, “Title,” Venue, City, 2025, doi: 10.1/x."
+ * `italics` is the citation's italic text, which in IEEE style is the venue.
+ */
+function readCitation(text: string, italics: string[] = []): Record<string, string> {
   const fields = blankEntry("Publications")
   let rest = text.replace(NUMBERED, "")
   // The year usually comes last; a year in a title shouldn't count.
@@ -764,7 +771,12 @@ function readCitation(text: string): Record<string, string> {
     fields.publicationDate = date.text
     rest = rest.slice(0, date.index) + " " + rest.slice(date.index + date.length)
   }
-  const link = rest.match(new RegExp(`(?:https?://|doi\\.org/|www\\.)\\S+|${URL.source}`, "i"))
+  const doi = rest.match(/\bdoi:\s*(10\.\d{4,9}\/\S+)/i)
+  if (doi) {
+    fields.publicationLink = `doi.org/${doi[1].replace(/[.,;]$/, "")}`
+    rest = rest.replace(doi[0], " ")
+  }
+  const link = fields.publicationLink ? null : rest.match(new RegExp(`(?:https?://|doi\\.org/|www\\.)\\S+|${URL.source}`, "i"))
   if (link && (link[0].includes("/") || /^www\./i.test(link[0]))) {
     fields.publicationLink = bare(link[0].replace(/[.,;]$/, ""))
     rest = rest.replace(link[0], " ")
@@ -772,8 +784,13 @@ function readCitation(text: string): Record<string, string> {
   const quoted = rest.match(/["“]([^"”]+)["”]/)
   if (quoted) {
     fields.publicationTitle = tidy(quoted[1])
-    fields.publicationAuthors = tidy(rest.slice(0, quoted.index))
-    fields.publicationVenue = tidy(rest.slice(quoted.index! + quoted[0].length).replace(/^[.,]\s*(?:in:?\s+)?/i, ""))
+    // Authors keep a closing full stop ("et al."), just not the comma before the title.
+    fields.publicationAuthors = tidy(rest.slice(0, quoted.index)).replace(/[\s,;:]+$/, "")
+    const after = tidyCitation(rest.slice(quoted.index! + quoted[0].length).replace(/^[.,]\s*(?:in:?\s+)?/i, ""))
+    // The venue is in italics; anything else left over (a city, pages) is detail.
+    const venue = italics.map(tidy).find((italic) => italic.length > 2 && after.includes(italic))
+    fields.publicationVenue = venue ?? after
+    if (venue) fields.publicationDetails = tidyCitation(after.replace(venue, " "))
     return fields
   }
   publicationFields(sentencesOf(tidy(rest.replace(/\s+([.,])/g, "$1"))), fields)
@@ -788,17 +805,25 @@ function readPublications(lines: ParseLine[]): SectionResult {
   const leftover: SectionResult["leftover"] = { lines: [], text: [] }
   const citations = lines.filter((line) => line.bullet || NUMBERED.test(line.text)).length >= lines.length / 2
   if (citations) {
-    const items: { text: string; lines: number[]; x: number }[] = []
+    const items: { text: string; lines: number[]; x: number; italics: string[] }[] = []
     for (const line of lines) {
       const last = items[items.length - 1]
       const starts = line.bullet || NUMBERED.test(line.text) || !last || line.x <= last.x - 3
-      if (starts) items.push({ text: line.text, lines: [line.index], x: line.x })
+      // Italic runs, joined with the one before when it carries on from the end of the line above.
+      const italics = line.parts.flatMap((part) =>
+        part.runs.filter((run) => run.italic).map((run) => ({ text: part.text.slice(run.start, run.end), start: run.start === 0 && part === line.parts[0] })),
+      )
+      if (starts) items.push({ text: line.text, lines: [line.index], x: line.x, italics: italics.map((italic) => italic.text) })
       else {
+        if (italics[0]?.start && last.italics.length && last.text.trimEnd().endsWith(last.italics[last.italics.length - 1].trim())) {
+          last.italics[last.italics.length - 1] = joinWrapped(last.italics[last.italics.length - 1], italics.shift()!.text)
+        }
+        last.italics.push(...italics.map((italic) => italic.text))
         last.text = joinWrapped(last.text, line.text)
         last.lines.push(line.index)
       }
     }
-    return { entries: items.map((item) => ({ fields: readCitation(item.text), lines: item.lines })), leftover }
+    return { entries: items.map((item) => ({ fields: readCitation(item.text, item.italics), lines: item.lines })), leftover }
   }
 
   const entries = groupEntries(lines).map((group) => {
