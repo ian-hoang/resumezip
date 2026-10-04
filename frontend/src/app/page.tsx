@@ -95,13 +95,13 @@ export default function Home() {
               template={template.id}
               className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
             >
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden border border-[#e5e5e5]">
+              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-[#171717]">
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}
                   fill
                   sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.015]"
+                  className="object-cover object-top"
                 />
               </div>
               <span className="label-caps">{template.name}</span>
