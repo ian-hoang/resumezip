@@ -34,7 +34,8 @@ export interface TemplateData {
     involvement: string
   }[]
   work: { company: string; location: string; role: string; start: string; end: string; bullets: string[] }[]
-  projects: { name: string; techStack: string; date: string; github: string; website: string; bullets: string[] }[]
+  /** `link` is set when the name links somewhere; `links` are printed as text. */
+  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: string[] }[]
   publications: { title: string; authors: string; venue: string; date: string; link: string }[]
   skills: { name: string; details: string }[]
   leadership: Experience[]
@@ -126,10 +127,10 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
     })),
     projects: entries(resume.projectsSection, (e) => ({
       name: text(e.projectName),
+      link: "",
+      links: [bareUrl(e.projectGithub), bareUrl(e.additionalLink)].filter(Boolean),
       techStack: text(e.techStack),
       date: text(e.projectDate),
-      github: bareUrl(e.projectGithub),
-      website: bareUrl(e.additionalLink),
       bullets: bullets(e.projectDescription),
     })),
     publications: entries(resume.publicationsSection, (e) => ({

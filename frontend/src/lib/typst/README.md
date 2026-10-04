@@ -25,7 +25,7 @@ used.)
 
 Templates can only use the fonts in `public/fonts`, listed in `typst.worker.ts`.
 
-## Fonts and icons
+## Fonts
 
 | Files | Font | Source | License |
 | --- | --- | --- | --- |
@@ -33,5 +33,3 @@ Templates can only use the fonts in `public/fonts`, listed in `typst.worker.ts`.
 | `Lato-*.ttf` | Lato | [Google Fonts](https://fonts.google.com/specimen/Lato) | SIL Open Font License 1.1 |
 | `texgyreheros-*.otf` | TeX Gyre Heros | [CTAN](https://ctan.org/pkg/tex-gyre) | GUST Font License |
 
-Icons in `common.typ` are from [Font Awesome Free](https://fontawesome.com) 6,
-licensed CC BY 4.0.

@@ -125,12 +125,7 @@
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => entry(
       row(
-        {
-          strong(pr.name)
-          if has(pr.github) { h(4pt) + web-link(pr.github, icon("github", size: 0.9em)) }
-          if has(pr.website) { h(3pt) + web-link(pr.website, icon("external-link", size: 0.9em)) }
-          if has(pr.techStack) { h(4pt) + [|] + h(4pt) + emph(pr.techStack) }
-        },
+        project-header(pr, h(4pt) + [|] + h(4pt), url => web-link(url, url)),
         strong(pr.date),
       ),
       pr.bullets,

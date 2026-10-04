@@ -88,12 +88,14 @@
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => {
       block(sticky: true, {
-        strong(pr.name)
-        if has(pr.github) { h(0.5em) + web-link(pr.github, icon("github")) }
-        if has(pr.website) { h(0.5em) + web-link(pr.website, icon("external-link")) }
+        strong(project-name(pr))
         h(1fr)
         emph(pr.date)
-        if has(pr.techStack) { linebreak() + emph(pr.techStack) }
+        // The tech stack and any printed links go on the second line.
+        let details = ()
+        if has(pr.techStack) { details.push(emph(pr.techStack)) }
+        for url in pr.links { details.push(box(web-link(url, ul(url)))) }
+        if details.len() > 0 { linebreak() + details.join([ | ]) }
       })
       bullets(pr.bullets)
     }).join(v(6.8pt)))
