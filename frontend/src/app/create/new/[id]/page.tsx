@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
-import { ArrowLeft, Download, Loader2 } from "lucide-react"
+import { ArrowLeft, Download, Eye, Loader2, PencilLine } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
 import PdfPreview from "@/components/editor/PdfPreview"
 import ProfileForm from "@/components/editor/ProfileForm"
@@ -23,6 +23,10 @@ export default function EditorPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [compileError, setCompileError] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
+  // Small screens show the form or the preview, not both.
+  const [view, setView] = useState<"edit" | "preview">("edit")
+  const [typing, setTyping] = useState(false)
+  const editScroll = useRef(0)
   const headerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
 
@@ -73,6 +77,21 @@ export default function EditorPage() {
     return () => URL.revokeObjectURL(pdfUrl)
   }, [pdfUrl])
 
+  // The Edit / Preview switch steps aside while the keyboard is up.
+  useEffect(() => {
+    const isField = (target: EventTarget | null) => target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    const onFocusIn = (event: FocusEvent) => setTyping(isField(event.target))
+    const onFocusOut = (event: FocusEvent) => {
+      if (isField(event.target) && !isField(event.relatedTarget)) setTyping(false)
+    }
+    document.addEventListener("focusin", onFocusIn)
+    document.addEventListener("focusout", onFocusOut)
+    return () => {
+      document.removeEventListener("focusin", onFocusIn)
+      document.removeEventListener("focusout", onFocusOut)
+    }
+  }, [])
+
   // A new section starts at its top: in the form's pane on wide screens, on the page on small ones
   // (scrolled just far enough that the section tabs stay pinned above it).
   const select = (section: ActiveSection) => {
@@ -83,6 +102,14 @@ export default function EditorPage() {
     }
     const top = headerRef.current?.offsetHeight ?? 0
     if (window.scrollY > top) window.scrollTo({ top })
+  }
+
+  // Coming back to the form returns to where you were in it.
+  const show = (next: "edit" | "preview") => {
+    if (next === view) return
+    if (next === "preview") editScroll.current = window.scrollY
+    setView(next)
+    requestAnimationFrame(() => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }))
   }
 
   // Once a rename is done, number the name if another resume already has it.
@@ -179,7 +206,9 @@ export default function EditorPage() {
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <aside
           data-covers="top"
-          className="sticky top-0 z-20 shrink-0 border-b border-rule bg-paper lg:static lg:w-[248px] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-7"
+          className={`sticky top-0 z-20 shrink-0 border-b border-rule bg-paper lg:static lg:block lg:w-[248px] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-7 ${
+            view === "preview" ? "hidden" : ""
+          }`}
         >
           <SectionNav
             sections={sections}
@@ -191,7 +220,9 @@ export default function EditorPage() {
 
         <main
           ref={mainRef}
-          className="min-w-0 flex-1 px-5 pb-16 pt-9 sm:px-10 lg:overflow-y-auto lg:px-12"
+          className={`min-w-0 flex-1 px-5 pb-28 pt-9 sm:px-10 lg:block lg:overflow-y-auto lg:px-12 lg:pb-16 ${
+            view === "preview" ? "hidden" : ""
+          }`}
         >
           <div className="mx-auto max-w-[640px]">
             {active === "Profile" ? (
@@ -202,11 +233,42 @@ export default function EditorPage() {
           </div>
         </main>
 
-        <section aria-label="Live preview" className="min-w-0 bg-desk lg:flex lg:w-[46%] lg:flex-col lg:overflow-hidden">
+        <section
+          aria-label="Live preview"
+          className={`min-w-0 flex-col bg-desk pb-20 lg:flex lg:w-[46%] lg:overflow-hidden lg:pb-0 ${
+            view === "preview" ? "flex max-lg:flex-1" : "hidden"
+          }`}
+        >
           <PdfPreview pdfUrl={pdfUrl} error={compileError} />
         </section>
       </div>
 
+      <div
+        data-covers="bottom"
+        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-[opacity,transform] duration-200 lg:hidden ${
+          typing ? "pointer-events-none translate-y-3 opacity-0" : ""
+        }`}
+      >
+        <div role="group" aria-label="View" className="flex gap-1 rounded-[4px] bg-ink p-1 shadow-[0_12px_32px_-12px_rgba(17,19,24,0.5)]">
+          {(["edit", "preview"] as const).map((option) => {
+            const Icon = option === "edit" ? PencilLine : Eye
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view === option}
+                onClick={() => show(option)}
+                className={`inline-flex h-9 items-center gap-2 rounded-[3px] px-4 text-sm font-medium transition-colors ${
+                  view === option ? "bg-paper text-ink" : "text-white/70 hover:text-white"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                {option === "edit" ? "Edit" : "Preview"}
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

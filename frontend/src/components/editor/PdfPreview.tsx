@@ -48,7 +48,10 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
-    const observer = new ResizeObserver(([entry]) => setAvailableWidth(entry.contentRect.width))
+    // A hidden panel (the form's showing, on small screens) keeps its last width.
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width > 0) setAvailableWidth(entry.contentRect.width)
+    })
     observer.observe(scroller)
     return () => observer.disconnect()
   }, [])
