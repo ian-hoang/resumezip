@@ -1,0 +1,153 @@
+{
+  "id": "preview-levels",
+  "resumeTitle": "Daniel Okafor",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "levelsfyi",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Publications",
+    "Projects",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Daniel Okafor",
+    "email": "daniel.okafor@example.com",
+    "phoneNumber": "(555) 019-3364",
+    "location": "Seattle, WA",
+    "linkedin": "linkedin.com/in/danielokafor",
+    "profileGithub": "github.com/dokafor",
+    "personalWebsite": "danielokafor.dev"
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Georgia Institute of Technology",
+      "schoolLocation": "Atlanta, GA",
+      "degree": "M.S. in Computer Science",
+      "gpa": "3.9 / 4.0",
+      "schoolStartDate": "Aug 2021",
+      "schoolEndDate": "May 2023",
+      "coursework": "Deep Learning, Machine Learning Theory, Natural Language Processing",
+      "involvement": ""
+    },
+    {
+      "id": 2,
+      "schoolName": "University of Lagos",
+      "schoolLocation": "Lagos, Nigeria",
+      "degree": "B.Sc. in Computer Engineering, First Class Honours",
+      "gpa": "",
+      "schoolStartDate": "Sep 2015",
+      "schoolEndDate": "Jul 2020",
+      "coursework": "",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Machine Learning Engineer",
+      "companyName": "Quarry Analytics",
+      "workLocation": "Seattle, WA",
+      "workStartDate": "Aug 2023",
+      "workEndDate": "Present",
+      "workDescription": "• Own the fraud model that scores 40 million card transactions a day, raising recall at the same false-positive rate by 9 points\n• Built a feature store on Spark and Redis that serves 300 features in under 10 ms, shared by four product teams\n• Moved model training from Jupyter notebooks to scheduled pipelines with automatic evaluation and rollback, so a retrained model ships in one day instead of after two weeks of manual checks\n• Set up shadow deployments that score live traffic with a candidate model for a week before it replaces the old one\n• Mentor two junior engineers and lead the team's monthly reading group on fraud and anomaly detection papers"
+    },
+    {
+      "id": 2,
+      "workRole": "Machine Learning Intern",
+      "companyName": "Kestrel Security",
+      "workLocation": "Atlanta, GA",
+      "workStartDate": "May 2022",
+      "workEndDate": "Aug 2022",
+      "workDescription": "• Trained a transformer on sequences of login events to spot account takeovers, finding 30% more attacks than the rule-based system at the same alert volume for the security operations team\n• Distilled the model to a quarter of its size so it runs on the existing CPU fleet without buying any new hardware"
+    },
+    {
+      "id": 3,
+      "workRole": "Graduate Research Assistant",
+      "companyName": "Georgia Institute of Technology",
+      "workLocation": "Atlanta, GA",
+      "workStartDate": "Jan 2022",
+      "workEndDate": "May 2023",
+      "workDescription": "• Studied how fraud labels that arrive weeks late skew model calibration, and built a correction method that is now part of the lab's open-source toolkit and used in two follow-up papers by other students in the lab\n• Ran experiments on 200 million public transactions using the university's GPU cluster and shared all the code"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "gradbook",
+      "projectDate": "2024",
+      "techStack": "Python, NumPy",
+      "projectGithub": "github.com/dokafor/gradbook",
+      "additionalLink": "",
+      "projectDescription": "• A from-scratch autograd engine with a written guide to backpropagation, used as course reading in two university classes"
+    },
+    {
+      "id": 2,
+      "projectName": "Lagos Traffic Forecast",
+      "projectDate": "2021",
+      "techStack": "PyTorch, FastAPI",
+      "projectGithub": "github.com/dokafor/lagos-traffic",
+      "additionalLink": "",
+      "projectDescription": "• Graph neural network that forecasts traffic speed on major Lagos roads an hour ahead from public GPS data\n• Served the forecasts through a FastAPI endpoint that a local ride-hailing startup tested for routing drivers"
+    }
+  ],
+  "publicationsSection": [
+    {
+      "id": 1,
+      "publicationTitle": "Calibrating fraud models under delayed labels",
+      "publicationAuthors": "D. Okafor, R. Chen, and M. Alvarez",
+      "publicationVenue": "Proc. KDD Workshop on Anomaly Detection in Finance",
+      "publicationDetails": "Long Beach, CA",
+      "publicationDate": "Aug. 2023",
+      "publicationLink": "10.5555/kdd-adf.2023.014"
+    },
+    {
+      "id": 2,
+      "publicationTitle": "Sequence models for account takeover detection",
+      "publicationAuthors": "D. Okafor and S. Patel",
+      "publicationVenue": "NeurIPS Workshop on Machine Learning for Security",
+      "publicationDetails": "New Orleans, LA",
+      "publicationDate": "Dec. 2022",
+      "publicationLink": "10.5555/neurips-mlsec.2022.031"
+    }
+  ],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Machine learning",
+      "skillDetails": "PyTorch, scikit-learn, XGBoost, Hugging Face, MLflow"
+    },
+    {
+      "id": 2,
+      "skillName": "Data",
+      "skillDetails": "Spark, Airflow, Redis, BigQuery, SQL"
+    },
+    {
+      "id": 3,
+      "skillName": "Languages",
+      "skillDetails": "Python, Scala, Go, C++"
+    }
+  ],
+  "leadershipExperienceSection": [],
+  "volunteerExperienceSection": [],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Best Paper Runner-up",
+      "awardDate": "2023",
+      "awardOrg": "KDD Workshop on Anomaly Detection in Finance"
+    },
+    {
+      "id": 2,
+      "awardName": "Graduate Research Fellowship",
+      "awardDate": "2021",
+      "awardOrg": "Georgia Institute of Technology"
+    }
+  ]
+}

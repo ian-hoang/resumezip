@@ -20,8 +20,8 @@ used.)
 2. Import it in `typst.worker.ts` and add it to `SOURCES`.
 3. Add it to `TEMPLATES` in `src/lib/templates.ts` with a picture of its first
    page in `public/previews/<id>.webp` (1280 px wide, from the editor's
-   preview). They all show the sample resume in `preview-sample.json`, so
-   they're easy to compare. Every page that lists templates reads that list.
+   preview), made from its own sample resume in `preview-samples/<id>.json`.
+   Every page that lists templates reads that list.
 
 Templates can only use the fonts in `public/fonts`, listed in `typst.worker.ts`.
 

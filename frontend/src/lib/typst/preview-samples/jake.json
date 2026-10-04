@@ -1,0 +1,127 @@
+{
+  "id": "preview-jake",
+  "resumeTitle": "Marcus Bell",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "jake",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Projects",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Marcus Bell",
+    "email": "marcus.bell@example.com",
+    "phoneNumber": "(555) 013-4471",
+    "location": "Ann Arbor, MI",
+    "linkedin": "linkedin.com/in/marcusbell",
+    "profileGithub": "github.com/marcusbell",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "University of Michigan",
+      "schoolLocation": "Ann Arbor, MI",
+      "degree": "B.S.E. in Computer Science, Minor in Mathematics",
+      "gpa": "3.9 / 4.0",
+      "schoolStartDate": "Sep 2023",
+      "schoolEndDate": "May 2027",
+      "coursework": "Data Structures and Algorithms, Computer Organization, Operating Systems, Web Systems, Machine Learning",
+      "involvement": "Michigan Hackers, Solar Car Team, Society of Minority Engineering Students"
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Software Engineering Intern",
+      "companyName": "Brightpath Logistics",
+      "workLocation": "Chicago, IL",
+      "workStartDate": "May 2026",
+      "workEndDate": "Aug 2026",
+      "workDescription": "• Built a route-batching service in Go that groups same-day deliveries by neighborhood, cutting average driver miles per shift by 11% across 40 depots and saving about $1.2M a year in fuel\n• Added OpenTelemetry tracing to the dispatch API and found a slow join that added 900 ms to each request\n• Wrote a k6 load test that replays a peak holiday morning, now run before every release of the dispatch API"
+    },
+    {
+      "id": 2,
+      "workRole": "Undergraduate Research Assistant",
+      "companyName": "University of Michigan",
+      "workLocation": "Ann Arbor, MI",
+      "workStartDate": "Jan 2025",
+      "workEndDate": "Present",
+      "workDescription": "• Built a Python toolkit that turns eye-tracking recordings from 60 study participants into reading heatmaps\n• Trained a small CNN in PyTorch to flag blinks and tracking dropouts, replacing two hours of manual cleanup per session and letting the lab run twice as many sessions each week"
+    },
+    {
+      "id": 3,
+      "workRole": "Instructional Aide, Data Structures and Algorithms",
+      "companyName": "University of Michigan",
+      "workLocation": "Ann Arbor, MI",
+      "workStartDate": "Sep 2024",
+      "workEndDate": "Dec 2025",
+      "workDescription": "• Led two weekly lab sections of 30 students and held office hours on pointers, graphs and recursion in C++\n• Wrote 40 autograder tests that catch common hash table mistakes, cutting regrade requests by a third"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "CourseCompass",
+      "projectDate": "Jan 2026 – Present",
+      "techStack": "React, TypeScript, PostgreSQL",
+      "projectGithub": "github.com/marcusbell/coursecompass",
+      "additionalLink": "",
+      "projectDescription": "• Degree planner that checks schedules against major requirements and prerequisites, used by 2,500 students\n• Scrapes 9,000 course listings from the public catalog each night into PostgreSQL with full-text search"
+    },
+    {
+      "id": 2,
+      "projectName": "Tiny Raft",
+      "projectDate": "Sep – Dec 2025",
+      "techStack": "Go, gRPC",
+      "projectGithub": "github.com/marcusbell/tiny-raft",
+      "additionalLink": "",
+      "projectDescription": "• Implemented Raft in Go with leader election, log replication and snapshots for a replicated key-value store\n• Wrote a chaos test that randomly partitions and restarts nodes while clients keep writing, which found three ordering bugs in log replication before the final course submission"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "C++, Go, Python, TypeScript, Java, SQL"
+    },
+    {
+      "id": 2,
+      "skillName": "Frameworks",
+      "skillDetails": "React, Node.js, Express, PyTorch, gRPC"
+    },
+    {
+      "id": 3,
+      "skillName": "Tools",
+      "skillDetails": "Git, Docker, PostgreSQL, Linux, AWS, OpenTelemetry"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "Workshop Lead",
+      "leadershipOrg": "Michigan Hackers",
+      "leadershipLocation": "Ann Arbor, MI",
+      "leadershipStartDate": "Sep 2024",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Run a monthly workshop series on Git, web APIs and Docker that drew 300 students last school year"
+    }
+  ],
+  "volunteerExperienceSection": [],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Dean's List, every semester",
+      "awardDate": "2023 – 2026",
+      "awardOrg": "University of Michigan"
+    }
+  ]
+}

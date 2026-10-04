@@ -1,0 +1,133 @@
+{
+  "id": "preview-modern",
+  "resumeTitle": "Elena Petrova",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "modernjack",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Projects",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Elena Petrova",
+    "email": "elena.petrova@example.com",
+    "phoneNumber": "(555) 016-2290",
+    "location": "Austin, TX",
+    "linkedin": "linkedin.com/in/elenapetrova",
+    "profileGithub": "github.com/epetrova",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "The University of Texas at Austin",
+      "schoolLocation": "Austin, TX",
+      "degree": "B.S. in Computer Science",
+      "gpa": "3.7 / 4.0",
+      "schoolStartDate": "Aug 2018",
+      "schoolEndDate": "May 2022",
+      "coursework": "Distributed Systems, Databases, Computer Networks, Operating Systems, Algorithms",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Software Engineer II",
+      "companyName": "Harbor Payments",
+      "workLocation": "Austin, TX",
+      "workStartDate": "Jan 2024",
+      "workEndDate": "Present",
+      "workDescription": "• Lead the ledger team's move from a single PostgreSQL primary to a sharded cluster of 16 nodes, keeping p99 write latency under 40 ms at 12,000 writes per second with no downtime\n• Designed an idempotency layer for the payouts API that ended duplicate transfers during client retries\n• Built a reconciliation job in Go that matches 3 million bank records each night and flags mismatches for the finance team, replacing a manual check that took four people a full morning\n• Mentor three engineers, run the team's weekly design review and lead on-call training for every new hire"
+    },
+    {
+      "id": 2,
+      "workRole": "Software Engineer",
+      "companyName": "Tidewater Energy",
+      "workLocation": "Houston, TX",
+      "workStartDate": "Jul 2022",
+      "workEndDate": "Dec 2023",
+      "workDescription": "• Rewrote the meter-reading pipeline from cron scripts to Kafka consumers, cutting data delays to 2 minutes\n• Added contract tests between eight internal services so breaking API changes fail in CI, not in production\n• Cut the monthly AWS bill by 22% by right-sizing database instances, moving cold sensor data to S3 Glacier and turning off idle staging environments overnight and on weekends"
+    },
+    {
+      "id": 3,
+      "workRole": "Software Engineering Intern",
+      "companyName": "Lumen Robotics",
+      "workLocation": "Pittsburgh, PA",
+      "workStartDate": "May 2021",
+      "workEndDate": "Aug 2021",
+      "workDescription": "• Built a React and Flask dashboard showing live battery and motor health for 150 robots in two warehouses\n• Wrote alerts that page the on-call engineer when a robot's battery drains abnormally fast, which caught four failing battery packs in the first month before any of them shut down mid-shift"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "pgshard",
+      "projectDate": "2024 – Present",
+      "techStack": "Go, PostgreSQL",
+      "projectGithub": "github.com/epetrova/pgshard",
+      "additionalLink": "",
+      "projectDescription": "• Open-source proxy that routes PostgreSQL queries to the right shard by tenant ID, with 900 GitHub stars\n• Added online shard splitting, which moves a tenant's rows in the background without blocking any writes"
+    },
+    {
+      "id": 2,
+      "projectName": "Ledgerline",
+      "projectDate": "2023",
+      "techStack": "Rust",
+      "projectGithub": "github.com/epetrova/ledgerline",
+      "additionalLink": "",
+      "projectDescription": "• Command-line budgeting tool that imports bank CSV exports, sorts transactions by rule and prints a monthly report\n• Wrote the CSV importers as plugins, so each bank's export format lives in a small, separately tested file"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Go, Python, Rust, TypeScript, SQL"
+    },
+    {
+      "id": 2,
+      "skillName": "Infrastructure",
+      "skillDetails": "PostgreSQL, Kafka, Redis, Kubernetes, Terraform, AWS"
+    },
+    {
+      "id": 3,
+      "skillName": "Practices",
+      "skillDetails": "System design, observability, incident response, code review"
+    }
+  ],
+  "leadershipExperienceSection": [],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Mentor",
+      "volunteerOrg": "Austin Code Collective",
+      "volunteerLocation": "Austin, TX",
+      "volunteerStartDate": "2023",
+      "volunteerEndDate": "Present",
+      "volunteerDescription": "• Mentor adults changing careers into software, with weekly code reviews and mock interviews for each cohort"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Spot Award for the payouts idempotency launch",
+      "awardDate": "2025",
+      "awardOrg": "Harbor Payments"
+    },
+    {
+      "id": 2,
+      "awardName": "University Honors",
+      "awardDate": "2019 – 2022",
+      "awardOrg": "The University of Texas at Austin"
+    }
+  ]
+}

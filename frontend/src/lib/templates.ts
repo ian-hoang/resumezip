@@ -1,8 +1,8 @@
 // Every resume template, in the order they're shown. The home page, the
 // templates page, the editor's template picker and the dashboard all read
 // this list, and each id needs a matching src/lib/typst/templates/<id>.typ
-// and a picture of its first page in public/previews/<id>.webp. The pictures
-// all show the same sample resume, so they're easy to compare.
+// and a picture of its first page in public/previews/<id>.webp, made from
+// the sample resume in src/lib/typst/preview-samples/<id>.json.
 
 export const TEMPLATES = [
   { id: "jake", name: "Jake's", image: "/previews/jake.webp" },

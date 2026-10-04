@@ -1,0 +1,142 @@
+{
+  "id": "preview-referme",
+  "resumeTitle": "Sofía Martínez",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "referme",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Projects",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Sofía Martínez",
+    "email": "sofia.martinez@example.com",
+    "phoneNumber": "(555) 012-8805",
+    "location": "New York, NY",
+    "linkedin": "linkedin.com/in/sofiamartinez",
+    "profileGithub": "github.com/smartinez",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "New York University",
+      "schoolLocation": "New York, NY",
+      "degree": "B.S. in Statistics, Minor in Economics",
+      "gpa": "3.8 / 4.0",
+      "schoolStartDate": "Sep 2017",
+      "schoolEndDate": "May 2021",
+      "coursework": "Probability, Regression Analysis, Causal Inference, Machine Learning, Econometrics",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Data Scientist",
+      "companyName": "Fernway Travel",
+      "workLocation": "New York, NY",
+      "workStartDate": "Mar 2023",
+      "workEndDate": "Present",
+      "workDescription": "• Built the hotel ranking model behind search results, which raised bookings per search by 6% in a four-week A/B test\n• Designed the company's experimentation guidelines and a sample-size calculator now used by 12 product teams\n• Forecast weekly demand for 3,000 destinations with gradient-boosted models, helping the pricing team plan seasonal campaigns and cut unsold hotel inventory by 8% over the summer\n• Partner with product managers to turn search and booking questions into dashboards and experiments"
+    },
+    {
+      "id": 2,
+      "workRole": "Data Analyst",
+      "companyName": "Copperleaf Bank",
+      "workLocation": "Charlotte, NC",
+      "workStartDate": "Jul 2021",
+      "workEndDate": "Feb 2023",
+      "workDescription": "• Built a churn model for checking accounts and a Tableau dashboard that branch managers use every week to call at-risk customers, which cut account closures by 12% in pilot branches\n• Automated the monthly regulatory report in Python and SQL, turning three days of spreadsheet work into an hour\n• Found a fee-waiver rule that was misapplied to 18,000 accounts, worked with engineering to fix the rule and refund $410,000 to customers, and added a weekly check so it can't happen again\n• Taught a weekly SQL class for 25 analysts in finance and operations who were new to the data warehouse"
+    },
+    {
+      "id": 3,
+      "workRole": "Analytics Intern",
+      "companyName": "Lantern Media",
+      "workLocation": "New York, NY",
+      "workStartDate": "Jun 2020",
+      "workEndDate": "Aug 2020",
+      "workDescription": "• Measured how newsletter send times affect opens across 2 million subscribers, then moved the daily send to the best-performing hour, which raised open rates by 4 points in a month\n• Built a weekly email report on subscriber growth that replaced a spreadsheet the editors updated by hand"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Subway Delays Explorer",
+      "projectDate": "2024",
+      "techStack": "Python, DuckDB, Streamlit",
+      "projectGithub": "github.com/smartinez/subway-delays",
+      "additionalLink": "",
+      "projectDescription": "• Interactive map of five years of public subway delay data that shows which lines and hours are worst, viewed by more than 20,000 people after a local news site shared it with its readers"
+    },
+    {
+      "id": 2,
+      "projectName": "Causal Notes",
+      "projectDate": "2022",
+      "techStack": "R, Quarto",
+      "projectGithub": "github.com/smartinez/causal-notes",
+      "additionalLink": "",
+      "projectDescription": "• Plain-language guide to difference-in-differences and synthetic control, with worked examples on public data sets"
+    },
+    {
+      "id": 3,
+      "projectName": "Rent Watch NYC",
+      "projectDate": "2021",
+      "techStack": "Python, scikit-learn",
+      "projectGithub": "github.com/smartinez/rent-watch",
+      "additionalLink": "",
+      "projectDescription": "• Model that estimates fair rent for New York apartments from public listings, built to help friends spot overpriced leases\n• Scraped 40,000 listings over six months and published the cleaned data set for other students to reuse"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Python, SQL, R"
+    },
+    {
+      "id": 2,
+      "skillName": "Modeling",
+      "skillDetails": "scikit-learn, XGBoost, statsmodels, PyMC, causal inference, A/B testing"
+    },
+    {
+      "id": 3,
+      "skillName": "Tools",
+      "skillDetails": "dbt, Snowflake, Airflow, Tableau, Looker, Git"
+    }
+  ],
+  "leadershipExperienceSection": [],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Volunteer Data Analyst",
+      "volunteerOrg": "Harlem Food Pantry Network",
+      "volunteerLocation": "New York, NY",
+      "volunteerStartDate": "2022",
+      "volunteerEndDate": "Present",
+      "volunteerDescription": "• Built a dashboard that tracks weekly visits and food stock across six pantries to plan weekly deliveries"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "AWS Certified Machine Learning – Specialty",
+      "awardDate": "2024",
+      "awardOrg": "Amazon Web Services"
+    },
+    {
+      "id": 2,
+      "awardName": "Data Science Hackathon, first place",
+      "awardDate": "2022",
+      "awardOrg": "NYC Open Data Week"
+    }
+  ]
+}
