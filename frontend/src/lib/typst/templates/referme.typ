@@ -57,8 +57,10 @@
   if has(p.linkedin) { items.push(web-link(p.linkedin, ul(p.linkedin))) }
   if has(p.website) { items.push(web-link(p.website, ul(p.website))) }
   if has(p.github) { items.push(web-link(p.github, ul(p.github))) }
-  // The name and contacts are separate paragraphs, 4.71pt apart.
-  if items.len() > 0 { parbreak() + items.join([ • ]) }
+  // The name and contacts are separate paragraphs, 4.71pt apart. A long
+  // line wraps between items, never inside a link, and isn't stretched.
+  set par(justify: false)
+  if items.len() > 0 { parbreak() + items.map(box).join([ • ]) }
 })
 #v(1.1pt)
 

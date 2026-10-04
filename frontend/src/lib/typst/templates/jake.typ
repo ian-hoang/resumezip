@@ -59,7 +59,8 @@
   if has(p.github) { items.push(web-link(p.github, ul(p.github))) }
   if items.len() > 0 {
     v(8.2pt)
-    text(size: 10pt, items.join([ | ]))
+    // A long line wraps between items, never inside a link.
+    text(size: 10pt, items.map(box).join([ | ]))
   }
 })
 #v(2pt)
