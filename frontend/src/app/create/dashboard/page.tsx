@@ -89,6 +89,15 @@ export default function DashboardPage() {
     }
   }
 
+  // The review shows the PDF itself, so it stays open until the review
+  // closes. Closed here rather than in the review, which React mounts twice
+  // in development.
+  const reviewedPdf = opening?.step === "review" ? opening.file.pdf?.doc : undefined
+  useEffect(() => {
+    if (!reviewedPdf) return
+    return () => void reviewedPdf.destroy()
+  }, [reviewedPdf])
+
   // Dropping a file anywhere on the page opens it.
   const openFileRef = useRef(openFile)
   openFileRef.current = openFile

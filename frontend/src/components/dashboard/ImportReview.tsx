@@ -87,9 +87,6 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
   const [highlight, setHighlight] = useState<number[]>([])
   const [copied, setCopied] = useState(false)
 
-  // The PDF stays open for the preview until the review closes.
-  useEffect(() => () => void file.pdf?.doc.destroy(), [file])
-
   const parsed = withSwaps(file.parsed, swapped)
   const { profile } = parsed
   const contact = [profile.email, profile.phoneNumber, profile.linkedin, profile.profileGithub, profile.personalWebsite].filter(Boolean)
