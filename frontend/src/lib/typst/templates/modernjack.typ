@@ -6,7 +6,7 @@
 #let hd = data.headings
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: 0.5in)
+#set page(paper: "us-letter", margin: (x: 0.4in, y: 0.5in))
 #set text(font: "Lato", size: 11pt, lang: "en")
 // All vertical spacing below is explicit, measured against the LaTeX output.
 #set block(spacing: 0pt)
