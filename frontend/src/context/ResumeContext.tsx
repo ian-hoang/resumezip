@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TEMPLATE } from "@/lib/templates"
+import { numberDuplicateTitles, uniqueTitle } from "@/lib/resumeTitles"
 
 const ResumeContext = createContext<any>(null);
 
@@ -13,14 +14,17 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
   // localStorage is the only copy of the user's resumes, so read it before
   // ever writing to it, and pick up changes made in other tabs.
   useEffect(() => {
-    const read = (saved: string | null) => {
+    // On first load, also number any resumes saved with the same name.
+    const read = (saved: string | null, numberDuplicates = false) => {
       try {
-        if (saved) setResumes(JSON.parse(saved));
+        if (!saved) return;
+        const parsed = JSON.parse(saved);
+        setResumes(numberDuplicates ? numberDuplicateTitles(parsed) : parsed);
       } catch (error) {
         console.error("Couldn't read saved resumes:", error);
       }
     };
-    read(localStorage.getItem("allResumes"));
+    read(localStorage.getItem("allResumes"), true);
     setLoaded(true);
 
     const onStorage = (event: StorageEvent) => {
@@ -63,7 +67,11 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
     };
 
-    setResumes(prev => ({ ...prev, [newId]: newResumeData }));
+    // A repeated name gets a number, e.g. "Untitled resume 2".
+    setResumes(prev => ({
+      ...prev,
+      [newId]: { ...newResumeData, resumeTitle: uniqueTitle(title, Object.values(prev).map(r => r?.resumeTitle)) },
+    }));
     setCurrentResumeId(newId);
     return newId;
   };

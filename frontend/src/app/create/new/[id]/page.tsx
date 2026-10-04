@@ -11,6 +11,7 @@ import SectionForm from "@/components/editor/SectionForm"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import TemplatePicker from "@/components/editor/TemplatePicker"
 import { SECTION_NAMES, SECTIONS, type SectionName } from "@/components/editor/sections"
+import { uniqueTitle } from "@/lib/resumeTitles"
 import { compileResumeUrl, downloadResume } from "@/lib/typst/compile"
 
 const pad = (n: number) => String(n).padStart(2, "0")
@@ -70,6 +71,13 @@ export default function EditorPage() {
     return () => URL.revokeObjectURL(pdfUrl)
   }, [pdfUrl])
 
+  // Once a rename is done, number the name if another resume already has it.
+  const commitTitle = () => {
+    const others = Object.entries(resumes as Record<string, any>).filter(([key]) => key !== id)
+    const title = uniqueTitle(formData.resumeTitle ?? "", others.map(([, resume]) => resume?.resumeTitle))
+    if (title !== formData.resumeTitle) updateFormData("resumeTitle", title)
+  }
+
   const download = async () => {
     setDownloading(true)
     try {
@@ -127,6 +135,10 @@ export default function EditorPage() {
               placeholder="Untitled resume"
               size={Math.max(14, (formData.resumeTitle ?? "").length + 1)}
               onChange={(event) => updateFormData("resumeTitle", event.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.currentTarget.blur()
+              }}
               className="min-w-0 max-w-[58vw] border-0 border-b border-transparent bg-transparent py-0.5 font-serif lg:max-w-[40vw] text-[19px] text-ink outline-none transition-colors placeholder:text-ink-2 hover:border-rule-strong focus:border-accent focus-visible:outline-none"
             />
             <span className="label-mono hidden shrink-0 text-ink-2 xl:inline">Saved in this browser</span>
