@@ -1,25 +1,33 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 "use client";
 import React, { createContext, useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid"
-import { supabase } from "@/lib/supabaseClient"
-import { auth } from "@/lib/firebaseClient"
+import { DEFAULT_TEMPLATE } from "@/lib/templates"
 
 const ResumeContext = createContext<any>(null);
 
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {
   const [resumes, setResumes] = useState<Record<string, any>>({});
+  const [loaded, setLoaded] = useState(false);
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
 
-  // Load resumes from localStorage
+  // localStorage is the only copy of the user's resumes, so read it before
+  // ever writing to it, and pick up changes made in other tabs.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedResumes = localStorage.getItem("allResumes");
-      if (savedResumes) {
-        const parsed = JSON.parse(savedResumes);
-        setResumes(parsed)
+    const read = (saved: string | null) => {
+      try {
+        if (saved) setResumes(JSON.parse(saved));
+      } catch (error) {
+        console.error("Couldn't read saved resumes:", error);
       }
-    }
+    };
+    read(localStorage.getItem("allResumes"));
+    setLoaded(true);
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === "allResumes") read(event.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const formData = useMemo(() => {
@@ -28,19 +36,14 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Save to localStorage on change
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (loaded) {
       localStorage.setItem("allResumes", JSON.stringify(resumes));
     }
-  }, [resumes]);
+  }, [resumes, loaded]);
 
-  const createNewResume = async (title: string, tag: string): Promise<string> => {
+  // Resumes only live in this browser's localStorage; there are no accounts.
+  const createNewResume = (title: string, tag: string, template: string = DEFAULT_TEMPLATE): string => {
     const newId = uuidv4();
-
-    const user = auth.currentUser
-      if (!user) {
-        console.error("No user logged in")
-        return ""
-      }
 
     const newResumeData = {
       id: newId,
@@ -49,7 +52,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       updatedAt: new Date().toISOString(),
       profileSection: {},
       headings: {},
-      selectedTemplate: "jake",
+      selectedTemplate: template,
       educationSection: [],
       workExperienceSection: [],
       projectsSection: [],
@@ -60,31 +63,12 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
     };
 
-    const { error, data } = await supabase.from("resumes").upsert([
-      {
-        id: newId,
-        uid: user.uid,
-        resume_title: newResumeData.resumeTitle,
-        resume_tag: newResumeData.resumeTag,
-        selected_template: newResumeData.selectedTemplate,
-        profile_section: newResumeData.profileSection,
-        education_section: newResumeData.educationSection,
-        work_section: newResumeData.workExperienceSection,
-        skills_section: newResumeData.skillsSection,
-        projects_section: newResumeData.projectsSection,
-        volunteer_section: newResumeData.volunteerExperienceSection,
-        leadership_section: newResumeData.leadershipExperienceSection,
-        awards_section: newResumeData.awardsSection,
-        headings: newResumeData.headings,
-        section_order: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
-      }
-    ])
     setResumes(prev => ({ ...prev, [newId]: newResumeData }));
     setCurrentResumeId(newId);
     return newId;
   };
 
-  const deleteResume = async (id: string) => {
+  const deleteResume = (id: string) => {
     setResumes(prev => {
       const updated = { ...prev };
       delete updated[id];
@@ -93,26 +77,24 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     if (currentResumeId === id) {
       setCurrentResumeId(null);
     }
-    const { error } = await supabase
-    .from("resumes")
-    .delete()
-    .eq("id", id)
   };
 
   const updateFormData = (section: string, data: any) => {
     if (!currentResumeId) return;
-    setResumes(prev => ({
+    setResumes(prev => prev[currentResumeId] ? {
       ...prev,
       [currentResumeId]: {
         ...prev[currentResumeId],
-        [section]: data
+        [section]: data,
+        updatedAt: new Date().toISOString(),
       }
-    }));
+    } : prev);
   };
 
   return (
     <ResumeContext.Provider value={{
       resumes,
+      loaded,
       currentResumeId,
       formData,
       setCurrentResumeId,
