@@ -74,12 +74,22 @@
 #v(-2.2pt)
 #align(center, text(size: 24pt, weight: "bold", p.name))
 #v(15.8pt)
+// Where you are and how to reach you on the left, your profiles on the right.
+#let reach = (
+  if has(p.location) { p.location },
+  if has(p.phone) { p.phone },
+  if has(p.email) { email-link(p.email, p.email) },
+).filter(item => item != none)
+#let profiles = (
+  if has(p.linkedin) { web-link(p.linkedin, p.linkedin) },
+  if has(p.github) { web-link(p.github, p.github) },
+  if has(p.website) { web-link(p.website, p.website) },
+).filter(item => item != none)
 #grid(
   columns: (1fr, 1fr),
   align: (left, right),
   row-gutter: 4.71pt,
-  p.phone, if has(p.linkedin) { web-link(p.linkedin, p.linkedin) },
-  if has(p.email) { email-link(p.email, p.email) }, if has(p.github) { web-link(p.github, p.github) },
+  ..range(calc.max(reach.len(), profiles.len())).map(i => (reach.at(i, default: []), profiles.at(i, default: []))).flatten(),
 )
 #v(5pt)
 

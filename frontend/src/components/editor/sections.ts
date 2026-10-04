@@ -31,6 +31,7 @@ export const PROFILE_FIELDS: (FieldDef & { inputType?: string })[] = [
   { key: "fullName", label: "Full name", placeholder: "Jake Ryan", size: "full" },
   { key: "email", label: "Email", placeholder: "jake@example.com", size: "md", inputType: "email" },
   { key: "phoneNumber", label: "Phone", placeholder: "123-456-7890", size: "md", inputType: "tel" },
+  { key: "location", label: "Location", placeholder: "Austin, TX", size: "md" },
   { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/jake", size: "md" },
   { key: "profileGithub", label: "GitHub", placeholder: "github.com/jake", size: "md" },
   { key: "personalWebsite", label: "Website", placeholder: "jake.dev", size: "md" },

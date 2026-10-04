@@ -11,7 +11,7 @@ export type { TemplateId }
 export const DEFAULT_SECTION_ORDER = ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"]
 
 export interface TemplateData {
-  profile: { name: string; phone: string; email: string; linkedin: string; github: string; website: string }
+  profile: { name: string; location: string; phone: string; email: string; linkedin: string; github: string; website: string }
   headings: {
     education: string
     work: string
@@ -81,6 +81,7 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
   return {
     profile: {
       name: text(profile.fullName),
+      location: text(profile.location),
       phone: text(profile.phoneNumber),
       email: text(profile.email),
       linkedin: bareUrl(profile.linkedin),

@@ -52,6 +52,7 @@
 #align(center, {
   text(size: 24.88pt, weight: "bold", p.name)
   let items = ()
+  if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push(p.phone) }
   if has(p.email) { items.push(email-link(p.email, ul(p.email))) }
   if has(p.linkedin) { items.push(web-link(p.linkedin, ul(p.linkedin))) }
