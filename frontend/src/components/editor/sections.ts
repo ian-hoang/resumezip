@@ -2,7 +2,7 @@
 // under `dataKey`; field keys are what the PDF templates read (see
 // lib/typst/resumeData.ts), so don't rename them.
 
-export type SectionName = "Education" | "Work" | "Skills" | "Projects" | "Volunteership" | "Leadership" | "Awards"
+export type SectionName = "Education" | "Work" | "Skills" | "Projects" | "Publications" | "Volunteership" | "Leadership" | "Awards"
 
 export interface FieldDef {
   key: string
@@ -110,6 +110,21 @@ export const SECTIONS: Record<SectionName, SectionDef> = {
       { key: "projectGithub", label: "GitHub", placeholder: "github.com/you/project", size: "md" },
       { key: "additionalLink", label: "Website", placeholder: "project.dev", size: "md" },
       { ...bullets("projectDescription"), label: "What it does · one bullet per line" },
+    ],
+  },
+  Publications: {
+    name: "Publications",
+    title: "Publications",
+    dataKey: "publicationsSection",
+    headingKey: "publications",
+    addLabel: "Add publication",
+    summary: ["publicationTitle", "publicationVenue"],
+    fields: [
+      { key: "publicationTitle", label: "Title", placeholder: "Sparse Attention for Long Documents", size: "full" },
+      { key: "publicationAuthors", label: "Authors", placeholder: "J. Ryan, A. Smith", size: "lg" },
+      { key: "publicationDate", label: "Date", placeholder: "Dec 2025", size: "sm" },
+      { key: "publicationVenue", label: "Published in", placeholder: "NeurIPS", size: "md" },
+      { key: "publicationLink", label: "Link", placeholder: "doi.org/10.1145/1234567", size: "md" },
     ],
   },
   Volunteership: {

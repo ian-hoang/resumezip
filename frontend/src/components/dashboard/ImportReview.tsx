@@ -58,6 +58,7 @@ const SHOWN: Record<
     swapLabel: "Swap role and organization",
   },
   Projects: { primary: "projectName", secondary: ["techStack"], dates: (f) => f.projectDate, bullets: "projectDescription" },
+  Publications: { primary: "publicationTitle", secondary: ["publicationAuthors", "publicationVenue"], dates: (f) => f.publicationDate },
   Skills: { primary: "skillName", secondary: ["skillDetails"], dates: () => "" },
   Awards: { primary: "awardName", secondary: ["awardOrg"], dates: (f) => f.awardDate },
 }

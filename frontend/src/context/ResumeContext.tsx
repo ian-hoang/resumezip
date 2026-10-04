@@ -14,11 +14,12 @@ const blankResume = (template: string) => ({
   educationSection: [],
   workExperienceSection: [],
   projectsSection: [],
+  publicationsSection: [],
   volunteerExperienceSection: [],
   skillsSection: [],
   leadershipExperienceSection: [],
   awardsSection: [],
-  sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
+  sectionOrder: ["Education", "Work", "Skills", "Projects", "Publications", "Volunteership", "Leadership", "Awards"],
 });
 
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {

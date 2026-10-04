@@ -1106,6 +1106,8 @@ export function parseResume(file: Line[]): ParsedResume {
         ? readEducation(sectionLines)
         : name === "Projects"
           ? readProjects(sectionLines)
+          : name === "Publications"
+            ? { entries: [], leftover: { lines: [], text: [] } }
           : name === "Skills"
             ? readSkills(sectionLines, "category" in meaning ? meaning.category : undefined)
             : name === "Awards"
