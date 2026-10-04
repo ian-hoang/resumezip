@@ -3,6 +3,7 @@
 
 import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler"
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
+import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import common from "./templates/common.typ"
 import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
@@ -35,6 +36,14 @@ const FONTS = [
   "texgyreheros-bolditalic.otf",
 ].map((file) => `/fonts/${file}`)
 
+// Downloads wrap the template in a file that also attaches a copy of the
+// resume, so templates don't need to know about it. Checked to leave every
+// template's layout exactly as it was.
+const withAttachment = (template: string) =>
+  `#include "/${template}.typ"
+#pdf.attach("/${ATTACHMENT_NAME}", relationship: "source", mime-type: "application/json", description: "This resume's content, so resumezip can open the PDF for editing again")
+`
+
 let compiler: Promise<TypstCompiler> | null = null
 
 async function createCompiler(): Promise<TypstCompiler> {
@@ -57,15 +66,19 @@ function getCompiler(): Promise<TypstCompiler> {
   return compiler
 }
 
-addEventListener("message", async ({ data: { id, template, data } }: MessageEvent<CompileRequest>) => {
+addEventListener("message", async ({ data: { id, template, data, attachment } }: MessageEvent<CompileRequest>) => {
   let response: CompileResponse
   try {
     const typst = await getCompiler()
     // Nothing is awaited between writing the data and compiling it, so
     // concurrent requests can't see each other's data.
     typst.mapShadow("/resume.json", new TextEncoder().encode(JSON.stringify(data)))
+    if (attachment !== undefined) {
+      typst.mapShadow(`/${ATTACHMENT_NAME}`, new TextEncoder().encode(attachment))
+      typst.addSource("/download.typ", withAttachment(template))
+    }
     const { result, diagnostics } = await typst.compile({
-      mainFilePath: `/${template}.typ`,
+      mainFilePath: attachment === undefined ? `/${template}.typ` : "/download.typ",
       format: CompileFormatEnum.pdf,
       diagnostics: "unix",
     })
