@@ -97,6 +97,21 @@
       })
       bullets(pr.bullets)
     }).join(v(6.8pt)))
+  } else if name == "Publications" and data.publications.len() > 0 {
+    section(heading-or(hd.publications, "Publications"), data.publications.map(pb => {
+      let title = if has(pb.link) { web-link(pb.link, pb.title) } else { pb.title }
+      block(sticky: true, {
+        strong(title)
+        h(1fr)
+        emph(pb.date)
+        if has(pb.authors) or has(pb.venue) {
+          linebreak()
+          pb.authors
+          if has(pb.authors) and has(pb.venue) { if pb.authors.ends-with(".") [ ] else [. ] }
+          emph(pb.venue)
+        }
+      })
+    }).join(v(6.8pt)))
   } else if name == "Leadership" and data.leadership.len() > 0 {
     section(heading-or(hd.leadership, "Leadership Experience"), experience(data.leadership, "organization"))
   } else if name == "Volunteership" and data.volunteer.len() > 0 {
