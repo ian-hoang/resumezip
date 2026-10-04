@@ -55,8 +55,13 @@ type Entry = Record<string, unknown>
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 
-// Links are displayed without their scheme; the templates add https:// back.
-const bareUrl = (value: unknown) => text(value).replace(/^https?:\/\/(www\.)?/i, "")
+// Links are displayed without their scheme, "www." or a trailing slash; the
+// templates add https:// back.
+const bareUrl = (value: unknown) =>
+  text(value)
+    .replace(/^https?:\/\//i, "")
+    .replace(/^www\./i, "")
+    .replace(/\/+$/, "")
 
 // Descriptions are typed one bullet per line, each prefixed with "• ".
 const bullets = (value: unknown) =>
