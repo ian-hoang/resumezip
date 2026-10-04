@@ -74,26 +74,26 @@ export default function Home() {
 
       <HowItWorks />
 
-      <section aria-labelledby="templates">
-        <div className="border-y border-[#d4d4d4]">
+      <section aria-labelledby="templates" className="bg-accent text-white">
+        <div className="border-b border-white/25">
           <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-7 md:px-10">
-            <h2 id="templates" className="label-section text-accent">
+            <h2 id="templates" className="label-section">
               Templates
             </h2>
             <Link
               href="/templates"
-              className="label-caps inline-flex h-10 items-center gap-3 border border-[#171717] px-4 transition-colors hover:bg-[#171717] hover:text-white"
+              className="label-caps inline-flex h-10 items-center gap-3 border border-white px-4 transition-colors hover:bg-white hover:text-accent"
             >
               See all <ArrowUpRight />
             </Link>
           </div>
         </div>
-        <div className="flex flex-wrap gap-px border-b border-[#d4d4d4] bg-[#d4d4d4]">
+        <div className="flex flex-wrap gap-px bg-white/25">
           {TEMPLATES.map((template) => (
             <StartWritingLink
               key={template.id}
               template={template.id}
-              className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-white px-5 pb-7 pt-10 md:px-10"
+              className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
             >
               <div className="relative aspect-[8.5/11] w-full overflow-hidden border border-[#e5e5e5]">
                 <Image
