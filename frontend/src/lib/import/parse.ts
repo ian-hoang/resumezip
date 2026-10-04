@@ -128,10 +128,11 @@ const HEADINGS: [HeadingMeaning, string[]][] = [
   [{ section: "Leadership" }, ["leadership", "leadership experience", "leadership and activities", "activities", "extracurricular activities", "extracurriculars", "campus involvement", "involvement", "activities and leadership", "organizations", "leadership and involvement", "extracurricular", "campus leadership", "student organizations", "activities and involvement", "leadership and extracurriculars", "extracurricular activities and leadership", "service and leadership", "leadership and service"]],
   [{ section: "Volunteership" }, ["volunteer", "volunteering", "volunteer experience", "community service", "community involvement", "volunteer work", "community engagement", "service", "volunteer and community service", "volunteer activities"]],
   [{ section: "Awards" }, ["awards", "honors", "honors and awards", "awards and honors", "achievements", "certifications", "certificates", "awards certifications", "awards and certifications", "licenses and certifications", "accomplishments", "scholarships", "honors awards", "certifications and awards", "awards and achievements", "certification", "licenses", "honors and achievements", "awards and scholarships", "achievements and awards", "competitions", "hackathons", "fellowships", "fellowships and awards", "awards and fellowships", "grants", "grants and fellowships", "fellowships and grants", "honors and fellowships", "honors and distinctions", "distinctions", "recognition", "awards and recognition"]],
+  [{ section: "Publications" }, ["publications", "selected publications", "research publications", "papers", "selected papers", "publications and presentations", "peer reviewed publications", "journal articles", "conference papers", "research papers", "publications and talks", "research and publications", "publications and research"]],
   [{ section: "Skills", category: "Languages" }, ["languages", "spoken languages", "language skills"]],
   [{ section: "Skills", category: "Interests" }, ["interests", "hobbies", "hobbies and interests", "personal interests", "interests and hobbies"]],
   [{ section: null, contact: true }, ["contact", "contact information", "contact info", "contact details", "personal information", "personal details", "personal info", "links", "personal", "details"]],
-  [{ section: null }, ["summary", "professional summary", "objective", "career objective", "profile", "about", "about me", "publications", "references", "coursework", "relevant coursework", "courses", "additional information", "other", "miscellaneous", "patents", "presentations", "papers", "conferences", "talks", "memberships", "professional memberships", "affiliations", "highlights", "qualifications", "summary of qualifications", "career summary", "executive summary", "overview", "bio"]],
+  [{ section: null }, ["summary", "professional summary", "objective", "career objective", "profile", "about", "about me", "references", "coursework", "relevant coursework", "courses", "additional information", "other", "miscellaneous", "patents", "presentations", "conferences", "talks", "memberships", "professional memberships", "affiliations", "highlights", "qualifications", "summary of qualifications", "career summary", "executive summary", "overview", "bio"]],
 ]
 const HEADING_LOOKUP = new Map(HEADINGS.flatMap(([meaning, names]) => names.map((name) => [name, meaning] as const)))
 // Letter-spaced headings can lose the gaps between their words.
@@ -710,6 +711,116 @@ function readProjects(lines: ParseLine[]): SectionResult {
   return { entries, leftover }
 }
 
+// ---------------------------------------------------------------- publications
+
+const NUMBERED = /^\s*(?:\[\d+\]|\d+[.)])\s+/
+// Abbreviations that end in a full stop without ending a sentence.
+const ABBREVIATIONS = new Set(["proc", "conf", "vol", "no", "pp", "int", "trans", "eds", "ed", "inc", "dept", "univ", "st", "jr", "sr", "dr", "vs"])
+
+/** Splits "A. Smith, B. Lee. Title. Venue" into its sentences, without splitting at initials. */
+function sentencesOf(text: string): string[] {
+  const pieces: string[] = []
+  let start = 0
+  for (const match of text.matchAll(/\.\s+(?=[A-Z0-9À-Þ"“(])/g)) {
+    const before = text.slice(start, match.index).split(/[\s,]+/).pop() ?? ""
+    if (/^[A-ZÀ-Þ]$/.test(before) || ABBREVIATIONS.has(before.toLowerCase())) continue
+    // "et al." keeps its full stop; it ends the authors.
+    pieces.push(text.slice(start, match.index) + (/\bet al$/.test(text.slice(start, match.index)) ? "." : ""))
+    start = match.index! + match[0].length
+  }
+  pieces.push(text.slice(start).replace(/\.\s*$/, (end) => (/\bet al\.\s*$/.test(text) ? end : "")))
+  return pieces.map(tidy).filter(Boolean)
+}
+
+/** "J. Ryan, A. Smith", "Ryan et al.", "Jake Ryan and Ann Smith". */
+function looksLikeAuthors(text: string): boolean {
+  if (/\bet al\b/i.test(text) || /\b[A-ZÀ-Þ]\.\s?(?:[A-ZÀ-Þ]\.\s?)*[A-ZÀ-Þ][a-zß-ÿ]/.test(text)) return true
+  const names = text.split(/\s*,\s*|\s+and\s+|\s*&\s*/).filter(Boolean)
+  return names.length >= 2 && names.every((name) => words(name).length <= 4 && /^[A-ZÀ-Þ]/.test(name))
+}
+
+/** Fills title, authors and venue from bits of text, the title being the first bit that isn't authors. */
+function publicationFields(pieces: string[], fields: Record<string, string>) {
+  const rest = [...pieces]
+  if (rest.length > 1 && looksLikeAuthors(rest[0])) fields.publicationAuthors = rest.shift()!
+  fields.publicationTitle = rest.shift() ?? ""
+  const authors = fields.publicationAuthors ? -1 : rest.findIndex(looksLikeAuthors)
+  if (authors >= 0) fields.publicationAuthors = rest.splice(authors, 1)[0]
+  fields.publicationVenue = rest.join(". ")
+}
+
+/** "[1] A. Smith, B. Lee. Title of the paper. NeurIPS 2025." */
+function readCitation(text: string): Record<string, string> {
+  const fields = blankEntry("Publications")
+  let rest = text.replace(NUMBERED, "")
+  // The year usually comes last; a year in a title shouldn't count.
+  let date: ReturnType<typeof findDate> = null
+  for (let found = findDate(rest), offset = 0; found; ) {
+    date = { ...found, index: found.index + offset }
+    offset = date.index + date.length
+    found = findDate(rest.slice(offset))
+  }
+  if (date) {
+    fields.publicationDate = date.text
+    rest = rest.slice(0, date.index) + " " + rest.slice(date.index + date.length)
+  }
+  const link = rest.match(new RegExp(`(?:https?://|doi\\.org/|www\\.)\\S+|${URL.source}`, "i"))
+  if (link && (link[0].includes("/") || /^www\./i.test(link[0]))) {
+    fields.publicationLink = bare(link[0].replace(/[.,;]$/, ""))
+    rest = rest.replace(link[0], " ")
+  }
+  const quoted = rest.match(/["“]([^"”]+)["”]/)
+  if (quoted) {
+    fields.publicationTitle = tidy(quoted[1])
+    fields.publicationAuthors = tidy(rest.slice(0, quoted.index))
+    fields.publicationVenue = tidy(rest.slice(quoted.index! + quoted[0].length).replace(/^[.,]\s*(?:in:?\s+)?/i, ""))
+    return fields
+  }
+  publicationFields(sentencesOf(tidy(rest.replace(/\s+([.,])/g, "$1"))), fields)
+  return fields
+}
+
+/**
+ * Publications come either as citations, one per bullet or number, or laid
+ * out like other entries: the title and date, then authors and venue below.
+ */
+function readPublications(lines: ParseLine[]): SectionResult {
+  const leftover: SectionResult["leftover"] = { lines: [], text: [] }
+  const citations = lines.filter((line) => line.bullet || NUMBERED.test(line.text)).length >= lines.length / 2
+  if (citations) {
+    const items: { text: string; lines: number[]; x: number }[] = []
+    for (const line of lines) {
+      const last = items[items.length - 1]
+      const starts = line.bullet || NUMBERED.test(line.text) || !last || line.x <= last.x - 3
+      if (starts) items.push({ text: line.text, lines: [line.index], x: line.x })
+      else {
+        last.text = joinWrapped(last.text, line.text)
+        last.lines.push(line.index)
+      }
+    }
+    return { entries: items.map((item) => ({ fields: readCitation(item.text), lines: item.lines })), leftover }
+  }
+
+  const entries = groupEntries(lines).map((group) => {
+    const fields = blankEntry("Publications")
+    const header = readHeader(group.header)
+    fields.publicationDate = header.date?.text ?? ""
+    const link = header.links.find((url) => !/^mailto:/i.test(url))
+    if (link) fields.publicationLink = bare(link)
+    // Publications have no descriptions, so a line of names under the title is the authors.
+    const authors = group.body.filter((item) => looksLikeAuthors(item.text))
+    const rest = group.body.filter((item) => !authors.includes(item))
+    // A line like "J. Ryan, A. Smith. NeurIPS" holds both the authors and the venue.
+    publicationFields([...header.texts.map((fragment) => fragment.text), ...authors.map((item) => item.text)].flatMap(sentencesOf), fields)
+    if (rest.length) {
+      leftover.lines.push(...rest.flatMap((item) => item.lines))
+      leftover.text.push(...rest.map((item) => item.text))
+    }
+    return { fields, lines: linesOf(group) }
+  })
+  return { entries, leftover }
+}
+
 function readSkills(lines: ParseLine[], category?: string): SectionResult {
   const entries: FoundEntry[] = []
   if (category) {
@@ -1107,7 +1218,7 @@ export function parseResume(file: Line[]): ParsedResume {
         : name === "Projects"
           ? readProjects(sectionLines)
           : name === "Publications"
-            ? { entries: [], leftover: { lines: [], text: [] } }
+            ? readPublications(sectionLines)
           : name === "Skills"
             ? readSkills(sectionLines, "category" in meaning ? meaning.category : undefined)
             : name === "Awards"
