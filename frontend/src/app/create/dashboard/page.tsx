@@ -1,157 +1,92 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { ArrowLeft, Plus, Sparkles } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth } from "@/lib/firebaseClient"
-import { syncAllResumesToLocalStorage } from "@/lib/sync"
-import ResumeCard from "@/components/dashboard/ResumeCard"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
 import DeleteResumeModal from "@/components/dashboard/DeleteResumeModal"
+import ResumeTable from "@/components/dashboard/ResumeTable"
+import PageIntro from "@/components/site/PageIntro"
+import SiteFooter from "@/components/site/SiteFooter"
+import SiteHeader from "@/components/site/SiteHeader"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [newResumeName, setNewResumeName] = useState("")
-  const [selectedTag, setSelectedTag] = useState("personal")
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { resumes, deleteResume, createNewResume, setResumes, setCurrentResumeId } = useResumeContext()
-  const [loading, setLoading] = useState(true)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [resumeToDelete, setResumeToDelete] = useState<any>(null)
+  const { resumes, loaded, deleteResume, createNewResume } = useResumeContext()
+  const [creating, setCreating] = useState(false)
+  const [resumeToDelete, setResumeToDelete] = useState<Record<string, any> | null>(null)
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push("/signin")
-        return
-      }
-    
-      const resumeMap = await syncAllResumesToLocalStorage(user.uid)
-      setResumes(resumeMap)
-      setLoading(false)
-    })
+  const sorted = useMemo(
+    () =>
+      Object.values(resumes as Record<string, any>).sort(
+        (a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime(),
+      ),
+    [resumes],
+  )
 
-    return () => unsubscribe()
-  }, [router])
-
-  const handleCreateResume = async () => {
-    setIsModalOpen(false)
-    const newId = await createNewResume(newResumeName, selectedTag)
-    router.push(`/create/new/${newId}`)
+  const create = (title: string, tag: string) => {
+    setCreating(false)
+    router.push(`/create/new/${createNewResume(title, tag)}`)
   }
 
-  const handleEditResume = useCallback((id: string) => {
-    setCurrentResumeId(id);
-    router.push(`/create/new/${id}`);
-  }, [router, setCurrentResumeId]);
-
-  const handleDeleteResume = useCallback(() => {
-    if (resumeToDelete) {
-      deleteResume(resumeToDelete.id);
-      setResumeToDelete(null); // Assuming this state remains here
-    }
-  }, [resumeToDelete, deleteResume]);
-
-  if (loading) {
-    return <div className="text-white p-4">Loading...</div>
-  }
+  const count = sorted.length
+  const newResumeButton = (
+    <button
+      type="button"
+      onClick={() => setCreating(true)}
+      className="inline-flex h-11 items-center gap-2 rounded-[4px] bg-ink px-[18px] text-sm font-medium text-white transition-colors hover:bg-black"
+    >
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      New resume
+    </button>
+  )
 
   return (
-    <div className="min-h-screen bg-[#f1efed]">
-      {/* Header Section */}
-      <section className="bg-black text-white py-16 px-4 md:px-6 lg:px-8 relative">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.15),transparent_50%)]"></div>
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="mb-6">
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm font-medium text-gray-300 hover:text-white transition-colors group"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-              Back to home
-            </Link>
+    <div className="flex min-h-screen flex-col bg-paper">
+      <SiteHeader />
+
+      <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-12 px-5 pb-24 pt-16 md:px-8 md:pt-[72px]">
+        <PageIntro
+          label={loaded ? `${count} ${count === 1 ? "resume" : "resumes"} · stored in this browser` : "Stored in this browser"}
+          title="Your resumes"
+          actions={count > 0 ? newResumeButton : undefined}
+        />
+
+        {loaded && count > 0 && <ResumeTable resumes={sorted} onDelete={setResumeToDelete} />}
+
+        {loaded && count === 0 && (
+          <div className="flex flex-col items-start gap-5 border-t border-ink pt-8">
+            <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
+            <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
+              Start one and it'll be saved here, in this browser.
+            </p>
+            {newResumeButton}
           </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-blue-900/30 text-blue-400 font-semibold text-sm mb-3">
-                <Sparkles className="h-4 w-4 mr-2" /> RESUME MANAGEMENT
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                Your <span className="text-blue-500">Resumes</span>
-              </h1>
-              <p className="mt-3 text-gray-300 max-w-2xl">
-                Manage all your resume versions in one place. Create, edit, and download your professional documents.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-3 text-base font-medium text-white hover:bg-blue-500 transition-colors duration-300 shadow-sm"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Create New Resume
-            </button>
-          </div>
+        )}
+
+        <div className="flex max-w-[720px] flex-wrap items-baseline gap-x-8 gap-y-3">
+          <span className="label-mono text-accent">Stored locally</span>
+          <p className="min-w-0 flex-[1_1_320px] text-sm leading-relaxed text-ink-2">
+            Resumes live in this browser only. Clearing your browsing data removes them, so download a PDF of anything
+            you&apos;d hate to lose.
+          </p>
         </div>
-      </section>
+      </main>
 
-      {/* Dashboard Content */}
-      <section className="py-12 px-4 md:px-6 lg:px-8">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Object.values(resumes).map((resume: any) => (
-              <ResumeCard
-                key={resume.id}
-                resume={resume}
-                onDelete={(resume) => {
-                  setResumeToDelete(resume)
-                  setIsDeleteModalOpen(true)
-                }}
-                onEdit={handleEditResume}
-              />
-            ))}
+      <SiteFooter />
 
-            {/* Add New Resume Card */}
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex flex-col items-center justify-center text-center p-6 bg-white rounded-xl border border-dashed border-gray-300 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer group h-full"
-            >
-              <div className="h-12 w-12 rounded-full bg-[#f1efed] flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors">
-                <Plus className="h-6 w-6 text-blue-500" />
-              </div>
-              <h3 className="font-bold cursor-pointer text-lg text-gray-900 mb-2">Create New Resume</h3>
-              <p className="text-gray-500 text-sm">Start building a new professional resume</p>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Create Resume Modal */}
-      <CreateResumeModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateResume}
-        newResumeName={newResumeName}
-        setNewResumeName={setNewResumeName}
-        selectedTag={selectedTag}
-        setSelectedTag={setSelectedTag}
-        isDropdownOpen={isDropdownOpen}
-        setIsDropdownOpen={setIsDropdownOpen}
-      />
-
-      {/* Delete Resume Modal */}
-      <DeleteResumeModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setResumeToDelete(null)
-        }}
-        onDelete={handleDeleteResume}
-        resumeTitle={resumeToDelete?.resumeTitle || ""}
-      />
+      {creating && <CreateResumeModal onClose={() => setCreating(false)} onCreate={create} />}
+      {resumeToDelete && (
+        <DeleteResumeModal
+          resumeTitle={resumeToDelete.resumeTitle}
+          onClose={() => setResumeToDelete(null)}
+          onDelete={() => {
+            deleteResume(resumeToDelete.id)
+            setResumeToDelete(null)
+          }}
+        />
+      )}
     </div>
   )
 }
