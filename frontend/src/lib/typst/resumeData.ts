@@ -8,7 +8,7 @@ import { templateById, type TemplateId } from "@/lib/templates"
 
 export type { TemplateId }
 
-export const DEFAULT_SECTION_ORDER = ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"]
+export const DEFAULT_SECTION_ORDER = ["Education", "Work", "Skills", "Projects", "Publications", "Volunteership", "Leadership", "Awards"]
 
 export interface TemplateData {
   profile: { name: string; location: string; phone: string; email: string; linkedin: string; github: string; website: string }
@@ -16,6 +16,7 @@ export interface TemplateData {
     education: string
     work: string
     projects: string
+    publications: string
     skills: string
     leadership: string
     volunteer: string
@@ -34,6 +35,7 @@ export interface TemplateData {
   }[]
   work: { company: string; location: string; role: string; start: string; end: string; bullets: string[] }[]
   projects: { name: string; techStack: string; date: string; github: string; website: string; bullets: string[] }[]
+  publications: { title: string; authors: string; venue: string; date: string; link: string }[]
   skills: { name: string; details: string }[]
   leadership: Experience[]
   volunteer: Experience[]
@@ -92,6 +94,7 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
       education: text(headings.edu),
       work: text(headings.work),
       projects: text(headings.projects),
+      publications: text(headings.publications),
       skills: text(headings.skills),
       leadership: text(headings.leadership),
       volunteer: text(headings.volunteer),
@@ -123,6 +126,13 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
       github: bareUrl(e.projectGithub),
       website: bareUrl(e.additionalLink),
       bullets: bullets(e.projectDescription),
+    })),
+    publications: entries(resume.publicationsSection, (e) => ({
+      title: text(e.publicationTitle),
+      authors: text(e.publicationAuthors),
+      venue: text(e.publicationVenue),
+      date: text(e.publicationDate),
+      link: bareUrl(e.publicationLink),
     })),
     skills: entries(resume.skillsSection, (e) => ({
       name: text(e.skillName),
