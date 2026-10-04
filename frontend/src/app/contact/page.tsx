@@ -51,7 +51,7 @@ export default function ContactPage() {
   return (
     <div className="flex min-h-screen flex-col bg-paper">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-24 pt-16 md:px-8 md:pt-20">
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
         <PageIntro label="Contact" title="Get in touch">
           Have questions or feedback? We’d love to hear from you.
         </PageIntro>

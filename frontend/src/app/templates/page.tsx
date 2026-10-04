@@ -13,7 +13,7 @@ export default function TemplatesPage() {
     <div className="flex min-h-screen flex-col bg-paper">
       <SiteHeader />
 
-      <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-12 px-5 pb-24 pt-16 md:px-8 md:pt-[72px]">
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-12 px-5 pb-24 pt-16 md:px-10 md:pt-20">
         <PageIntro label="Templates" title="Pick a template.">
           Switch any time; your writing stays put.
         </PageIntro>
