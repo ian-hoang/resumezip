@@ -2,7 +2,6 @@ import Link from "next/link"
 import Logo from "./Logo"
 
 const LINKS = [
-  { href: "/templates", label: "Templates" },
   { href: "/about", label: "About" },
   { href: "/terms", label: "Terms & privacy" },
   { href: "/contact", label: "Contact" },
