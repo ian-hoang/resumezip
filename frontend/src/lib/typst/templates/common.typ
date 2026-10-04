@@ -34,6 +34,46 @@
   if parts.len() > 0 { parts.join(sep) } else { [] }
 }
 
+// One publication as a citation, IEEE style:
+//   R. Conde, J. Smith, and A. Lee, “Title of the paper,” Venue, details, date, doi: 10.1/x.
+// The resume owner's name is bold (see resumeData.ts). `show-link(url, body)`
+// draws the DOI or link in the template's link style.
+#let citation(pb, show-link) = {
+  let rest = ()
+  let last-text = ""
+  if has(pb.venue) { rest.push(emph(pb.venue)); last-text = pb.venue }
+  if has(pb.details) { rest.push(pb.details); last-text = pb.details }
+  if has(pb.date) { rest.push(pb.date); last-text = pb.date }
+  if has(pb.doi) { rest.push([doi: ] + show-link("doi.org/" + pb.doi, pb.doi)); last-text = pb.doi }
+  else if has(pb.link) { rest.push(show-link(pb.link, pb.link)); last-text = pb.link }
+
+  let authors = pb.authors.map(piece => if piece.me { strong(piece.text) } else { piece.text }).join()
+  let out = if pb.authors.len() > 0 { authors } else { [] }
+  if has(pb.title) {
+    if pb.authors.len() > 0 { out += [, ] }
+    // The comma after the title, or the closing full stop, goes inside the quotes.
+    let mark = if pb.title.ends-with(regex("[.?!]")) { "" } else if rest.len() > 0 { "," } else { "." }
+    out += "“" + pb.title + mark + "”"
+    if rest.len() > 0 { out += [ ] }
+  } else if pb.authors.len() > 0 and rest.len() > 0 {
+    out += [, ]
+  }
+  if rest.len() > 0 {
+    out += rest.join([, ])
+    if not last-text.ends-with(".") { out += [.] }
+  }
+  out
+}
+
+// Publications as a numbered list of citations, [1], [2], ..., each with a
+// hanging indent.
+#let citations(list, show-link, gap: 6pt) = grid(
+  columns: (auto, 1fr),
+  column-gutter: 0.7em,
+  row-gutter: gap,
+  ..list.enumerate().map(((i, pb)) => ("[" + str(i + 1) + "]", citation(pb, show-link))).flatten(),
+)
+
 // The section heading the user typed, or the template's default.
 #let heading-or(custom, fallback) = if has(custom) { custom } else { fallback }
 

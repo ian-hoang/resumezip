@@ -36,11 +36,18 @@ export interface TemplateData {
   work: { company: string; location: string; role: string; start: string; end: string; bullets: string[] }[]
   /** `link` is set when the name links somewhere; `links` are printed as text. */
   projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: string[] }[]
-  publications: { title: string; authors: string; venue: string; date: string; link: string }[]
+  /** Printed as citations; `doi` is set instead of `link` when the link is a DOI. */
+  publications: { title: string; authors: AuthorPiece[]; venue: string; details: string; date: string; doi: string; link: string }[]
   skills: { name: string; details: string }[]
   leadership: Experience[]
   volunteer: Experience[]
   awards: { name: string; organization: string; date: string }[]
+}
+
+/** A piece of an author list: a name, or the text between names. `me` marks the resume owner's name. */
+interface AuthorPiece {
+  text: string
+  me: boolean
 }
 
 interface Experience {
@@ -70,8 +77,41 @@ const bullets = (value: unknown) =>
     .map((line) => line.trim().replace(/^•\s*/, ""))
     .filter(Boolean)
 
+// For matching names: lower case, without accents.
+const plain = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
+
+// What separates names in an author list: commas, "and", "&" and a closing "et al."
+const AUTHOR_SEPARATOR = /(,\s*(?:and\s+|&\s*)?|\s+(?:and|&)\s+|\s+et al\.?\s*$)/i
+
+/**
+ * Splits an author list into names and separators, marking the resume
+ * owner's name so it can be printed in bold. "R. Conde", "Rafael Conde" and
+ * "Conde, R." all match Rafael Conde.
+ */
+function authorPieces(value: unknown, owner: string): AuthorPiece[] {
+  const authors = text(value)
+  if (!authors) return []
+  const names = plain(owner).split(/\s+/).filter(Boolean)
+  const last = names[names.length - 1]
+  const isOwner = (piece: string) => {
+    const words = plain(piece).split(/[\s.,]+/).filter(Boolean)
+    if (names.length < 2) return names.length === 1 && words.length === 1 && words[0] === last
+    return words.includes(last) && words.some((word) => word !== last && word[0] === names[0][0])
+  }
+  return authors
+    .split(AUTHOR_SEPARATOR)
+    .filter(Boolean)
+    .map((piece) => ({ text: piece, me: !AUTHOR_SEPARATOR.test(piece) && isOwner(piece) }))
+}
+
+// A DOI on its own ("10.1145/3580305"), after "doi:", or as a doi.org link.
+function doiOf(link: string): string {
+  const doi = link.replace(/^doi:\s*/i, "").replace(/^(?:dx\.)?doi\.org\//i, "")
+  return /^10\.\d{4,9}\/\S+$/.test(doi) ? doi : ""
+}
+
 // Maps a section's entries, dropping ones the user added but left blank.
-function entries<T extends Record<string, string | string[]>>(value: unknown, map: (entry: Entry) => T): T[] {
+function entries<T extends Record<string, string | unknown[]>>(value: unknown, map: (entry: Entry) => T): T[] {
   return (Array.isArray(value) ? value : [])
     .map((entry) => map(entry && typeof entry === "object" ? entry : {}))
     .filter((entry) => Object.values(entry).some((field) => field.length > 0))
@@ -141,13 +181,19 @@ export function toTemplateData(resume: Record<string, any>): TemplateData {
         bullets: bullets(e.projectDescription),
       }
     }),
-    publications: entries(resume.publicationsSection, (e) => ({
-      title: text(e.publicationTitle),
-      authors: text(e.publicationAuthors),
-      venue: text(e.publicationVenue),
-      date: text(e.publicationDate),
-      link: bareUrl(e.publicationLink),
-    })),
+    publications: entries(resume.publicationsSection, (e) => {
+      const link = bareUrl(e.publicationLink)
+      const doi = doiOf(link)
+      return {
+        title: text(e.publicationTitle),
+        authors: authorPieces(e.publicationAuthors, text(profile.fullName)),
+        venue: text(e.publicationVenue),
+        details: text(e.publicationDetails),
+        date: text(e.publicationDate),
+        doi,
+        link: doi ? "" : link,
+      }
+    }),
     skills: entries(resume.skillsSection, (e) => ({
       name: text(e.skillName),
       details: text(e.skillDetails),

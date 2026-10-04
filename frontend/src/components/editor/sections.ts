@@ -140,8 +140,9 @@ export const SECTIONS: Record<SectionName, SectionDef> = {
       { key: "publicationTitle", label: "Title", placeholder: "Sparse Attention for Long Documents", size: "full" },
       { key: "publicationAuthors", label: "Authors", placeholder: "J. Ryan, A. Smith", size: "lg" },
       { key: "publicationDate", label: "Date", placeholder: "Dec 2025", size: "sm" },
-      { key: "publicationVenue", label: "Published in", placeholder: "NeurIPS", size: "md" },
-      { key: "publicationLink", label: "Link", placeholder: "doi.org/10.1145/1234567", size: "md" },
+      { key: "publicationVenue", label: "Published in", placeholder: "Proc. NeurIPS", size: "md" },
+      { key: "publicationDetails", label: "Details", placeholder: "Vancouver, Canada, pp. 112–120", size: "md" },
+      { key: "publicationLink", label: "DOI or link", placeholder: "10.1145/1234567", size: "md" },
     ],
   },
   Volunteership: {
