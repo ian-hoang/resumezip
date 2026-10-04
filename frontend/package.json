@@ -13,6 +13,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hello-pangea/dnd": "^18.0.1",
+    "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
+    "@myriaddreamin/typst.ts": "^0.7.0",
     "@react-pdf/renderer": "^4.3.0",
     "@supabase/supabase-js": "^2.49.4",
     "class-variance-authority": "^0.7.1",
