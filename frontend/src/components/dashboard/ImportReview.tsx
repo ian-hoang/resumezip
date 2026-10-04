@@ -89,7 +89,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
 
   const parsed = withSwaps(file.parsed, swapped)
   const { profile } = parsed
-  const contact = [profile.email, profile.phoneNumber, profile.linkedin, profile.profileGithub, profile.personalWebsite].filter(Boolean)
+  const contact = [profile.location, profile.email, profile.phoneNumber, profile.linkedin, profile.profileGithub, profile.personalWebsite].filter(Boolean)
   const leftovers = parsed.unplaced.reduce((sum, group) => sum + group.text.length, 0)
   const foundNothing = !profile.fullName && parsed.sections.length === 0
 

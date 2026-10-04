@@ -873,6 +873,13 @@ function readContacts(lines: ParseLine[], isTop: (line: ParseLine) => boolean): 
       if (url && !/github\.com\/[^/]+\/[^/]+/i.test(url[0])) take("personalWebsite", bare(url[0]), url[0])
     }
 
+    // A place among the contact details: "Austin, TX | 512-555-0100 | ...".
+    if (inHeader && !fields.location) {
+      const pieces = [...line.parts.map((part) => part.text), ...text.split(/\s*[|\u2022\u00B7\u25AA]\s*|\s{2,}/)]
+      const place = pieces.map(tidy).find((piece) => piece !== "" && isLocation(piece) && text.includes(piece))
+      if (place) take("location", place, place)
+    }
+
     // Link text broken across lines ("github.com/" then "mjalvarez") is part of the link.
     if (inHeader && line.links.length) {
       const targets = line.links.map((link) => bare(link).toLowerCase())
