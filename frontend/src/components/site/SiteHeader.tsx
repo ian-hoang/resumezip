@@ -8,8 +8,8 @@ import { StartWritingLink } from "./StartWriting"
 
 const LINKS = [
   { href: "/templates", label: "Templates" },
-  { href: "/about", label: "About" },
   { href: "/create/dashboard", label: "Your resumes" },
+  { href: "/about", label: "About" },
 ]
 
 const CTA = "label-caps items-center whitespace-nowrap bg-accent px-[18px] text-white transition-colors hover:bg-[#2550d4]"
