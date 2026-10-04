@@ -6,7 +6,10 @@ import "react-pdf/dist/esm/Page/AnnotationLayer.css"
 import "react-pdf/dist/esm/Page/TextLayer.css"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+// The worker is bundled with the app, like the one lib/import/open.ts uses.
+// pdfjs-dist is pinned to react-pdf's version so both share one copy and the
+// worker matches the library.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
 
 // A PDF being shown or loaded in the background. A new PDF stays hidden until
 // its page has rendered, so live previews swap in without flashing.
