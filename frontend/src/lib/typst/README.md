@@ -8,7 +8,8 @@ used.)
 - `resumeData.ts` maps the editor's resume data to the JSON the templates read.
 - `compile.ts` is what the UI calls. It runs the compiler in a Web Worker.
 - `typst.worker.ts` loads the WebAssembly compiler, fonts and templates once and
-  compiles each request.
+  compiles each request. Downloads also attach a copy of the resume to the PDF
+  (see `src/lib/resumeFile.ts` and `src/lib/import/README.md`).
 - `templates/*.typ` are the resume templates (the first ones were ported from LaTeX).
   `common.typ` has the shared helpers. They are bundled as strings (see the
   `.typ` rule in `next.config.js`).
