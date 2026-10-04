@@ -26,6 +26,16 @@ export interface SectionDef {
   summary: string[]
 }
 
+/** The profile's fields, stored on the resume under `profileSection`. */
+export const PROFILE_FIELDS: (FieldDef & { inputType?: string })[] = [
+  { key: "fullName", label: "Full name", placeholder: "Jake Ryan", size: "full" },
+  { key: "email", label: "Email", placeholder: "jake@example.com", size: "md", inputType: "email" },
+  { key: "phoneNumber", label: "Phone", placeholder: "123-456-7890", size: "md", inputType: "tel" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/jake", size: "md" },
+  { key: "profileGithub", label: "GitHub", placeholder: "github.com/jake", size: "md" },
+  { key: "personalWebsite", label: "Website", placeholder: "jake.dev", size: "md" },
+]
+
 const dates = (prefix: string): FieldDef[] => [
   { key: `${prefix}StartDate`, label: "Start", placeholder: "Jan 2024", size: "sm" },
   { key: `${prefix}EndDate`, label: "End", placeholder: "Present", size: "sm" },
