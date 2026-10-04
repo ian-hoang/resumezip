@@ -95,6 +95,17 @@
       ))
       bullets(pr.bullets)
     })))
+  } else if name == "Publications" and data.publications.len() > 0 {
+    section(heading-or(hd.publications, "Publications"), entries(data.publications.map(pb => {
+      let title = if has(pb.link) { web-link(pb.link, pb.title) } else { pb.title }
+      block(sticky: true, {
+        row(strong(title), pb.date)
+        if has(pb.authors) or has(pb.venue) {
+          v(6.9pt)
+          text(size: 10pt, row(emph(pb.authors), emph(pb.venue)))
+        }
+      })
+    })))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), entries((
       text(size: 10pt, data.skills.map(s => {
