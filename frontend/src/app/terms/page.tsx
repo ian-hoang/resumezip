@@ -15,24 +15,24 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     label: "Terms of service",
     items: [
       {
-        title: "What you’re agreeing to",
-        body: "By using resumezip, you agree to these terms. If you don’t agree, please don’t use the site.",
+        title: "Using resumezip",
+        body: "By using resumezip, you agree to these terms. If you don’t, please don’t use the site.",
       },
       {
-        title: "What we actually do",
-        body: "We help you build resumes that look like you spent hours on them (even if you didn’t). You enter your info, your browser runs it through our templates, and out comes a professional-looking PDF. All for free.",
+        title: "What it does",
+        body: "You fill in your details and pick a template, and your browser turns them into a PDF. It’s free.",
       },
       {
-        title: "Your PDF stays with you",
-        body: "Your PDF is built in your browser and never uploaded to us. What you type is saved in your browser too, so clearing your browser data deletes your resumes. Download the ones you love.",
+        title: "Your resumes",
+        body: "What you write is yours. It’s saved only in your browser, so clearing your browser data deletes it. Download a PDF of anything you want to keep.",
       },
       {
-        title: "Third parties",
-        body: "None. There are no accounts or logins, and your resume never leaves your browser.",
+        title: "No accounts",
+        body: "There’s nothing to sign up for, and no outside service ever sees your resume.",
       },
       {
-        title: "The legal bit",
-        body: "No guarantees: things might break, and since everything’s free, there are no refunds. We’re not responsible for your resume’s success or failure. We wish you all the best.",
+        title: "No guarantees",
+        body: "resumezip is provided as is. It may have bugs or downtime, and we can’t promise any result from using it.",
       },
     ],
   },
@@ -41,20 +41,20 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     label: "Privacy policy",
     items: [
       {
-        title: "What we know about you",
-        body: "Basically nothing. There are no accounts, and what you type in (jobs, skills, world domination plans) is saved in your own browser, not on our servers. Our host keeps basic request logs to keep the site running smoothly.",
+        title: "What we collect",
+        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running.",
       },
       {
-        title: "Why we use that info",
-        body: "Your browser uses your input to build your resume, and saves it so you can pick up where you left off on the same device. That’s it.",
+        title: "How it’s used",
+        body: "What you type is only used in your browser, to build your resume and save your progress.",
       },
       {
         title: "Where your resume goes",
-        body: "Nowhere. Your PDF is built in your browser and stays on your device unless you send it somewhere. You can rebuild it any time from your saved info.",
+        body: "Nowhere. Your PDF is made on your device and stays there unless you send it to someone.",
       },
       {
-        title: "Data sharing and selling",
-        body: "I don’t even know how to sell data. Your resume isn’t for sale, and neither are you.",
+        title: "Sharing and selling",
+        body: "We don’t share or sell your data. We never receive your resume in the first place.",
       },
     ],
   },
@@ -64,23 +64,23 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "Is resumezip really free?",
-        body: "Yes, 100%. No fees, no upsells, no “pay $10 a month to continue.”",
-      },
-      {
-        title: "How long is my resume stored?",
-        body: "Your PDF isn’t stored at all: it’s built in your browser whenever you need it. What you type stays in your browser until you delete the resume or clear your browser data.",
-      },
-      {
-        title: "Can I get feedback on my resume?",
-        body: "Not yet. Feedback features are in progress (pinky promise).",
-      },
-      {
-        title: "Do you share or sell my data?",
-        body: "No. Your data stays private, in your own browser.",
+        body: "Yes. No fees, no upsells, no subscriptions.",
       },
       {
         title: "Do I need an account?",
-        body: "Nope. Open the builder and go. Your resumes are saved in the browser you use, so come back on the same device to keep editing.",
+        body: "No. Open the builder and start writing.",
+      },
+      {
+        title: "How long are my resumes kept?",
+        body: "Until you delete them or clear your browser data. They’re saved in this browser only and don’t sync to other devices.",
+      },
+      {
+        title: "Do you share or sell my data?",
+        body: "No. Your resume stays in your browser, so we never see it.",
+      },
+      {
+        title: "Can I get feedback on my resume?",
+        body: "Not yet, but it’s on the way.",
       },
     ],
   },
@@ -111,7 +111,7 @@ export default function TermsAndPrivacy() {
       <SiteHeader />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
         <PageIntro label="Legal" title="Terms & privacy">
-          We’re committed to transparency and protecting your data. These aren’t too boring, I promise.
+          The short version: your resume stays in your browser, and we never see it.
         </PageIntro>
 
         <div
@@ -173,8 +173,7 @@ export default function TermsAndPrivacy() {
           <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
           <div className="md:col-span-2">
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">
-              If you have any questions or concerns about our terms or privacy policy, don’t hesitate to get in
-              touch.
+              Ask us anything about these terms or your privacy.
             </p>
             <Link
               href="/contact"
