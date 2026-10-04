@@ -4,20 +4,24 @@ import { useEffect, useRef, useState } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/esm/Page/AnnotationLayer.css"
 import "react-pdf/dist/esm/Page/TextLayer.css"
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 // A PDF being shown or loaded in the background. A new PDF stays hidden until
-// its page has rendered, so live previews swap in without flashing.
+// all its pages have rendered, so live previews swap in without flashing.
 interface LoadedDocument {
   file: string
   pages: number | null
+  /** The page numbers drawn so far. */
+  rendered: number[]
   ready: boolean
 }
 
 const MAX_PAGE_WIDTH = 640
 const ZOOM_STEP = 0.1
+// Space between pages, matching gap-4.
+const PAGE_GAP = 16
 
 interface PdfPreviewProps {
   /** Object URL of the latest compiled PDF. */
@@ -27,7 +31,6 @@ interface PdfPreviewProps {
 
 export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
   const [documents, setDocuments] = useState<LoadedDocument[]>([])
-  const [pageNumber, setPageNumber] = useState(1)
   const [zoom, setZoom] = useState(1)
   const [loadError, setLoadError] = useState(false)
   const [availableWidth, setAvailableWidth] = useState(MAX_PAGE_WIDTH)
@@ -40,7 +43,7 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
       if (!pdfUrl) return []
       if (docs.some((doc) => doc.file === pdfUrl)) return docs
       const shown = docs.filter((doc) => doc.ready).slice(-1)
-      return [...shown, { file: pdfUrl, pages: null, ready: false }]
+      return [...shown, { file: pdfUrl, pages: null, rendered: [], ready: false }]
     })
   }, [pdfUrl])
 
@@ -76,14 +79,19 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
 
   function onLoadSuccess(file: string, pages: number) {
     setDocuments((docs) => docs.map((doc) => (doc.file === file ? { ...doc, pages } : doc)))
-    if (file === pdfUrl) setPageNumber((page) => Math.min(page, pages))
   }
 
-  function onRenderSuccess(file: string) {
+  // Once every page of a PDF has rendered, it's shown and the older ones are dropped.
+  function onRenderSuccess(file: string, page: number) {
     setDocuments((docs) => {
       const index = docs.findIndex((doc) => doc.file === file)
       if (index === -1 || docs[index].ready) return docs
-      return docs.slice(index).map((doc, i) => (i === 0 ? { ...doc, ready: true } : doc))
+      const doc = docs[index]
+      const rendered = doc.rendered.includes(page) ? doc.rendered : [...doc.rendered, page]
+      if (doc.pages === null || rendered.length < doc.pages) {
+        return docs.map((other, i) => (i === index ? { ...other, rendered } : other))
+      }
+      return docs.slice(index).map((other, i) => (i === 0 ? { ...other, rendered, ready: true } : other))
     })
   }
 
@@ -108,29 +116,7 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
           <button type="button" aria-label="Zoom in" onClick={() => setZoom((z) => clampZoom(z + ZOOM_STEP))} className={iconButton}>
             +
           </button>
-          {numPages > 1 && (
-            <span className="ml-3 flex items-center">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={pageNumber <= 1}
-                onClick={() => setPageNumber((p) => Math.max(p - 1, 1))}
-                className={iconButton}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              Page {pageNumber} / {numPages}
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={pageNumber >= numPages}
-                onClick={() => setPageNumber((p) => Math.min(p + 1, numPages))}
-                className={iconButton}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </span>
-          )}
+          {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
         </div>
       </div>
 
@@ -140,7 +126,10 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
             {loadError || error ? "The preview couldn't be built." : "Your resume will appear here."}
           </div>
         ) : (
-          <div className="relative mx-auto" style={{ width: pageWidth, minHeight: pageWidth * (11 / 8.5) }}>
+          <div
+            className="relative mx-auto"
+            style={{ width: pageWidth, minHeight: numPages * pageWidth * (11 / 8.5) + (numPages - 1) * PAGE_GAP }}
+          >
             {isLoading && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-sheet">
                 <Loader2 className="h-5 w-5 animate-spin text-ink-2" aria-label="Loading preview" />
@@ -153,15 +142,21 @@ export default function PdfPreview({ pdfUrl, error }: PdfPreviewProps) {
                   onLoadSuccess={({ numPages }) => onLoadSuccess(doc.file, numPages)}
                   onLoadError={() => onLoadError(doc.file)}
                   loading={null}
+                  className="flex flex-col gap-4"
                 >
-                  <Page
-                    pageNumber={Math.min(pageNumber, doc.pages ?? 1)}
-                    width={pageWidth}
-                    className="shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
-                    renderTextLayer
-                    renderAnnotationLayer
-                    onRenderSuccess={() => onRenderSuccess(doc.file)}
-                  />
+                  {/* Every page, one under the other; the panel scrolls through them. */}
+                  {Array.from({ length: doc.pages ?? 0 }, (_, index) => (
+                    <Page
+                      key={index}
+                      pageNumber={index + 1}
+                      width={pageWidth}
+                      loading={null}
+                      className="shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
+                      renderTextLayer
+                      renderAnnotationLayer
+                      onRenderSuccess={() => onRenderSuccess(doc.file, index + 1)}
+                    />
+                  ))}
                 </Document>
               </div>
             ))}
