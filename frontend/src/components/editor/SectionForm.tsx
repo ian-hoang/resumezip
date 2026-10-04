@@ -28,10 +28,24 @@ function scrollerOf(element: HTMLElement): HTMLElement {
   return document.scrollingElement as HTMLElement
 }
 
+/** The part of the window that the editor's pinned bars (on small screens) leave uncovered. */
+function uncovered() {
+  let top = 0
+  let bottom = window.innerHeight
+  for (const bar of document.querySelectorAll<HTMLElement>("[data-covers]")) {
+    const { position } = getComputedStyle(bar)
+    const box = bar.getBoundingClientRect()
+    if ((position !== "sticky" && position !== "fixed") || !box.height) continue
+    if (bar.dataset.covers === "top") top = Math.max(top, box.bottom)
+    else bottom = Math.min(bottom, box.top)
+  }
+  return { top, bottom }
+}
+
 /** Scrolls just enough to show the top of an opened entry: its heading and first fields. */
 function reveal(element: HTMLElement, scroller: HTMLElement, reduced: boolean) {
   const box = element.getBoundingClientRect()
-  const view = scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : scroller.getBoundingClientRect()
+  const view = scroller === document.scrollingElement ? uncovered() : scroller.getBoundingClientRect()
   const below = box.top + Math.min(box.height, 260) - view.bottom
   const above = view.top - box.top
   const by = above > 0 ? -above - 16 : below > 0 ? below + 16 : 0
