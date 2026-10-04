@@ -2,9 +2,24 @@
 import React, { createContext, useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TEMPLATE } from "@/lib/templates"
+import type { ResumeContent } from "@/lib/resumeFile"
 import { numberDuplicateTitles, uniqueTitle } from "@/lib/resumeTitles"
 
 const ResumeContext = createContext<any>(null);
+
+const blankResume = (template: string) => ({
+  profileSection: {},
+  headings: {},
+  selectedTemplate: template,
+  educationSection: [],
+  workExperienceSection: [],
+  projectsSection: [],
+  volunteerExperienceSection: [],
+  skillsSection: [],
+  leadershipExperienceSection: [],
+  awardsSection: [],
+  sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
+});
 
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {
   const [resumes, setResumes] = useState<Record<string, any>>({});
@@ -50,21 +65,11 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     const newId = uuidv4();
 
     const newResumeData = {
+      ...blankResume(template),
       id: newId,
       resumeTag: tag,
       resumeTitle: title,
       updatedAt: new Date().toISOString(),
-      profileSection: {},
-      headings: {},
-      selectedTemplate: template,
-      educationSection: [],
-      workExperienceSection: [],
-      projectsSection: [],
-      volunteerExperienceSection: [],
-      skillsSection: [],
-      leadershipExperienceSection: [],
-      awardsSection: [],
-      sectionOrder: ["Education", "Work", "Skills", "Projects", "Volunteership", "Leadership", "Awards"],
     };
 
     // A repeated name gets a number, e.g. "Untitled resume 2".
@@ -74,6 +79,33 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     }));
     setCurrentResumeId(newId);
     return newId;
+  };
+
+  // Adds a resume opened from a file. A resumezip PDF keeps its resume's id,
+  // so opening it again later is recognised as the same resume.
+  const importResume = (content: ResumeContent, title: string, { keepId = true } = {}): string => {
+    const id = keepId && content.id && !resumes[content.id] ? content.id : uuidv4();
+    const resume = {
+      ...blankResume(content.selectedTemplate ?? DEFAULT_TEMPLATE),
+      ...content,
+      id,
+      resumeTag: "personal",
+      updatedAt: content.updatedAt ?? new Date().toISOString(),
+    };
+    // Named after the file, numbered if another resume has that name.
+    setResumes(prev => ({
+      ...prev,
+      [id]: { ...resume, resumeTitle: uniqueTitle(title, Object.values(prev).map(r => r?.resumeTitle)) },
+    }));
+    return id;
+  };
+
+  // Replaces a resume's content with a file's, keeping its name and tag.
+  const replaceResume = (id: string, content: ResumeContent) => {
+    setResumes(prev => prev[id] ? {
+      ...prev,
+      [id]: { ...prev[id], ...content, id, updatedAt: new Date().toISOString() }
+    } : prev);
   };
 
   const deleteResume = (id: string) => {
@@ -107,6 +139,8 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       formData,
       setCurrentResumeId,
       createNewResume,
+      importResume,
+      replaceResume,
       updateFormData,
       deleteResume,
       setResumes
