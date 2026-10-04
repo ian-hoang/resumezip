@@ -1,5 +1,6 @@
-// "Modern Jack's": Jake's Resume set in Lato with contact icons, ported from
-// the LaTeX template that used to live in backend/templates/overleaf1.tex.
+// "Modern Jack's": Jake's Resume set in Lato, ported from the LaTeX template
+// that used to live in backend/templates/overleaf1.tex. Contact details are
+// plain text, without icons, so applicant tracking systems read them cleanly.
 #import "common.typ": *
 
 #let p = data.profile
@@ -51,14 +52,14 @@
 #align(center, {
   text(size: 24.88pt, weight: "bold", p.name)
   let items = ()
-  if has(p.phone) { items.push([#icon("phone") #p.phone]) }
-  if has(p.email) { items.push(email-link(p.email, [#icon("envelope") #ul(p.email)])) }
-  if has(p.linkedin) { items.push(web-link(p.linkedin, [#icon("linkedin") #ul(p.linkedin)])) }
-  if has(p.website) { items.push(web-link(p.website, [#icon("globe") #ul(p.website)])) }
-  if has(p.github) { items.push(web-link(p.github, [#icon("github") #ul(p.github)])) }
+  if has(p.phone) { items.push(p.phone) }
+  if has(p.email) { items.push(email-link(p.email, ul(p.email))) }
+  if has(p.linkedin) { items.push(web-link(p.linkedin, ul(p.linkedin))) }
+  if has(p.website) { items.push(web-link(p.website, ul(p.website))) }
+  if has(p.github) { items.push(web-link(p.github, ul(p.github))) }
   if items.len() > 0 {
     v(6.5pt)
-    text(size: 10pt, items.join(h(1em)))
+    text(size: 10pt, items.join([ | ]))
   }
 })
 #v(2pt)
