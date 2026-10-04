@@ -15,7 +15,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.479.0",
     "mammoth": "^1.13.0",
-    "next": "15.2.8",
+    "next": "15.5.27",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -31,7 +31,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.2.1",
+    "eslint-config-next": "15.5.27",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
