@@ -1,20 +1,27 @@
+import type { Metadata } from "next"
 import Link from "next/link"
+import PageIntro from "@/components/site/PageIntro"
+import SiteFooter from "@/components/site/SiteFooter"
+import SiteHeader from "@/components/site/SiteHeader"
+
+export const metadata: Metadata = { title: "Page not found" }
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f5f5f5] px-4">
-      <div className="text-center max-w-md">
-        <h1 className="text-[180px] font-light text-[#1a1a2e] leading-none">404</h1>
-        <p className="text-[#333] text-lg mb-8 mt-4">
-          The page you were looking for doesn't exist. You may have mistyped the address or the page may have moved.
-        </p>
+    <div className="flex min-h-screen flex-col bg-paper">
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-[1280px] flex-1 px-5 pb-24 pt-16 md:px-8 md:pt-20">
+        <PageIntro label="Error 404" title="Page not found">
+          This page doesn’t exist. It may have moved, or the address may be mistyped.
+        </PageIntro>
         <Link
           href="/"
-          className="inline-flex items-center justify-center rounded-full bg-blue-600 px-8 py-3 text-base text-white hover:bg-blue-500 transition-colors duration-300"
+          className="mt-10 inline-flex h-11 items-center rounded-[4px] bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-black"
         >
-          GO TO HOMEPAGE
+          Back to home
         </Link>
-      </div>
+      </main>
+      <SiteFooter />
     </div>
   )
 }
