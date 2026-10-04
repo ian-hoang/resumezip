@@ -18,8 +18,10 @@ used.)
 
 1. Add `templates/<id>.typ`, importing `common.typ` for the data and helpers.
 2. Import it in `typst.worker.ts` and add it to `SOURCES`.
-3. Add it to `TEMPLATES` in `src/lib/templates.ts` with a preview image in
-   `public/`. Every page that lists templates reads that list.
+3. Add it to `TEMPLATES` in `src/lib/templates.ts` with a picture of its first
+   page in `public/previews/<id>.webp` (1280 px wide, from the editor's
+   preview). They all show the sample resume in `preview-sample.json`, so
+   they're easy to compare. Every page that lists templates reads that list.
 
 Templates can only use the fonts in `public/fonts`, listed in `typst.worker.ts`.
 

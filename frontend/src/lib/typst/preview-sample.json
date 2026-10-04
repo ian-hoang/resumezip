@@ -1,0 +1,133 @@
+{
+  "id": "preview-sample",
+  "resumeTitle": "Sample",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "jake",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Projects",
+    "Skills",
+    "Publications",
+    "Volunteership",
+    "Leadership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Jordan Rivera",
+    "email": "jordan@example.com",
+    "phoneNumber": "(555) 014-2817",
+    "location": "Seattle, WA",
+    "linkedin": "linkedin.com/in/jordanrivera",
+    "profileGithub": "github.com/jordanrivera",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "University of Washington",
+      "schoolLocation": "Seattle, WA",
+      "degree": "B.S. in Computer Science, Minor in Mathematics",
+      "gpa": "3.8 / 4.0",
+      "schoolStartDate": "Sep 2021",
+      "schoolEndDate": "Jun 2025",
+      "coursework": "Data Structures, Algorithms, Operating Systems, Databases, Distributed Systems, Machine Learning",
+      "involvement": "ACM, Women in Computing, Husky Robotics"
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Software Engineer",
+      "companyName": "Northwind Labs",
+      "workLocation": "Seattle, WA",
+      "workStartDate": "Jul 2025",
+      "workEndDate": "Present",
+      "workDescription": "• Built a usage-billing service in Go and PostgreSQL that invoices 4,000+ customers each month\n• Cut p95 API latency from 480 ms to 120 ms by adding Redis caching and batching database reads\n• Led the move from cron jobs to Temporal workflows, reducing failed nightly runs by 90%\n• Mentor two interns and review 15+ pull requests a week"
+    },
+    {
+      "id": 2,
+      "workRole": "Software Engineer Intern",
+      "companyName": "Cascade Health",
+      "workLocation": "Portland, OR",
+      "workStartDate": "Jun 2024",
+      "workEndDate": "Sep 2024",
+      "workDescription": "• Shipped appointment reminders in React Native and Node.js, lowering missed visits by 18%\n• Wrote end-to-end tests with Playwright that caught 30+ regressions before release\n• Built an internal dashboard in Next.js for clinic staff to track daily check-ins"
+    },
+    {
+      "id": 3,
+      "workRole": "Undergraduate Research Assistant",
+      "companyName": "University of Washington",
+      "workLocation": "Seattle, WA",
+      "workStartDate": "Jan 2023",
+      "workEndDate": "May 2024",
+      "workDescription": "• Trained transformer models in PyTorch to label 2M+ satellite images for flood mapping\n• Built a data pipeline with Apache Spark that cut preprocessing time from 9 hours to 40 minutes"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Trailcast",
+      "projectDate": "Jan 2025 – Present",
+      "techStack": "Next.js, TypeScript, PostgreSQL, Mapbox",
+      "projectGithub": "github.com/jordanrivera/trailcast",
+      "additionalLink": "",
+      "projectDescription": "• Hiking planner that combines trail maps with hourly weather forecasts, used by 3,000+ hikers a month\n• Server-rendered pages and image caching brought load time under one second on mobile"
+    },
+    {
+      "id": 2,
+      "projectName": "Pantry",
+      "projectDate": "Sep – Dec 2023",
+      "techStack": "Python, FastAPI, React, Docker",
+      "projectGithub": "github.com/jordanrivera/pantry",
+      "additionalLink": "",
+      "projectDescription": "• Recipe app that suggests meals from what's in your fridge, built with a team of four\n• Wrote the ingredient-matching API and deployed it with Docker on AWS"
+    }
+  ],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Go, TypeScript, Python, Java, SQL, C"
+    },
+    {
+      "id": 2,
+      "skillName": "Frameworks",
+      "skillDetails": "React, Next.js, Node.js, FastAPI, PyTorch"
+    },
+    {
+      "id": 3,
+      "skillName": "Tools",
+      "skillDetails": "PostgreSQL, Redis, Docker, AWS, Git, Linux"
+    }
+  ],
+  "publicationsSection": [],
+  "volunteerExperienceSection": [],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "President",
+      "leadershipOrg": "UW Association for Computing Machinery",
+      "leadershipLocation": "Seattle, WA",
+      "leadershipStartDate": "Sep 2023",
+      "leadershipEndDate": "Jun 2024",
+      "leadershipDescription": "• Ran weekly workshops and a 300-person hackathon with 12 sponsors"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Dean's List, every quarter",
+      "awardDate": "2021 – 2025",
+      "awardOrg": "University of Washington"
+    },
+    {
+      "id": 2,
+      "awardName": "Best Civic Hack",
+      "awardDate": "Apr 2024",
+      "awardOrg": "Seattle Civic Hackathon"
+    }
+  ]
+}

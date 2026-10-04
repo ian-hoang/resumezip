@@ -1,12 +1,14 @@
 // Every resume template, in the order they're shown. The home page, the
 // templates page, the editor's template picker and the dashboard all read
-// this list, and each id needs a matching src/lib/typst/templates/<id>.typ.
+// this list, and each id needs a matching src/lib/typst/templates/<id>.typ
+// and a picture of its first page in public/previews/<id>.webp. The pictures
+// all show the same sample resume, so they're easy to compare.
 
 export const TEMPLATES = [
-  { id: "jake", name: "Jake's", image: "/jakeresume.webp" },
-  { id: "modernjack", name: "Modern", image: "/modernjack.webp" },
-  { id: "levelsfyi", name: "levels.fyi", image: "/levelsfyi.webp" },
-  { id: "referme", name: "refer.me", image: "/referme.webp" },
+  { id: "jake", name: "Jake's", image: "/previews/jake.webp" },
+  { id: "modernjack", name: "Modern", image: "/previews/modernjack.webp" },
+  { id: "levelsfyi", name: "levels.fyi", image: "/previews/levelsfyi.webp" },
+  { id: "referme", name: "refer.me", image: "/previews/referme.webp" },
 ] as const
 
 export type Template = (typeof TEMPLATES)[number]
