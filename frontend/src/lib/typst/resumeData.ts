@@ -86,8 +86,9 @@ const bullets = (value: unknown) =>
     .map((line) => runs(line))
 
 // ***both***, **bold** or *italic*. A marker has to touch its words, so the
-// one in "2 * 3", or one without a pair, stays as typed.
-const MARKED = /\*\*\*(\S(?:[\s\S]*?\S)?)\*\*\*|\*\*(\S(?:[\s\S]*?\S)?)\*\*|\*([^\s*](?:[^*]*?[^\s*])?)\*/g
+// one in "2 * 3", or one without a pair, stays as typed. Each mark ends at
+// the first marker that can close it, so "**C** and **Go**" is two bold words.
+const MARKED = /\*\*\*(\S(?:[\s\S]*?\S)??)\*\*\*|\*\*(\S(?:[\s\S]*?\S)??)\*\*|\*([^\s*](?:[^*]*?[^\s*])?)\*/g
 
 // "Optimized a **Rust** engine for *low latency*" in plain, bold and italic
 // pieces. Marks can sit inside each other: "**bold with *italic* inside**".

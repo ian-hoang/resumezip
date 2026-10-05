@@ -21,6 +21,13 @@ describe("bold and italic words in bullets", () => {
     ])
   })
 
+  test("one-letter words in marks end at their own marker", () => {
+    expect(bulletsOf("• Built in **C** and **Go**")).toEqual([[plain("Built in "), bold("C"), plain(" and "), bold("Go")]])
+    expect(bulletsOf("• Hired ***5*** of *8* finalists")).toEqual([
+      [plain("Hired "), { text: "5", bold: true, italic: true }, plain(" of "), italic("8"), plain(" finalists")],
+    ])
+  })
+
   test("marks can sit inside each other", () => {
     expect(bulletsOf("• **Shipped *v2* early**")).toEqual([[bold("Shipped "), { text: "v2", bold: true, italic: true }, bold(" early")]])
   })
