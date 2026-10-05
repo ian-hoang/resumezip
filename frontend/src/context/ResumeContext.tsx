@@ -1,6 +1,5 @@
 "use client";
 import React, { createContext, useState, useEffect, useMemo } from "react";
-import { v4 as uuidv4 } from "uuid"
 import { DEFAULT_TEMPLATE } from "@/lib/templates"
 import type { ResumeContent } from "@/lib/resumeFile"
 import { numberDuplicateTitles, uniqueTitle } from "@/lib/resumeTitles"
@@ -82,7 +81,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Resumes only live in this browser's localStorage; there are no accounts.
   const createNewResume = (title: string, tag: string, template: string = DEFAULT_TEMPLATE): string => {
-    const newId = uuidv4();
+    const newId = crypto.randomUUID();
 
     const newResumeData = {
       ...blankResume(template),
@@ -104,7 +103,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
   // Adds a resume opened from a file. A resumezip PDF keeps its resume's id,
   // so opening it again later is recognised as the same resume.
   const importResume = (content: ResumeContent, title: string, { keepId = true } = {}): string => {
-    const id = keepId && content.id && !resumes[content.id] ? content.id : uuidv4();
+    const id = keepId && content.id && !resumes[content.id] ? content.id : crypto.randomUUID();
     const resume = {
       ...blankResume(content.selectedTemplate ?? DEFAULT_TEMPLATE),
       ...content,

@@ -19,8 +19,7 @@
     "pdfjs-dist": "4.8.69",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-pdf": "^9.2.1",
-    "uuid": "^11.1.0"
+    "react-pdf": "^9.2.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
