@@ -33,15 +33,21 @@ export interface TemplateData {
     coursework: string
     involvement: string
   }[]
-  work: { company: string; location: string; role: string; start: string; end: string; bullets: string[] }[]
+  work: { company: string; location: string; role: string; start: string; end: string; bullets: Run[][] }[]
   /** `link` is set when the name links somewhere; `links` are printed as text. */
-  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: string[] }[]
+  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: Run[][] }[]
   /** Printed as citations; `doi` is set instead of `link` when the link is a DOI. */
   publications: { title: string; authors: AuthorPiece[]; venue: string; details: string; date: string; doi: string; link: string }[]
   skills: { name: string; details: string }[]
   leadership: Experience[]
   volunteer: Experience[]
   awards: { name: string; organization: string; date: string }[]
+}
+
+/** A stretch of a bullet's text, bold where the user wrapped it in **double asterisks**. */
+interface Run {
+  text: string
+  bold: boolean
 }
 
 /** A piece of an author list: a name, or the text between names. `me` marks the resume owner's name. */
@@ -56,7 +62,7 @@ interface Experience {
   role: string
   start: string
   end: string
-  bullets: string[]
+  bullets: Run[][]
 }
 
 type Entry = Record<string, unknown>
@@ -76,6 +82,16 @@ const bullets = (value: unknown) =>
   (Array.isArray(value) ? value.map(text) : text(value).split("\n"))
     .map((line) => line.trim().replace(/^•\s*/, ""))
     .filter(Boolean)
+    .map(runs)
+
+// "Optimized a **Rust** engine" in plain and bold pieces. A ** without its
+// pair stays as typed.
+function runs(line: string): Run[] {
+  return line
+    .split(/\*\*(.+?)\*\*/)
+    .map((piece, index) => ({ text: piece, bold: index % 2 === 1 }))
+    .filter((run) => run.text !== "")
+}
 
 // For matching names: lower case, without accents.
 const plain = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()

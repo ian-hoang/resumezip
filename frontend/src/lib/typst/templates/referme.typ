@@ -18,7 +18,7 @@
 
 #let bullets(items) = if items.len() > 0 {
   v(5.8pt)
-  list(marker: [•], indent: 11.1pt, body-indent: 5.2pt, spacing: 4.71pt, ..items)
+  list(marker: [•], indent: 11.1pt, body-indent: 5.2pt, spacing: 4.71pt, ..items.map(rich))
 }
 
 // Sticky so a heading is never left alone at the bottom of a page.

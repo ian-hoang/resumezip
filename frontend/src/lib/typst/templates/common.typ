@@ -10,6 +10,13 @@
 
 #let has(value) = value != none and value != ""
 
+// A bullet: its runs from resumeData.ts, with the words marked **bold** in
+// bold. Bullets a template builds itself (like "Relevant Coursework: ...")
+// are content already and pass through.
+#let rich(item) = if type(item) == array {
+  item.map(run => if run.bold { strong(run.text) } else { run.text }).join()
+} else { item }
+
 // "Start - End", or whichever of the two is present.
 #let date-range(start, end) = {
   if has(start) and has(end) { start + " - " + end } else { start + end }
