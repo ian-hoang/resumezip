@@ -2,8 +2,7 @@
 
 Resumes are compiled to PDF entirely in the browser with [Typst](https://typst.app)
 via [typst.ts](https://github.com/Myriad-Dreamin/typst.ts). Nothing is sent to a
-server to build a PDF. (`backend/`, the old Go + LaTeX + S3 service, is no longer
-used.)
+server to build a PDF.
 
 - `resumeData.ts` maps the editor's resume data to the JSON the templates read.
 - `compile.ts` is what the UI calls. It runs the compiler in a Web Worker.

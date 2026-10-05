@@ -5,7 +5,26 @@ import { DEFAULT_TEMPLATE } from "@/lib/templates"
 import type { ResumeContent } from "@/lib/resumeFile"
 import { numberDuplicateTitles, uniqueTitle } from "@/lib/resumeTitles"
 
-const ResumeContext = createContext<any>(null);
+/** A resume as the editor stores it; its fields are listed in components/editor/sections.ts. */
+export type Resume = Record<string, any>;
+
+interface ResumeContextValue {
+  /** Every resume saved in this browser, by id. */
+  resumes: Record<string, Resume>;
+  /** False until the saved resumes have been read from localStorage. */
+  loaded: boolean;
+  currentResumeId: string | null;
+  /** The open resume, or {} when none is open. */
+  formData: Resume;
+  setCurrentResumeId: (id: string | null) => void;
+  createNewResume: (title: string, tag: string, template?: string) => string;
+  importResume: (content: ResumeContent, title: string, options?: { keepId?: boolean }) => string;
+  replaceResume: (id: string, content: ResumeContent) => void;
+  updateFormData: (section: string, data: unknown) => void;
+  deleteResume: (id: string) => void;
+}
+
+const ResumeContext = createContext<ResumeContextValue | null>(null);
 
 const blankResume = (template: string) => ({
   profileSection: {},
@@ -23,7 +42,7 @@ const blankResume = (template: string) => ({
 });
 
 export const FormProvider = ({ children }: { children: React.ReactNode }) => {
-  const [resumes, setResumes] = useState<Record<string, any>>({});
+  const [resumes, setResumes] = useState<Record<string, Resume>>({});
   const [loaded, setLoaded] = useState(false);
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
 
@@ -120,7 +139,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const updateFormData = (section: string, data: any) => {
+  const updateFormData = (section: string, data: unknown) => {
     if (!currentResumeId) return;
     setResumes(prev => prev[currentResumeId] ? {
       ...prev,
@@ -144,11 +163,14 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       replaceResume,
       updateFormData,
       deleteResume,
-      setResumes
     }}>
       {children}
     </ResumeContext.Provider>
   );
 };
 
-export const useResumeContext = () => React.useContext(ResumeContext);
+export const useResumeContext = () => {
+  const context = React.useContext(ResumeContext);
+  if (!context) throw new Error("useResumeContext must be used inside FormProvider");
+  return context;
+};

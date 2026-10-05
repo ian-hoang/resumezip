@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# resumezip
 
-## Getting Started
+A free resume builder with no sign-up. Resumes are saved in the browser and
+built into PDFs in the browser with [Typst](https://typst.app), so a resume
+is never sent to a server.
 
-First, run the development server:
+## Running it
+
+Needs Node 22.12 or newer.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm test        # renders every template and reads it back (see below)
+npm run lint
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it fits together
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `src/context/ResumeContext.tsx` holds every resume and saves them to
+  localStorage. There are no accounts, so that's the only copy.
+- `src/app/create/dashboard` lists the resumes; `src/app/create/new/[id]` is
+  the editor, with a live preview.
+- `src/lib/typst/` builds PDFs in a Web Worker. Its README covers adding a
+  template.
+- `src/lib/resumeFile.ts`: every downloaded PDF carries its resume, so the PDF
+  is the user's save file and opens again exactly.
+- `src/lib/import/` opens PDF and Word files and sorts them into the editor's
+  fields. Its README explains how.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tests
 
-## Learn More
+`npm test` renders each template's sample resume (`src/lib/typst/preview-samples`)
+to a PDF without its attachment, reads it back through the importer, and
+checks it prints the same resume. Fields that don't read back yet are listed in
+`KNOWN_GAPS` in `src/lib/import/roundtrip.test.ts`; when you fix one, delete it
+there. A new template needs a sample and an entry in that list.
 
-To learn more about Next.js, take a look at the following resources:
+## Deploying
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel builds and deploys this folder (`frontend/`).
