@@ -12,7 +12,7 @@ import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
 import type { CompileRequest, CompileResponse } from "./compile"
-import { COMPILER_CDN_URL, COMPILER_INTEGRITY } from "./compilerSource"
+import { COMPILER_CDN_URL, COMPILER_INTEGRITY, compileChecked } from "./compilerSource"
 
 const SOURCES: Record<string, string> = {
   "/common.typ": common,
@@ -55,12 +55,15 @@ const withAttachment = (template: string) =>
 
 let compiler: Promise<TypstCompiler> | null = null
 
+// How long jsDelivr can go without sending anything before the app's own
+// copy is used instead.
+const CDN_IDLE_MS = 15_000
+
 // The compiler from jsDelivr, or the app's own copy if that fails (offline,
-// blocked, or not the expected file).
-async function compilerModule(): Promise<Response> {
+// blocked, stalled, or not the expected file).
+async function compilerModule(): Promise<WebAssembly.Module | Response> {
   try {
-    const response = await fetch(COMPILER_CDN_URL, { integrity: COMPILER_INTEGRITY, credentials: "omit" })
-    if (response.ok) return response
+    return await compileChecked(COMPILER_CDN_URL, COMPILER_INTEGRITY, CDN_IDLE_MS)
   } catch {
     // Fall through to the bundled copy.
   }
