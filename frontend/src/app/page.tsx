@@ -89,7 +89,8 @@ export default function Home() {
           </div>
         </div>
         <div className="flex flex-wrap gap-px bg-white/25">
-          {TEMPLATES.map((template) => (
+          {/* A few to show the range; "See all" has the rest. */}
+          {TEMPLATES.slice(0, 4).map((template) => (
             <StartWritingLink
               key={template.id}
               template={template.id}
