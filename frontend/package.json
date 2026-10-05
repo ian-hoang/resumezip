@@ -13,7 +13,6 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
     "@myriaddreamin/typst.ts": "^0.7.0",
-    "clsx": "^2.1.1",
     "lucide-react": "^0.479.0",
     "mammoth": "^1.13.0",
     "next": "15.5.27",
@@ -21,7 +20,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-pdf": "^9.2.1",
-    "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0"
   },
