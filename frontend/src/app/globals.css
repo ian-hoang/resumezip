@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-@plugin "tailwindcss-animate";
-
-@custom-variant dark (&:is(.dark *));
-
 /* resumezip design tokens: use them as bg-paper, text-ink, border-rule, ... */
 @theme {
   --color-paper: #f4f4f1; /* page background */
