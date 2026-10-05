@@ -89,6 +89,16 @@ function toParts(pieces: Piece[], x: number): Part[] {
   return parts
 }
 
+/**
+ * A link as written. LaTeX turns a link without "https://" into a link to
+ * another PDF, which pdf.js reports as "www.site.com/page/.pdf#[0,{...}]";
+ * the part from ".pdf#[" on isn't part of the address.
+ */
+export function cleanLink(url: string): string {
+  const remote = url.match(/^(.*?)\/?\.pdf#\[/i)
+  return remote ? remote[1] : url
+}
+
 function toLine(parts: Part[], size: number, links: string[], extra: Partial<Line> = {}): Line | null {
   if (parts.length === 0) return null
   const left = parts[0].x
@@ -258,7 +268,7 @@ export async function linesFromPdf(doc: PDFDocumentProxy): Promise<{ lines: Line
       .filter((note) => note.subtype === "Link" && (note.url || note.unsafeUrl) && note.rect?.length === 4)
       .map((note) => {
         const [lx0, ly0, lx1, ly1] = note.rect!
-        return { url: String(note.url || note.unsafeUrl), x0: lx0 - x0, y0: ly0 - y0, x1: lx1 - x0, y1: ly1 - y0 }
+        return { url: cleanLink(String(note.url || note.unsafeUrl)), x0: lx0 - x0, y0: ly0 - y0, x1: lx1 - x0, y1: ly1 - y0 }
       })
 
     for (const group of groups) {
