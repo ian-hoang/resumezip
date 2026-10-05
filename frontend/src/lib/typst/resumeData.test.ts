@@ -4,24 +4,34 @@ import { toTemplateData } from "./resumeData"
 const bulletsOf = (description: string) =>
   toTemplateData({ workExperienceSection: [{ id: 1, companyName: "Acme", workDescription: description }] }).work[0].bullets
 
-describe("bold words in bullets", () => {
+const plain = (text: string) => ({ text, bold: false, italic: false })
+const bold = (text: string) => ({ text, bold: true, italic: false })
+const italic = (text: string) => ({ text, bold: false, italic: true })
+
+describe("bold and italic words in bullets", () => {
   test("words in **double asterisks** are bold", () => {
     expect(bulletsOf("• Optimized a **Rust** engine to **125 ns** p99")).toEqual([
-      [
-        { text: "Optimized a ", bold: false },
-        { text: "Rust", bold: true },
-        { text: " engine to ", bold: false },
-        { text: "125 ns", bold: true },
-        { text: " p99", bold: false },
-      ],
+      [plain("Optimized a "), bold("Rust"), plain(" engine to "), bold("125 ns"), plain(" p99")],
     ])
   })
 
-  test("a lone ** is kept as typed", () => {
-    expect(bulletsOf("• Raised 2 ** 10 requests")).toEqual([[{ text: "Raised 2 ** 10 requests", bold: false }]])
+  test("words in *single asterisks* are italic, and ***three*** are both", () => {
+    expect(bulletsOf("• Led *Project Atlas* to ***record*** sales")).toEqual([
+      [plain("Led "), italic("Project Atlas"), plain(" to "), { text: "record", bold: true, italic: true }, plain(" sales")],
+    ])
+  })
+
+  test("marks can sit inside each other", () => {
+    expect(bulletsOf("• **Shipped *v2* early**")).toEqual([[bold("Shipped "), { text: "v2", bold: true, italic: true }, bold(" early")]])
+  })
+
+  test("asterisks that don't touch words, or have no pair, are kept as typed", () => {
+    expect(bulletsOf("• Raised 2 ** 10 requests")).toEqual([[plain("Raised 2 ** 10 requests")]])
+    expect(bulletsOf("• Scored 2 * 3 * 4 points")).toEqual([[plain("Scored 2 * 3 * 4 points")]])
+    expect(bulletsOf("• Rated 5* by users")).toEqual([[plain("Rated 5* by users")]])
   })
 
   test("each bullet is read on its own", () => {
-    expect(bulletsOf("• **All bold**\n• none")).toEqual([[{ text: "All bold", bold: true }], [{ text: "none", bold: false }]])
+    expect(bulletsOf("• **All bold**\n• none")).toEqual([[bold("All bold")], [plain("none")]])
   })
 })

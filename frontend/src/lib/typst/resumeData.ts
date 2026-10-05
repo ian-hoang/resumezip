@@ -44,10 +44,11 @@ export interface TemplateData {
   awards: { name: string; organization: string; date: string }[]
 }
 
-/** A stretch of a bullet's text, bold where the user wrapped it in **double asterisks**. */
+/** A stretch of a bullet's text: **bold**, *italic* or ***both*** where the user marked it. */
 interface Run {
   text: string
   bold: boolean
+  italic: boolean
 }
 
 /** A piece of an author list: a name, or the text between names. `me` marks the resume owner's name. */
@@ -82,15 +83,34 @@ const bullets = (value: unknown) =>
   (Array.isArray(value) ? value.map(text) : text(value).split("\n"))
     .map((line) => line.trim().replace(/^•\s*/, ""))
     .filter(Boolean)
-    .map(runs)
+    .map((line) => runs(line))
 
-// "Optimized a **Rust** engine" in plain and bold pieces. A ** without its
-// pair stays as typed.
-function runs(line: string): Run[] {
-  return line
-    .split(/\*\*(.+?)\*\*/)
-    .map((piece, index) => ({ text: piece, bold: index % 2 === 1 }))
-    .filter((run) => run.text !== "")
+// ***both***, **bold** or *italic*. A marker has to touch its words, so the
+// one in "2 * 3", or one without a pair, stays as typed.
+const MARKED = /\*\*\*(\S(?:[\s\S]*?\S)?)\*\*\*|\*\*(\S(?:[\s\S]*?\S)?)\*\*|\*([^\s*](?:[^*]*?[^\s*])?)\*/g
+
+// "Optimized a **Rust** engine for *low latency*" in plain, bold and italic
+// pieces. Marks can sit inside each other: "**bold with *italic* inside**".
+function runs(line: string, bold = false, italic = false): Run[] {
+  const out: Run[] = []
+  const add = (text: string) => {
+    const last = out[out.length - 1]
+    if (last && last.bold === bold && last.italic === italic) last.text += text
+    else if (text) out.push({ text, bold, italic })
+  }
+  let at = 0
+  for (const match of line.matchAll(MARKED)) {
+    add(line.slice(at, match.index))
+    const [, both, strong, emph] = match
+    for (const run of both !== undefined ? runs(both, true, true) : strong !== undefined ? runs(strong, true, italic) : runs(emph, bold, true)) {
+      const last = out[out.length - 1]
+      if (last && last.bold === run.bold && last.italic === run.italic) last.text += run.text
+      else out.push(run)
+    }
+    at = match.index! + match[0].length
+  }
+  add(line.slice(at))
+  return out
 }
 
 // For matching names: lower case, without accents.

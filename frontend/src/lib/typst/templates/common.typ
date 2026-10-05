@@ -10,11 +10,16 @@
 
 #let has(value) = value != none and value != ""
 
-// A bullet: its runs from resumeData.ts, with the words marked **bold** in
-// bold. Bullets a template builds itself (like "Relevant Coursework: ...")
-// are content already and pass through.
+// A bullet: its runs from resumeData.ts, with the words the user marked
+// **bold** or *italic* set that way. Bullets a template builds itself (like
+// "Relevant Coursework: ...") are content already and pass through.
 #let rich(item) = if type(item) == array {
-  item.map(run => if run.bold { strong(run.text) } else { run.text }).join()
+  item.map(run => {
+    let body = run.text
+    if run.italic { body = emph(body) }
+    if run.bold { body = strong(body) }
+    body
+  }).join()
 } else { item }
 
 // "Start - End", or whichever of the two is present.
