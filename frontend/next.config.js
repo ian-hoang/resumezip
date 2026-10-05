@@ -4,11 +4,13 @@ module.exports = {
     config.module.rules.push({ test: /\.typ$/, type: "asset/source" });
     return config;
   },
-  async rewrites() {
+  // Sends visitors on to YouTube rather than serving it through this site.
+  async redirects() {
     return [
       {
         source: '/sike',
         destination: 'https://www.youtube.com/',
+        permanent: false,
       },
     ];
   },
