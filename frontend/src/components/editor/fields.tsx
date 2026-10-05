@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useLayoutEffect, useRef, useState } from "react"
+import { useId, useLayoutEffect, useRef, useState } from "react"
 import { Pencil } from "lucide-react"
 
 interface FieldProps {
@@ -41,10 +41,17 @@ function withBullets(text: string) {
     .join("\n")
 }
 
-/** A textarea for bullet points: one per line, and Enter starts a new bullet. */
+// The shortcut for bold, as this device writes it.
+const boldShortcut = () => (typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘B" : "Ctrl+B")
+
+/**
+ * A textarea for bullet points: one per line, and Enter starts a new bullet.
+ * Words in **double asterisks** print in bold; ⌘B / Ctrl+B adds or removes them.
+ */
 export function BulletsField({ label, value, placeholder, className = "", onChange }: FieldProps) {
   const text = withBullets(value)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const hintId = useId()
 
   // Grow to fit the text instead of scrolling inside the box.
   useLayoutEffect(() => {
@@ -54,7 +61,31 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
     textarea.style.height = `${textarea.scrollHeight + 2}px`
   }, [text])
 
+  // Wraps the selected words in ** (or unwraps them), keeping them selected.
+  const toggleBold = (textarea: HTMLTextAreaElement) => {
+    let { selectionStart: start, selectionEnd: end } = textarea
+    while (start < end && /\s/.test(text[start])) start++
+    while (end > start && /\s/.test(text[end - 1])) end--
+    const select = (from: number, to: number) =>
+      requestAnimationFrame(() => {
+        textarea.selectionStart = from
+        textarea.selectionEnd = to
+      })
+    if (text.slice(start - 2, start) === "**" && text.slice(end, end + 2) === "**") {
+      onChange(text.slice(0, start - 2) + text.slice(start, end) + text.slice(end + 2))
+      select(start - 2, end - 2)
+    } else {
+      onChange(`${text.slice(0, start)}**${text.slice(start, end)}**${text.slice(end)}`)
+      select(start + 2, end + 2)
+    }
+  }
+
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "b") {
+      event.preventDefault()
+      toggleBold(event.currentTarget)
+      return
+    }
     if (event.key !== "Enter" || event.nativeEvent.isComposing) return
     event.preventDefault()
     const textarea = event.currentTarget
@@ -67,18 +98,24 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
   }
 
   return (
-    <label className={`flex min-w-0 flex-col gap-2 ${className}`}>
-      <span className="label-mono text-ink-2">{label}</span>
-      <textarea
-        ref={textareaRef}
-        value={text}
-        placeholder={placeholder ? `• ${placeholder}` : undefined}
-        rows={4}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={onKeyDown}
-        className="w-full resize-none overflow-hidden rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
-      />
-    </label>
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      <label className="flex flex-col gap-2">
+        <span className="label-mono text-ink-2">{label}</span>
+        <textarea
+          ref={textareaRef}
+          aria-describedby={hintId}
+          value={text}
+          placeholder={placeholder ? `• ${placeholder}` : undefined}
+          rows={4}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={onKeyDown}
+          className="w-full resize-none overflow-hidden rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
+        />
+      </label>
+      <span id={hintId} className="text-[13px] leading-normal text-ink-2">
+        To bold words, select them and press {boldShortcut()}, or wrap them in **double asterisks**.
+      </span>
+    </div>
   )
 }
 
