@@ -42,7 +42,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "What we collect",
-        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running.",
+        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine from jsDelivr, a public code host, which logs downloads the same way.",
       },
       {
         title: "How it’s used",

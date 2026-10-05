@@ -12,6 +12,7 @@ import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
 import type { CompileRequest, CompileResponse } from "./compile"
+import { COMPILER_CDN_URL, COMPILER_INTEGRITY } from "./compilerSource"
 
 const SOURCES: Record<string, string> = {
   "/common.typ": common,
@@ -54,11 +55,22 @@ const withAttachment = (template: string) =>
 
 let compiler: Promise<TypstCompiler> | null = null
 
+// The compiler from jsDelivr, or the app's own copy if that fails (offline,
+// blocked, or not the expected file).
+async function compilerModule(): Promise<Response> {
+  try {
+    const response = await fetch(COMPILER_CDN_URL, { integrity: COMPILER_INTEGRITY, credentials: "omit" })
+    if (response.ok) return response
+  } catch {
+    // Fall through to the bundled copy.
+  }
+  return fetch(new URL("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm", import.meta.url))
+}
+
 async function createCompiler(): Promise<TypstCompiler> {
   const instance = createTypstCompiler()
   await instance.init({
-    getModule: () =>
-      new URL("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm", import.meta.url),
+    getModule: compilerModule,
     beforeBuild: [loadFonts(FONTS, { assets: false })],
   })
   for (const [path, source] of Object.entries(SOURCES)) instance.addSource(path, source)
