@@ -287,6 +287,10 @@ function joinWrappedDates(lines: ParseLine[]): ParseLine[] {
 
 interface Item {
   text: string
+  /** The text with its bold words in **double asterisks**, the editor's mark for bold. */
+  marked: string
+  /** Whether all of it is bold, in which case nothing is marked. */
+  bold: boolean
   lines: number[]
   /** For wrapped lines: where the item's text starts and ends up. */
   left: number
@@ -308,6 +312,55 @@ function continues(line: Line, item: Item, wasBullet: boolean): boolean {
 
 const joinWrapped = (text: string, next: string) =>
   /\w-$/.test(text) && /^[a-z]/.test(next) ? text + next : `${text} ${next}`
+
+/**
+ * A line's text with its bold words wrapped in **double asterisks**, so
+ * keywords set in bold inside a bullet ("Optimized a **Rust** engine") stay
+ * bold in the editor, and whether the whole line is bold.
+ */
+function markBold(line: Line): { marked: string; allBold: boolean } {
+  let allBold = true
+  const parts = line.parts.map((part) => {
+    // The part's text in plain and bold stretches, neighbors of the same kind merged.
+    const pieces: { text: string; bold: boolean }[] = []
+    const add = (text: string, bold: boolean) => {
+      if (!text) return
+      const last = pieces[pieces.length - 1]
+      if (last && last.bold === bold) last.text += text
+      else pieces.push({ text, bold })
+    }
+    let cursor = 0
+    for (const run of [...part.runs].sort((a, b) => a.start - b.start)) {
+      add(part.text.slice(cursor, Math.max(cursor, run.start)), false)
+      add(part.text.slice(Math.max(cursor, run.start), run.end), run.bold)
+      cursor = Math.max(cursor, run.end)
+    }
+    add(part.text.slice(cursor), false)
+    return pieces
+      .map(({ text, bold }) => {
+        const word = /[\p{L}\p{N}]/u.test(text)
+        if (!bold && word) allBold = false
+        if (!bold || !word) return text
+        // Markers hug the words, with any spaces outside them.
+        const [, before, core, after] = text.match(/^(\s*)([\s\S]*?)(\s*)$/)!
+        return `${before}**${core}**${after}`
+      })
+      .join("")
+  })
+  return { marked: parts.join(" "), allBold }
+}
+
+/** Adds a wrapped line to the item above it. */
+function extendItem(item: Item, line: ParseLine) {
+  const { marked, allBold } = markBold(line)
+  item.text = joinWrapped(item.text, line.text)
+  item.marked = joinWrapped(item.marked, marked)
+  item.bold = item.bold && allBold
+  item.lines.push(line.index)
+}
+
+/** An item as a bullet: with its bold words marked, unless it's bold throughout. */
+const described = (item: Item) => (item.bold ? item.text : item.marked)
 
 /** A long line that reads like a sentence, not an entry's title. */
 const sentence = (line: Line) =>
@@ -380,14 +433,14 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
   for (const line of lines) {
     const group: Group | undefined = groups[groups.length - 1]
     const last: Item | undefined = group?.body[group.body.length - 1]
-    const item: Item = { text: line.text, lines: [line.index], left: line.left, x: line.x, size: line.size }
+    const { marked, allBold } = markBold(line)
+    const item: Item = { text: line.text, marked, bold: allBold, lines: [line.index], left: line.left, x: line.x, size: line.size }
     const before = previous
     previous = line
 
     // Text wrapping under a bullet lines up with the bullet's text.
     if (last && lastWasBullet && continues(line, last, true)) {
-      last.text = joinWrapped(last.text, line.text)
-      last.lines.push(line.index)
+      extendItem(last, line)
       continue
     }
 
@@ -398,8 +451,7 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
       // A new point usually starts with a capital; wrapped text rarely does unless the line before ended mid-phrase.
       const wrapped = before && wrapsInto(before, line) && (!/^[A-Z]/.test(line.text) || CONNECTOR.test(before.text))
       if (last && before && wrapped && last.lines.includes(before.index) && Math.abs(line.left - before.left) < 3) {
-        last.text = joinWrapped(last.text, line.text)
-        last.lines.push(line.index)
+        extendItem(last, line)
       } else {
         group!.body.push(item)
       }
@@ -414,8 +466,7 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
       continue
     }
     if (last && !lastWasBullet && continues(line, last, false)) {
-      last.text = joinWrapped(last.text, line.text)
-      last.lines.push(line.index)
+      extendItem(last, line)
       continue
     }
     if (group && group.header.length > 0 && sentence(line)) {
@@ -610,7 +661,7 @@ function readExperience(name: "Work" | "Leadership" | "Volunteership", lines: Pa
     fields[keys.location] = header.location
     fields[keys.start] = header.date?.start ?? ""
     fields[keys.end] = header.date?.end ?? ""
-    fields[keys.bullets] = bulletField(group.body.map((item) => item.text))
+    fields[keys.bullets] = bulletField(group.body.map(described))
     if (rest.length) {
       leftover.lines.push(...group.header.map((line) => line.index))
       leftover.text.push(...rest)
@@ -700,7 +751,7 @@ function readProjects(lines: ParseLine[]): SectionResult {
     for (const item of group.body) {
       const label = item.text.match(LABEL)
       if (label && /tech|stack|tools|built|languages/i.test(label[2]) && !tech) tech = tidy(item.text.slice(label[0].length))
-      else bullets.push(item.text)
+      else bullets.push(described(item))
     }
     fields.projectName = tidy(name.replace(/:$/, ""))
     fields.techStack = tidy(tech)
