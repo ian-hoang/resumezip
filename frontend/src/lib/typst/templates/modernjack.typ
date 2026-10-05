@@ -19,7 +19,7 @@
 #let bullets(items) = if items.len() > 0 {
   v(7.5pt)
   set text(size: 10pt)
-  list(marker: [•], indent: 17pt, body-indent: 5pt, spacing: 6.6pt, ..items)
+  list(marker: [•], indent: 17pt, body-indent: 5pt, spacing: 6.6pt, ..items.map(rich))
 }
 
 // \resumeSubheading: two rows of left/right aligned text, then bullets.

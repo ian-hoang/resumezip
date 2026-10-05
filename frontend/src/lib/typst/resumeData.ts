@@ -33,15 +33,22 @@ export interface TemplateData {
     coursework: string
     involvement: string
   }[]
-  work: { company: string; location: string; role: string; start: string; end: string; bullets: string[] }[]
+  work: { company: string; location: string; role: string; start: string; end: string; bullets: Run[][] }[]
   /** `link` is set when the name links somewhere; `links` are printed as text. */
-  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: string[] }[]
+  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: Run[][] }[]
   /** Printed as citations; `doi` is set instead of `link` when the link is a DOI. */
   publications: { title: string; authors: AuthorPiece[]; venue: string; details: string; date: string; doi: string; link: string }[]
   skills: { name: string; details: string }[]
   leadership: Experience[]
   volunteer: Experience[]
   awards: { name: string; organization: string; date: string }[]
+}
+
+/** A stretch of a bullet's text: **bold**, *italic* or ***both*** where the user marked it. */
+interface Run {
+  text: string
+  bold: boolean
+  italic: boolean
 }
 
 /** A piece of an author list: a name, or the text between names. `me` marks the resume owner's name. */
@@ -56,7 +63,7 @@ interface Experience {
   role: string
   start: string
   end: string
-  bullets: string[]
+  bullets: Run[][]
 }
 
 type Entry = Record<string, unknown>
@@ -76,6 +83,36 @@ const bullets = (value: unknown) =>
   (Array.isArray(value) ? value.map(text) : text(value).split("\n"))
     .map((line) => line.trim().replace(/^•\s*/, ""))
     .filter(Boolean)
+    .map((line) => runs(line))
+
+// ***both***, **bold** or *italic*. A marker has to touch its words, so the
+// one in "2 * 3", or one without a pair, stays as typed. Each mark ends at
+// the first marker that can close it, so "**C** and **Go**" is two bold words.
+const MARKED = /\*\*\*(\S(?:[\s\S]*?\S)??)\*\*\*|\*\*(\S(?:[\s\S]*?\S)??)\*\*|\*([^\s*](?:[^*]*?[^\s*])?)\*/g
+
+// "Optimized a **Rust** engine for *low latency*" in plain, bold and italic
+// pieces. Marks can sit inside each other: "**bold with *italic* inside**".
+function runs(line: string, bold = false, italic = false): Run[] {
+  const out: Run[] = []
+  const add = (text: string) => {
+    const last = out[out.length - 1]
+    if (last && last.bold === bold && last.italic === italic) last.text += text
+    else if (text) out.push({ text, bold, italic })
+  }
+  let at = 0
+  for (const match of line.matchAll(MARKED)) {
+    add(line.slice(at, match.index))
+    const [, both, strong, emph] = match
+    for (const run of both !== undefined ? runs(both, true, true) : strong !== undefined ? runs(strong, true, italic) : runs(emph, bold, true)) {
+      const last = out[out.length - 1]
+      if (last && last.bold === run.bold && last.italic === run.italic) last.text += run.text
+      else out.push(run)
+    }
+    at = match.index! + match[0].length
+  }
+  add(line.slice(at))
+  return out
+}
 
 // For matching names: lower case, without accents.
 const plain = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()

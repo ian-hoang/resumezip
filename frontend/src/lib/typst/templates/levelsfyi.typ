@@ -16,7 +16,7 @@
 #set par(justify: true, leading: 4.71pt, spacing: 0pt)
 
 #let bullets(items, indent: 11pt, body-indent: 5pt) = if items.len() > 0 {
-  list(marker: [•], indent: indent, body-indent: body-indent, spacing: 4.71pt, ..items)
+  list(marker: [•], indent: indent, body-indent: body-indent, spacing: 4.71pt, ..items.map(rich))
 }
 
 // \threecolumns: left, page-centred middle, and right. The outer columns share

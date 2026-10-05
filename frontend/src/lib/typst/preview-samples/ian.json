@@ -45,7 +45,7 @@
       "workLocation": "Chicago, IL",
       "workStartDate": "Jun 2026",
       "workEndDate": "Aug 2026",
-      "workDescription": "• Rewrote the order gateway's message parser in C++ with zero-copy buffers, cutting median tick-to-trade latency by 18%\n• Built a replay tool that feeds a full day of recorded market data through the strategy engine, so every deploy is checked against real trading conditions before it reaches the production servers\n• Added per-venue risk limits to the order router, blocking oversized orders in under 2 microseconds with no locks"
+      "workDescription": "• Rewrote the order gateway's message parser in **C++** with zero-copy buffers, cutting median tick-to-trade latency by **18%**\n• Built a replay tool that feeds a full day of recorded market data through the strategy engine, so every deploy is checked against real trading conditions before it reaches the production servers\n• Added per-venue risk limits to the order router, blocking oversized orders in under **2 microseconds** with no locks"
     },
     {
       "id": 2,
@@ -54,7 +54,7 @@
       "workLocation": "Seattle, WA",
       "workStartDate": "May 2025",
       "workEndDate": "Aug 2025",
-      "workDescription": "• Designed a rate limiter in Go for the storage API that keeps any single tenant under its quota across 40 regional clusters\n• Moved hot metadata reads to a Redis cache with write-through invalidation, lowering p99 read latency from 45 ms to 9 ms\n• Wrote load tests that replay production traffic at five times peak volume, and used them to find and fix a connection pool leak that had been causing weekly outages for two of the largest customers"
+      "workDescription": "• Designed a rate limiter in **Go** for the storage API that keeps any single tenant under its quota across **40** regional clusters\n• Moved hot metadata reads to a **Redis** cache with write-through invalidation, lowering p99 read latency from **45 ms** to **9 ms**\n• Wrote load tests that replay production traffic at five times peak volume, and used them to find and fix a connection pool leak that had been causing weekly outages for two of the largest customers"
     },
     {
       "id": 3,
@@ -63,7 +63,7 @@
       "workLocation": "Urbana, IL",
       "workStartDate": "Jan 2025",
       "workEndDate": "Present",
-      "workDescription": "• Measured how Linux schedules latency-sensitive threads on many-core machines, using tracing tools built with eBPF\n• Prototyped a scheduler tweak that pins network threads to idle cores, reducing tail latency by 27% in the lab's benchmark"
+      "workDescription": "• Measured how Linux schedules latency-sensitive threads on many-core machines, using tracing tools built with eBPF\n• Prototyped a scheduler tweak that pins network threads to idle cores, reducing tail latency by **27%** in the lab's benchmark"
     },
     {
       "id": 4,
@@ -92,7 +92,7 @@
       "techStack": "C++, Python",
       "projectGithub": "github.com/aidenpark/orderbook",
       "additionalLink": "",
-      "projectDescription": "• Price-time priority matching engine handling 4 million orders per second on one core, with lock-free queues\n• Python bindings and a backtester that replays historical quotes, used to compare three market-making strategies"
+      "projectDescription": "• Price-time priority matching engine handling **4 million orders per second** on one core, with lock-free queues\n• Python bindings and a backtester that replays historical quotes, used to compare three market-making strategies"
     },
     {
       "id": 2,
@@ -110,7 +110,7 @@
       "techStack": "TypeScript, React, Node.js",
       "projectGithub": "github.com/aidenpark/pathfinder",
       "additionalLink": "",
-      "projectDescription": "• Campus navigation app that plans accessible routes between buildings, used by 3,000 students in its first month\n• Imports building and elevator data from the university's open data portal and refreshes it automatically every night"
+      "projectDescription": "• Campus navigation app that plans accessible routes between buildings, used by **3,000 students** in its first month\n• Imports building and elevator data from the university's open data portal and refreshes it automatically every night"
     }
   ],
   "publicationsSection": [],

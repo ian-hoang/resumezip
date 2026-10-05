@@ -156,6 +156,16 @@ test("a school with its place on the right starts a new entry, even right after 
   ])
 })
 
+test("bold and italic words in bullets come back marked, in every template", async () => {
+  const bullet = "Led **Project Atlas** to a *record* quarter with ***zero*** outages, plus a plain ending"
+  for (const sample of samples) {
+    const [first, ...rest] = sample.workExperienceSection
+    const resume = { ...sample, workExperienceSection: [{ ...first, workDescription: `• ${bullet}` }, ...rest] }
+    const { resume: got } = await readBack(await render(resume))
+    expect(got.workExperienceSection[0].workDescription, sample.selectedTemplate).toBe(`• ${bullet}`)
+  }
+})
+
 test("a phone number with a plus written apart keeps the plus", async () => {
   const sample = samples.find((resume) => resume.selectedTemplate === "ian")
   const resume = { ...sample, profileSection: { ...sample.profileSection, phoneNumber: "+ (352) 284-0205" } }

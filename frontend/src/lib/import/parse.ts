@@ -285,8 +285,17 @@ function joinWrappedDates(lines: ParseLine[]): ParseLine[] {
 
 // ---------------------------------------------------------------- entries
 
+/** A stretch of text in one style. */
+interface Piece {
+  text: string
+  bold: boolean
+  italic: boolean
+}
+
 interface Item {
   text: string
+  /** The same text in plain, bold and italic pieces, for marking styled words in the editor. */
+  pieces: Piece[]
   lines: number[]
   /** For wrapped lines: where the item's text starts and ends up. */
   left: number
@@ -308,6 +317,66 @@ function continues(line: Line, item: Item, wasBullet: boolean): boolean {
 
 const joinWrapped = (text: string, next: string) =>
   /\w-$/.test(text) && /^[a-z]/.test(next) ? text + next : `${text} ${next}`
+
+/** Adds text in a style, merged into the piece before when the style is the same. */
+function addPiece(pieces: Piece[], text: string, bold: boolean, italic: boolean) {
+  if (!text) return
+  const last = pieces[pieces.length - 1]
+  if (last && last.bold === bold && last.italic === italic) last.text += text
+  else pieces.push({ text, bold, italic })
+}
+
+/** A line's text in plain, bold and italic pieces, joined the way `line.text` is. */
+function stylePieces(line: Line): Piece[] {
+  const pieces: Piece[] = []
+  line.parts.forEach((part, index) => {
+    // The space between parts takes the style before it, so a styled phrase stays in one piece.
+    const last = pieces[pieces.length - 1]
+    if (index > 0) addPiece(pieces, " ", last?.bold ?? false, last?.italic ?? false)
+    let cursor = 0
+    for (const run of [...part.runs].sort((a, b) => a.start - b.start)) {
+      addPiece(pieces, part.text.slice(cursor, Math.max(cursor, run.start)), false, false)
+      addPiece(pieces, part.text.slice(Math.max(cursor, run.start), run.end), run.bold, run.italic)
+      cursor = Math.max(cursor, run.end)
+    }
+    addPiece(pieces, part.text.slice(cursor), false, false)
+  })
+  return pieces
+}
+
+/** Adds a wrapped line to the item above it. */
+function extendItem(item: Item, line: ParseLine) {
+  const together = /\w-$/.test(item.text) && /^[a-z]/.test(line.text)
+  item.text = joinWrapped(item.text, line.text)
+  const last = item.pieces[item.pieces.length - 1]
+  if (!together) addPiece(item.pieces, " ", last?.bold ?? false, last?.italic ?? false)
+  for (const piece of stylePieces(line)) addPiece(item.pieces, piece.text, piece.bold, piece.italic)
+  item.lines.push(line.index)
+}
+
+const hasWords = (text: string) => /[\p{L}\p{N}]/u.test(text)
+
+/**
+ * An item as a bullet, with its bold and italic words in the editor's marks
+ * (**bold**, *italic*, ***both***), so keywords set in bold or italic inside
+ * a bullet stay that way. A style the whole item is in isn't marked.
+ */
+function described(item: Item): string {
+  const words = item.pieces.filter((piece) => hasWords(piece.text))
+  const allBold = words.every((piece) => piece.bold)
+  const allItalic = words.every((piece) => piece.italic)
+  return item.pieces
+    .map(({ text, bold, italic }) => {
+      const strong = bold && !allBold
+      const emph = italic && !allItalic
+      if ((!strong && !emph) || !hasWords(text)) return text
+      const marker = strong && emph ? "***" : strong ? "**" : "*"
+      // Marks hug the words, with any spaces outside them.
+      const [, before, core, after] = text.match(/^(\s*)([\s\S]*?)(\s*)$/)!
+      return `${before}${marker}${core}${marker}${after}`
+    })
+    .join("")
+}
 
 /** A long line that reads like a sentence, not an entry's title. */
 const sentence = (line: Line) =>
@@ -380,14 +449,13 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
   for (const line of lines) {
     const group: Group | undefined = groups[groups.length - 1]
     const last: Item | undefined = group?.body[group.body.length - 1]
-    const item: Item = { text: line.text, lines: [line.index], left: line.left, x: line.x, size: line.size }
+    const item: Item = { text: line.text, pieces: stylePieces(line), lines: [line.index], left: line.left, x: line.x, size: line.size }
     const before = previous
     previous = line
 
     // Text wrapping under a bullet lines up with the bullet's text.
     if (last && lastWasBullet && continues(line, last, true)) {
-      last.text = joinWrapped(last.text, line.text)
-      last.lines.push(line.index)
+      extendItem(last, line)
       continue
     }
 
@@ -398,8 +466,7 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
       // A new point usually starts with a capital; wrapped text rarely does unless the line before ended mid-phrase.
       const wrapped = before && wrapsInto(before, line) && (!/^[A-Z]/.test(line.text) || CONNECTOR.test(before.text))
       if (last && before && wrapped && last.lines.includes(before.index) && Math.abs(line.left - before.left) < 3) {
-        last.text = joinWrapped(last.text, line.text)
-        last.lines.push(line.index)
+        extendItem(last, line)
       } else {
         group!.body.push(item)
       }
@@ -414,8 +481,7 @@ function groupEntries(lines: ParseLine[], isBody: (line: Line) => boolean = () =
       continue
     }
     if (last && !lastWasBullet && continues(line, last, false)) {
-      last.text = joinWrapped(last.text, line.text)
-      last.lines.push(line.index)
+      extendItem(last, line)
       continue
     }
     if (group && group.header.length > 0 && sentence(line)) {
@@ -610,7 +676,7 @@ function readExperience(name: "Work" | "Leadership" | "Volunteership", lines: Pa
     fields[keys.location] = header.location
     fields[keys.start] = header.date?.start ?? ""
     fields[keys.end] = header.date?.end ?? ""
-    fields[keys.bullets] = bulletField(group.body.map((item) => item.text))
+    fields[keys.bullets] = bulletField(group.body.map(described))
     if (rest.length) {
       leftover.lines.push(...group.header.map((line) => line.index))
       leftover.text.push(...rest)
@@ -700,7 +766,7 @@ function readProjects(lines: ParseLine[]): SectionResult {
     for (const item of group.body) {
       const label = item.text.match(LABEL)
       if (label && /tech|stack|tools|built|languages/i.test(label[2]) && !tech) tech = tidy(item.text.slice(label[0].length))
-      else bullets.push(item.text)
+      else bullets.push(described(item))
     }
     fields.projectName = tidy(name.replace(/:$/, ""))
     fields.techStack = tidy(tech)

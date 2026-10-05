@@ -12,6 +12,7 @@ import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
 import type { CompileRequest, CompileResponse } from "./compile"
+import { COMPILER_CDN_URL, COMPILER_INTEGRITY, compileChecked } from "./compilerSource"
 
 const SOURCES: Record<string, string> = {
   "/common.typ": common,
@@ -54,11 +55,25 @@ const withAttachment = (template: string) =>
 
 let compiler: Promise<TypstCompiler> | null = null
 
+// How long jsDelivr can go without sending anything before the app's own
+// copy is used instead.
+const CDN_IDLE_MS = 15_000
+
+// The compiler from jsDelivr, or the app's own copy if that fails (offline,
+// blocked, stalled, or not the expected file).
+async function compilerModule(): Promise<WebAssembly.Module | Response> {
+  try {
+    return await compileChecked(COMPILER_CDN_URL, COMPILER_INTEGRITY, CDN_IDLE_MS)
+  } catch {
+    // Fall through to the bundled copy.
+  }
+  return fetch(new URL("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm", import.meta.url))
+}
+
 async function createCompiler(): Promise<TypstCompiler> {
   const instance = createTypstCompiler()
   await instance.init({
-    getModule: () =>
-      new URL("@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm", import.meta.url),
+    getModule: compilerModule,
     beforeBuild: [loadFonts(FONTS, { assets: false })],
   })
   for (const [path, source] of Object.entries(SOURCES)) instance.addSource(path, source)

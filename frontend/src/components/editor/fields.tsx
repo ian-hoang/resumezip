@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useLayoutEffect, useRef, useState } from "react"
+import { useId, useLayoutEffect, useRef, useState } from "react"
 import { Pencil } from "lucide-react"
 
 interface FieldProps {
@@ -41,10 +41,17 @@ function withBullets(text: string) {
     .join("\n")
 }
 
-/** A textarea for bullet points: one per line, and Enter starts a new bullet. */
+// A keyboard shortcut as this device writes it: ⌘B on a Mac, Ctrl+B elsewhere.
+const shortcut = (key: string) => (/Mac|iPhone|iPad/.test(navigator.platform) ? `⌘${key}` : `Ctrl+${key}`)
+
+/**
+ * A textarea for bullet points: one per line, and Enter starts a new bullet.
+ * **Bold**, *italic* and ***both*** print that way; ⌘B and ⌘I add or remove the marks.
+ */
 export function BulletsField({ label, value, placeholder, className = "", onChange }: FieldProps) {
   const text = withBullets(value)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const hintId = useId()
 
   // Grow to fit the text instead of scrolling inside the box.
   useLayoutEffect(() => {
@@ -54,7 +61,37 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
     textarea.style.height = `${textarea.scrollHeight + 2}px`
   }, [text])
 
+  // Adds or removes a mark around the selected words, ** for bold or * for italic, keeping them selected.
+  const toggleMark = (textarea: HTMLTextAreaElement, size: 1 | 2) => {
+    let { selectionStart: start, selectionEnd: end } = textarea
+    while (start < end && /\s/.test(text[start])) start++
+    while (end > start && /\s/.test(text[end - 1])) end--
+    // Asterisks already around the words: one for italic, two for bold, three for both.
+    let before = 0
+    while (before < 3 && text[start - 1 - before] === "*") before++
+    let after = 0
+    while (after < 3 && text[end + after] === "*") after++
+    const marks = Math.min(before, after)
+    const marked = size === 2 ? marks >= 2 : marks === 1 || marks === 3
+    const stars = "*".repeat(size)
+    const next = marked
+      ? text.slice(0, start - size) + text.slice(start, end) + text.slice(end + size)
+      : text.slice(0, start) + stars + text.slice(start, end) + stars + text.slice(end)
+    onChange(next)
+    const shift = marked ? -size : size
+    requestAnimationFrame(() => {
+      textarea.selectionStart = start + shift
+      textarea.selectionEnd = end + shift
+    })
+  }
+
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const key = event.key.toLowerCase()
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && (key === "b" || key === "i")) {
+      event.preventDefault()
+      toggleMark(event.currentTarget, key === "b" ? 2 : 1)
+      return
+    }
     if (event.key !== "Enter" || event.nativeEvent.isComposing) return
     event.preventDefault()
     const textarea = event.currentTarget
@@ -67,18 +104,34 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
   }
 
   return (
-    <label className={`flex min-w-0 flex-col gap-2 ${className}`}>
-      <span className="label-mono text-ink-2">{label}</span>
-      <textarea
-        ref={textareaRef}
-        value={text}
-        placeholder={placeholder ? `• ${placeholder}` : undefined}
-        rows={4}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={onKeyDown}
-        className="w-full resize-none overflow-hidden rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
-      />
-    </label>
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      <label className="flex flex-col gap-2">
+        <span className="label-mono text-ink-2">{label}</span>
+        <textarea
+          ref={textareaRef}
+          aria-describedby={hintId}
+          value={text}
+          placeholder={placeholder ? `• ${placeholder}` : undefined}
+          rows={4}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={onKeyDown}
+          className="w-full resize-none overflow-hidden rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
+        />
+      </label>
+      <span id={hintId} className="text-[13px] leading-normal text-ink-2">
+        {window.matchMedia("(pointer: coarse)").matches ? (
+          // No keyboard shortcuts on a touch screen, so show the marks to type.
+          <>
+            <span className="font-mono">**bold**</span> · <span className="font-mono">*italic*</span>
+          </>
+        ) : (
+          <>
+            <kbd className="font-mono">{shortcut("B")}</kbd> <strong className="font-semibold text-ink">bold</strong> ·{" "}
+            <kbd className="font-mono">{shortcut("I")}</kbd> <em className="text-ink">italic</em>
+          </>
+        )}
+      </span>
+    </div>
   )
 }
 

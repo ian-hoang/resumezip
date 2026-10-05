@@ -26,7 +26,7 @@
     indent: 0pt,
     body-indent: 10.7pt,
     spacing: 5.78pt,
-    ..items,
+    ..items.map(rich),
   )
   v(3.3pt)
 }
