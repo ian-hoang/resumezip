@@ -974,7 +974,8 @@ interface Contacts {
   remainders: Map<number, string>
 }
 
-const CONTACT_LABEL = /\b(?:e-?mail|phone|mobile|cell|tel|telephone|linkedin|github|website|portfolio|web|site|address)\s*:?/gi
+// Labels in front of contact details, including short ones with a colon ("P: 555-0100", "E: me@x.com").
+const CONTACT_LABEL = /\b(?:(?:e-?mail|phone|mobile|cell|tel|telephone|linkedin|github|website|portfolio|web|site|address)\s*:?|(?:p|ph|m|t|e)\s*:)/gi
 
 function readContacts(lines: ParseLine[], isTop: (line: ParseLine) => boolean): Contacts {
   const fields: Record<string, string> = {}
