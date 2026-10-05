@@ -41,12 +41,12 @@ function withBullets(text: string) {
     .join("\n")
 }
 
-// The shortcut for bold, as this device writes it.
-const boldShortcut = () => (typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘B" : "Ctrl+B")
+// A keyboard shortcut as this device writes it: ⌘B on a Mac, Ctrl+B elsewhere.
+const shortcut = (key: string) => (/Mac|iPhone|iPad/.test(navigator.platform) ? `⌘${key}` : `Ctrl+${key}`)
 
 /**
  * A textarea for bullet points: one per line, and Enter starts a new bullet.
- * Words in **double asterisks** print in bold; ⌘B / Ctrl+B adds or removes them.
+ * **Bold**, *italic* and ***both*** print that way; ⌘B and ⌘I add or remove the marks.
  */
 export function BulletsField({ label, value, placeholder, className = "", onChange }: FieldProps) {
   const text = withBullets(value)
@@ -61,29 +61,35 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
     textarea.style.height = `${textarea.scrollHeight + 2}px`
   }, [text])
 
-  // Wraps the selected words in ** (or unwraps them), keeping them selected.
-  const toggleBold = (textarea: HTMLTextAreaElement) => {
+  // Adds or removes a mark around the selected words, ** for bold or * for italic, keeping them selected.
+  const toggleMark = (textarea: HTMLTextAreaElement, size: 1 | 2) => {
     let { selectionStart: start, selectionEnd: end } = textarea
     while (start < end && /\s/.test(text[start])) start++
     while (end > start && /\s/.test(text[end - 1])) end--
-    const select = (from: number, to: number) =>
-      requestAnimationFrame(() => {
-        textarea.selectionStart = from
-        textarea.selectionEnd = to
-      })
-    if (text.slice(start - 2, start) === "**" && text.slice(end, end + 2) === "**") {
-      onChange(text.slice(0, start - 2) + text.slice(start, end) + text.slice(end + 2))
-      select(start - 2, end - 2)
-    } else {
-      onChange(`${text.slice(0, start)}**${text.slice(start, end)}**${text.slice(end)}`)
-      select(start + 2, end + 2)
-    }
+    // Asterisks already around the words: one for italic, two for bold, three for both.
+    let before = 0
+    while (before < 3 && text[start - 1 - before] === "*") before++
+    let after = 0
+    while (after < 3 && text[end + after] === "*") after++
+    const marks = Math.min(before, after)
+    const marked = size === 2 ? marks >= 2 : marks === 1 || marks === 3
+    const stars = "*".repeat(size)
+    const next = marked
+      ? text.slice(0, start - size) + text.slice(start, end) + text.slice(end + size)
+      : text.slice(0, start) + stars + text.slice(start, end) + stars + text.slice(end)
+    onChange(next)
+    const shift = marked ? -size : size
+    requestAnimationFrame(() => {
+      textarea.selectionStart = start + shift
+      textarea.selectionEnd = end + shift
+    })
   }
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "b") {
+    const key = event.key.toLowerCase()
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && (key === "b" || key === "i")) {
       event.preventDefault()
-      toggleBold(event.currentTarget)
+      toggleMark(event.currentTarget, key === "b" ? 2 : 1)
       return
     }
     if (event.key !== "Enter" || event.nativeEvent.isComposing) return
@@ -113,7 +119,17 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
         />
       </label>
       <span id={hintId} className="text-[13px] leading-normal text-ink-2">
-        To bold words, select them and press {boldShortcut()}, or wrap them in **double asterisks**.
+        {window.matchMedia("(pointer: coarse)").matches ? (
+          // No keyboard shortcuts on a touch screen, so show the marks to type.
+          <>
+            <span className="font-mono">**bold**</span> · <span className="font-mono">*italic*</span>
+          </>
+        ) : (
+          <>
+            <kbd className="font-mono">{shortcut("B")}</kbd> <strong className="font-semibold text-ink">bold</strong> ·{" "}
+            <kbd className="font-mono">{shortcut("I")}</kbd> <em className="text-ink">italic</em>
+          </>
+        )}
       </span>
     </div>
   )
