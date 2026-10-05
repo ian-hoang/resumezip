@@ -36,6 +36,10 @@ const FONTS = [
   "texgyreheros-bold.otf",
   "texgyreheros-italic.otf",
   "texgyreheros-bolditalic.otf",
+  "EBGaramond-Regular.ttf",
+  "EBGaramond-Bold.ttf",
+  "EBGaramond-Italic.ttf",
+  "EBGaramond-BoldItalic.ttf",
 ].map((file) => `/fonts/${file}`)
 
 // Downloads wrap the template in a file that also attaches a copy of the

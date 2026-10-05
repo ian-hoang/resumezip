@@ -31,4 +31,5 @@ Templates can only use the fonts in `public/fonts`, listed in `typst.worker.ts`.
 | `NewCM10-*.otf` | New Computer Modern | [typst-assets](https://github.com/typst/typst-assets) | GUST Font License |
 | `Lato-*.ttf` | Lato | [Google Fonts](https://fonts.google.com/specimen/Lato) | SIL Open Font License 1.1 |
 | `texgyreheros-*.otf` | TeX Gyre Heros | [CTAN](https://ctan.org/pkg/tex-gyre) | GUST Font License |
+| `EBGaramond-*.ttf` | EB Garamond | [EBGaramond12](https://github.com/octaviopardo/EBGaramond12) | SIL Open Font License 1.1 |
 
