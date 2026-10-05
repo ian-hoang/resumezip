@@ -5,6 +5,7 @@ import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myr
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import common from "./templates/common.typ"
+import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
 import modernjack from "./templates/modernjack.typ"
@@ -13,6 +14,7 @@ import type { CompileRequest, CompileResponse } from "./compile"
 
 const SOURCES: Record<string, string> = {
   "/common.typ": common,
+  "/ian.typ": ian,
   "/jake.typ": jake,
   "/levelsfyi.typ": levelsfyi,
   "/modernjack.typ": modernjack,

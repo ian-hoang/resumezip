@@ -9,6 +9,7 @@ export const TEMPLATES = [
   { id: "modernjack", name: "Modern", image: "/previews/modernjack.webp" },
   { id: "levelsfyi", name: "levels.fyi", image: "/previews/levelsfyi.webp" },
   { id: "referme", name: "refer.me", image: "/previews/referme.webp" },
+  { id: "ian", name: "Ian's", image: "/previews/ian.webp" },
 ] as const
 
 export type Template = (typeof TEMPLATES)[number]

@@ -24,6 +24,7 @@ const WASM = path.resolve("node_modules/@myriaddreamin/typst-ts-web-compiler/pkg
  * starts differing and isn't listed fails the test.
  */
 const KNOWN_GAPS: Record<string, string[]> = {
+  ian: [],
   // A comma inside an award's name reads as the start of the organization.
   jake: ["awards[0].name", "awards[0].organization"],
   levelsfyi: [],
