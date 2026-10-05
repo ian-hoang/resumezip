@@ -130,6 +130,14 @@ test("every template's sample is checked", () => {
   expect(samples.map((sample) => sample.selectedTemplate).sort()).toEqual(Object.keys(KNOWN_GAPS).sort())
 })
 
+test("a phone number with a plus written apart keeps the plus", async () => {
+  const sample = samples.find((resume) => resume.selectedTemplate === "ian")
+  const resume = { ...sample, profileSection: { ...sample.profileSection, phoneNumber: "+ (352) 284-0205" } }
+  const { parsed, resume: got } = await readBack(await render(resume))
+  expect(got.profileSection.phoneNumber).toBe("+ (352) 284-0205")
+  expect(parsed.unplaced).toEqual([])
+})
+
 test("a DOI or link holding a year keeps it, and the citation's own date is found", async () => {
   const sample = samples.find((resume) => resume.selectedTemplate === "levelsfyi")
   const resume = {

@@ -1004,7 +1004,12 @@ function readContacts(lines: ParseLine[], isTop: (line: ParseLine) => boolean): 
     if (github) take("profileGithub", bare(github[0]), github[0])
     if (inHeader || /^(?:\+|\(|\d)/.test(text.trim())) {
       const phone = text.match(PHONE)
-      if (phone && !DATE.test(phone[0])) take("phoneNumber", phone[0].trim(), phone[0])
+      if (phone && !DATE.test(phone[0])) {
+        // A plus written apart from the number ("+ (352) 284-0205") is still part of it.
+        const plus = text.slice(0, phone.index).match(/\+\s*$/)
+        const number = (plus ? plus[0] : "") + phone[0]
+        take("phoneNumber", number.trim(), number)
+      }
     }
     if (inHeader) {
       const url = text.match(URL)
