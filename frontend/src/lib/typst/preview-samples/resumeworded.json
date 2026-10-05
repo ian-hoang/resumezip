@@ -1,0 +1,136 @@
+{
+  "id": "preview-resumeworded",
+  "resumeTitle": "Hannah Brooks",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-04T12:00:00.000Z",
+  "selectedTemplate": "resumeworded",
+  "sectionOrder": [
+    "Education",
+    "Work",
+    "Projects",
+    "Publications",
+    "Leadership",
+    "Skills",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Hannah Brooks",
+    "email": "hannah.brooks@example.com",
+    "phoneNumber": "(555) 017-6629",
+    "location": "Boston, MA",
+    "linkedin": "linkedin.com/in/hannahbrooks",
+    "profileGithub": "",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Boston University",
+      "schoolLocation": "Boston, MA",
+      "degree": "Bachelor of Science in Business Administration, Concentration in Information Systems",
+      "gpa": "3.86/4.0",
+      "schoolStartDate": "",
+      "schoolEndDate": "Expected May 2026",
+      "coursework": "Database Management; Business Analytics; Product Management; Corporate Finance; Statistics",
+      "involvement": "Product Club; BU Running Club; Peer Advisor for the Questrom School"
+    },
+    {
+      "id": 2,
+      "schoolName": "University College Dublin",
+      "schoolLocation": "Dublin, Ireland",
+      "degree": "Study Abroad Program in Technology Management",
+      "gpa": "",
+      "schoolStartDate": "Jan 2025",
+      "schoolEndDate": "May 2025",
+      "coursework": "",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Product Management Intern",
+      "companyName": "Lumen Health",
+      "workLocation": "Boston, MA",
+      "workStartDate": "Jun 2025",
+      "workEndDate": "Aug 2025",
+      "workDescription": "• Led discovery for a prescription refill reminder, interviewing 25 patients and writing the spec the team built in six weeks\n• Defined launch metrics with the data team and ran an A/B test that raised on-time refills by 14% across 40,000 patients, which the company then rolled out to every one of its pharmacy partners nationwide\n• Wrote weekly product updates for leadership and kept a shared roadmap of 30+ requests from support and sales"
+    },
+    {
+      "id": 2,
+      "workRole": "Business Analyst Intern",
+      "companyName": "Harborview Bank",
+      "workLocation": "Providence, RI",
+      "workStartDate": "Jun 2024",
+      "workEndDate": "Aug 2024",
+      "workDescription": "• Built a SQL and Tableau dashboard of branch wait times that managers now use to plan staffing for each weekday\n• Mapped the small-business loan process with operations staff and found two approval steps to remove, cutting the average time to a decision from 9 days to 6 for loans under $250,000 across 30 branches\n• Cleaned five years of customer survey data in Python and summarized the top complaints for the retail banking team"
+    },
+    {
+      "id": 3,
+      "workRole": "Teaching Assistant, Introduction to Information Systems",
+      "companyName": "Boston University",
+      "workLocation": "Boston, MA",
+      "workStartDate": "Sep 2024",
+      "workEndDate": "Present",
+      "workDescription": "• Lead two weekly discussion sections of 35 students on databases, spreadsheets and basic SQL, and hold office hours\n• Rewrote the course's spreadsheet labs around real company data, and grade weekly assignments with written feedback"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Campus Marketplace",
+      "projectDate": "Sep 2024 – Dec 2024",
+      "techStack": "Figma, Airtable, Webflow",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Designed and launched a buy-and-sell site for students in a four-person team, reaching 1,200 listings in its first semester\n• Ran weekly user interviews and usability tests that shaped the listing flow and cut the time to post an item by half"
+    },
+    {
+      "id": 2,
+      "projectName": "Dining Hall Waste Study",
+      "projectDate": "Feb 2024",
+      "techStack": "Excel, R",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Analyzed six months of dining hall data to find the meals most often thrown away, and presented changes to the dining team"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Technical",
+      "skillDetails": "SQL, Python (pandas), Tableau, Excel (pivot tables, VLOOKUP), Figma, Jira, Airtable"
+    },
+    {
+      "id": 2,
+      "skillName": "Languages",
+      "skillDetails": "Fluent in English and Spanish; conversational French"
+    },
+    {
+      "id": 3,
+      "skillName": "Certifications",
+      "skillDetails": "Google Data Analytics Certificate, Scrum Fundamentals"
+    },
+    {
+      "id": 4,
+      "skillName": "Interests",
+      "skillDetails": "Long-distance running, film photography, cooking for friends"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "Vice President of Events",
+      "leadershipOrg": "BU Women in Business",
+      "leadershipLocation": "Boston, MA",
+      "leadershipStartDate": "Sep 2024",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Organize a speaker series and a spring conference for 400 students, with 15 company partners and a budget of $20,000\n• Started a mentoring program that pairs first-year members with alumni working in product, consulting and finance roles"
+    }
+  ],
+  "volunteerExperienceSection": [],
+  "awardsSection": []
+}

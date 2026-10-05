@@ -46,6 +46,18 @@ const KNOWN_GAPS: Record<string, string[]> = {
     "awards[1].name",
     "awards[1].organization",
   ],
+  // Names of schools, employers, groups and projects are printed in capitals,
+  // so their original case can't be read back.
+  resumeworded: [
+    "education[0].school",
+    "education[1].school",
+    "leadership[0].organization",
+    "projects[0].name",
+    "projects[1].name",
+    "work[0].company",
+    "work[1].company",
+    "work[2].company",
+  ],
 }
 
 const samples = readdirSync(path.join(TYPST, "preview-samples")).map((file) => JSON.parse(readFileSync(path.join(TYPST, "preview-samples", file), "utf8")))

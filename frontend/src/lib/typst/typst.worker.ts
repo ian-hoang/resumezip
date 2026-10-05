@@ -10,6 +10,7 @@ import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
 import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
+import resumeworded from "./templates/resumeworded.typ"
 import type { CompileRequest, CompileResponse } from "./compile"
 
 const SOURCES: Record<string, string> = {
@@ -19,6 +20,7 @@ const SOURCES: Record<string, string> = {
   "/levelsfyi.typ": levelsfyi,
   "/modernjack.typ": modernjack,
   "/referme.typ": referme,
+  "/resumeworded.typ": resumeworded,
 }
 
 // Served from public/fonts. Templates can only use these fonts: Typst's
