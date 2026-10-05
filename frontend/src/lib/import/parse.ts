@@ -329,9 +329,14 @@ const textStart = (line: Line) => (line.parts.find((part) => !dateOnly(part.text
 
 /** A line with only a place, a date or a link on it, which belongs to the title above. */
 const detailOnly = (line: Line) => {
-  const text = line.text.trim()
-  const url = text.match(URL)
-  return isLocation(text) || (url !== null && url[0].length === text.length) || dateOnly(text)
+  const isDetail = (value: string) => {
+    const text = value.trim()
+    const url = text.match(URL)
+    return isLocation(text) || (url !== null && url[0].length === text.length) || dateOnly(text)
+  }
+  // Each side on its own: "UNIVERSITY OF MICHIGAN    Ann Arbor, MI" is a name with its
+  // place, even though the whole line reads like a long place name.
+  return line.parts.length > 1 ? line.parts.every((part) => isDetail(part.text)) : isDetail(line.text)
 }
 
 const sameStyle = (a: Line, b: Line) => {

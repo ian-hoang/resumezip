@@ -142,6 +142,20 @@ test("every template's sample is checked", () => {
   expect(samples.map((sample) => sample.selectedTemplate).sort()).toEqual(Object.keys(KNOWN_GAPS).sort())
 })
 
+test("a school with its place on the right starts a new entry, even right after another school", async () => {
+  // In the Resume Worded layout a school's dates are on its second line, and a
+  // school with no details is followed straight away by the next one.
+  const sample = samples.find((resume) => resume.selectedTemplate === "resumeworded")
+  const [first, second] = sample.educationSection
+  const resume = { ...sample, educationSection: [{ ...first, gpa: "", coursework: "", involvement: "" }, second] }
+  const { resume: got } = await readBack(await render(resume))
+  expect(got.educationSection.map((school: Record<string, string>) => school.schoolLocation)).toEqual([first.schoolLocation, second.schoolLocation])
+  expect(got.educationSection.map((school: Record<string, string>) => school.schoolName.toLowerCase())).toEqual([
+    first.schoolName.toLowerCase(),
+    second.schoolName.toLowerCase(),
+  ])
+})
+
 test("a phone number with a plus written apart keeps the plus", async () => {
   const sample = samples.find((resume) => resume.selectedTemplate === "ian")
   const resume = { ...sample, profileSection: { ...sample.profileSection, phoneNumber: "+ (352) 284-0205" } }
