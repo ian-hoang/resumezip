@@ -1,0 +1,20 @@
+# Labels that .github/workflows/review-labels.yml adds by itself.
+
+# Asks Greptile for a review (.greptile/config.json). Only for the code where
+# a missed bug costs most; for anything else, add the label by hand or
+# comment @greptileai.
+"review: greptile":
+  - changed-files:
+      - any-glob-to-any-file:
+          # Saved resumes: localStorage is the only copy.
+          - frontend/src/context/**
+          # The PDF engine. Not the templates' looks or the sample resumes.
+          - frontend/src/lib/typst/*.ts
+          # The resume attached to every PDF.
+          - frontend/src/lib/resumeFile.ts
+          # Reads files people upload.
+          - frontend/src/lib/import/**
+          # How the site is built and deployed, and what it depends on.
+          - frontend/next.config.js
+          - frontend/package.json
+          - .github/workflows/**

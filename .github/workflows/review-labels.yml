@@ -1,0 +1,25 @@
+# Adds labels to pull requests by the files they change (.github/labeler.yml),
+# such as "review: greptile" for the code where a missed bug costs most.
+#
+# pull_request_target runs this workflow and labeler.yml as they are on main,
+# so it can label pull requests from forks too. It never checks out the pull
+# request's code, so that code can't use the token that writes labels.
+# Changes to this file or labeler.yml only take effect once merged.
+
+name: Review labels
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Label
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/labeler@v7
