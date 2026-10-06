@@ -42,6 +42,12 @@ builds the site (`.github/workflows/ci.yml`), and `main` only accepts a pull
 request once that passes. It also audits the packages that ship, as a report
 that doesn't block merging. Dependabot opens update pull requests weekly.
 
+Greptile reviews a pull request only when it has the `review: greptile` label.
+The label is added automatically to pull requests that touch saved resumes, the
+PDF engine, the importer, the build or the dependencies (`.github/labeler.yml`).
+For anything else, add the label or comment `@greptileai`. Its settings and
+review rules are in `.greptile/`.
+
 ## Deploying
 
 Vercel builds and deploys this folder (`frontend/`).
