@@ -1,0 +1,7 @@
+{
+  "labels": ["review: greptile"],
+  "autoReview": ["open"],
+  "effort": "base",
+  "excludeAuthors": ["dependabot[bot]"],
+  "ignorePatterns": "**/package-lock.json\nfrontend/public/**\nfrontend/src/lib/typst/preview-samples/**\n**/*.md"
+}
