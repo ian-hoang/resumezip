@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { ArrowLeft, Download, Eye, Loader2, PencilLine } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
+import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
 import ProfileForm from "@/components/editor/ProfileForm"
 import SectionForm from "@/components/editor/SectionForm"
@@ -208,19 +209,14 @@ export default function EditorPage() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside
-          data-covers="top"
-          className={`sticky top-0 z-20 shrink-0 border-b border-rule bg-paper lg:static lg:block lg:w-[248px] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-4 lg:py-7 ${
-            view === "preview" ? "hidden" : ""
-          }`}
-        >
+        <LeftBar hidden={view === "preview"}>
           <SectionNav
             sections={sections}
             active={active}
             onSelect={select}
             onReorder={(order) => updateFormData("sectionOrder", order)}
           />
-        </aside>
+        </LeftBar>
 
         <main
           ref={mainRef}
