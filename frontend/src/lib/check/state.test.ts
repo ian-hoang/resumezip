@@ -4,9 +4,10 @@ import { describe, expect, test } from "vitest"
 import { memoryStorage } from "@/lib/memoryStorage"
 import { toAttachment } from "@/lib/resumeFile"
 import { createResumeStore } from "@/lib/resumeStore"
+import { changedPaths, mergeResume } from "@/lib/resumeStorage"
 import { runChecks, type Finding, type Rule } from "./engine"
 import { MAX_DISMISSED, MAX_WORD_LENGTH, MAX_WORDS } from "./settings"
-import { addWord, CHECK_FIELD, dismiss, readCheckState, removeWord, restore } from "./state"
+import { addWord, changeCheck, CHECK_FIELD, dismiss, readCheckState, removeWord, restore } from "./state"
 
 const sample = JSON.parse(readFileSync(path.resolve("src/lib/typst/preview-samples/jake.json"), "utf8"))
 
@@ -60,6 +61,23 @@ describe("what the checker saves on a resume", () => {
     expect(readCheckState(reloaded.getState().resumes[id])).toEqual({ dismissed: ["B1|a|b"], words: ["Kubernetes"] })
   })
 
+  test("changes only the part that changed, and nothing at all if nothing did", () => {
+    const resume = { ...sample, [CHECK_FIELD]: { dismissed: [], words: ["Typst"], later: "kept" } }
+    const value = changeCheck(resume, (state) => dismiss(state, suggestion("B1|a|b")))
+    expect(value).toEqual({ dismissed: ["B1|a|b"], words: ["Typst"], later: "kept" })
+    expect(value?.words).toBe(resume[CHECK_FIELD].words)
+    expect(changeCheck(resume, (state) => restore(state, "B9|x|y"))).toBeNull()
+    expect(changeCheck(sample, (state) => addWord(state, "Typst"))).toEqual({ words: ["Typst"] })
+  })
+
+  test("from two tabs keeps both: one tab's dismissals and the other's words", () => {
+    const saved = { ...sample, [CHECK_FIELD]: { dismissed: [], words: [] } }
+    const ours = { ...saved, [CHECK_FIELD]: changeCheck(saved, (state) => dismiss(state, suggestion("B1|a|b"))) }
+    const theirs = { ...saved, [CHECK_FIELD]: changeCheck(saved, (state) => addWord(state, "Kubernetes")) }
+    const changed = new Set(changedPaths(CHECK_FIELD, saved[CHECK_FIELD], ours[CHECK_FIELD]))
+    expect(changed).toEqual(new Set([`${CHECK_FIELD}.dismissed`]))
+    expect(mergeResume(theirs, ours, changed)[CHECK_FIELD]).toEqual({ dismissed: ["B1|a|b"], words: ["Kubernetes"] })
+  })
 })
 
 describe("dismissing and restoring", () => {

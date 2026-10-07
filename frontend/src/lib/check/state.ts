@@ -23,11 +23,39 @@ const strings = (value: unknown, max: number, longest: number) =>
     .filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= longest)
     .slice(-max)
 
+const savedOn = (resume: Record<string, any>): Record<string, unknown> => {
+  const saved = resume?.[CHECK_FIELD]
+  return typeof saved === "object" && saved !== null && !Array.isArray(saved) ? saved : {}
+}
+
+// Far longer than any finding's key (see findingKey in places.ts).
+const MAX_KEY_LENGTH = 200
+
 /** What's saved on a resume, or nothing dismissed and no words if it's missing or in another shape. */
 export function readCheckState(resume: Record<string, any>): CheckState {
-  const saved = resume?.[CHECK_FIELD]
-  const check = typeof saved === "object" && saved !== null && !Array.isArray(saved) ? saved : {}
-  return { dismissed: strings(check.dismissed, MAX_DISMISSED, 200), words: strings(check.words, MAX_WORDS, MAX_WORD_LENGTH) }
+  const check = savedOn(resume)
+  return {
+    dismissed: strings(check.dismissed, MAX_DISMISSED, MAX_KEY_LENGTH),
+    words: strings(check.words, MAX_WORDS, MAX_WORD_LENGTH),
+  }
+}
+
+/**
+ * Makes a change to what's saved on a resume, and gives the value to save
+ * under CHECK_FIELD, or null if nothing changed. What the change didn't touch
+ * stays exactly as saved, so if two tabs change different parts at once, as
+ * one dismissing a finding while the other adds a word, both are kept (see
+ * mergeResume in lib/resumeStorage.ts).
+ */
+export function changeCheck(resume: Record<string, any>, change: (state: CheckState) => CheckState): Record<string, unknown> | null {
+  const before = readCheckState(resume)
+  const after = change(before)
+  if (after === before) return null
+  return {
+    ...savedOn(resume),
+    ...(after.dismissed !== before.dismissed && { dismissed: after.dismissed }),
+    ...(after.words !== before.words && { words: after.words }),
+  }
 }
 
 /**

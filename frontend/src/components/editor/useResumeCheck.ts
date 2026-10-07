@@ -3,7 +3,7 @@
 import { useCallback, useDeferredValue, useMemo, useRef } from "react"
 import { useResumeContext } from "@/context/ResumeContext"
 import { runChecks, type Finding, type PdfReading } from "@/lib/check/engine"
-import { addWord, CHECK_FIELD, dismiss, readCheckState, restore, type CheckState } from "@/lib/check/state"
+import { addWord, CHECK_FIELD, changeCheck, dismiss, restore, type CheckState } from "@/lib/check/state"
 
 /**
  * Checks the open resume as it changes. The checks run on a deferred copy of
@@ -20,9 +20,8 @@ export function useResumeCheck(pdf?: PdfReading) {
   latest.current = { formData, report }
   const change = useCallback(
     (next: (state: CheckState) => CheckState) => {
-      const state = readCheckState(latest.current.formData)
-      const changed = next(state)
-      if (changed !== state) updateFormData(CHECK_FIELD, changed)
+      const value = changeCheck(latest.current.formData, next)
+      if (value) updateFormData(CHECK_FIELD, value)
     },
     [updateFormData],
   )
