@@ -83,6 +83,8 @@ export default function LeftBar({ hidden, children }: LeftBarProps) {
       <div role="tablist" aria-label="Write or check" className="mx-3 mt-2 flex gap-1 rounded-[4px] bg-desk p-1 lg:mx-0 lg:mb-6 lg:mt-0">
         {MODES.map((option, index) => {
           const selected = option.id === mode
+          // "Check · 3": how much the checker found that isn't dismissed.
+          const count = option.id === "check" && open > 0 ? open : null
           return (
             <button
               key={option.id}
@@ -94,22 +96,16 @@ export default function LeftBar({ hidden, children }: LeftBarProps) {
               id={`${id}-${option.id}`}
               aria-selected={selected}
               aria-controls={`${id}-panel`}
+              aria-label={count === null ? undefined : `${option.label}, ${count} to look at`}
               tabIndex={selected ? 0 : -1}
               onClick={() => choose(option.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[3px] text-sm font-medium transition-colors ${
+              className={`inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[3px] text-sm font-medium transition-colors ${
                 selected ? "bg-sheet text-ink ring-1 ring-rule" : "text-ink-2 hover:text-ink"
               }`}
             >
               {option.label}
-              {option.id === "check" && open > 0 && (
-                <>
-                  <span aria-hidden="true" className="font-mono text-[12px] tabular-nums">
-                    · {open}
-                  </span>
-                  <span className="sr-only">, {open} to look at</span>
-                </>
-              )}
+              {count !== null && <span className="tabular-nums">· {count}</span>}
             </button>
           )
         })}
