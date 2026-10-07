@@ -114,6 +114,12 @@ function runs(line: string, bold = false, italic = false): Run[] {
   return out
 }
 
+/** A bullet's words as printed, without its bold and italic marks. */
+export const plainText = (line: string) =>
+  runs(line)
+    .map((run) => run.text)
+    .join("")
+
 // For matching names: lower case, without accents.
 const plain = (value: string) => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 
@@ -158,9 +164,11 @@ export function templateIdOf(value: unknown): TemplateId {
   return templateById(value).id
 }
 
-// The saved order, plus any sections missing from older resumes, at the end,
-// as the editor shows them. Unknown names and repeats are dropped.
-function sectionOrder(value: unknown): string[] {
+/**
+ * The saved order, plus any sections missing from older resumes, at the end,
+ * as the editor shows them. Unknown names and repeats are dropped.
+ */
+export function sectionOrder(value: unknown): string[] {
   const saved = (Array.isArray(value) ? value : []).filter(
     (name, index, all) => DEFAULT_SECTION_ORDER.includes(name) && all.indexOf(name) === index,
   )
