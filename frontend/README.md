@@ -31,6 +31,8 @@ npm run test:browser   # after a build; see below
   is the user's save file and opens again exactly.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's
   fields. Its README explains how.
+- `src/lib/check/` is the resume checker: fixed rules that say what to fix on
+  a resume, and where. Its README covers writing a rule.
 
 ## Tests
 
