@@ -1,8 +1,8 @@
 # Contributing to resumezip
 
-Thanks for helping. resumezip is a resume builder that runs entirely in the
-browser: no accounts, no server, and nothing someone writes is uploaded.
-Every change has to keep it that way.
+Thanks for helping. resumezip is a resume builder that runs in the browser:
+no accounts, and nothing someone writes is uploaded, except to the AI review
+when they ask for it. Every change has to keep it that way.
 
 ## Before you start
 
@@ -22,7 +22,9 @@ npm install
 npm run dev   # http://localhost:3000
 ```
 
-It uses Node 24. There are no accounts, keys or settings to set up.
+It uses Node 24. There are no accounts or settings to set up. The AI review
+needs an Anthropic API key in `ANTHROPIC_API_KEY`; without one it says it
+isn't available, and everything else works.
 [`frontend/README.md`](frontend/README.md) explains how the code fits together.
 
 ## Making a change
@@ -50,10 +52,13 @@ may also comment. Take them as suggestions; you don't have to answer each one.
 
 ## Ground rules
 
-- **Nothing someone writes leaves the browser.** Don't send resume content
-  anywhere, and don't add analytics, trackers or ads. The app only contacts
-  other sites to download its PDF engine (from jsDelivr) and to fetch
-  something the person asked for, like a paper's details from its DOI.
+- **Nothing someone writes leaves the browser** unless they ask. Don't send
+  resume content anywhere, and don't add analytics, trackers or ads. The app
+  only contacts other sites to download its PDF engine (from jsDelivr) and to
+  fetch something the person asked for, like a paper's details from its DOI,
+  or an AI review. The AI review sends only what it needs
+  ([`frontend/src/lib/review`](frontend/src/lib/review/README.md)), only
+  when the person chooses it, and its server function never logs or keeps it.
 - **Saved resumes keep working.** Resumes only exist in visitors' browsers
   and in the PDFs they downloaded. If you change how a resume is stored, older
   ones must still open.

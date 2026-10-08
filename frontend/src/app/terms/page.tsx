@@ -28,7 +28,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
       },
       {
         title: "No accounts",
-        body: "There’s nothing to sign up for, and no outside service ever sees your resume.",
+        body: "There’s nothing to sign up for. Your resume is only sent anywhere if you ask for AI feedback.",
       },
       {
         title: "No guarantees",
@@ -42,7 +42,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "What we collect",
-        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up.",
+        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up. If you ask for AI feedback, see below.",
       },
       {
         title: "How it’s used",
@@ -53,8 +53,12 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
         body: "Nowhere. Your PDF is made on your device and stays there unless you send it to someone.",
       },
       {
+        title: "AI feedback",
+        body: "Only if you ask for it, in Check. Then the text of your resume’s entries goes through our server to Claude, Anthropic’s AI, and the feedback comes back to your browser. Your name, contact details, links and locations aren’t sent. We don’t store or log the text. Anthropic’s commercial terms don’t let it train its AI on what’s sent, and it may keep it for a limited time, as its privacy policy says.",
+      },
+      {
         title: "Sharing and selling",
-        body: "We don’t share or sell your data. We never receive your resume in the first place.",
+        body: "We don’t share or sell your data. We only pass your resume’s text on to Anthropic when you ask for AI feedback.",
       },
     ],
   },
@@ -76,11 +80,11 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
       },
       {
         title: "Do you share or sell my data?",
-        body: "No. Your resume stays in your browser, so we never see it.",
+        body: "No. Your resume stays in your browser, so we never see it, unless you ask for AI feedback. Then its text is passed to Anthropic for that and nothing else.",
       },
       {
         title: "Can I get feedback on my resume?",
-        body: "Not yet, but it’s on the way.",
+        body: "Yes. In the editor, open Check and choose Get AI feedback. Claude reads it the way a recruiter skims one, and marks the words that stick and the red flags.",
       },
     ],
   },

@@ -11,6 +11,7 @@ import { checkingCategories, keepScores, scoreOf, shownScore, wholePoints, type 
 import { CATEGORIES, MUST_FIX_MAX, type CategoryId } from "@/lib/check/settings"
 import { hasLeftOut } from "@/lib/leftOut"
 import { useCheck } from "./CheckContext"
+import ReviewPanel from "./ReviewPanel"
 
 // A typo can't be dismissed, but its word can be added so it isn't flagged
 // again (rule G1, issue #66).
@@ -60,6 +61,7 @@ export default function CheckPanel() {
   const checkingGrammar = waitingFor("grammar") || grammar !== "ready"
   return (
     <div className="flex flex-col gap-5 px-3 py-4 xl:p-0">
+      <ReviewPanel />
       <ScoreHeader total={score.total} mustFix={score.mustFix} />
       {(waitingFor("pdf") || checkingGrammar) && (
         <div role="status" className="flex flex-col gap-1 px-2 text-sm text-ink-2">

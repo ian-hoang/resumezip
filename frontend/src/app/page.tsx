@@ -18,7 +18,7 @@ const QUESTIONS = [
     question: "Who can see my resume?",
     answer: (
       <>
-        Only you. It’s saved in this browser and never sent to us or anyone else. The code is{" "}
+        Only you. It’s saved in this browser and never sent to us or anyone else, unless you ask for AI feedback. The code is{" "}
         <a
           href={REPO_URL}
           target="_blank"

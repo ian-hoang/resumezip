@@ -5,9 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { ArrowLeft, Check, Download, Eye, Loader2, PencilLine } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
+import { AiReviewProvider } from "@/components/editor/AiReview"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import LeftBar from "@/components/editor/LeftBar"
-import PdfPreview from "@/components/editor/PdfPreview"
+import { ReviewedPreview } from "@/components/editor/ReviewMarks"
 import ProfileForm from "@/components/editor/ProfileForm"
 import SectionForm from "@/components/editor/SectionForm"
 import { WIDE_SCREEN } from "@/components/editor/layout"
@@ -336,43 +337,45 @@ export default function EditorPage() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
-        {/* The left bar and the forms share what the checker found. */}
+        {/* The left bar and the forms share what the checker found, and the left bar and the preview the AI review. */}
         {/* The resume from the address: on the first render the open resume can still be the one before. */}
         <CheckProvider onSelect={select} preview={preview} printed={printed} unbuilt={unbuilt} opened={resumes[id]}>
-          <LeftBar hidden={view === "preview"}>
-            <SectionNav
-              sections={sections}
-              headings={formData.headings}
-              active={active}
-              onSelect={select}
-              onReorder={(order) => updateFormData("sectionOrder", order)}
-            />
-          </LeftBar>
+          <AiReviewProvider key={id} onSelect={select}>
+            <LeftBar hidden={view === "preview"}>
+              <SectionNav
+                sections={sections}
+                headings={formData.headings}
+                active={active}
+                onSelect={select}
+                onReorder={(order) => updateFormData("sectionOrder", order)}
+              />
+            </LeftBar>
 
-          <main
-            ref={mainRef}
-            className={`min-w-0 flex-1 px-5 pb-28 pt-9 sm:px-10 xl:block xl:overflow-y-auto xl:pb-16 ${
-              view === "preview" ? "hidden" : ""
-            }`}
-          >
-            {/* A container, so the fields fit the form's own width rather than the window's. */}
-            <div className="@container mx-auto max-w-[640px]">
-              {active === "Profile" ? (
-                <ProfileForm position={position(1)} />
-              ) : (
-                <SectionForm key={active} section={SECTIONS[active]} position={position(sections.indexOf(active) + 2)} />
-              )}
-            </div>
-          </main>
+            <main
+              ref={mainRef}
+              className={`min-w-0 flex-1 px-5 pb-28 pt-9 sm:px-10 xl:block xl:overflow-y-auto xl:pb-16 ${
+                view === "preview" ? "hidden" : ""
+              }`}
+            >
+              {/* A container, so the fields fit the form's own width rather than the window's. */}
+              <div className="@container mx-auto max-w-[640px]">
+                {active === "Profile" ? (
+                  <ProfileForm position={position(1)} />
+                ) : (
+                  <SectionForm key={active} section={SECTIONS[active]} position={position(sections.indexOf(active) + 2)} />
+                )}
+              </div>
+            </main>
 
-          <section
-            aria-label="Live preview"
-            className={`min-w-0 flex-col bg-desk pb-20 xl:flex xl:w-[46%] xl:overflow-hidden xl:pb-0 ${
-              view === "preview" ? "flex max-xl:flex-1" : "hidden"
-            }`}
-          >
-            <PdfPreview pdfUrl={pdfUrl} error={compileError} updating={switchingTemplate && !compileError} />
-          </section>
+            <section
+              aria-label="Live preview"
+              className={`min-w-0 flex-col bg-desk pb-20 xl:flex xl:w-[46%] xl:overflow-hidden xl:pb-0 ${
+                view === "preview" ? "flex max-xl:flex-1" : "hidden"
+              }`}
+            >
+              <ReviewedPreview pdfUrl={pdfUrl} error={compileError} updating={switchingTemplate && !compileError} />
+            </section>
+          </AiReviewProvider>
         </CheckProvider>
       </div>
 

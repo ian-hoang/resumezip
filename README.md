@@ -31,7 +31,8 @@
 ## Why resumezip
 
 - **No account.** Open it and start writing. It's free, with nothing to install.
-- **Private.** Your resume is saved in your browser and the PDF is made on your device. Nothing is uploaded.
+- **Private.** Your resume is saved in your browser and the PDF is made on your device. Nothing is uploaded unless you ask for AI feedback.
+- **AI feedback, if you want it.** Claude skims it like a recruiter and marks the words that stick and the red flags, right on the preview. Your name and contact details aren't sent.
 - **Live preview.** The PDF updates as you type.
 - **Pick up where you left off.** Every PDF carries its resume, so you can open it again on any computer and keep editing.
 - **Bring your old resume.** Open a PDF or Word (.docx) file, check what was found, and carry on from there.
@@ -51,12 +52,13 @@
 
 ## How it works
 
-resumezip is a [Next.js](https://nextjs.org) app with no server of its own.
+resumezip is a [Next.js](https://nextjs.org) app with almost no server of its own: one function, for the AI feedback.
 
 - Resumes live in your browser's local storage. resumezip asks the browser to keep them rather than clear them to free up space, but Safari still deletes a site's data after seven days of Safari use without a visit. That's the cost of having no accounts and no server: in Safari, keep your downloaded PDF, since it opens again as an editable resume.
 - PDFs are made with [Typst](https://typst.app), running in the browser as WebAssembly through [typst.ts](https://github.com/Myriad-Dreamin/typst.ts), in a Web Worker so typing stays smooth.
 - The preview and opening PDFs use [pdf.js](https://mozilla.github.io/pdf.js/). Word files are read with [mammoth](https://github.com/mwilliamson/mammoth.js).
 - Each downloaded PDF has a copy of its resume attached, which is how it opens again for editing.
+- AI feedback is the one thing that leaves your browser, and only when you ask for it in Check: the text of your entries goes through one server function to [Claude](https://www.anthropic.com/claude), which isn't logged or kept by resumezip. [`frontend/src/lib/review`](frontend/src/lib/review/README.md) explains it.
 
 ## Run it yourself
 

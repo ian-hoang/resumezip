@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ClipboardEvent } from "react"
+import { useEffect, useRef, useState, type ClipboardEvent, type ReactNode } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import "react-pdf/dist/esm/Page/AnnotationLayer.css"
 import "react-pdf/dist/esm/Page/TextLayer.css"
@@ -36,9 +36,13 @@ interface PdfPreviewProps {
   error?: string | null
   /** A new PDF is being built in another template, so the one on screen is out of date. */
   updating?: boolean
+  /** Drawn around the pages, behind them, with room left for it above them. */
+  frame?: ReactNode
+  /** Drawn over the pages, which it can measure by their text (`[data-preview-shown] .react-pdf__Page__textContent`). */
+  overlay?: ReactNode
 }
 
-export default function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
+export default function PdfPreview({ pdfUrl, error, updating = false, frame, overlay }: PdfPreviewProps) {
   const [documents, setDocuments] = useState<LoadedDocument[]>([])
   const [zoom, setZoom] = useState(1)
   const [loadError, setLoadError] = useState(false)
@@ -168,12 +172,17 @@ export default function PdfPreview({ pdfUrl, error, updating = false }: PdfPrevi
         ) : (
           // The out-of-date page fades a little, after a moment, so a quick switch doesn't flicker.
           <div
-            className={`relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
+            className={`relative isolate mx-auto transition-[opacity,margin] duration-300 ${frame ? "mt-11" : ""} ${updating ? "opacity-50 delay-150" : ""}`}
             style={{ width: pageWidth, minHeight: numPages * pageWidth * (11 / 8.5) + (numPages - 1) * PAGE_GAP }}
           >
+            {frame}
             {!faded && <PrintingPage width={pageWidth} leaving={!waiting} />}
             {documents.map((doc) => (
-              <div key={doc.file} className={doc === shownDocument ? "" : "invisible absolute inset-0"}>
+              <div
+                key={doc.file}
+                data-preview-shown={doc === shownDocument || undefined}
+                className={doc === shownDocument ? "" : "invisible absolute inset-0"}
+              >
                 <Document
                   file={doc.file}
                   // A link in the preview, such as the person's LinkedIn, opens in a new tab rather than leaving the editor.
@@ -202,6 +211,7 @@ export default function PdfPreview({ pdfUrl, error, updating = false }: PdfPrevi
                 </Document>
               </div>
             ))}
+            {overlay}
           </div>
         )}
       </div>

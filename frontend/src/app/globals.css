@@ -42,6 +42,46 @@
   }
 }
 
+/* The AI review on the preview (components/editor/ReviewMarks.tsx): its
+   marks come in from a blur when they change, and a note fades in by its words. */
+@theme {
+  --animate-review-in: review-in 0.35s ease-out;
+  --animate-tip-in: tip-in 0.15s ease-out;
+  @keyframes review-in {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+    }
+  }
+  @keyframes tip-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}
+
+/* Each stroke under a note's words is drawn on, as with a pen. Its path has a
+   pathLength of 1, so one dash is the whole stroke. */
+.review-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: review-draw 0.5s cubic-bezier(0.3, 0.7, 0.4, 1) forwards;
+}
+
+@keyframes review-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-stroke {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Small monospace caps for metadata: "03 / 08", "SAVED IN THIS BROWSER". */
 @utility label-mono {
   font-family: var(--font-geist-mono), ui-monospace, monospace;

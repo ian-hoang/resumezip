@@ -24,7 +24,7 @@ export default function AboutPage() {
           title="Hi, I’m Ian."
         >
           I built resumezip because formatting a resume shouldn’t be harder than writing it. It’s free, there’s no
-          sign-up, and your resume never leaves your browser.
+          sign-up, and your resume stays in your browser unless you ask for AI feedback.
         </PageIntro>
 
         <section className={SECTION}>

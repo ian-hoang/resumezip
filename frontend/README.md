@@ -2,7 +2,8 @@
 
 A free resume builder with no sign-up. Resumes are saved in the browser and
 built into PDFs in the browser with [Typst](https://typst.app), so a resume
-is never sent to a server.
+is never sent to a server, unless the person asks for AI feedback
+(`src/lib/review`).
 
 ## Running it
 
@@ -34,6 +35,9 @@ npm run test:browser   # after a build; see below
   fields. Its README explains how.
 - `src/lib/check/` is the resume checker: fixed rules that say what to fix on
   a resume, and where. Its README covers writing a rule.
+- `src/lib/review/` is the AI review in Check: Claude marks the words that
+  stick and the red flags, drawn on the preview. It's the only part with a
+  server function (`src/app/api/review`), and it only runs when asked.
 
 ## Tests
 
@@ -73,6 +77,14 @@ pull requests by label, so fixes for urgent issues get a review.
 Vercel builds and deploys this folder (`frontend/`). Only `main` deploys, to
 the live site. Pull requests don't get preview deployments, since they use
 the same free allowance; CI's build already shows a pull request builds.
+
+The AI review needs an Anthropic API key, as `ANTHROPIC_API_KEY` in the
+project's environment variables on Vercel. Without one, the review says it
+isn't available and the rest of the site works as it always has. Since
+anyone can ask for reviews, keep its cost capped: set a monthly spend limit
+on the key's workspace in the Claude Console, and a rate limit rule for
+`/api/review` in Vercel's firewall, as the function's own count
+(`src/lib/review/limit.ts`) is only per copy of the function.
 
 To get a preview, for example to try a change on a phone, push the branch
 under a `preview/` name, then delete it when you're done:
