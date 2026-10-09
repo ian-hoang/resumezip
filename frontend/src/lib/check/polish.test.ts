@@ -160,18 +160,11 @@ describe("P5 words in capitals", () => {
 
 describe("P6 shorthand", () => {
   test("flags shorthand, with the word to write", () => {
-    const bullets = [
-      "Built it w/ React",
-      "Led the mgmt team",
-      "Cut costs approx. 40%",
-      "Design & build the API",
-      "Cut builds from 10 hrs to 2",
-    ]
+    const bullets = ["Built it w/ React", "Led the mgmt team", "Cut costs approx. 40%", "Cut builds from 10 hrs to 2"]
     expect(check("P6", resumeWith(job(bullets))).findings.map(({ message, suggestion }) => [message, suggestion])).toEqual([
       ["“w/” is shorthand", "Write “with”."],
       ["“mgmt” is shorthand", "Write “management”."],
       ["“approx.” is shorthand", "Write “about”."],
-      ["“&” is shorthand", "Write “and”."],
     ])
   })
 
@@ -183,8 +176,9 @@ describe("P6 shorthand", () => {
     expect(check("P6", resume).findings).toEqual([])
   })
 
-  test("leaves names and acronyms with an & or the same letters alone", () => {
+  test("leaves an & alone, and names and acronyms with the same letters", () => {
     const bullets = [
+      "Design & build the API",
       "Ran R&D for AT&T",
       "Partnered with Procter & Gamble",
       "Trained the HR team",

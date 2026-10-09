@@ -271,11 +271,9 @@ const allCaps: Rule = {
   },
 }
 
-// How each kind of shorthand is found: "&" only between words in a sentence
-// ("design & build", not "AT&T" or "Procter & Gamble"), "hr" and "yr" only in
-// lower case ("HR" is a department).
+// How each kind of shorthand is found: "hr" and "yr" only in lower case ("HR"
+// is a department).
 function shorthandPattern(short: string): RegExp {
-  if (short === "&") return / & (?=\p{Ll})/u
   if (/^(yrs?|hrs?)$/.test(short)) return new RegExp(String.raw`\b${short}\b`)
   if (short.includes("/")) return new RegExp(String.raw`(?<![\p{L}\p{N}/])${escaped(short)}(?!/)`, "iu")
   return new RegExp(String.raw`(?<!\p{L})${escaped(short)}(?!\p{L})`, "iu")

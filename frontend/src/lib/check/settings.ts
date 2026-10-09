@@ -368,11 +368,14 @@ export const NUMBER_LABELS = [
   "series", "chapter",
 ]
 
-/** Shorthand and slang, and the word to write instead. */
+/**
+ * Shorthand and slang, and the word to write instead. Not "&": "design &
+ * build" reads fine, and it saves room on a line.
+ */
 export const SHORTHAND: [string, string][] = [
   ["w/o", "without"], ["w/", "with"], ["b/c", "because"], ["mgmt", "management"], ["mgr", "manager"],
   ["approx.", "about"], ["approx", "about"], ["govt", "government"], ["thru", "through"], ["esp.", "especially"],
-  ["yrs", "years"], ["yr", "year"], ["hrs", "hours"], ["hr", "hour"], ["&", "and"],
+  ["yrs", "years"], ["yr", "year"], ["hrs", "hours"], ["hr", "hour"],
 ]
 
 // Readable by hiring software (R1–R6).
