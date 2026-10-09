@@ -169,8 +169,9 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     }`
   // A row's own background: the white tab is drawn behind the chosen one,
   // except while a section is dragged, when the rows move under it and the
-  // chosen one has its own. Another is shaded while pointed at.
-  const rowBackground = (isActive: boolean) => (isActive ? (dragging ? "bg-sheet ring-1 ring-rule" : "") : "hover:bg-ink/[0.04]")
+  // chosen one has its own. Another is shaded while pointed at. The tab's line
+  // is inside its edge, so it's the size of that shade.
+  const rowBackground = (isActive: boolean) => (isActive ? (dragging ? "bg-sheet ring-1 ring-inset ring-rule" : "") : "hover:bg-ink/[0.04]")
 
   // A section, the same with or without dragging, so the list doesn't move as dragging loads.
   const renderSection = (name: SectionRef, index: number, drag?: DraggableProvided, isDragged = false) => {
@@ -226,23 +227,27 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
       <span
         ref={tabRef}
         aria-hidden="true"
-        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
+        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-inset ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
           dragging ? "invisible" : ""
         }`}
       />
       <span className="label-mono hidden px-2 pb-3 text-ink-2 xl:block">Sections</span>
 
-      <button
-        type="button"
-        data-section-ref="Profile"
-        onClick={() => onSelect("Profile")}
-        className={`${item(active === "Profile")} ${rowBackground(active === "Profile")}`}
-        aria-current={active === "Profile" || undefined}
-      >
-        <span className="hidden w-3.5 xl:block" aria-hidden="true" />
-        <span className={`font-mono text-[11px] ${active === "Profile" ? "text-accent" : ""}`}>01</span>
-        Profile
-      </button>
+      {/* Laid out as the other sections are, with an empty space where they have their
+          handle, so the numbers and titles line up in the list. */}
+      <div data-section-row className={`flex shrink-0 items-center rounded-[4px] transition-colors ${rowBackground(active === "Profile")}`}>
+        <span className="hidden h-9 w-6 shrink-0 xl:block" aria-hidden="true" />
+        <button
+          type="button"
+          data-section-ref="Profile"
+          onClick={() => onSelect("Profile")}
+          className={`${item(active === "Profile")} xl:-ml-1`}
+          aria-current={active === "Profile" || undefined}
+        >
+          <span className={`font-mono text-[11px] ${active === "Profile" ? "text-accent" : ""}`}>01</span>
+          Profile
+        </button>
+      </div>
 
       {dnd ? (
         <dnd.DragDropContext onDragStart={() => setDragging(true)} onDragEnd={onDragEnd}>
