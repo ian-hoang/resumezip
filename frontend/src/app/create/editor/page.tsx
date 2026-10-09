@@ -188,8 +188,22 @@ function Editor({ id }: { id: string }) {
     let cancel: (() => void) | undefined
     const follow = () => {
       const next = resumeOf(getState(), id)
-      if (!next || next === resume) return
+      if (next === resume) return
       resume = next
+      if (!next) {
+        // Gone, as when another tab deletes it. The preview on its way isn't
+        // wanted, and the one built isn't of anything here any more: if it
+        // comes back, as when its PDF is opened again, it's built afresh.
+        cancel?.()
+        cancel = undefined
+        printed = undefined
+        setPdfUrl(null)
+        setPdfPrinted("")
+        setPdfResume(undefined)
+        setCompileError(null)
+        setUnbuilt(null)
+        return
+      }
       // What the preview shows. Changes that don't print, such as renaming
       // the resume, leave it as it was, so they don't recompile.
       const shows = JSON.stringify(printedOf(next))

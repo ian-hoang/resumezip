@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { pageErrors, seriousAccessibilityProblems } from "./helpers"
+import { holdablePreviews, holdPreviews, pageErrors, previewsBuilt, seriousAccessibilityProblems } from "./helpers"
 
 declare global {
   interface Window {
@@ -329,6 +329,44 @@ test("the editor says Saving… while typing, and Saved once typing has stopped 
   await expect(saved).toBeVisible()
   await expect(saving).toHaveCount(0)
   await page.clock.resume()
+
+  expect(errors).toEqual([])
+})
+
+test("a resume deleted in another tab leaves no preview behind, so it's built afresh if it comes back", async ({ page, context }) => {
+  const errors = pageErrors(page)
+  await holdablePreviews(page)
+  const key = await startWriting(page)
+  const preview = page.getByRole("region", { name: "Live preview" })
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await expect(previewShows(preview, /Ada Lovelace/i)).toBeVisible()
+
+  // A change is saved while its preview is held on the way to the compiler.
+  await holdPreviews(page, true)
+  await page.getByLabel("Full name").fill("Ada Byron")
+  await expect.poll(savedAt(page, key)).toContain("Ada Byron")
+
+  // Another tab deletes the resume, and the preview that was on its way is built after.
+  const other = await context.newPage()
+  await other.goto("/")
+  const saved = await savedAt(other, key)()
+  await other.evaluate((key) => localStorage.removeItem(key), key)
+  await expect(page.getByRole("heading", { name: "Resume not found" })).toBeVisible()
+  const built = await previewsBuilt(page)
+  await holdPreviews(page, false)
+  await expect.poll(() => previewsBuilt(page)).toBeGreaterThan(built)
+
+  // It comes back with other words, as when its PDF is opened again in another
+  // tab. Until they're built, the preview shows nothing of the deleted resume:
+  // a fixed wait, to show nothing of it is drawn.
+  await holdPreviews(page, true)
+  await other.evaluate(([key, text]) => localStorage.setItem(key, text), [key, saved.replaceAll("Ada Byron", "Grace Hopper")])
+  await expect(page.getByLabel("Full name")).toHaveValue("Grace Hopper")
+  await expect(preview.getByRole("status", { name: "Loading preview" })).toBeVisible()
+  await page.waitForTimeout(2_000)
+  await expect(preview.getByText(/Ada/)).toHaveCount(0)
+  await holdPreviews(page, false)
+  await expect(previewShows(preview, /Grace Hopper/i)).toBeVisible()
 
   expect(errors).toEqual([])
 })

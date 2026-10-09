@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
+import { holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // The editor's left bar switches between the sections (Write) and what the
 // checker found (Check), and remembers which for the visit.
@@ -9,29 +9,6 @@ async function newResume(page: Page) {
   await page.getByRole("link", { name: "Start writing" }).first().click()
   await expect(page).toHaveURL(/\/create\/new\//)
 }
-
-// While held, the compiler's worker isn't sent resumes to compile, so the
-// preview and the checks on the PDF wait, and the score with them.
-async function holdablePreviews(page: Page) {
-  await page.addInitScript(() => {
-    const held: (() => void)[] = []
-    let holding = false
-    ;(window as any).holdPreviews = (hold: boolean) => {
-      holding = hold
-      if (!hold) for (const send of held.splice(0)) send()
-    }
-    const RealWorker = window.Worker
-    window.Worker = class extends RealWorker {
-      postMessage(message: any, options?: any) {
-        // A resume to compile has an id and a template; the grammar checker's texts have no template.
-        if (holding && message?.id !== undefined && message?.template !== undefined) held.push(() => super.postMessage(message, options))
-        else super.postMessage(message, options)
-      }
-    }
-  })
-}
-
-const holdPreviews = (page: Page, hold: boolean) => page.evaluate((hold) => (window as any).holdPreviews(hold), hold)
 
 /** A new resume with a name and an entry, so there's something to check, and its preview on screen. */
 async function resumeToCheck(page: Page) {
