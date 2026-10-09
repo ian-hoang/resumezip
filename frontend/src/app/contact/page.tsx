@@ -15,7 +15,7 @@ const LABEL = "label-mono text-ink-2"
 const FIELD =
   "w-full border-0 border-b border-rule-strong bg-transparent py-2 text-base text-ink outline-none focus:border-accent placeholder:text-ink-2/60"
 
-const CONTACT_EMAIL = "resumezipio@gmail.com"
+const CONTACT_EMAIL = "hello@tryresumezip.com"
 
 const SUBJECTS: Record<string, string> = {
   general: "General inquiry",
