@@ -60,7 +60,7 @@ describe("L2 a few lines on the last page", () => {
 describe("L3 and L4 how a bullet wraps", () => {
   const bullet = "Built a search index that cut query time by 40% for the whole team"
 
-  test("L3 flags a bullet whose last line has 1 to 4 words", () => {
+  test("L3 flags a bullet whose last line has 1 to 3 words", () => {
     const pdf = full([
       line("Built a search index that cut query time by 40% for the", { bullet: true, top: 600 }),
       line("whole team", { top: 612 }),
@@ -76,8 +76,8 @@ describe("L3 and L4 how a bullet wraps", () => {
   test("L3 leaves one-line bullets and last lines with more words", () => {
     expect(check("L3", resumeWith([bullet]), full([line(bullet, { bullet: true, top: 600 })])).status).toBe("passed")
     const pdf = full([
-      line("Built a search index that cut query", { bullet: true, top: 600 }),
-      line("time by 40% for the whole team", { top: 612 }),
+      line("Built a search index that cut query time by 40%", { bullet: true, top: 600 }),
+      line("for the whole team", { top: 612 }),
     ])
     expect(check("L3", resumeWith([bullet]), pdf).status).toBe("passed")
   })

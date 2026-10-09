@@ -395,8 +395,11 @@ export const FINE_SYMBOLS = ["©", "®", "™"]
 /** This many lines or fewer on the last page is a spill-over. */
 export const SPILL_LINES = 5
 
-/** A bullet whose last line has this many words or fewer leaves a gap. */
-export const SHORT_LAST_LINE = 4
+/**
+ * A bullet whose last line has this many words or fewer leaves a gap. Four
+ * words fill enough of a line to leave be.
+ */
+export const SHORT_LAST_LINE = 3
 
 /** A bullet that runs this many lines or more is hard to skim. */
 export const LONG_BULLET_LINES = 3
