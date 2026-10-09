@@ -76,8 +76,8 @@ export default function DashboardPage() {
   const [opening, setOpening] = useState<Opening | null>(null)
   // What opening a file of them all did, until another file is opened.
   const [allOpened, setAllOpened] = useState("")
-  // Said to screen readers after a download.
-  const [downloaded, setDownloaded] = useState("")
+  // What's said aloud about the last file opened or downloaded.
+  const [announcement, setAnnouncement] = useState("")
   const [dragging, setDragging] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
   // The file being read. Cancelling (or opening another file) stops it, and
@@ -117,9 +117,17 @@ export default function DashboardPage() {
     setOpening(null)
   }
 
+  const announce = (text: string) => {
+    // Cleared first, so the same words twice in a row are said aloud again.
+    setAnnouncement("")
+    requestAnimationFrame(() => setAnnouncement(text))
+  }
+
   const addAll = (files: FileResume[], options?: { replace?: boolean }) => {
     setOpening(null)
-    setAllOpened(openedAll(files.length, importAll(files, options)))
+    const done = openedAll(files.length, importAll(files, options))
+    setAllOpened(done)
+    announce(done)
   }
 
   const openFile = async (file: File) => {
@@ -238,9 +246,7 @@ export default function DashboardPage() {
   // Every resume in one JSON file, newest first, as the list shows them.
   const downloadAll = () => {
     saveFile(toJsonOfAll(sorted), `resumezip-resumes-${today()}.json`, "application/json")
-    // Said again, even when it's the same as last time.
-    setDownloaded("")
-    requestAnimationFrame(() => setDownloaded(`Downloaded ${count(sorted.length, "resume")} in one file`))
+    announce(`Downloaded ${count(sorted.length, "resume")} in one file`)
   }
 
   const total = sorted.length
@@ -307,7 +313,7 @@ export default function DashboardPage() {
           </div>
         )}
         <p role="status" className="sr-only">
-          {allOpened || downloaded}
+          {announcement}
         </p>
 
         {loaded && total > 0 && (

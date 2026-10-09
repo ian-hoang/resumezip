@@ -429,7 +429,10 @@ function Editor({ id }: { id: string }) {
               />
             </div>
             <span role="status" className="sr-only">
-              {downloaded ? "PDF downloaded" : savedAs}
+              {downloaded ? "PDF downloaded" : ""}
+            </span>
+            <span role="status" className="sr-only">
+              {savedAs}
             </span>
           </div>
         </div>
