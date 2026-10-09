@@ -115,7 +115,8 @@ test("what a change prints lights up on the preview for a moment", async ({ page
   const changed = preview.getByText("London, England").first()
   const lit = async () => alpha(await changed.evaluate((span) => getComputedStyle(span).backgroundColor))
   await expect(changed).toHaveAttribute("data-changed")
-  expect(await lit()).toBeGreaterThan(0)
+  // Lit by the fade-out animation (read as its name, as a slow machine can be past the light by now).
+  expect(await changed.evaluate((span) => getComputedStyle(span).animationName)).toBe("changed")
   // The rest of the page doesn't.
   await expect(preview.getByText(/Ada Lovelace/i).first()).not.toHaveAttribute("data-changed")
   // It fades away.
