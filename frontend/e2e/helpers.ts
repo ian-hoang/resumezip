@@ -104,3 +104,40 @@ export async function seriousAccessibilityProblems(page: Page, exclude: string[]
     .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
     .map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.map((node) => node.target.join(" ")).join(", ")})`)
 }
+
+/**
+ * Lets a test hold the resumes sent to the PDF compiler's worker (holdPreviews),
+ * so the preview, and the checks on it, wait. It also counts the PDFs the
+ * worker sends back (previewsBuilt), whether or not the page still wants them.
+ */
+export async function holdablePreviews(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const held: (() => void)[] = []
+    let holding = false
+    ;(window as any).previewsBuilt = 0
+    ;(window as any).holdPreviews = (hold: boolean) => {
+      holding = hold
+      if (!hold) for (const send of held.splice(0)) send()
+    }
+    const RealWorker = window.Worker
+    window.Worker = class extends RealWorker {
+      constructor(...args: ConstructorParameters<typeof Worker>) {
+        super(...args)
+        this.addEventListener("message", (event) => {
+          if (event.data?.pdf !== undefined) (window as any).previewsBuilt++
+        })
+      }
+      postMessage(message: any, options?: any) {
+        // A resume to compile has an id and a template; the grammar checker's texts have no template.
+        if (holding && message?.id !== undefined && message?.template !== undefined) held.push(() => super.postMessage(message, options))
+        else super.postMessage(message, options)
+      }
+    }
+  })
+}
+
+/** Holds resumes on their way to the compiler, or sends the held ones on. */
+export const holdPreviews = (page: Page, hold: boolean): Promise<void> => page.evaluate((hold) => (window as any).holdPreviews(hold), hold)
+
+/** How many PDFs the compiler's worker has sent back, with holdablePreviews. */
+export const previewsBuilt = (page: Page): Promise<number> => page.evaluate(() => (window as any).previewsBuilt)
