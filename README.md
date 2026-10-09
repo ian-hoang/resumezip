@@ -7,7 +7,7 @@
 <h1 align="center">resumezip</h1>
 
 <p align="center">
-  The resume builder that never sees your resume.<br>
+  Your resume. Not our data.<br>
   A free, open-source resume builder that runs in your browser. Pick a template, write, and download the PDF.
 </p>
 
@@ -31,7 +31,7 @@
 ## Why resumezip
 
 - **No account.** Open it and start writing. It's free, with nothing to install.
-- **Private.** Your resume is saved in your browser and the PDF is made on your device. Nothing is uploaded.
+- **Private.** Your resume is saved in your browser and the PDF is made on your device. We don't store it.
 - **Live preview.** The PDF updates as you type.
 - **Pick up where you left off.** Every PDF carries its resume, so you can open it again on any computer and keep editing.
 - **Bring your old resume.** Open a PDF or Word (.docx) file, check what was found, and carry on from there.

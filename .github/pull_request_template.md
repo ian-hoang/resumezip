@@ -10,5 +10,5 @@ Closes #
 ## Checked
 
 - [ ] `npx tsc --noEmit`, `npm run lint` and `npm test` pass in `frontend/`
-- [ ] Nothing someone writes leaves the browser
+- [ ] resumezip still doesn't store anyone's resume
 - [ ] Resumes saved before this change still open, if it changes how they're stored

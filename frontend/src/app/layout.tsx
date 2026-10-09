@@ -33,7 +33,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "resumezip: the resume builder that never sees your resume",
+        alt: "resumezip: Your resume. Not our data.",
       },
     ],
     type: "website",

@@ -16,10 +16,10 @@ const QUESTIONS = [
     answer: "Yes. Every template and every download. No ads, no trial, no watermark.",
   },
   {
-    question: "Who can see my resume?",
+    question: "Do you keep my resume?",
     answer: (
       <>
-        Only you. It’s saved in this browser and never sent to us or anyone else. The code is{" "}
+        No. It’s saved in this browser, and we don’t store it. The code is{" "}
         <a
           href={REPO_URL}
           target="_blank"
@@ -56,9 +56,9 @@ export default function Home() {
         <SiteHeader variant="overlay" />
 
         <div className="relative mx-auto w-full max-w-[1440px] px-5 pt-6 md:px-10">
-          <h1 className="max-w-[1000px] text-balance font-serif text-[56px] leading-[0.92] tracking-[-0.045em] sm:text-[80px] lg:text-[116px] lg:leading-[0.88]">
-            {/* Kept on one line on wide screens so the headline doesn't open with a short "The resume". */}
-            <span className="md:whitespace-nowrap">The resume builder</span> that never sees your resume.
+          <h1 className="max-w-[1000px] text-balance font-serif text-[56px] leading-[0.92] tracking-[-0.045em] max-[359px]:text-[52px] sm:text-[80px] lg:text-[116px] lg:leading-[0.88]">
+            {/* A line for each sentence. At 56px each is a few pixels wider than a 320px screen leaves, so it's a little smaller there. */}
+            Your resume. Not our data.
           </h1>
         </div>
 
@@ -76,7 +76,7 @@ export default function Home() {
           </div>
           <div className="flex max-w-[340px] flex-col gap-4">
             <span className="label-caps">Free · Saved in your browser</span>
-            <p className="text-xl leading-[1.35] tracking-[-0.015em]">Nothing to install. Nothing uploaded.</p>
+            <p className="text-xl leading-[1.35] tracking-[-0.015em]">Nothing to install. No sign-up.</p>
             <Link
               href="/templates"
               className="label-caps inline-flex h-11 items-center gap-3 self-start border border-white/70 px-[18px] transition-colors hover:bg-white hover:text-[#171717]"
@@ -91,11 +91,9 @@ export default function Home() {
         <div className="flex flex-col gap-24 px-5 pb-24 pt-8 md:gap-[200px] md:px-10 md:pb-[120px]">
           <span className="label-section">Why resumezip</span>
           <div className="flex max-w-[760px] flex-col gap-8">
-            <p className="font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[80px] md:leading-[0.92]">
-              Your resume never leaves your browser.
-            </p>
+            <p className="font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[80px] md:leading-[0.92]">You keep it. We don’t.</p>
             <p className="max-w-[520px] text-xl leading-[1.35] tracking-[-0.015em]">
-              No account, no uploads. To switch devices, open your PDF or Word file on the new one.
+              No account, and no copy on our side. To switch devices, open your PDF or Word file on the new one.
             </p>
             <StartWritingLink
               className="label-caps inline-flex h-11 items-center gap-3 self-start border border-white px-[18px] transition-colors hover:bg-white hover:text-accent"
