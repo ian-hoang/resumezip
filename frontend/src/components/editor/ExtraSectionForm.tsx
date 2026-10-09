@@ -61,8 +61,9 @@ export default function ExtraSectionForm({ sectionId, position, onDelete }: { se
       {section.leftOut && <p className="text-sm text-ink-2">This section stays saved here and is left out of the PDF and checks.</p>}
       {section.kind === "text" && (
         <div data-field="text" className="flex flex-col gap-2">
-          <label className="flex flex-col gap-2">
-            <span className="label-mono text-ink-2">Text</span>
+          {/* Its label turns blue while typing in the box, as a field's does. */}
+          <label className="group/field flex flex-col gap-2">
+            <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">Text</span>
             <textarea
               value={section.text}
               onChange={(event) => editSection(id, sectionId, { text: event.target.value })}
