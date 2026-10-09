@@ -191,3 +191,34 @@ test.describe("touch", () => {
     expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
   })
 })
+
+test("a resume from before sections were added from the list shows only the ones it uses, and one added after stays", async ({ page }) => {
+  const errors = pageErrors(page)
+  // Saved when every resume listed all eight sections, used or not.
+  const older = {
+    ...initial,
+    id: "older",
+    sectionOrder: ["Education", "Work", "Projects", "Publications", "Skills", "Leadership", "Volunteership", "Awards"],
+    leadershipExperienceSection: [{ id: 1, leadershipRole: "Club president" }],
+  }
+  await page.addInitScript((resume) => {
+    if (!localStorage.getItem("resume:older")) localStorage.setItem("resume:older", JSON.stringify(resume))
+  }, older)
+  await page.goto("/create/new/older")
+  const listed = (name: string) => nav(page).getByRole("button", { name: new RegExp(`^\\d+ ${name}$`) })
+  await expect(listed("Leadership")).toHaveCount(1)
+  for (const empty of ["Publications", "Volunteer", "Awards & Certifications"]) await expect(listed(empty)).toHaveCount(0)
+  await previewShown(page)
+
+  // Added now, Publications stays while it's empty, after a reload too.
+  await add(page, "Publications")
+  await expect(listed("Publications")).toHaveCount(1)
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("resume:older") ?? "{}")))
+    .toMatchObject({ sectionsChosen: true, sectionOrder: ["Education", "Work", "Projects", "Skills", "Leadership", "Publications"] })
+  await page.reload()
+  await expect(listed("Publications")).toHaveCount(1)
+  await expect(listed("Awards & Certifications")).toHaveCount(0)
+  await previewShown(page)
+  expect(errors).toEqual([])
+})

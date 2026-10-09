@@ -164,6 +164,8 @@ export function cleanResume(input: unknown): ResumeContent {
     clean.extraSections = Object.fromEntries(Object.entries(decoded.sections).map(([key, { leftOut, ...section }]) => [key, section]))
   }
   // The saved order's known sections, then the core ones it lacks and any optional one with entries.
-  clean.sectionOrder = resolveSections({ ...clean, sectionOrder: resume.sectionOrder })
+  // That's then only the sections it shows, so it's marked as chosen (see Resume.sectionsChosen).
+  clean.sectionOrder = resolveSections({ ...clean, sectionOrder: resume.sectionOrder, sectionsChosen: resume.sectionsChosen })
+  clean.sectionsChosen = true
   return clean
 }

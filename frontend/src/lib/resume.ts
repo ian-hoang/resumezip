@@ -33,6 +33,13 @@ export type Resume = {
   selectedTemplate?: string
   /** Section names in print order. Older resumes can lack some, or list unknown ones. */
   sectionOrder?: string[] | null
+  /**
+   * Set once sectionOrder holds only the optional sections the person added
+   * from the list (see resolveSections). Resumes and PDFs from before then
+   * listed every section, so their empty optional ones aren't shown, and the
+   * first change to one keeps only what it shows, and sets this.
+   */
+  sectionsChosen?: true | null
   headings?: Headings | null
   profileSection?: Profile | null
   /** Sections beyond the built-in ones, by key, read with extrasOf (lib/resumeSections.ts). */

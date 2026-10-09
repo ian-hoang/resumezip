@@ -86,6 +86,7 @@ function Editor({ id }: { id: string }) {
   const savedOrder = useResumeField("sectionOrder")
   const headings = useResumeField("headings")
   const extraSections = useResumeField("extraSections")
+  const sectionsChosen = useResumeField("sectionsChosen")
   const [active, setActive] = useState<ActiveSection>("Profile")
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   // What the preview on screen prints, for the checker to know when it's
@@ -128,8 +129,8 @@ function Editor({ id }: { id: string }) {
     return resume ? filledSections(resume).join(" ") : ""
   })
   const sections = useMemo(
-    () => resolveSections({ sectionOrder: savedOrder, extraSections }, filled ? (filled.split(" ") as SectionName[]) : []),
-    [savedOrder, extraSections, filled],
+    () => resolveSections({ sectionOrder: savedOrder, sectionsChosen, extraSections }, filled ? (filled.split(" ") as SectionName[]) : []),
+    [savedOrder, sectionsChosen, extraSections, filled],
   )
   const selected = active === "Profile" || sections.includes(active) ? active : "Profile"
 

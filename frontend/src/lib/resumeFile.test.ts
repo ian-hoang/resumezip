@@ -25,6 +25,7 @@ const editorResume = ({ count = 1, length = 10 }): ResumeContent => ({
   updatedAt: "2026-10-06T12:00:00.000Z",
   selectedTemplate: "jake",
   sectionOrder: [...SECTION_NAMES],
+  sectionsChosen: true,
   headings: Object.fromEntries(SECTION_NAMES.map((name) => [SECTIONS[name].headingKey, "x".repeat(length)])),
   profileSection: Object.fromEntries(PROFILE_FIELDS.map((field) => [field.key, "x".repeat(length)])),
   ...Object.fromEntries(SECTION_NAMES.map((name) => [SECTIONS[name].dataKey, entries(name, count, length)])),
@@ -120,9 +121,23 @@ describe("cleanResume", () => {
 
   test("keeps the saved order, with the core sections, and an optional one only with entries", () => {
     expect(cleanResume({ sectionOrder: ["Projects", "Work"] }).sectionOrder).toEqual(["Projects", "Work", "Education", "Skills"])
-    expect(cleanResume({ sectionOrder: ["Awards"] }).sectionOrder).toEqual(["Awards", "Education", "Work", "Skills", "Projects"])
     const filled = cleanResume({ sectionOrder: ["Work"], awardsSection: [{ awardName: "Prize" }] })
     expect(filled.sectionOrder).toEqual(["Work", "Education", "Skills", "Projects", "Awards"])
+    // A section the person added stays, even empty.
+    expect(cleanResume({ sectionOrder: ["Awards"], sectionsChosen: true }).sectionOrder).toEqual([
+      "Awards",
+      "Education",
+      "Work",
+      "Skills",
+      "Projects",
+    ])
+  })
+
+  test("a PDF from before sections were added from the list keeps only those with entries, and is then marked", () => {
+    // Its order listed every section, whether the person used it or not.
+    const old = cleanResume({ sectionOrder: [...SECTION_NAMES].reverse(), awardsSection: [{ awardName: "Prize" }] })
+    expect(old.sectionOrder).toEqual(["Awards", "Projects", "Skills", "Work", "Education"])
+    expect(old.sectionsChosen).toBe(true)
   })
 
   test("turns bullets an earlier version kept as a list into lines, all of them", () => {

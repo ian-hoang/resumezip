@@ -107,7 +107,19 @@ const blankResume = (template: string): Resume => ({
   leadershipExperienceSection: [],
   awardsSection: [],
   sectionOrder: [...CORE_SECTIONS],
+  sectionsChosen: true,
 })
+
+/**
+ * What the first change to a resume from before optional sections were added
+ * from the list also changes: its order listed every section, so it keeps
+ * only the ones it shows (resolveSections), and is marked so a section added
+ * from now on stays, even while empty. Nothing for any other resume.
+ */
+const migrated = (resume: Resume): [Partial<Resume>, string[]] =>
+  resume.sectionsChosen === true
+    ? [{}, []]
+    : [{ sectionOrder: resolveSections(resume), sectionsChosen: true }, ["sectionOrder", "sectionsChosen"]]
 
 const without = (resumes: Record<string, Resume>, id: string) => Object.fromEntries(Object.entries(resumes).filter(([key]) => key !== id))
 
@@ -165,8 +177,9 @@ export function createResumeStore(delay = SAVE_DELAY) {
   /** Changes one field of a resume. It's saved once typing pauses. */
   function edit<Field extends ResumeField>(id: string, field: Field, value: Resume[Field]) {
     if (!has(id)) return
-    markChanged(id, ...changedPaths(field, state.resumes[id][field], value), "updatedAt")
-    const resume = { ...state.resumes[id], [field]: value, updatedAt: new Date().toISOString() }
+    const [migration, migrationPaths] = migrated(state.resumes[id])
+    markChanged(id, ...changedPaths(field, state.resumes[id][field], value), ...migrationPaths, "updatedAt")
+    const resume = { ...state.resumes[id], ...migration, [field]: value, updatedAt: new Date().toISOString() }
     setState({ resumes: { ...state.resumes, [id]: resume } })
     saveSoon()
   }
@@ -175,8 +188,11 @@ export function createResumeStore(delay = SAVE_DELAY) {
   // publish one update. A section is one merge unit.
   function commit(id: string, changes: Partial<Resume>, paths: string[]) {
     if (!has(id) || !paths.length) return
-    markChanged(id, ...paths, "updatedAt")
-    setState({ resumes: { ...state.resumes, [id]: { ...state.resumes[id], ...changes, updatedAt: new Date().toISOString() } } })
+    const [migration, migrationPaths] = migrated(state.resumes[id])
+    markChanged(id, ...paths, ...migrationPaths, "updatedAt")
+    setState({
+      resumes: { ...state.resumes, [id]: { ...state.resumes[id], ...migration, ...changes, updatedAt: new Date().toISOString() } },
+    })
     saveSoon()
   }
 

@@ -273,6 +273,7 @@ function readField(key: string, value: unknown): { value: unknown; complete: boo
     return { value: items, complete: items.length === value.length }
   }
   if (OBJECT_FIELDS.has(key) && !isObject(value)) return null
+  if (key === "sectionsChosen" && value !== true) return null
   return { value, complete: true }
 }
 

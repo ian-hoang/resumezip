@@ -53,7 +53,8 @@ describe("section order", () => {
       publicationsSection: [{ id: 1, publicationTitle: "Fast Joins on Small Machines" }],
     })
     expect(data.publications).toHaveLength(1)
-    expect(data.order).toEqual(["Work", "Education", "Skills", "Projects", "Volunteership", "Leadership", "Awards", "Publications"])
+    // Its empty optional sections were only listed by default, and print nothing.
+    expect(data.order).toEqual(["Work", "Education", "Skills", "Projects", "Publications"])
   })
 
   test("unknown names are ignored and no section is printed twice", () => {
