@@ -78,8 +78,8 @@ export function Field({ label, value, placeholder, type = "text", className = ""
   const noteId = useId()
   return (
     <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-      <label className="flex min-w-0 flex-col gap-1.5">
-        <span className="label-mono text-ink-2">{label}</span>
+      <label className="group/field relative flex min-w-0 flex-col gap-1.5">
+        <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">{label}</span>
         <input
           type={type}
           value={value}
@@ -92,8 +92,13 @@ export function Field({ label, value, placeholder, type = "text", className = ""
           aria-describedby={flag ? noteId : undefined}
           aria-invalid={flag?.level === "fix" || undefined}
           className={`w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
-            !flag ? "border-b border-rule-strong focus:border-accent" : "border-b-2 border-accent"
+            !flag ? "border-b border-rule-strong" : "border-b-2 border-accent"
           }`}
+        />
+        {/* The field being typed in is underlined in blue, drawn out from the left. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
         />
       </label>
       {flag && <FlagNote id={noteId} finding={flag} />}
@@ -347,9 +352,14 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
   }
 
   return (
-    <div data-field={name} className={`flex min-w-0 flex-col gap-2 ${className}`}>
+    <div data-field={name} className={`group/field flex min-w-0 flex-col gap-2 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor={textareaId} id={`${textareaId}-label`} className="label-mono text-ink-2">
+        {/* Blue while typing in the box, as a field's label is; not while on Arrange. */}
+        <label
+          htmlFor={textareaId}
+          id={`${textareaId}-label`}
+          className="label-mono text-ink-2 transition-colors group-has-[textarea:focus]/field:text-accent"
+        >
           {label}
         </label>
         {(arranging || bullets.length > 0) && (

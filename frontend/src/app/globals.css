@@ -86,6 +86,11 @@
   --font-logo: var(--font-outfit), var(--font-geist), sans-serif; /* the "resumezip" wordmark */
 }
 
+/* Fast start, soft stop: for what slides or draws into place, as ease-glide. */
+@theme {
+  --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* The line that passes down the preview's stand-in page while it waits (components/editor/PrintingPage.tsx). */
 @theme {
   --animate-print-sweep: print-sweep 1.8s ease-in-out infinite;
