@@ -32,6 +32,7 @@ function LeftBar({ hidden, children }: LeftBarProps) {
   const bar = useRef<HTMLElement>(null)
   // Until there's a name and an entry, the panel asks for those instead of listing what's missing.
   const open = hasEnoughToCheck(report.view) ? report.findings.length : 0
+  const chosen = MODES.findIndex((option) => option.id === mode)
 
   const choose = (next: Mode) => {
     chooseMode(next)
@@ -69,7 +70,21 @@ function LeftBar({ hidden, children }: LeftBarProps) {
         mode === "write" ? "sticky top-0 z-20" : ""
       } ${hidden ? "hidden" : ""}`}
     >
-      <div role="tablist" aria-label="Write or check" className="mx-3 mt-2 flex gap-1 rounded-[4px] bg-desk p-1 xl:mx-0 xl:mb-6 xl:mt-0">
+      <div
+        role="tablist"
+        aria-label="Write or check"
+        className="relative isolate mx-3 mt-2 flex gap-1 rounded-[4px] bg-desk p-1 xl:mx-0 xl:mb-6 xl:mt-0"
+      >
+        {/* The white tab behind the chosen one, which slides across to the other. The tabs
+            share the width inside the 4px padding, 4px apart (p-1, gap-1). */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-1 left-1 -z-10 rounded-[3px] bg-sheet ring-1 ring-rule transition-transform duration-300 ease-glide motion-reduce:transition-none"
+          style={{
+            width: `calc((100% - ${8 + 4 * (MODES.length - 1)}px) / ${MODES.length})`,
+            transform: `translateX(calc(${chosen} * (100% + 4px)))`,
+          }}
+        />
         {MODES.map((option, index) => {
           const selected = option.id === mode
           // "Check · 3": how much the checker found that isn't dismissed.
@@ -90,7 +105,7 @@ function LeftBar({ hidden, children }: LeftBarProps) {
               onClick={() => choose(option.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={`inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[3px] text-sm font-medium transition-colors ${
-                selected ? "bg-sheet text-ink ring-1 ring-rule" : "text-ink-2 hover:text-ink"
+                selected ? "text-ink" : "text-ink-2 hover:text-ink"
               }`}
             >
               {option.label}
