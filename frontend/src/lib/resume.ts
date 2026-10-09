@@ -11,6 +11,7 @@
 
 import type { ChoiceKey, DataKey, FieldKey, HeadingKey, ProfileKey } from "@/components/editor/sections"
 import type { CHECK_FIELD, SavedCheck } from "@/lib/check/state"
+import type { ExtraSections } from "@/lib/resumeSections"
 
 /** One entry in a list section, like a job. Only its own section's fields are set. */
 export type Entry = { id: number; leftOut?: true } & { [Key in FieldKey]?: string }
@@ -34,6 +35,8 @@ export type Resume = {
   sectionOrder?: string[] | null
   headings?: Headings | null
   profileSection?: Profile | null
+  /** Sections beyond the built-in ones, by key, read with extrasOf (lib/resumeSections.ts). */
+  extraSections?: ExtraSections
 } & { [Key in DataKey]?: Entry[] | null } & { [Key in ChoiceKey]?: string } & {
   /** What the person told the checker, read with readCheckState (lib/check/state.ts). */
   [Key in typeof CHECK_FIELD]?: SavedCheck | null

@@ -3,7 +3,7 @@ import path from "node:path"
 import { describe, expect, test } from "vitest"
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume, ResumeContent } from "./resume"
-import { cleanResume, fromAttachment, MAX_ENTRIES, MAX_LENGTH, toAttachment, TooLongError } from "./resumeFile"
+import { AttachmentError, cleanResume, fromAttachment, MAX_ENTRIES, MAX_LENGTH, toAttachment, TooLongError } from "./resumeFile"
 
 const SAMPLES = path.resolve("src/lib/typst/preview-samples")
 const samples = readdirSync(SAMPLES).map((file) => JSON.parse(readFileSync(path.join(SAMPLES, file), "utf8")))
@@ -89,10 +89,10 @@ describe("the attachment in a downloaded PDF", () => {
     expect(() => fromAttachment(toAttachment(resume))).toThrow(TooLongError)
   })
 
-  test("isn't read from other JSON or from newer versions", () => {
+  test("ignores other JSON and explains recognized unsupported versions", () => {
     expect(fromAttachment("not json")).toBeNull()
     expect(fromAttachment(JSON.stringify({ format: "something-else", version: 1, resume: {} }))).toBeNull()
-    expect(fromAttachment(JSON.stringify({ format: "resumezip", version: 2, resume: {} }))).toBeNull()
+    expect(() => fromAttachment(JSON.stringify({ format: "resumezip", version: 3, resume: {} }))).toThrow(AttachmentError)
     // Not even one too long to open, so the PDF is read like any other.
     expect(fromAttachment(JSON.stringify({ format: "something-else", notes: "x".repeat(MAX_LENGTH) }))).toBeNull()
     expect(fromAttachment("x".repeat(MAX_LENGTH + 1))).toBeNull()
@@ -116,6 +116,13 @@ describe("cleanResume", () => {
     expect(clean.sectionOrder?.[0]).toBe("Work")
     expect(clean.sectionOrder).not.toContain("Hacking")
     expect(new Set(clean.sectionOrder).size).toBe(clean.sectionOrder?.length)
+  })
+
+  test("keeps the saved order, with the core sections, and an optional one only with entries", () => {
+    expect(cleanResume({ sectionOrder: ["Projects", "Work"] }).sectionOrder).toEqual(["Projects", "Work", "Education", "Skills"])
+    expect(cleanResume({ sectionOrder: ["Awards"] }).sectionOrder).toEqual(["Awards", "Education", "Work", "Skills", "Projects"])
+    const filled = cleanResume({ sectionOrder: ["Work"], awardsSection: [{ awardName: "Prize" }] })
+    expect(filled.sectionOrder).toEqual(["Work", "Education", "Skills", "Projects", "Awards"])
   })
 
   test("turns bullets an earlier version kept as a list into lines, all of them", () => {

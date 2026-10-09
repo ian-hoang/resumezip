@@ -4,15 +4,17 @@
 // plain JSON strings, which Typst never evaluates as markup, so no escaping
 // is needed.
 
-import { SECTION_NAMES, type SectionName } from "@/components/editor/sections"
 import { printedResume } from "@/lib/leftOut"
 import type { Entry, Resume } from "@/lib/resume"
+import { extraHeading, extraHasBody, extrasOf, resolveSections } from "@/lib/resumeSections"
 import { templateById, type TemplateId } from "@/lib/templates"
 
 export type { TemplateId }
 
 export interface TemplateData {
   profile: { name: string; location: string; phone: string; email: string; linkedin: string; github: string; website: string }
+  /** The profile's summary, printed under its own heading above the sections. */
+  summary: string[]
   headings: {
     education: string
     work: string
@@ -24,6 +26,8 @@ export interface TemplateData {
     awards: string
   }
   order: string[]
+  /** New section kinds only; built-in data and rendering keep their existing shapes. */
+  extras: Record<string, ExtraTemplateSection>
   education: {
     school: string
     location: string
@@ -44,6 +48,9 @@ export interface TemplateData {
   volunteer: Experience[]
   awards: { name: string; organization: string; date: string }[]
 }
+
+export type ExtraTemplateSection =
+  { kind: "text"; heading: string; paragraphs: string[] } | { kind: "list"; heading: string; bullets: Run[][] }
 
 /** A stretch of a bullet's text: **bold**, *italic* or ***both*** where the user marked it. */
 interface Run {
@@ -71,6 +78,12 @@ interface Experience {
 type Saved = Partial<Entry>
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
+
+// Prose as paragraphs, split at blank lines. A single line break stays in its paragraph.
+const paragraphs = (value: unknown) =>
+  text(value)
+    .split(/\r?\n\s*\r?\n/)
+    .filter(Boolean)
 
 // Links are displayed without their scheme, "www." or a trailing slash; the
 // templates add https:// back.
@@ -179,17 +192,6 @@ export function templateIdOf(value: unknown): TemplateId {
   return templateById(value).id
 }
 
-/**
- * The saved order, plus any sections missing from older resumes, at the end,
- * as the editor shows them. Unknown names and repeats are dropped.
- */
-export function sectionOrder(value: unknown): SectionName[] {
-  const saved = (Array.isArray(value) ? value : []).filter(
-    (name, index, all): name is SectionName => SECTION_NAMES.includes(name) && all.indexOf(name) === index,
-  )
-  return [...saved, ...SECTION_NAMES.filter((name) => !saved.includes(name))]
-}
-
 export function toTemplateData(saved: Resume): TemplateData {
   // What the person left out isn't printed.
   const resume = printedResume(saved)
@@ -208,6 +210,7 @@ export function toTemplateData(saved: Resume): TemplateData {
       github: bareUrl(profile.profileGithub),
       website: bareUrl(profile.personalWebsite),
     },
+    summary: paragraphs(profile.summary),
     headings: {
       education: text(headings.edu),
       work: text(headings.work),
@@ -218,7 +221,23 @@ export function toTemplateData(saved: Resume): TemplateData {
       volunteer: text(headings.volunteer),
       awards: text(headings.awards),
     },
-    order: sectionOrder(resume.sectionOrder),
+    order: resolveSections(resume),
+    extras: Object.fromEntries(
+      Object.entries(extrasOf(resume))
+        .filter(([, section]) => extraHasBody(section))
+        .map(([id, section]) => {
+          const heading = extraHeading(section)
+          const printable: ExtraTemplateSection =
+            section.kind === "list"
+              ? { kind: "list", heading, bullets: bullets(section.bullets) }
+              : {
+                  kind: "text",
+                  heading,
+                  paragraphs: paragraphs(section.text),
+                }
+          return [`extra:${id}`, printable]
+        }),
+    ),
     education: entries(resume.educationSection, (e) => ({
       school: text(e.schoolName),
       location: text(e.schoolLocation),

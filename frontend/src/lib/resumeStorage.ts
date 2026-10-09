@@ -6,6 +6,7 @@
 
 import { SECTIONS } from "@/components/editor/sections"
 import { CHECK_FIELD } from "@/lib/check/state"
+import { readExtraSections } from "@/lib/resumeSections"
 import type { Resume } from "./resume"
 import { idOf, keyOf, LEGACY_KEY } from "./resumeKeys"
 
@@ -256,10 +257,14 @@ export const isObject = (value: unknown): value is Record<string, unknown> =>
 // values (the checker's dismissals and added words are one). Older resumes
 // can lack some of them, or have them empty (null); only other shapes count.
 const ENTRY_LISTS: ReadonlySet<string> = new Set(Object.values(SECTIONS).map((section) => section.dataKey))
-const OBJECT_FIELDS: ReadonlySet<string> = new Set(["profileSection", "headings", CHECK_FIELD])
+const OBJECT_FIELDS: ReadonlySet<string> = new Set(["profileSection", "headings", "extraSections", CHECK_FIELD])
 
 /** A field as the editor can show it, and whether that's all of it; null if none of it. */
 function readField(key: string, value: unknown): { value: unknown; complete: boolean } | null {
+  if (key === "extraSections") {
+    const decoded = readExtraSections(value, { local: true })
+    return { value: decoded.sections, complete: decoded.complete }
+  }
   if (value == null) return { value, complete: true }
   if (key === "sectionOrder" || ENTRY_LISTS.has(key)) {
     if (!Array.isArray(value)) return null

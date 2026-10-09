@@ -10,7 +10,29 @@ import { comparable, wordsOf } from "./pdf"
 import { readDate, readDateRange } from "./readDate"
 import { textsOf } from "./resume"
 import { FINE_SYMBOLS, ODD_SYMBOLS } from "./settings"
-import { bulletsIn } from "./text"
+import { layoutBulletsIn } from "./text"
+import type { ResumeView } from "./resume"
+
+// An unresolved custom occurrence sharing a builtin heading can contaminate
+// the heuristic semantic parse. Do not turn that uncertainty into invented
+// jobs, missing fields or an ATS heading accusation against the builtin.
+function unresolvedExtraHeadings(resume: ResumeView, pdf: PdfReading): Set<string> {
+  return new Set(
+    Object.values(resume.extras)
+      .filter((extra) => !extra.blank && pdf.extras?.sections.find(({ sectionId }) => sectionId === extra.id)?.status !== "matched")
+      .map((extra) => comparable(extra.heading)),
+  )
+}
+
+function uncertainBuiltinSections(resume: ResumeView, pdf: PdfReading): Set<SectionName> {
+  const headings = unresolvedExtraHeadings(resume, pdf)
+  const sections = new Set(resume.order.filter((section) => headings.has(comparable(resume.printedHeadings[section]))))
+  // Parser provenance covers aliases such as 'Work Experience', not merely
+  // the exact default heading printed by our own templates.
+  for (const occurrence of pdf.parsed.occurrences ?? [])
+    if (occurrence.section && headings.has(comparable(occurrence.heading))) sections.add(occurrence.section)
+  return sections
+}
 
 // The profile fields a recruiter needs to reach the person.
 const CONTACT: { field: ProfileKey; label: string }[] = [
@@ -70,10 +92,13 @@ const headings: Rule = {
   check: ({ resume, pdf }) => {
     const printed = resume.order.filter((section) => resume.sections[section].some((entry) => !entry.blank))
     if (printed.length === 0) return null
+    const uncertain = uncertainBuiltinSections(resume, pdf)
+    const reliable = printed.filter((section) => !uncertain.has(section))
     const found = new Set(pdf.parsed.sections.map(({ name }) => name))
     return {
-      checked: printed.length,
-      problems: printed
+      checked: reliable.length,
+      ...(reliable.length < printed.length && { partial: true }),
+      problems: reliable
         .filter((section) => !found.has(section))
         .map((section) => ({
           place: { kind: "heading", section },
@@ -133,10 +158,17 @@ const entriesRead: Rule = {
   why: "If a role, company, date or skill lands in another entry, or nowhere, your resume reads wrong.",
   check: ({ resume, pdf }) => {
     let checked = 0
+    let partial = false
     const problems: Problem[] = []
+    const uncertain = uncertainBuiltinSections(resume, pdf)
     for (const section of resume.order) {
       const keys = KEY_FIELDS[section]
       const typed = resume.sections[section].filter((entry) => !entry.blank)
+      if (typed.length === 0) continue
+      if (uncertain.has(section)) {
+        partial = true
+        continue
+      }
       const found = pdf.parsed.sections.find(({ name }) => name === section)
       // A section that isn't found at all is R2's.
       if (typed.length === 0 || !found) continue
@@ -167,7 +199,25 @@ const entriesRead: Rule = {
         }
       })
     }
-    return checked ? { checked, problems } : null
+    for (const extra of Object.values(resume.extras).filter((extra) => !extra.blank)) {
+      const match = pdf.extras?.sections.find((section) => section.sectionId === extra.id)
+      // Repeated text can leave it unclear which printed section is this one.
+      // That's the checker's uncertainty, not the resume's problem, so it only
+      // makes the check partial, as a section it can't tell apart does above.
+      if (!match || match.status === "ambiguous") {
+        partial = true
+        continue
+      }
+      checked++
+      if (match.status === "matched") continue
+      problems.push({
+        place: { kind: "extra-heading", sectionId: extra.id },
+        message: `The checker couldn't verify all the text in “${extra.heading}” in the PDF`,
+        suggestion: "Check the section in the preview; the extracted text did not match completely.",
+      })
+    }
+    // Only uncertain sections is still partial, not a rule that doesn't apply.
+    return checked || partial ? { checked, problems, ...(partial && { partial }) } : null
   },
 }
 
@@ -207,28 +257,34 @@ const unplaced: Rule = {
   title: "Hiring software can place all your text",
   why: "Text it can't place under a section may be left out of what it reads.",
   check: ({ resume, pdf }) => {
-    const texts = textsOf(resume).map(({ place, text }) => ({
-      place,
-      text: comparable(text),
-      section: place.kind === "entry" || place.kind === "heading" ? place.section : null,
-    }))
+    const uncertain = unresolvedExtraHeadings(resume, pdf)
+    const texts = textsOf(resume)
+      .filter(({ place }) => !("sectionId" in place))
+      .map(({ place, text }) => ({
+        place,
+        text: comparable(text),
+        section: place.kind === "entry" || place.kind === "heading" ? place.section : null,
+      }))
     // The section each printed heading stands for, to know which section a line was found under.
-    const headed = new Map(resume.order.map((section) => [comparable(resume.headings[section] || SECTIONS[section].title), section]))
+    const headed = new Map(resume.order.map((section) => [comparable(resume.printedHeadings[section]), section]))
     return {
       checked: 1,
-      problems: pdf.parsed.unplaced.map((group): Problem => {
-        // Pointing at the field it came from, when it can be found; text with
-        // no letters or digits can't be, so it points at its page.
-        const line = comparable(group.text[0] ?? "")
-        const typed = line ? fieldOf(texts, line, headed.get(comparable(group.heading)) ?? null) : undefined
-        const page: Place = { kind: "page", page: pdf.parsed.lines[group.lines[0]]?.page }
-        return {
-          place: typed ?? page,
-          text: group.text.join(" "),
-          message: `Hiring software can't tell where “${short(group.text[0] ?? "")}” belongs`,
-          suggestion: "Check it's in the field it's for, without a date or place typed into it.",
-        }
-      }),
+      ...(uncertain.size > 0 && { partial: true }),
+      problems: pdf.parsed.unplaced
+        .filter((group) => !uncertain.has(comparable(group.heading)))
+        .map((group): Problem => {
+          // Pointing at the field it came from, when it can be found; text with
+          // no letters or digits can't be, so it points at its page.
+          const line = comparable(group.text[0] ?? "")
+          const typed = line ? fieldOf(texts, line, headed.get(comparable(group.heading)) ?? null) : undefined
+          const page: Place = { kind: "page", page: pdf.parsed.lines[group.lines[0]]?.page }
+          return {
+            place: typed ?? page,
+            text: group.text.join(" "),
+            message: `Hiring software can't tell where “${short(group.text[0] ?? "")}” belongs`,
+            suggestion: "Check it's in the field it's for, without a date or place typed into it.",
+          }
+        }),
     }
   },
 }
@@ -251,7 +307,8 @@ const symbols: Rule = {
       checked: texts.length,
       problems: texts.flatMap(({ place, text }) => {
         // A bullet character typed at the start of a bullet is R6's.
-        const body = place.kind === "entry" && place.line !== undefined ? text.replace(TYPED_BULLET, "") : text
+        const body =
+          (place.kind === "entry" || place.kind === "extra-text") && place.line !== undefined ? text.replace(TYPED_BULLET, "") : text
         const found = [...body].find((char) => ODD_SYMBOLS.test(char) && !FINE_SYMBOLS.includes(char))
         return found ? [{ place, message: `“${found}” may not come through`, suggestion: "Leave it out, or say it in words." }] : []
       }),
@@ -267,7 +324,7 @@ const typedBullets: Rule = {
   title: "No bullet characters typed into bullets",
   why: "The template adds the bullet, so a typed one shows twice.",
   check: ({ resume }) => {
-    const bullets = bulletsIn(resume)
+    const bullets = layoutBulletsIn(resume)
     if (bullets.length === 0) return null
     return {
       checked: bullets.length,

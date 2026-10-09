@@ -216,7 +216,8 @@ const KNOWN_GAPS: Record<string, string[]> = {
  * sections in its own order, like a sidebar.
  */
 function printed(resume: Record<string, unknown>) {
-  const { headings, order, ...data } = toTemplateData(resume)
+  // The sections a person adds aren't in the corpus, and the summary is checked on its own, below.
+  const { headings, order, extras, summary, ...data } = toTemplateData(resume)
   const plain = (bullets: { text: string }[][]) => bullets.map((runs) => runs.map((run) => run.text).join(""))
   const withPlainBullets = <T extends { bullets: { text: string }[][] }>(entries: T[]) =>
     entries.map((entry) => ({ ...entry, bullets: plain(entry.bullets) }))
@@ -262,6 +263,18 @@ describe.each(files)("%s", (file) => {
     // What the known gaps read as, which a change can make worse while
     // they stay wrong.
     expect(Object.fromEntries(known.map((field) => [field, valueAt(got, field)]))).toMatchSnapshot()
+  })
+
+  test("the import reads the summary as it was typed", async () => {
+    const [person] = file.split("/")
+    const fixture = JSON.parse(readFileSync(path.join(CORPUS, person, "resume.json"), "utf8"))
+    const { parsed, resume } = await readBack(new Uint8Array(readFileSync(path.join(CORPUS, `${file}.pdf`))))
+    const summaries = parsed.extraGroups?.filter((group) => group.kind === "summary") ?? []
+    if (summaries.length) {
+      // As typed: the PDF's lines are joined back up where they only wrapped.
+      expect(resume.profileSection.summary).toBe(fixture.summary)
+      expect(summaries).toHaveLength(1)
+    }
   })
 })
 

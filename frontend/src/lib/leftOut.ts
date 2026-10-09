@@ -6,6 +6,7 @@
 
 import { SECTIONS } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"
+import { extraKey, extrasOf, sectionIncluded, type ExtraSection } from "./resumeSections"
 
 /** What a left-out bullet starts with, instead of "•". */
 export const LEFT_OUT_BULLET = "○"
@@ -33,19 +34,27 @@ const printedBullets = (value: unknown) =>
 
 /** Whether anything in the resume is left out: an entry, or a bullet. */
 export function hasLeftOut(resume: Resume): boolean {
-  return Object.values(SECTIONS).some(({ dataKey, fields }) => {
-    const entries = resume[dataKey]
-    return (
-      Array.isArray(entries) &&
-      entries.some(
-        (entry: unknown) =>
-          isLeftOut(entry) ||
-          (typeof entry === "object" &&
-            entry !== null &&
-            fields.some((field) => field.type === "bullets" && linesOf((entry as Record<string, unknown>)[field.key]).some(isLeftOutLine))),
+  const extraLeftOut = Object.values(extrasOf(resume)).some(
+    (section) => !sectionIncluded(section) || (section.kind === "list" && section.bullets.split("\n").some(isLeftOutLine)),
+  )
+  return (
+    extraLeftOut ||
+    Object.values(SECTIONS).some(({ dataKey, fields }) => {
+      const entries = resume[dataKey]
+      return (
+        Array.isArray(entries) &&
+        entries.some(
+          (entry: unknown) =>
+            isLeftOut(entry) ||
+            (typeof entry === "object" &&
+              entry !== null &&
+              fields.some(
+                (field) => field.type === "bullets" && linesOf((entry as Record<string, unknown>)[field.key]).some(isLeftOutLine),
+              )),
+        )
       )
-    )
-  })
+    })
+  )
 }
 
 /**
@@ -69,6 +78,22 @@ export function printedResume(resume: Resume): Resume {
         }
         return kept
       })
+  }
+  if (resume.extraSections !== undefined) {
+    const extras = Object.fromEntries(
+      Object.entries(extrasOf(resume))
+        .filter(([, section]) => sectionIncluded(section))
+        .map(([key, section]) => {
+          const { leftOut, ...kept } = section
+          if (kept.kind === "list") kept.bullets = printedBullets(kept.bullets) as string
+          return [key, kept as ExtraSection]
+        }),
+    )
+    printed.extraSections = extras
+    if (Array.isArray(printed.sectionOrder))
+      printed.sectionOrder = printed.sectionOrder.filter(
+        (ref: unknown) => typeof ref !== "string" || extraKey(ref) === null || Object.hasOwn(extras, extraKey(ref)!),
+      )
   }
   return printed as Resume
 }

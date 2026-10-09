@@ -11,12 +11,14 @@ import { viewOf, type ResumeView } from "./resume"
 import { RULES } from "./rules"
 import { CATEGORIES, type CategoryId, type Level } from "./settings"
 import { readCheckState } from "./state"
+import type { ExtraPdfReading } from "./extraPdf"
 
 /** The latest preview PDF, as the resume reader in lib/import read it. */
 export interface PdfReading {
   lines: Line[]
   pages: PageSize[]
   parsed: ParsedResume
+  extras?: ExtraPdfReading
 }
 
 /** Something the grammar checker (Harper, see grammar.ts) found in a piece of text. */

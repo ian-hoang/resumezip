@@ -4,6 +4,8 @@ import { readBack, render, samples } from "@/lib/import/testRender"
 import { runChecks, type Outcome, type Rule } from "./engine"
 import { viewOf } from "./resume"
 import { RULES } from "./rules"
+import { readForChecks } from "@/lib/import/read"
+import { pdfLayoutOf } from "./extraPdf"
 import {
   bandOf,
   checkingCategories,
@@ -335,8 +337,9 @@ describe("on real resumes", () => {
   // Every rule, with the PDF printed and read back, and the text checked for spelling, as the editor does.
   async function scoreOfResume(resume: Record<string, unknown>): Promise<number | null> {
     const { parsed, pages } = await readBack(await render(resume))
+    const pdf = readForChecks(parsed.lines, pdfLayoutOf(viewOf(resume)))
     const grammar = await readingOf(grammarTexts(viewOf(resume)).map(({ text }) => text))
-    return scoreOf(runChecks(resume, { pdf: { lines: parsed.lines, pages, parsed }, grammar, today: TODAY })).total
+    return scoreOf(runChecks(resume, { pdf: { lines: pdf.parsed.lines, pages, ...pdf }, grammar, today: TODAY })).total
   }
 
   test("missing work identity matters more than omitting an optional LinkedIn profile", async () => {

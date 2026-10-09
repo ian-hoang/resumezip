@@ -5,6 +5,11 @@ via [typst.ts](https://github.com/Myriad-Dreamin/typst.ts). Nothing is sent to a
 server to build a PDF.
 
 - `resumeData.ts` maps the editor's resume data to the JSON the templates read.
+  Existing section arrays keep their original shape. The profile's summary is
+  `summary`, paragraphs every template prints under "Summary" above the
+  sections. Text and list sections a person adds are mapped into `extras`,
+  keyed by their `extra:<id>` ordering reference. Empty bodies have no printable descriptor.
+  Prose stays literal; custom lists use the existing bold/italic bullet runs.
 - `compile.ts` is what the UI calls. It runs the compiler in a Web Worker, and
   replaces the worker if it goes quiet with work to do: 30 s while the compiler
   and fonts download (each bit that arrives counts, so slow connections finish),
@@ -35,6 +40,10 @@ server to build a PDF.
 - `templates/*.typ` are the resume templates (the first ones were ported from LaTeX).
   `common.typ` has the shared helpers. They are bundled as strings (see the
   `.typ` rule in `next.config.js`).
+  Every template handles `extras` in its order loop with its own section and
+  bullet styles. `extra-body` shares only new-kind content formatting;
+  paragraphs remain breakable across pages. Omitted
+  sections, entries and bullet lines never reach the template data.
 
 ## Adding a template
 

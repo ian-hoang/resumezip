@@ -2,7 +2,7 @@
 // and how each bullet wraps.
 
 import type { Rule } from "./engine"
-import { printedBullets } from "./pdf"
+import { printedLayoutBullets } from "./pdf"
 import { LONG_BULLET_LINES, MIN_PAGE_FULL, SHORT_LAST_LINE, SPILL_LINES } from "./settings"
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`
@@ -74,7 +74,7 @@ const shortLastLine: Rule = {
   title: "No bullet ending with a few words on a line of their own",
   why: "A short last line takes a whole line of space for a few words.",
   check: ({ resume, pdf }) => {
-    const bullets = printedBullets(resume, pdf)
+    const bullets = printedLayoutBullets(resume, pdf)
     if (bullets.length === 0) return null
     return {
       checked: bullets.length,
@@ -101,7 +101,7 @@ const longBullets: Rule = {
   title: "No bullet longer than two lines",
   why: "Long bullets get skimmed past.",
   check: ({ resume, pdf }) => {
-    const bullets = printedBullets(resume, pdf)
+    const bullets = printedLayoutBullets(resume, pdf)
     if (bullets.length === 0) return null
     return {
       checked: bullets.length,
