@@ -1,7 +1,7 @@
 "use client"
 
 import type { PDFWorker } from "pdfjs-dist"
-import { memo, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ClipboardEvent } from "react"
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ClipboardEvent } from "react"
 // react-pdf's styles are in the page's first download, though its code isn't
 // (see below). Next loads a later chunk's CSS as a React stylesheet resource,
 // and React suspends renders until it's in: what was typed into the form
@@ -47,6 +47,8 @@ const compilerDownloaded = () => compilerStatus().downloaded === 1
 // same one at a new zoom, swaps in without flashing.
 interface Drawing {
   file: string
+  /** The template it's printed in. */
+  template: string | null
   width: number
   pages: number | null
   /** The page numbers drawn so far. */
@@ -67,6 +69,10 @@ const PAGE_GAP = 16
 const FADE_MS = 300
 // How long the zoom stays put before the pages are drawn again at its size.
 const SETTLE_MS = 150
+// The most runs of text a new preview lights up on a page. Typing changes one
+// or two (a line, and the next if it wraps); more is a new template, a file
+// opened over the resume or an undo, where lighting up the page is just noise.
+const MAX_LIT = 6
 
 interface PdfPreviewProps {
   /** Object URL of the latest compiled PDF. */
@@ -74,6 +80,8 @@ interface PdfPreviewProps {
   error?: string | null
   /** A new PDF is being built in another template, so the one on screen is out of date. */
   updating?: boolean
+  /** The template `pdfUrl` is printed in. */
+  template?: string | null
 }
 
 /**
@@ -97,7 +105,7 @@ interface HeldAnchor {
   box: DOMRect
 }
 
-function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
+function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPreviewProps) {
   const [drawings, setDrawings] = useState<Drawing[]>([])
   const [zoom, setZoom] = useState(1)
   // Catches up with the zoom once it settles. Until then, the pages on screen
@@ -111,6 +119,12 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
   // Set just before the zoom changes, and used up once the pages have their new size.
   const anchorRef = useRef<ZoomAnchor | null>(null)
   const heldRef = useRef<HeldAnchor | null>(null)
+  // The drawing on screen and its pages, and the text each PDF printed, page
+  // by page, to light up what the next one changes (lightUpChanges).
+  const shownRef = useRef<Drawing | null>(null)
+  const shownPagesRef = useRef<(HTMLDivElement | null)[]>([])
+  const printedRef = useRef<{ file: string; template: string | null; pages: Map<number, string[]> } | null>(null)
+  const beforeRef = useRef<{ template: string | null; text: Set<string> } | null>(null)
 
   // react-pdf and pdf.js are a third of the editor's code, so they aren't in
   // the page's first download: the form can be used sooner, and the stand-in
@@ -161,6 +175,7 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
       const shown = drawings.findLast((drawing) => drawing.ready)
       const wanted = drawings.find((drawing) => drawing.file === pdfUrl && drawing.width === drawWidth) ?? {
         file: pdfUrl,
+        template,
         width: drawWidth,
         // Known already if this PDF is drawn at another size.
         pages: drawings.find((drawing) => drawing.file === pdfUrl)?.pages ?? null,
@@ -169,7 +184,7 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
       }
       return shown && shown !== wanted ? [shown, wanted] : [wanted]
     })
-  }, [pdfUrl, drawWidth])
+  }, [pdfUrl, drawWidth, template])
 
   // Fit the page to the panel.
   useEffect(() => {
@@ -263,6 +278,49 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
     })
   }
 
+  useLayoutEffect(() => {
+    shownRef.current = shownDrawing ?? null
+  })
+
+  /**
+   * Lights up the runs of text that the PDF before didn't print, so the line
+   * just typed in stands out for a moment (`[data-changed]` in globals.css).
+   * It's called as each page's text layer is drawn, and looks at every page
+   * drawn since. The first preview has nothing to compare with, the same PDF
+   * drawn again at another zoom lit up already, and a new template moves and
+   * restyles everything rather than changing it. One function for every
+   * page, made once: react-pdf draws a text layer again whenever it's given a
+   * new one, which would also put out the light.
+   */
+  const lightUpChanges = useCallback(() => {
+    const shown = shownRef.current
+    if (!shown) return
+    let printed = printedRef.current
+    if (printed?.file !== shown.file) {
+      // If none of the last PDF's text was drawn (it was replaced first), the one before it is still what to compare with.
+      if (printed?.pages.size) beforeRef.current = { template: printed.template, text: new Set([...printed.pages.values()].flat()) }
+      printed = printedRef.current = { file: shown.file, template: shown.template, pages: new Map() }
+    }
+    const { pages, template } = printed
+    shownPagesRef.current.forEach((box, page) => {
+      const layer = box?.querySelector(".textLayer")
+      // react-pdf ends a text layer with this once it's all drawn.
+      if (!layer?.querySelector(":scope > .endOfContent") || pages.has(page)) return
+      // Runs of text, not the empty spans pdf.js wraps some of them in.
+      const runs = [...layer.querySelectorAll<HTMLElement>("span")].filter(
+        (span) => span.childElementCount === 0 && span.textContent?.trim(),
+      )
+      pages.set(
+        page,
+        runs.map((run) => run.textContent ?? ""),
+      )
+      const before = beforeRef.current
+      if (before?.template !== template) return
+      const changed = runs.filter((run) => !before.text.has(run.textContent ?? ""))
+      if (changed.length <= MAX_LIT) for (const run of changed) run.dataset.changed = ""
+    })
+  }, [])
+
   function onLoadError(file: string) {
     setDrawings((drawings) => drawings.filter((drawing) => drawing.file !== file))
     if (file === pdfUrl) setLoadError(true)
@@ -349,6 +407,13 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
                         {Array.from({ length: drawing.pages ?? 0 }, (_, index) => (
                           <div
                             key={index}
+                            ref={
+                              drawing === shownDrawing
+                                ? (element) => {
+                                    shownPagesRef.current[index] = element
+                                  }
+                                : undefined
+                            }
                             className="bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
                             style={{ width: pageWidth, height: pageHeight(pageWidth) }}
                           >
@@ -366,6 +431,7 @@ function PdfPreview({ pdfUrl, error, updating = false }: PdfPreviewProps) {
                                 renderTextLayer={drawing.ready && drawing === shownDrawing}
                                 renderAnnotationLayer
                                 onRenderSuccess={() => onRenderSuccess(drawing, index + 1)}
+                                onRenderTextLayerSuccess={lightUpChanges}
                               />
                             </div>
                           </div>

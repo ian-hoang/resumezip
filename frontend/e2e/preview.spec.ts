@@ -101,6 +101,42 @@ test("renaming doesn't rebuild the preview, and fast typing ends on the latest t
   expect(errors).toEqual([])
 })
 
+test("what a change prints lights up on the preview for a moment", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.goto("/")
+  await page.getByRole("link", { name: "Start writing" }).first().click()
+  await expect(page).toHaveURL(/\/create\/new\//)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await page.getByLabel("Location").fill("Effingham, Illinois")
+  const preview = page.getByRole("region", { name: "Live preview" })
+  await expect(preview.getByText("Effingham, Illinois").first()).toBeVisible()
+
+  await page.getByLabel("Location").fill("London, England")
+  const changed = preview.getByText("London, England").first()
+  const lit = async () => alpha(await changed.evaluate((span) => getComputedStyle(span).backgroundColor))
+  await expect(changed).toHaveAttribute("data-changed")
+  expect(await lit()).toBeGreaterThan(0)
+  // The rest of the page doesn't.
+  await expect(preview.getByText(/Ada Lovelace/i).first()).not.toHaveAttribute("data-changed")
+  // It fades away.
+  await expect.poll(lit).toBe(0)
+
+  // A new template restyles the page rather than changing what it says, so
+  // nothing lights up, though Harvard prints the name in capitals.
+  await preview
+    .locator(".textLayer")
+    .first()
+    .evaluate((layer) => (layer.dataset.replaced = ""))
+  await page.getByRole("button", { name: /^Template/ }).click()
+  await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name: "Harvard" }).click()
+  // Its text, drawn in full: react-pdf ends a text layer with .endOfContent.
+  await expect(preview.locator(".textLayer:not([data-replaced]) > .endOfContent")).toBeAttached()
+  await expect(preview.getByText("ADA LOVELACE", { exact: true })).toBeAttached()
+  await expect(preview.locator("[data-changed]")).toHaveCount(0)
+
+  expect(errors).toEqual([])
+})
+
 test("the preview starts pdf.js's worker once, not for each new PDF", async ({ page }) => {
   const errors = pageErrors(page)
   // Each one loads a 1.3 MB script as it starts.

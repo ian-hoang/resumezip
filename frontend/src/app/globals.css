@@ -192,6 +192,31 @@
   }
 }
 
+/* Text a change just printed, lit up on the preview for a moment
+   (lightUpChanges in components/editor/PdfPreview.tsx). It fades; with less
+   motion it stays as it is for the moment, then goes. Outside a layer, as
+   react-pdf's own text layer styles are. */
+.textLayer [data-changed] {
+  border-radius: 2px;
+  animation: changed 1600ms ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .textLayer [data-changed] {
+    animation-timing-function: step-end;
+  }
+}
+@keyframes changed {
+  from,
+  40% {
+    background-color: rgb(46 91 230 / 0.16);
+    box-shadow: inset 0 -2px var(--color-accent);
+  }
+  to {
+    background-color: rgb(46 91 230 / 0);
+    box-shadow: inset 0 -2px rgb(46 91 230 / 0);
+  }
+}
+
 /* Dragging sections and entries (@hello-pangea/dnd) */
 [data-rfd-drag-handle-context-id] {
   cursor: grab;

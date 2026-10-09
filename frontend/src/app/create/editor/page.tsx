@@ -394,7 +394,7 @@ function Editor({ id }: { id: string }) {
               view === "preview" ? "flex max-xl:flex-1" : "hidden"
             }`}
           >
-            <PdfPreview pdfUrl={pdfUrl} error={compileError} updating={switchingTemplate && !compileError} />
+            <PdfPreview pdfUrl={pdfUrl} template={shownTemplate} error={compileError} updating={switchingTemplate && !compileError} />
           </section>
         </CheckProvider>
       </div>
