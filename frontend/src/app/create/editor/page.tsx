@@ -43,8 +43,9 @@ const SAVED_AFTER_MS = 800
 // How long "Downloaded" shows after a download.
 const DOWNLOADED_MS = 2000
 // How long the line along Download PDF takes to fill, however quick the PDF is
-// (download-fill in globals.css). The file is saved as it ends.
-const DOWNLOAD_FILL_MS = 900
+// (--animate-download-progress in globals.css). The file is saved as it ends.
+// Long enough to see it fill without waiting on it.
+const DOWNLOAD_FILL_MS = 1500
 
 const EDITOR_ADDRESS = "/create/new/"
 
@@ -384,6 +385,8 @@ function Editor({ id }: { id: string }) {
               {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
               <span
                 aria-hidden="true"
+                // The fill's time, and the wait after it, from DOWNLOAD_FILL_MS, as the save is.
+                style={{ animationDuration: `${DOWNLOAD_FILL_MS}ms, 20s`, animationDelay: `0s, ${DOWNLOAD_FILL_MS}ms` }}
                 className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
                   downloading
                     ? "scale-x-0 motion-safe:animate-download-progress"

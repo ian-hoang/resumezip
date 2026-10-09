@@ -128,7 +128,7 @@ test("Download PDF shows the PDF being made, however quick, and saves it as that
   expect(await line.evaluate((element) => parseFloat(getComputedStyle(element).scale))).toBeGreaterThan(0.9)
 
   const downloading = page.waitForEvent("download")
-  await page.clock.runFor(900)
+  await page.clock.runFor(1_500)
   expect((await downloading).suggestedFilename()).toMatch(/\.pdf$/)
   await expect(page.getByRole("button", { name: "Downloaded" })).toBeVisible()
   await page.clock.resume()

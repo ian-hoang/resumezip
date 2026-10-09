@@ -92,14 +92,14 @@
 }
 
 /* The line along the bottom of the editor's Download PDF button while the PDF
-   is made. It fills most of the way in the same time however quick that is
-   (DOWNLOAD_FILL_MS in the editor, which saves the file as it ends). A PDF that
-   takes longer, it waits for, creeping on, short of the end. It animates `scale`,
-   which Tailwind's scale-x-* set too: a transform would be multiplied by the
-   scale-x-0 that hides it until then, and never show. */
+   is made. It fills most of the way in the same time however quick that is:
+   DOWNLOAD_FILL_MS in the editor, which saves the file as it ends, and sets
+   these animations' times on the line from it, so the two keep in step. A PDF
+   that takes longer, it waits for, creeping on, short of the end. It animates
+   `scale`, which Tailwind's scale-x-* set too: a transform would be multiplied
+   by the scale-x-0 that hides it until then, and never show. */
 @theme {
-  --animate-download-progress:
-    download-fill 900ms cubic-bezier(0.65, 0, 0.35, 1) forwards, download-wait 20s var(--ease-glide) 900ms forwards;
+  --animate-download-progress: download-fill 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards, download-wait 20s var(--ease-glide) 1.5s forwards;
   @keyframes download-fill {
     from {
       scale: 0 1;
