@@ -28,7 +28,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
       },
       {
         title: "No accounts",
-        body: "There’s nothing to sign up for, and no outside service ever sees your resume.",
+        body: "There’s nothing to sign up for, and we don’t store your resume.",
       },
       {
         title: "No guarantees",
@@ -42,19 +42,19 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "What we collect",
-        body: "Nothing you type. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up.",
+        body: "We don’t collect or store your resume. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up.",
       },
       {
         title: "How it’s used",
-        body: "What you type is only used in your browser, to build your resume and save your progress.",
+        body: "What you type is used to build your resume and save your progress. We don’t store it.",
       },
       {
-        title: "Where your resume goes",
-        body: "Nowhere. Your PDF is made on your device and stays there unless you send it to someone.",
+        title: "Where your resume is kept",
+        body: "In your browser. We don’t store it, and your PDF is made on your device.",
       },
       {
         title: "Sharing and selling",
-        body: "We don’t share or sell your data. We never receive your resume in the first place.",
+        body: "We don’t share or sell your data, and we don’t store your resume.",
       },
     ],
   },
@@ -76,7 +76,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
       },
       {
         title: "Do you share or sell my data?",
-        body: "No. Your resume stays in your browser, so we never see it.",
+        body: "No. We don’t share or sell anything, and we don’t store your resume.",
       },
       {
         title: "Can I get feedback on my resume?",
@@ -111,7 +111,7 @@ export default function TermsAndPrivacy() {
       <SiteHeader />
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
         <PageIntro label="Legal" title="Terms & privacy">
-          The short version: your resume stays in your browser, and we never see it.
+          The short version: your resume is saved in your browser, and we don’t store it.
         </PageIntro>
 
         <div role="tablist" aria-label="Terms, privacy and FAQ" className="mt-14 flex flex-wrap gap-x-6 border-b border-rule md:gap-x-8">

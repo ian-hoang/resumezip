@@ -1,7 +1,7 @@
 # Contributing to resumezip
 
-Thanks for helping. resumezip is a resume builder that runs entirely in the
-browser: no accounts, no server, and nothing someone writes is uploaded.
+Thanks for helping. resumezip is a resume builder that runs in the browser:
+no accounts, no server of its own, and it doesn't store anyone's resume.
 Every change has to keep it that way.
 
 ## Before you start
@@ -51,10 +51,11 @@ may also comment. Take them as suggestions; you don't have to answer each one.
 
 ## Ground rules
 
-- **Nothing someone writes leaves the browser.** Don't send resume content
-  anywhere, and don't add analytics, trackers or ads. The app only contacts
-  other sites to download its PDF engine (from jsDelivr) and to fetch
-  something the person asked for, like a paper's details from its DOI.
+- **We don't store resumes.** They're saved in the browser, and resumezip
+  keeps no copy. Don't add analytics, trackers or ads. The app contacts other
+  sites to download its PDF engine (from jsDelivr) and to fetch something the
+  person asked for, like a paper's details from its DOI. Anything new that
+  sends what someone writes to another site is discussed in an issue first.
 - **Saved resumes keep working.** Resumes only exist in visitors' browsers
   and in the PDFs they downloaded. If you change how a resume is stored, older
   ones must still open.

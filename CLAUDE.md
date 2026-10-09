@@ -3,7 +3,7 @@
 resumezip is a resume builder that runs entirely in the browser: Next.js 15
 and React 19 in `frontend/`, with no server of its own. Resumes live in
 localStorage, PDFs are compiled by Typst (WebAssembly) in a Web Worker, and
-nothing a person types is uploaded. `frontend/README.md` maps the code;
+resumezip keeps no copy of anyone's resume. `frontend/README.md` maps the code;
 `CONTRIBUTING.md` has the ground rules. Read both before a large change.
 Paths below starting with `src/` or `e2e/` are under `frontend/`.
 
@@ -25,8 +25,9 @@ For anything a visitor can see or that touches storage, also run
 
 From CONTRIBUTING.md, in short:
 
-- Nothing someone writes leaves the browser. No analytics, no new network
-  calls beyond the PDF engine's CDN and lookups the person asks for (DOIs).
+- We don't store resumes. No analytics. A new network call beyond the PDF
+  engine's CDN and lookups the person asks for (DOIs) is discussed in an
+  issue first.
 - Saved resumes keep working. Old localStorage data and old PDFs must still
   open. Change the storage format only with a migration and a test.
 - Templates stay readable by hiring software: no icons or graphics, links

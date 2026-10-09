@@ -1,8 +1,8 @@
 # resumezip
 
 A free resume builder with no sign-up. Resumes are saved in the browser and
-built into PDFs in the browser with [Typst](https://typst.app), so a resume
-is never sent to a server.
+built into PDFs in the browser with [Typst](https://typst.app), and resumezip
+doesn't store them.
 
 ## Running it
 
