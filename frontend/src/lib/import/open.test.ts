@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import { ATTACHMENT_NAME, cleanResume, MAX_LENGTH, toAttachment } from "@/lib/resumeFile"
+import { ATTACHMENT_NAME, cleanResume, MAX_LENGTH, toAttachment, toJson, toJsonOfAll } from "@/lib/resumeFile"
 import { MAX_CHARACTERS, MAX_PAGES, TIME_LIMIT_MS } from "./limits"
 import { readFile, type ReadRequest } from "./read"
 import { wordFile } from "./testFiles"
@@ -144,7 +144,7 @@ afterEach(() => {
 
 describe("a resumezip PDF", () => {
   test("restores its resume, and is closed", async () => {
-    await expect(openResumeFile(pdf())).resolves.toEqual({ kind: "resumezip", resume: cleanResume(resume), title: "Mara Lin" })
+    await expect(openResumeFile(pdf())).resolves.toEqual({ kind: "resumezip", resume: cleanResume(resume), title: "Mara Lin", from: "pdf" })
     expect(opened).toEqual([{ closed: true }])
     expect(workers).toEqual([])
   })
@@ -349,11 +349,67 @@ describe("a Word file", () => {
   })
 })
 
+describe("a JSON file", () => {
+  const json = (text: string, name = "Mara Lin.json") => new File([text], name, { type: "application/json" })
+  const saved = { ...resume, id: "mara", updatedAt: "2026-10-06T12:00:00.000Z" }
+
+  test("of a resume restores it, named and tagged as it was, without pdf.js", async () => {
+    const file = json(toJson({ ...saved, resumeTitle: "Mara at Google", resumeTag: "professional" }), "backup.json")
+    await expect(openResumeFile(file)).resolves.toEqual({
+      kind: "resumezip",
+      resume: { ...cleanResume(saved), extraSections: {} },
+      title: "Mara at Google",
+      tag: "professional",
+      from: "json",
+    })
+    expect(downloads).toBe(0)
+    expect(workers).toEqual([])
+  })
+
+  test("without a name is named after the file, as a PDF is", async () => {
+    await expect(openResumeFile(json(toAttachment(saved)))).resolves.toMatchObject({ title: "Mara Lin", from: "json" })
+  })
+
+  test("of every resume has them all", async () => {
+    const all = await openResumeFile(json(toJsonOfAll([saved, { ...saved, id: "ada" }]), "resumezip-resumes.json"))
+    expect(all.kind === "all" && all.resumes.map((file) => file.resume.id)).toEqual(["mara", "ada"])
+    // One resume in it opens as that resume.
+    await expect(openResumeFile(json(toJsonOfAll([saved])))).resolves.toMatchObject({ kind: "resumezip", from: "json" })
+  })
+
+  test.each([
+    [
+      JSON.stringify({ basics: { name: "Mara Lin" } }),
+      "This JSON file isn't from resumezip. Open one you downloaded here, or a PDF or Word file.",
+    ],
+    ["not json", "This JSON file isn't from resumezip."],
+    ['{"format":"resumezip","version":2,"resumes":[]}', "There are no resumes in this file."],
+    ['{"format":"resumezip","version":2,"resume":[]}', "The resume data in this file is damaged. Try another saved file."],
+    ['{"format":"resumezip","version":9,"resume":{}}', "This file needs a newer resumezip."],
+    [
+      JSON.stringify({ format: "resumezip", version: 2, resume: { notes: "x".repeat(MAX_LENGTH) } }),
+      "This file is longer than resumezip can open (more than 1,000 resumes, 10,000 entries in one, or 10,000,000 characters).",
+    ],
+  ])("that can't be opened says why: %#", async (text, message) => {
+    const opening = openResumeFile(json(text))
+    await expect(opening).rejects.toThrow(OpenFileError)
+    await expect(opening).rejects.toThrow(message)
+  })
+
+  test("is known by its name, or by its type", async () => {
+    await expect(openResumeFile(new File([toAttachment(saved)], "Mara Lin.JSON"))).resolves.toMatchObject({ kind: "resumezip" })
+    await expect(openResumeFile(json(toAttachment(saved), "Mara Lin"))).resolves.toMatchObject({ kind: "resumezip" })
+    await expect(openResumeFile(new File(["{}"], "Mara Lin.txt"))).rejects.toThrow(
+      "Open a PDF, a Word (.docx) file, or a JSON file from resumezip.",
+    )
+  })
+})
+
 describe("downloading pdf.js", () => {
   test("a failed download is tried again for the next PDF", async () => {
     failures = 1
     await expect(openResumeFile(pdf())).rejects.toThrow()
-    await expect(openResumeFile(pdf())).resolves.toEqual({ kind: "resumezip", resume: cleanResume(resume), title: "Mara Lin" })
+    await expect(openResumeFile(pdf())).resolves.toEqual({ kind: "resumezip", resume: cleanResume(resume), title: "Mara Lin", from: "pdf" })
     expect(downloads).toBe(2)
   })
 
