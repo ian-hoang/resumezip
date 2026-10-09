@@ -29,8 +29,9 @@ npm run test:browser   # after a build; see below
 - `src/app/create/dashboard` lists the resumes; `src/app/create/editor` is
   the editor, with a live preview. It's one static page that `next.config.js`
   serves at every resume's address, `/create/new/<id>`. The editor reads the
-  open resume a field at a time (`useResumeField`), so a key typed re-renders
-  only the form it's typed in; `useResumeContext` re-renders with every change.
+  open resume a field at a time (`useResumeField`), so each keystroke
+  re-renders only the form it's typed in; `useResumeContext` re-renders with
+  every change.
 - `src/lib/resumeSections.ts` owns the sections a person adds: text or bullet
   lists. The summary is a profile field. Built-in sections keep their existing
   fields; extras have stable map identities and share the saved section order
