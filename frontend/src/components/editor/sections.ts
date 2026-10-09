@@ -43,10 +43,23 @@ interface Definition<Field extends string, Data extends string, Heading extends 
   choice?: ChoiceDef<Choice>
   /** Entries can also be added from a paper's DOI or link. */
   fromPaperLink?: boolean
+  /**
+   * Not on a new resume: the person adds it from Add section, and can delete
+   * it. A resume that has entries in it shows it either way.
+   */
+  optional?: true
 }
 
-/** A profile field: also how the browser can fill it in, and whether it's a web address. */
-type ProfileFieldDef<Key extends string = string> = FieldDef<Key> & { inputType?: string; autoComplete?: string; web?: true }
+/**
+ * A profile field: also how the browser can fill it in, whether it's a web
+ * address, and whether it's a few lines of prose (a box that grows) rather than one.
+ */
+type ProfileFieldDef<Key extends string = string> = FieldDef<Key> & {
+  inputType?: string
+  autoComplete?: string
+  web?: true
+  multiline?: true
+}
 
 const PROFILE = [
   { key: "fullName", label: "Full name", placeholder: "Jake Ryan", size: "full", autoComplete: "name" },
@@ -56,6 +69,14 @@ const PROFILE = [
   { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/jake", size: "md", web: true },
   { key: "profileGithub", label: "GitHub", placeholder: "github.com/jake", size: "md", web: true },
   { key: "personalWebsite", label: "Website", placeholder: "jake.dev", size: "md", web: true },
+  // Printed under its own heading, above the sections. A blank line starts a new paragraph.
+  {
+    key: "summary",
+    label: "Summary",
+    placeholder: "Software engineer who builds fast, reliable web apps.",
+    size: "full",
+    multiline: true,
+  },
 ] as const satisfies readonly ProfileFieldDef[]
 
 /** A profile field's key, like "email". */
@@ -153,6 +174,7 @@ const DEFINITIONS = {
   Publications: {
     name: "Publications",
     title: "Publications",
+    optional: true,
     dataKey: "publicationsSection",
     headingKey: "publications",
     addLabel: "Add publication",
@@ -169,7 +191,8 @@ const DEFINITIONS = {
   },
   Volunteership: {
     name: "Volunteership",
-    title: "Volunteer Experience",
+    title: "Volunteer",
+    optional: true,
     dataKey: "volunteerExperienceSection",
     headingKey: "volunteer",
     addLabel: "Add volunteering",
@@ -184,7 +207,8 @@ const DEFINITIONS = {
   },
   Leadership: {
     name: "Leadership",
-    title: "Leadership Experience",
+    title: "Leadership",
+    optional: true,
     dataKey: "leadershipExperienceSection",
     headingKey: "leadership",
     addLabel: "Add leadership",
@@ -200,6 +224,7 @@ const DEFINITIONS = {
   Awards: {
     name: "Awards",
     title: "Awards & Certifications",
+    optional: true,
     dataKey: "awardsSection",
     headingKey: "awards",
     addLabel: "Add award",
@@ -230,6 +255,9 @@ export type SectionDef = Definition<FieldKey, DataKey, HeadingKey, ChoiceKey>
 export const SECTIONS: Record<SectionName, SectionDef> = DEFINITIONS
 
 export const SECTION_NAMES = Object.keys(SECTIONS) as SectionName[]
+
+/** The sections a new resume starts with, in their order; the others are added from Add section. */
+export const CORE_SECTIONS = SECTION_NAMES.filter((name) => !SECTIONS[name].optional)
 
 /**
  * Tailwind classes for a field's width in the form's grid: 2 columns, or 4

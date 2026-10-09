@@ -6,7 +6,7 @@
 
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { ResumeContent } from "@/lib/resume"
-import { ATTACHMENT_NAME, fromAttachment, MAX_ENTRIES, MAX_LENGTH, TooLongError } from "@/lib/resumeFile"
+import { ATTACHMENT_NAME, AttachmentError, fromAttachment, MAX_ENTRIES, MAX_LENGTH, TooLongError } from "@/lib/resumeFile"
 import { MAX_BYTES, MAX_PAGES, TIME_LIMIT_MS, TooMuchTextError } from "./limits"
 import { readPdf, type Line, type PageSize, type PdfPage } from "./lines"
 import type { ParsedResume } from "./parse"
@@ -120,6 +120,7 @@ async function attachedResume(doc: PDFDocumentProxy, signal: AbortSignal): Promi
   try {
     return attached ? fromAttachment(new TextDecoder().decode(attached.content)) : null
   } catch (error) {
+    if (error instanceof AttachmentError) throw new OpenFileError(error.message)
     if (!(error instanceof TooLongError)) throw error
     const most = (count: number) => count.toLocaleString("en-US")
     throw new OpenFileError(

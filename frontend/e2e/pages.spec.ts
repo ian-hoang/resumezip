@@ -27,7 +27,10 @@ for (const path of PAGES) {
   test(`${path} loads without errors and passes accessibility checks`, async ({ page }) => {
     const errors = pageErrors(page)
     await page.goto(path)
-    await page.waitForLoadState("networkidle")
+    // The home page's looping video can keep streaming in Safari. Readiness
+    // for this layout/accessibility check is visible content with fonts loaded.
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+    await page.evaluate(() => document.fonts.ready.then(() => undefined))
 
     expect(await seriousAccessibilityProblems(page)).toEqual([])
     // The 404 page's own "not found" response is expected, and browsers log it.

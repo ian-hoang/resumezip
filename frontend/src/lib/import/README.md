@@ -12,6 +12,9 @@ PDF or Word file. It all happens in the browser; nothing is uploaded.
   the dialog says why. The attachment holds what's printed plus the template and
   section order, never the resume's name or tag, or the entries and bullets left
   out of the PDF (`src/lib/leftOut.ts`), since anyone who gets the PDF can read it.
+  Attachments with flexible sections use version 2; files with only the original
+  sections keep version 1. Recognized damaged data or a newer version stops
+  opening with a useful message instead of silently guessing from its PDF text.
 - **Any other file** is read by `lines.ts` into lines of text with their position,
   size, style and links, then sorted into the editor's fields by `parse.ts`. The
   review dialog (`components/dashboard/ImportReview.tsx`) shows the result next to
@@ -58,6 +61,23 @@ as too much text.
    place) followed by bullets. Bullets may be glyphs, or only indentation; a line
    that ran to the right edge wraps onto the next.
 4. Leftovers go in "Couldn't place", so nothing is silently dropped.
+
+Heading occurrences have deterministic review IDs and source-line provenance.
+Repeated headings stay independent, even when their visible words are identical.
+Clear prose summaries go in the profile's summary. Certifications are read as
+awards, as the editor keeps them in Awards & Certifications: "Certifications",
+"Licenses" and "Honors & Certifications" read into Awards, and "Education &
+Certifications" and "Skills & Certifications" into Education and Skills.
+
+The review puts the summaries ticked together, a paragraph each, in the file's
+order. Unsupported groups can be kept as text sections or bullet lists, with
+neither choice selected initially. Durable section UUIDs are created only when
+the person confirms the import. Copy and download preserve uncertain text and the original
+text of groups or entries excluded during review.
+
+The PDF checker reads with `readForChecks`, which parses again without the
+text of sections a person added once it has matched them. A summary reads as
+one there too, so the checker doesn't count it as text it can't place.
 
 It handles single and two-column layouts, headings in a margin column, dates in a
 column of their own, and Word files with or without heading styles and tables.

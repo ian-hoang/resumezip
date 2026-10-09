@@ -163,7 +163,14 @@ test("a file read mostly wrong says so up front, and shows what couldn't be plac
   await page.locator('input[type="file"]').setInputFiles(pdf([RESUME]))
   await expect(review).toContainText("State University")
   await expect(review).not.toContainText("We couldn't place")
+  // Unticked, the school is text to copy or download, but it was placed.
+  await review.getByRole("checkbox", { name: "Include State University" }).uncheck()
+  await expect(review.getByRole("region", { name: /^Unticked · 1 line$/ })).toBeVisible()
+  await expect(review.getByRole("region", { name: /^Couldn't place/ })).toHaveCount(0)
   await review.getByRole("button", { name: "Cancel" }).click()
+  // Something was unticked, so closing asks first.
+  await page.getByRole("dialog", { name: "Discard your changes?" }).getByRole("button", { name: "Discard", exact: true }).click()
+  await expect(review).toBeHidden()
 
   // No headings to sort it by, so almost all of it goes to "Couldn't place".
   const lost = [

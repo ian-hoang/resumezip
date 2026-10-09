@@ -95,8 +95,16 @@
 
 // ---------- Sections ----------
 
+// The profile's summary, above the sections, set as a text section is.
+#if data.summary.len() > 0 {
+  section("Summary", extra-body((kind: "text", paragraphs: data.summary), bullets))
+}
+
 #for name in data.order {
-  if name == "Education" and data.education.len() > 0 {
+  if data.extras.at(name, default: none) != none {
+    let extra = data.extras.at(name)
+    section(extra.heading, extra-body(extra, bullets))
+  } else if name == "Education" and data.education.len() > 0 {
     // The LaTeX version leaves a little extra room around education entries.
     section(heading-or(hd.education, "Education"), v(2pt) + data.education.map(e => {
       let items = ()
@@ -119,9 +127,9 @@
   } else if name == "Work" and data.work.len() > 0 {
     section(heading-or(hd.work, "Experience"), experience(data.work, "company"))
   } else if name == "Leadership" and data.leadership.len() > 0 {
-    section(heading-or(hd.leadership, "Leadership Experience"), experience(data.leadership, "organization"))
+    section(heading-or(hd.leadership, "Leadership"), experience(data.leadership, "organization"))
   } else if name == "Volunteership" and data.volunteer.len() > 0 {
-    section(heading-or(hd.volunteer, "Volunteer Experience"), experience(data.volunteer, "organization"))
+    section(heading-or(hd.volunteer, "Volunteer"), experience(data.volunteer, "organization"))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => entry(
       row(

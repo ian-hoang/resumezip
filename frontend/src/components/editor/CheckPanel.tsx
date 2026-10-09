@@ -89,8 +89,8 @@ export default function CheckPanel() {
         <p className="px-2 text-sm leading-relaxed text-ink-2">
           {/* The checker reads only what's printed, so entries that are all left out don't count. */}
           {view.profile.fullName && hasLeftOut(checked)
-            ? "Include an entry in the PDF to check this resume."
-            : "Add your name and one entry to check this resume."}
+            ? "Include some section content in the PDF to check this resume."
+            : "Add your name and some section content to check this resume."}
         </p>
       </div>
     )

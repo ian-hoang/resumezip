@@ -22,7 +22,7 @@ function ProfileForm({ position }: { position: string }) {
     if (!target || place?.kind !== "profile" || !pending(target.request)) return
     const timer = setTimeout(() => {
       if (!claim(target.request)) return
-      const input = form.current?.querySelector<HTMLElement>(`[data-field="${place.field}"] input`)
+      const input = form.current?.querySelector<HTMLElement>(`[data-field="${place.field}"] :is(input, textarea)`)
       input?.focus({ preventScroll: true })
       input?.scrollIntoView({
         block: "center",
@@ -45,6 +45,7 @@ function ProfileForm({ position }: { position: string }) {
             type={field.inputType}
             autoComplete={field.autoComplete}
             web={field.web}
+            multiline={field.multiline}
             value={profile[field.key] ?? ""}
             onChange={(value) => update("profileSection", { ...profile, [field.key]: value })}
             className={FIELD_SPAN[field.size]}

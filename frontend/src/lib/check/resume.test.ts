@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { SECTION_NAMES } from "@/components/editor/sections"
+import { CORE_SECTIONS } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"
 import { asSaved } from "@/lib/testResume"
 import { findingKey, placeExists, ruleOfKey, textAt, type Place } from "./places"
@@ -35,6 +35,7 @@ describe("reading a resume for the checks", () => {
       linkedin: "",
       profileGithub: "",
       personalWebsite: "",
+      summary: "",
     })
     expect(view.sections.Work[0].values).toMatchObject({ workRole: "Engineer", workLocation: "", workStartDate: "" })
     expect(view.sections.Projects).toEqual([])
@@ -68,7 +69,7 @@ describe("reading a resume for the checks", () => {
     expect(view.headings.Work).toBe("Engines")
     expect(view.headings.Education).toBe("")
     expect(view.order.slice(0, 2)).toEqual(["Work", "Education"])
-    expect([...view.order].sort()).toEqual([...SECTION_NAMES].sort())
+    expect([...view.order].sort()).toEqual([...CORE_SECTIONS].sort())
   })
 
   test("doesn't break on fields in shapes the editor doesn't save", () => {

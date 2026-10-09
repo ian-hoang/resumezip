@@ -6,3 +6,6 @@
 
 # format the code main brought in with Prettier
 3a2d2822cac876806931461d634d84e90913f934
+
+# format the flexible sections' code with prettier
+bd448a3ed848c08fb71a4105b08840325591de8a

@@ -5,6 +5,10 @@ the parser (`../parse.ts`) doesn't read any of them worse. `../corpus.test.ts`
 opens each PDF the way "Open a file" does and compares what it finds with what
 the resume says, field by field. It runs with `npm test`.
 
+The comparison goes through the same import as "Open a file". Sections a
+person adds aren't in the corpus, so they're left out of it; a summary the
+import reads is checked against the fixture's words on its own.
+
 Everyone here is made up. Their email addresses are at example.com and their
 phone numbers are in the 555-0100 to 555-0199 range set aside for fiction.
 **Never add a real person's resume**, not even with permission: this
@@ -16,8 +20,10 @@ made-up person and print them in a copy of that layout.
 Each folder is one person:
 
 - `resume.json` is what their resume says, in the editor's format. It's the
-  answer the parser should find. `summary`, and `tech` on a job, are printed by
-  some layouts but aren't fields in the editor, so they aren't checked.
+  answer the parser should find. `summary` is printed by some layouts and is
+  checked against the profile's summary when one is read. `tech` on a job is
+  printed by some layouts but has no matching editor field, so it isn't
+  checked.
 - Each PDF is that resume in one layout, named after the layout.
 - A layout can also be written by hand, as a Typst file beside its PDF, for a
   shape too particular to print from `resume.json`. Its `resume.json` is then

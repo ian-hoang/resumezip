@@ -9,7 +9,7 @@
 // without being saved again; if both tabs changed the same resume, the fields
 // each one changed are kept.
 
-import { SECTION_NAMES } from "@/components/editor/sections"
+import { CORE_SECTIONS, SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume, ResumeContent, ResumeField } from "./resume"
 import {
   changedPaths,
@@ -33,6 +33,18 @@ import {
 } from "./resumeStorage"
 import { numberDuplicateTitles, uniqueTitle } from "./resumeTitles"
 import { DEFAULT_TEMPLATE } from "./templates"
+import {
+  extraKey,
+  extraRef,
+  newExtraSection,
+  readExtraSections,
+  resolveSections,
+  type ExtraKind,
+  type ExtraPatch,
+  type ExtraSection,
+  type ExtraSections,
+  type SectionRef,
+} from "./resumeSections"
 
 export interface ResumeState {
   /** Every resume saved in this browser, by id. */
@@ -94,7 +106,7 @@ const blankResume = (template: string): Resume => ({
   skillsSection: [],
   leadershipExperienceSection: [],
   awardsSection: [],
-  sectionOrder: [...SECTION_NAMES],
+  sectionOrder: [...CORE_SECTIONS],
 })
 
 const without = (resumes: Record<string, Resume>, id: string) => Object.fromEntries(Object.entries(resumes).filter(([key]) => key !== id))
@@ -157,6 +169,92 @@ export function createResumeStore(delay = SAVE_DELAY) {
     const resume = { ...state.resumes[id], [field]: value, updatedAt: new Date().toISOString() }
     setState({ resumes: { ...state.resumes, [id]: resume } })
     saveSoon()
+  }
+
+  // Commands read the latest snapshot, preserve untouched member references and
+  // publish one update. A section is one merge unit.
+  function commit(id: string, changes: Partial<Resume>, paths: string[]) {
+    if (!has(id) || !paths.length) return
+    markChanged(id, ...paths, "updatedAt")
+    setState({ resumes: { ...state.resumes, [id]: { ...state.resumes[id], ...changes, updatedAt: new Date().toISOString() } } })
+    saveSoon()
+  }
+
+  /**
+   * Adds a section at the end, and gives back where it is: an optional one by
+   * its name (where it is already, if it's there), or a new text or bullet list.
+   */
+  function addSection(id: string, kind: ExtraKind | SectionName): SectionRef | null {
+    if (!has(id)) return null
+    const resume = state.resumes[id]
+    if (kind !== "text" && kind !== "list") {
+      const order = resolveSections(resume)
+      if (!order.includes(kind)) commit(id, { sectionOrder: [...order, kind] }, ["sectionOrder"])
+      return kind
+    }
+    const extras: ExtraSections = resume.extraSections ?? {}
+    const key = crypto.randomUUID()
+    const ref = extraRef(key)
+    commit(id, { extraSections: { ...extras, [key]: newExtraSection(kind) }, sectionOrder: [...resolveSections(resume), ref] }, [
+      `extraSections.${key}`,
+      "sectionOrder",
+    ])
+    return ref
+  }
+
+  function changeSection(id: string, key: string, change: (section: ExtraSection) => ExtraSection) {
+    if (!has(id)) return
+    const extras: ExtraSections = state.resumes[id].extraSections ?? {}
+    if (!Object.hasOwn(extras, key)) return
+    const before = extras[key]
+    const after = change(before)
+    if (after === before || JSON.stringify(after) === JSON.stringify(before)) return
+    if (!readExtraSections({ [key]: after }).complete) return
+    commit(id, { extraSections: { ...extras, [key]: after } }, [`extraSections.${key}`])
+  }
+
+  function editSection(id: string, key: string, patch: ExtraPatch) {
+    changeSection(id, key, (section) => {
+      const { heading, leftOut, text, bullets } = patch
+      return {
+        ...section,
+        ...(heading !== undefined && { heading }),
+        ...(leftOut !== undefined && { leftOut }),
+        ...(section.kind === "text" && text !== undefined && { text }),
+        ...(section.kind === "list" && bullets !== undefined && { bullets }),
+      }
+    })
+  }
+
+  function includeSection(id: string, key: string, included: boolean) {
+    editSection(id, key, { leftOut: !included })
+  }
+
+  /** Takes an optional section off the resume, with its entries, and its title if it was renamed. */
+  function removeSection(id: string, name: SectionName) {
+    if (!has(id) || !SECTIONS[name].optional) return
+    const resume = state.resumes[id]
+    const { dataKey, headingKey } = SECTIONS[name]
+    const headings = Object.fromEntries(Object.entries(resume.headings ?? {}).filter(([key]) => key !== headingKey))
+    const changes: Partial<Resume> = { sectionOrder: resolveSections(resume).filter((ref) => ref !== name), [dataKey]: [], headings }
+    commit(id, changes, ["sectionOrder", dataKey, ...changedPaths("headings", resume.headings, headings)])
+  }
+
+  function deleteSection(id: string, key: string) {
+    if (!has(id)) return
+    const resume = state.resumes[id]
+    const extras: ExtraSections = resume.extraSections ?? {}
+    if (!Object.hasOwn(extras, key)) return
+    const next = Object.fromEntries(Object.entries(extras).filter(([name]) => name !== key))
+    const order = resolveSections(resume).filter((ref) => extraKey(ref) !== key)
+    commit(id, { extraSections: next, sectionOrder: order }, [`extraSections.${key}`, "sectionOrder"])
+  }
+
+  function reorderSections(id: string, order: SectionRef[]) {
+    if (!has(id)) return
+    const resume = state.resumes[id]
+    const next = resolveSections({ ...resume, sectionOrder: order })
+    if (JSON.stringify(resolveSections(resume)) !== JSON.stringify(next)) commit(id, { sectionOrder: next }, ["sectionOrder"])
   }
 
   /** Adds an empty resume, and returns its id. */
@@ -232,7 +330,14 @@ export function createResumeStore(delay = SAVE_DELAY) {
     if (!has(id)) return
     const before = state.resumes[id]
     markChanged(id, EVERY_FIELD)
-    const after = { ...before, ...content, id, updatedAt: content.updatedAt ?? new Date().toISOString() }
+    // A file without sections a person added replaces the ones here too.
+    const after = {
+      ...before,
+      ...content,
+      extraSections: content.extraSections ?? {},
+      id,
+      updatedAt: content.updatedAt ?? new Date().toISOString(),
+    }
     setState({ resumes: { ...state.resumes, [id]: after }, replaced: { id, before, after, undone: false } })
     flush()
   }
@@ -424,6 +529,12 @@ export function createResumeStore(delay = SAVE_DELAY) {
     subscribe,
     load,
     edit,
+    addSection,
+    editSection,
+    includeSection,
+    removeSection,
+    deleteSection,
+    reorderSections,
     create,
     importResume,
     duplicate,

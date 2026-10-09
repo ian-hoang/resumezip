@@ -15,14 +15,17 @@ export type Place =
   // An entry (its place in the list, from 0), one of its fields, or one line of
   // a bullet field (a bullet's `line`).
   | { kind: "entry"; section: SectionName; entry: number; field?: FieldKey; line?: number }
+  | { kind: "extra-heading"; sectionId: string }
+  | { kind: "extra-text"; sectionId: string; field: "text" | "bullets"; line?: number }
   // The PDF as a whole, or one of its pages (from 1).
   | { kind: "page"; page?: number }
 
 /** The field a place is in: a profile field, or one of an entry's. */
-export const fieldOf = (place: Place) => (place.kind === "profile" || place.kind === "entry" ? place.field : undefined)
+export const fieldOf = (place: Place) =>
+  place.kind === "profile" || place.kind === "entry" || place.kind === "extra-text" ? place.field : undefined
 
 /** Fields that hold a link or an email address rather than words. */
-export const LINK_FIELDS: ReadonlySet<ProfileKey | FieldKey | undefined> = new Set<ProfileKey | FieldKey>([
+export const LINK_FIELDS: ReadonlySet<ReturnType<typeof fieldOf>> = new Set<ReturnType<typeof fieldOf>>([
   "email",
   "linkedin",
   "profileGithub",
@@ -43,6 +46,15 @@ export const LOCATION_FIELDS: { [Section in SectionName]?: FieldKeyOf<Section> }
 /** Whether a place is on this resume, so the editor can open it. `pages` is how many the PDF has. */
 export function placeExists(view: ResumeView, place: Place, pages = 0): boolean {
   switch (place.kind) {
+    case "extra-heading":
+      return !!view.extras[place.sectionId] && !view.extras[place.sectionId].blank
+    case "extra-text": {
+      const extra = view.extras[place.sectionId]
+      if (!extra) return false
+      if (place.field === "bullets")
+        return extra.section.kind === "list" && (place.line === undefined || extra.bullets.some((bullet) => bullet.line === place.line))
+      return extra.section.kind === "text" && place.line === undefined
+    }
     case "profile":
       return PROFILE_FIELDS.some((field) => field.key === place.field)
     case "heading":
@@ -70,6 +82,17 @@ export function placeExists(view: ResumeView, place: Place, pages = 0): boolean 
  */
 export function textAt(view: ResumeView, place: Place): string {
   switch (place.kind) {
+    case "extra-heading":
+      return view.extras[place.sectionId]?.heading ?? ""
+    case "extra-text": {
+      const extra = view.extras[place.sectionId]
+      if (!extra) return ""
+      if (place.field === "bullets")
+        return place.line === undefined
+          ? extra.bullets.map((bullet) => bullet.raw).join("\n")
+          : (extra.bullets.find((bullet) => bullet.line === place.line)?.raw ?? "")
+      return extra.section.kind === "text" ? extra.section.text.trim() : ""
+    }
     case "profile":
       return view.profile[place.field] ?? ""
     case "heading":
@@ -97,6 +120,10 @@ export function textAt(view: ResumeView, place: Place): string {
 // page's number stays in, as pages can have the same text, or none.
 function pathOf(place: Place): string {
   switch (place.kind) {
+    case "extra-heading":
+      return `extra.${place.sectionId}.heading`
+    case "extra-text":
+      return `extra.${place.sectionId}.${place.field}`
     case "profile":
       return `profile.${place.field}`
     case "heading":

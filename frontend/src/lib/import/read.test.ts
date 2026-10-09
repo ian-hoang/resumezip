@@ -1,7 +1,18 @@
 import { describe, expect, test, vi } from "vitest"
+import { pdfLayoutOf } from "@/lib/check/extraPdf"
+import { viewOf } from "@/lib/check/resume"
+import { line } from "@/lib/check/testPdf"
+import type { Resume } from "@/lib/resume"
 import { MAX_LINES } from "./limits"
-import { readFile } from "./read"
+import { parseResume } from "./parse"
+import { readFile, readForChecks } from "./read"
 import { wordFile } from "./testFiles"
+
+// The parser as it is, counting its calls.
+vi.mock("./parse", async (importOriginal) => {
+  const parse = await importOriginal<typeof import("./parse")>()
+  return { ...parse, parseResume: vi.fn(parse.parseResume) }
+})
 
 const docx = (paragraphs: string[]) => ({ kind: "docx" as const, data: new Uint8Array(wordFile(paragraphs)).buffer })
 const numbered = (count: number) => Array.from({ length: count }, (_, i) => `Line ${i + 1}`)
@@ -37,5 +48,22 @@ describe("the import worker", () => {
 
   test("says when a Word file can't be read", async () => {
     await expect(readFile({ kind: "docx", data: new TextEncoder().encode("not a zip").buffer })).resolves.toEqual({ problem: "unreadable" })
+  })
+})
+
+describe("reading a preview for the checks", () => {
+  test("parses it once, whether or not it has sections the person added", () => {
+    const source: Resume = {
+      extraSections: { "11111111-1111-4111-8111-111111111111": { kind: "text", heading: "Interests", text: "Reading fiction" } },
+    }
+    const parse = vi.mocked(parseResume)
+    for (const lines of [
+      [line("Interests"), line("Reading fiction")],
+      [line("Experience"), line("Engineer, Acme")],
+    ]) {
+      parse.mockClear()
+      readForChecks(lines, pdfLayoutOf(viewOf(source)))
+      expect(parse).toHaveBeenCalledTimes(1)
+    }
   })
 })

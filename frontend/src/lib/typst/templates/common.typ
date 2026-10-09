@@ -103,3 +103,14 @@
   let present = values.pos().filter(has)
   if present.len() == 0 { "" } else { present.join(sep) }
 }
+
+// Optional sections share content formatting, while every template supplies
+// its own heading and bullet styles. Prose is literal text, not markup.
+// Keep paragraphs breakable so long sections span pages.
+#let extra-body(extra, show-bullets) = {
+  if extra.kind == "text" {
+    extra.paragraphs.map(value => par(value.split("\n").join(linebreak()))).join(v(0.6em))
+  } else if extra.kind == "list" {
+    show-bullets(extra.bullets)
+  }
+}

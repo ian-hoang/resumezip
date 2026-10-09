@@ -6,6 +6,7 @@ import type { Resume } from "@/lib/resume"
 import type { Finding, GrammarLint, GrammarReading, PdfReading, Report } from "@/lib/check/engine"
 import { hasEnoughToCheck } from "@/lib/check/labels"
 import type { Place } from "@/lib/check/places"
+import { pdfLayoutOf, type PdfSectionLayout } from "@/lib/check/extraPdf"
 import { viewOf } from "@/lib/check/resume"
 import { grammarTexts } from "@/lib/check/spelling"
 import { printedOf } from "@/lib/typst/compile"
@@ -82,6 +83,8 @@ type CheckActions = ReturnType<typeof useResumeCheck>["actions"] & {
 export interface Preview {
   url: string
   printed: string
+  /** The resume it was made from, with what's left out of it: where each printed line is in the editor. */
+  checkerResume?: Resume
 }
 
 // Three contexts, so each part of the editor re-renders only with what it
@@ -94,10 +97,16 @@ const CheckTargetContext = createContext<Target | null | undefined>(undefined)
 
 /** The form section a place is in; none for the PDF's pages. */
 export function sectionOf(place: Place): ActiveSection | null {
-  return place.kind === "profile" ? "Profile" : place.kind === "page" ? null : place.section
+  return place.kind === "profile"
+    ? "Profile"
+    : place.kind === "page"
+      ? null
+      : "sectionId" in place
+        ? `extra:${place.sectionId}`
+        : place.section
 }
 
-const PLACE_PARTS = ["field", "section", "entry", "line", "page"] as const
+const PLACE_PARTS = ["field", "section", "sectionId", "entry", "line", "page"] as const
 
 // The same problem: one rule at one place. Its text and message can change
 // as the person types, and it's still the one they're fixing.
@@ -151,6 +160,21 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   const resume = usePausedResume(CHECK_DELAY_MS)
   // What the resume being checked prints; a preview of anything else is out of date.
   const printed = useMemo(() => JSON.stringify(printedOf(resume)), [resume])
+  // The resume the preview was made from, to find each section's text in the
+  // PDF by. A change that doesn't print, as to a left-out bullet, can still
+  // move that text in the editor, so while the resume being checked prints the
+  // same as the preview, it's that one.
+  const pdfResume = preview && preview.printed === printed ? resume : preview?.checkerResume
+  const layoutJSON = useMemo(() => (pdfResume ? JSON.stringify(pdfLayoutOf(viewOf(pdfResume))) : undefined), [pdfResume])
+  const layout = useMemo<PdfSectionLayout[] | undefined>(
+    () => (layoutJSON === undefined ? undefined : JSON.parse(layoutJSON)),
+    [layoutJSON],
+  )
+  const previewUrl = preview?.url
+  const previewPrinted = preview?.printed
+  // Private omitted-line edits can keep the PDF identical while moving an
+  // editor target. Include source addresses in the reading cache key.
+  const readingKey = previewPrinted ? `${previewPrinted}\n${layoutJSON}` : ""
   // A resume with nothing to check yet opens in Write, so its sections aren't
   // hidden behind a request to fill them in.
   const [mode, setMode] = useState<Mode>(() => (hasEnoughToCheck(viewOf(resume)) ? savedMode() : "write"))
@@ -164,37 +188,38 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
     if (mode === "check") setWatching(true)
   }, [mode])
   // The latest preview as read, and what it prints; null if it couldn't be read.
-  const [read, setRead] = useState<{ printed: string; pdf: PdfReading | null } | null>(null)
+  const [read, setRead] = useState<{ printed: string; key: string; pdf: PdfReading | null } | null>(null)
   const readings = useRef(new Map<string, PdfReading | null>())
   useEffect(() => {
-    if (!watching || !preview) return
+    if (!watching || !previewUrl || !previewPrinted) return
     const known = readings.current
-    if (known.has(preview.printed)) {
-      setRead({ printed: preview.printed, pdf: known.get(preview.printed) ?? null })
+    if (known.has(readingKey)) {
+      setRead({ printed: previewPrinted, key: readingKey, pdf: known.get(readingKey) ?? null })
       return
     }
     const reading = new AbortController()
     const cancel = whenIdle(() => {
       // The reader only loads once Check has been opened.
       import("@/lib/check/preview")
-        .then(({ readPreview }) => readPreview(preview.url, reading.signal))
+        .then(({ readPreview }) => readPreview(previewUrl, reading.signal, layout))
         .then((pdf) => {
-          known.set(preview.printed, pdf)
+          if (reading.signal.aborted) return
+          known.set(readingKey, pdf)
           // Maps keep the order things were added in: the first is the oldest.
           if (known.size > READINGS_KEPT) known.delete(known.keys().next().value!)
-          setRead({ printed: preview.printed, pdf })
+          setRead({ printed: previewPrinted, key: readingKey, pdf })
         })
         .catch((error) => {
           if (reading.signal.aborted) return
           console.warn("The checker couldn't read the preview:", error)
-          setRead({ printed: preview.printed, pdf: null })
+          setRead({ printed: previewPrinted, key: readingKey, pdf: null })
         })
     })
     return () => {
       cancel()
       reading.abort()
     }
-  }, [watching, preview])
+  }, [watching, previewUrl, previewPrinted, readingKey, layout])
 
   // What the grammar checker found in each piece of text, once it has loaded,
   // and the text it's checking now.
@@ -202,7 +227,7 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   const [grammarFailed, setGrammarFailed] = useState(false)
   const grammarFound = useRef(new Map<string, readonly GrammarLint[]>())
   const grammarChecking = useRef(new Set<string>())
-  const current = read?.printed === printed ? read : null
+  const current = read?.printed === printed && read.key === readingKey ? read : null
   const pdf: CheckValue["pdf"] = current ? (current.pdf ? "read" : "unreadable") : unbuilt === printed ? "unbuilt" : "reading"
   const check = useResumeCheck(resume, current?.pdf ?? undefined, grammarRead)
   // The text the grammar checker reads, from the resume as last checked, so

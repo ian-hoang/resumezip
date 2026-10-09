@@ -7,10 +7,13 @@ import { runChecks, type PdfReading } from "./engine"
 import { printedBullets } from "./pdf"
 import { viewOf } from "./resume"
 import { RULES } from "./rules"
+import { readForChecks } from "@/lib/import/read"
+import { pdfLayoutOf } from "./extraPdf"
 
 async function readingOf(resume: Record<string, unknown>): Promise<PdfReading> {
   const { parsed, pages } = await readBack(await render(resume))
-  return { lines: parsed.lines, pages, parsed }
+  const result = readForChecks(parsed.lines, pdfLayoutOf(viewOf(resume)))
+  return { lines: result.parsed.lines, pages, ...result }
 }
 
 const PDF_RULES = RULES.filter((rule) => /^[RL]\d$/.test(rule.id))

@@ -67,8 +67,16 @@
 
 // ---------- Sections ----------
 
+// The profile's summary, above the sections, set as a text section is.
+#if data.summary.len() > 0 {
+  section("Summary", entries((extra-body((kind: "text", paragraphs: data.summary), bullets),)))
+}
+
 #for name in data.order {
-  if name == "Education" and data.education.len() > 0 {
+  if data.extras.at(name, default: none) != none {
+    let extra = data.extras.at(name)
+    section(extra.heading, entries((extra-body(extra, bullets),)))
+  } else if name == "Education" and data.education.len() > 0 {
     section(heading-or(hd.education, "Education"), entries(data.education.map(e => {
       let degree = e.degree
       if has(e.gpa) { degree = degree + " (GPA: " + e.gpa + ")" }
@@ -101,11 +109,11 @@
       }).join(linebreak())),
     )))
   } else if name == "Leadership" and data.leadership.len() > 0 {
-    section(heading-or(hd.leadership, "Leadership Experience"), entries(data.leadership.map(l => {
+    section(heading-or(hd.leadership, "Leadership"), entries(data.leadership.map(l => {
       subheading(l.organization, date-range(l.start, l.end), l.role, l.location, items: l.bullets)
     })))
   } else if name == "Volunteership" and data.volunteer.len() > 0 {
-    section(heading-or(hd.volunteer, "Volunteer Experience"), entries(data.volunteer.map(v => {
+    section(heading-or(hd.volunteer, "Volunteer"), entries(data.volunteer.map(v => {
       subheading(v.organization, date-range(v.start, v.end), v.role, v.location, items: v.bullets)
     })))
   } else if name == "Awards" and data.awards.len() > 0 {

@@ -150,13 +150,30 @@ describe("a resumezip PDF", () => {
   })
 
   test("too long to open says so, instead of opening with parts cut off", async () => {
-    attachment = toAttachment({ ...resume, profileSection: { fullName: "x".repeat(MAX_LENGTH) } })
+    attachment = JSON.stringify({
+      format: "resumezip",
+      version: 1,
+      resume: { ...resume, profileSection: { fullName: "x".repeat(MAX_LENGTH) } },
+    })
     const opening = openResumeFile(pdf())
     await expect(opening).rejects.toThrow(OpenFileError)
     await expect(opening).rejects.toThrow(
       "This resume is longer than resumezip can open (more than 10,000 entries or 10,000,000 characters).",
     )
     expect(opened).toEqual([{ closed: true }])
+  })
+
+  test.each([
+    ['{"format":"resumezip","version":99,"resume":{}}', "newer version"],
+    ['{"format":"resumezip","version":2,"resume":{"extraSections":{"summary":{"kind":"summary","text":"secret"}}}}', "damaged"],
+    ['{"format":"resumezip",', "damaged"],
+  ])("a recognized unusable attachment stops opening without a heuristic fallback", async (content, message) => {
+    attachment = content
+    await expect(openResumeFile(pdf())).rejects.toThrow(OpenFileError)
+    await expect(openResumeFile(pdf())).rejects.toThrow(message)
+    expect(pagesRead).toBe(0)
+    expect(workers).toEqual([])
+    expect(opened.every((doc) => doc.closed)).toBe(true)
   })
 })
 

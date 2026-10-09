@@ -9,6 +9,7 @@ import { MAX_PAGES, TooMuchTextError } from "@/lib/import/limits"
 import { readPdf } from "@/lib/import/lines"
 import { loadPdfjs, readInWorker, until } from "@/lib/import/open"
 import type { PdfReading } from "./engine"
+import type { PdfSectionLayout } from "./extraPdf"
 
 // pdf.js's worker for these readings. Closing a document stops what it's
 // reading there, and leaves the worker for the next one.
@@ -19,7 +20,7 @@ let pdfWorker: PDFWorker | null = null
  * the reader's limits or has no text. Stops as soon as `signal` aborts,
  * rejecting with its reason.
  */
-export async function readPreview(url: string, signal: AbortSignal): Promise<PdfReading | null> {
+export async function readPreview(url: string, signal: AbortSignal, checkerLayout?: PdfSectionLayout[]): Promise<PdfReading | null> {
   const data = new Uint8Array(await (await fetch(url, { signal })).arrayBuffer())
   const { getDocument, PDFWorker } = await until(loadPdfjs(), signal)
   if (!pdfWorker || pdfWorker.destroyed) pdfWorker = new PDFWorker()
@@ -30,10 +31,15 @@ export async function readPreview(url: string, signal: AbortSignal): Promise<Pdf
     const doc = await until(task.promise, signal)
     if (doc.numPages > MAX_PAGES) return null
     const pages = await until(readPdf(doc, signal), signal)
-    const result = await readInWorker({ kind: "pdf", pages }, signal, { keep: true })
+    const result = await readInWorker({ kind: "pdf", pages, checkerLayout: checkerLayout ?? [] }, signal, { keep: true })
     if ("failed" in result) throw new Error(result.failed)
     if (!("parsed" in result)) return null
-    return { lines: result.parsed.lines, pages: pages.map(({ width, height }) => ({ width, height })), parsed: result.parsed }
+    return {
+      lines: result.parsed.lines,
+      pages: pages.map(({ width, height }) => ({ width, height })),
+      parsed: result.parsed,
+      extras: result.extras,
+    }
   } catch (error) {
     if (error instanceof TooMuchTextError) return null
     throw error

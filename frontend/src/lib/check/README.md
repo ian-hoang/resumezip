@@ -15,6 +15,21 @@ sent anywhere.
   (`src/lib/leftOut.ts`) aren't, so no rule flags them. An entry keeps its
   place in the editor as `index`, so places are built from that, and entries
   are looked up with `entryAt`, never by their place in the list.
+- `ResumeView.order` remains builtin-only for rules about jobs, dates and
+  skills. `allOrder`, `extras` and `textsOf` also cover the custom text/list
+  sections; the summary is a profile field. Prose is literal; custom list bullets use the
+  existing formatting and preserve original line offsets. Extra places use
+  stable section keys, so reordering them preserves targets and dismissals.
+  Custom lists do not receive job-specific advice.
+- `extraPdf.ts` matches actual extracted section occurrences in the import
+  worker, including repeated headings, before builtin semantic checks run.
+  Only complete matching ranges are removed; original PDF line addresses
+  survive the filtered parse. R3 reports missing text as a readability failure
+  and ambiguous matches as partial coverage. It does not assume arbitrary
+  headings are ATS-known or invent builtin field failures from uncertain extras.
+  Custom lists share physical bullet layout checks. Preview cache keys also
+  include editor source addresses, since inserting omitted lines can move a
+  target without changing the PDF bytes.
 - `readDate.ts` reads dates the way resumes write them ("Jan 2024",
   "01/2024", "2024", "Fall 2023", "Expected May 2027", "Present", and ranges
   in one field like "Jun – Aug 2025"), and compares them. Rules that need to

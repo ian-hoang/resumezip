@@ -14,6 +14,7 @@ import {
   type SectionName,
 } from "@/components/editor/sections"
 import type { CompleteContent, ResumeContent } from "@/lib/resume"
+import { extraKey, resolveSections, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
 import { SOFT_HYPHEN, type Line, type Part } from "./lines"
 
 /** An entry's values, keyed by its section's field names. */
@@ -30,6 +31,27 @@ export interface FoundSection {
   entries: FoundEntry[]
 }
 
+/** A heading occurrence is an address in this file, never a durable editor ID. */
+export interface FoundOccurrence {
+  id: string
+  heading: string
+  headingLine: number
+  lines: number[]
+  sourceLines: number[]
+  section: SectionName | null
+  kind: "builtin" | "summary" | "unsupported"
+}
+
+export interface FoundExtraGroup {
+  id: string
+  kind: "summary"
+  heading: string
+  headingLine: number
+  lines: number[]
+  sourceLines: number[]
+  text: string[]
+}
+
 export interface ParsedResume {
   /** The lines that entries' `lines` index into: the file's, with side headings split off. */
   lines: Line[]
@@ -38,7 +60,9 @@ export interface ParsedResume {
   /** In the order they appear in the file. */
   sections: FoundSection[]
   /** Text that didn't fit anywhere, grouped under the heading it was found under. */
-  unplaced: { heading: string; lines: number[]; text: string[] }[]
+  unplaced: { id?: string; heading: string; headingLine?: number; lines: number[]; sourceLines?: number[]; text: string[] }[]
+  occurrences?: FoundOccurrence[]
+  extraGroups?: FoundExtraGroup[]
 }
 
 /** A line being parsed: its place in the file, and lines joined onto it. */
@@ -208,6 +232,21 @@ const normalizeHeading = (text: string) =>
     .replace(/[^a-z ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+
+const SUMMARY_HEADINGS = new Set([
+  "summary",
+  "professional summary",
+  "objective",
+  "career objective",
+  "profile",
+  "about",
+  "about me",
+  "summary of qualifications",
+  "career summary",
+  "executive summary",
+  "overview",
+  "bio",
+])
 
 const words = (text: string) => text.split(/\s+/).filter(Boolean)
 const isAllCaps = (text: string) => /[A-Z]/.test(text) && !/[a-z]/.test(text) && text.replace(/[^A-Z]/g, "").length >= 3
@@ -513,6 +552,22 @@ function wrapsInto(line: ParseLine, next: ParseLine): boolean {
   const word = next.text.split(/\s+/)[0] ?? ""
   // Generous: digits and capitals run wider than the line's average letter.
   return line.box[2] + (word.length + 1) * charWidth * 1.15 >= line.margin - 2
+}
+
+/**
+ * Prose as it was written rather than as it was printed: a line that ran to
+ * its column's edge is joined back up with the line it wrapped onto, so each
+ * line here is one the person typed (or a bullet). Word files have no
+ * wrapping to undo.
+ */
+function unwrapped(lines: ParseLine[]): string[] {
+  const written: string[] = []
+  lines.forEach((line, i) => {
+    if (i > 0 && !line.bullet && wrapsInto(lines[i - 1], line))
+      written[written.length - 1] = joinWrapped(written[written.length - 1], line.text)
+    else written.push(line.text)
+  })
+  return written.map(tidy).filter(Boolean)
 }
 
 /** A date laid out the way an entry's is: set apart from the rest of its line, or alone on it. */
@@ -1558,6 +1613,8 @@ function readAwards(lines: ParseLine[]): SectionResult {
   return { entries: entries.filter((entry) => entry.fields.awardName || entry.fields.awardOrg), leftover }
 }
 
+const lineIndexes = (line: ParseLine) => [line.index, ...(line.merged ?? [])]
+
 // ---------------------------------------------------------------- profile
 
 function looksLikeName(text: string): boolean {
@@ -1683,7 +1740,9 @@ function bodySize(lines: Line[]): number {
  * Some layouts put each section's heading in a margin column, on the same
  * line as the section's first entry. Splits such lines in two.
  */
-function splitSideHeadings(lines: Line[]): Line[] {
+export type SourceLine = Line & { sourceIndex: number }
+
+function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
   const candidate = (line: Line) =>
     line.parts.length > 1 &&
     !line.bullet &&
@@ -1715,7 +1774,7 @@ function splitSideHeadings(lines: Line[]): Line[] {
       return { bold: chars(true, null) / total > 0.6, italic: chars(null, true) / total > 0.6 }
     }
     const box = line.box
-    const heading: Line = {
+    const heading: SourceLine = {
       ...line,
       parts: [first],
       text: first.text,
@@ -1723,7 +1782,7 @@ function splitSideHeadings(lines: Line[]): Line[] {
       ...restyle([first]),
       box: box && [box[0], box[1], rest[0].x - 4, box[3]],
     }
-    const entry: Line = {
+    const entry: SourceLine = {
       ...line,
       parts: rest,
       text: rest.map((part) => part.text).join(" "),
@@ -1740,7 +1799,7 @@ function splitSideHeadings(lines: Line[]): Line[] {
 const PAGE_NUMBER = /^[\s\-\u2013\u2014]*(?:page\s+)?(\d{1,3})(?:\s*(?:of|\/)\s*\d{1,3})?[\s\-\u2013\u2014]*$/i
 
 /** Lines that are only a page's number, at its top or bottom: not part of the resume. */
-function withoutPageNumbers(lines: Line[]): Line[] {
+function withoutPageNumbers<T extends Line>(lines: T[]): T[] {
   const ends = new Set<Line>()
   lines.forEach((line, i) => {
     if (line.page === undefined) return
@@ -1749,8 +1808,16 @@ function withoutPageNumbers(lines: Line[]): Line[] {
   return lines.filter((line) => !(ends.has(line) && Number(line.text.match(PAGE_NUMBER)?.[1]) === line.page))
 }
 
+/**
+ * A file's lines as the parser reads them: without the pages' numbers, and
+ * with a heading set in a margin column split off its line. Each keeps its
+ * place in the file as `sourceIndex`.
+ */
+export const preparedLines = (file: Line[]): SourceLine[] =>
+  splitSideHeadings(withoutPageNumbers(file.map((line, sourceIndex) => ({ ...line, sourceIndex }))))
+
 export function parseResume(file: Line[]): ParsedResume {
-  const input = splitSideHeadings(withoutPageNumbers(file))
+  const input = preparedLines(file)
   const lines: ParseLine[] = input.map((line, index) => ({ ...line, index }))
   const body = bodySize(lines)
 
@@ -1877,16 +1944,20 @@ export function parseResume(file: Line[]): ParsedResume {
   }
 
   const unplaced: ParsedResume["unplaced"] = []
-  const addUnplaced = (heading: string, lineIndexes: number[], text: string[]) => {
+  const provenance = (indexes: number[]) => [
+    ...new Set(indexes.map((index) => input[index]?.sourceIndex).filter((index): index is number => index !== undefined)),
+  ]
+  const addUnplaced = (heading: string, lineIndexes: number[], text: string[], headingLine = lineIndexes[0] ?? -1) => {
     const kept = text.map(tidy).filter(Boolean)
     if (kept.length === 0) return
-    const existing = unplaced.find((group) => group.heading === heading)
-    if (existing) {
-      existing.lines.push(...lineIndexes)
-      existing.text.push(...kept)
-    } else {
-      unplaced.push({ heading, lines: lineIndexes, text: kept })
-    }
+    unplaced.push({
+      id: `unplaced:${headingLine}:${unplaced.length}`,
+      heading,
+      headingLine,
+      lines: lineIndexes,
+      sourceLines: provenance(lineIndexes),
+      text: kept,
+    })
   }
   const textOf = (line: Line & { index: number }) => contacts.remainders.get(line.index) ?? line.text
   const content = (line: Line & { index: number }) => !contacts.used.has(line.index) && line !== nameLine
@@ -1910,6 +1981,8 @@ export function parseResume(file: Line[]): ParsedResume {
   }
 
   const starts = lines.filter((line) => headings.has(line.index))
+  const occurrences: FoundOccurrence[] = []
+  const extraGroups: FoundExtraGroup[] = []
   const experience: { name: ExperienceName; calls: Map<FoundEntry, RoleCall>; splits: Map<FoundEntry, SplitCall> }[] = []
   starts.forEach((start, i) => {
     const { meaning, label } = headings.get(start.index)!
@@ -1924,7 +1997,27 @@ export function parseResume(file: Line[]): ParsedResume {
             : line,
         ),
     )
+    const normalized = normalizeHeading(label)
+    // A summary is prose: one in bullets isn't read as one.
+    const summary = SUMMARY_HEADINGS.has(normalized) && !sectionLines.some((line) => line.bullet)
+    const kind: FoundOccurrence["kind"] = summary ? "summary" : meaning.section === null ? "unsupported" : "builtin"
+    const indexes = sectionLines.flatMap(lineIndexes)
+    const occurrence: FoundOccurrence = {
+      id: `heading:${start.index}`,
+      heading: label,
+      headingLine: start.index,
+      lines: indexes,
+      sourceLines: provenance([start.index, ...indexes]),
+      section: kind === "builtin" ? meaning.section : null,
+      kind,
+    }
+    occurrences.push(occurrence)
     if (sectionLines.length === 0) return
+
+    if (kind === "summary") {
+      extraGroups.push({ ...occurrence, kind, text: unwrapped(sectionLines) })
+      return
+    }
 
     if (meaning.section === null) {
       // Coursework listed on its own goes with the first school.
@@ -1934,11 +2027,7 @@ export function parseResume(file: Line[]): ParsedResume {
         education.entries[0].lines.push(...sectionLines.map((line) => line.index))
         return
       }
-      addUnplaced(
-        titleCase(label),
-        sectionLines.map((line) => line.index),
-        sectionLines.map((line) => line.text),
-      )
+      addUnplaced(titleCase(label), indexes, unwrapped(sectionLines), start.index)
       return
     }
 
@@ -1959,7 +2048,7 @@ export function parseResume(file: Line[]): ParsedResume {
     if (entries.length) sectionFor(name).entries.push(...entries)
     if (result.calls && result.splits && name in EXPERIENCE_FIELDS)
       experience.push({ name: name as ExperienceName, calls: result.calls, splits: result.splits })
-    addUnplaced(titleCase(label), result.leftover.lines, result.leftover.text)
+    addUnplaced(titleCase(label), result.leftover.lines, result.leftover.text, start.index)
   })
   followOtherEntries(experience)
   followCommas(experience)
@@ -1975,18 +2064,22 @@ export function parseResume(file: Line[]): ParsedResume {
     )
   }
 
-  return { lines: input, profile, profileLines, sections, unplaced }
+  return { lines: input, profile, profileLines, sections, unplaced, occurrences, extraGroups }
 }
 
 /** Builds a resume for the editor from what was found, leaving out entries the user unticked. */
-export function toResumeContent(parsed: ParsedResume, skip: Set<string> = new Set()): CompleteContent {
+export interface ImportChoices {
+  /** Deliberate promotions, initially absent from the review. */
+  keepAs?: Record<string, "text" | "list">
+}
+
+export const extraGroupKey = (id: string) => `extra-group:${id}`
+export const unplacedKey = (group: ParsedResume["unplaced"][number], index: number) => group.id ?? `unplaced:${index}`
+
+export function toResumeContent(parsed: ParsedResume, skip: Set<string> = new Set(), choices: ImportChoices = {}): CompleteContent {
   const resume: ResumeContent = {
     profileSection: { ...parsed.profile },
     headings: {},
-    sectionOrder: [
-      ...parsed.sections.map((section) => section.name),
-      ...SECTION_NAMES.filter((name) => !parsed.sections.some((section) => section.name === name)),
-    ],
   }
   for (const name of SECTION_NAMES) {
     const section = parsed.sections.find((found) => found.name === name)
@@ -1994,6 +2087,40 @@ export function toResumeContent(parsed: ParsedResume, skip: Set<string> = new Se
       .filter((_, index) => !skip.has(entryKey(name, index)))
       .map((entry, index) => ({ id: index + 1, ...blankEntry(name), ...entry.fields }))
   }
+  const extras: ExtraSections = {}
+  const positions = new Map<SectionRef, number>()
+  for (const occurrence of parsed.occurrences ?? []) {
+    if (occurrence.section && !positions.has(occurrence.section)) positions.set(occurrence.section, occurrence.headingLine)
+  }
+  // The summaries ticked go in the profile's summary, a paragraph each, in the file's order.
+  const summaries = (parsed.extraGroups ?? []).filter((group) => group.kind === "summary" && !skip.has(extraGroupKey(group.id)))
+  if (summaries.length)
+    resume.profileSection = { ...resume.profileSection, summary: summaries.map((group) => group.text.join("\n")).join("\n\n") }
+  parsed.unplaced.forEach((group, index) => {
+    const kind = choices.keepAs?.[unplacedKey(group, index)]
+    if (!kind) return
+    const key = crypto.randomUUID()
+    const common = {
+      kind,
+      heading: group.heading === "Top of the resume" || group.heading === "Everything else" ? "New section" : group.heading,
+    }
+    extras[key] =
+      kind === "text"
+        ? { ...common, kind, text: group.text.join("\n") }
+        : { ...common, kind, bullets: group.text.map((line) => `• ${line.replace(/^[•○]\s*/, "")}`).join("\n") }
+    positions.set(`extra:${key}`, group.headingLine ?? group.lines[0] ?? Number.MAX_SAFE_INTEGER)
+  })
+  if (Object.keys(extras).length) resume.extraSections = extras
+  // The sections found, in the file's order, but an optional one only with an
+  // entry ticked; then the core sections the file doesn't have.
+  const authored: SectionRef[] = [
+    ...parsed.sections.map((section) => section.name),
+    ...Object.keys(extras).map((key): SectionRef => `extra:${key}`),
+  ].filter(
+    (ref) => extraKey(ref) !== null || !SECTIONS[ref as SectionName].optional || resume[SECTIONS[ref as SectionName].dataKey]?.length,
+  )
+  authored.sort((a, b) => (positions.get(a) ?? Number.MAX_SAFE_INTEGER) - (positions.get(b) ?? Number.MAX_SAFE_INTEGER))
+  resume.sectionOrder = resolveSections({ ...resume, sectionOrder: authored })
   // Every section is set above.
   return resume as CompleteContent
 }

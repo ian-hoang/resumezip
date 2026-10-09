@@ -8,7 +8,17 @@
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS, type FieldKey, type ProfileKey, type SectionName } from "@/components/editor/sections"
 import { isLeftOut, isLeftOutLine } from "@/lib/leftOut"
 import type { Resume } from "@/lib/resume"
-import { plainText, sectionOrder } from "@/lib/typst/resumeData"
+import { plainText } from "@/lib/typst/resumeData"
+import {
+  extraHasBody,
+  extraHeading,
+  extraKey,
+  extrasOf,
+  resolveSections,
+  sectionIncluded,
+  type ExtraSection,
+  type SectionRef,
+} from "@/lib/resumeSections"
 import type { Place } from "./places"
 import { readCheckState } from "./state"
 
@@ -21,9 +31,9 @@ export function resumeTypeOf(resume: Resume): ResumeType {
   return tag === "academic" || tag === "personal" ? tag : "professional"
 }
 
-export interface Bullet {
+export interface Bullet<Field extends string = FieldKey> {
   /** The field it's in, like "workDescription". */
-  field: FieldKey
+  field: Field
   /** Its line in that field, counting from 0 and blank lines included, which is where the editor finds it. */
   line: number
   /** Which bullet it is in that field, from 1, counting left-out ones too, as the editor does. */
@@ -59,8 +69,21 @@ export interface ResumeView {
   sections: Record<SectionName, Entry[]>
   /** Each section's own title if the person renamed it, or "" for the template's. */
   headings: Record<SectionName, string>
+  /** Shared editor/template defaults, used only for physical PDF occurrence anchors. */
+  printedHeadings: Record<SectionName, string>
   /** The sections in the order they're printed. */
   order: SectionName[]
+  /** Mixed print order; semantic rules continue to use the builtin-only order above. */
+  allOrder: SectionRef[]
+  extras: Record<string, ExtraView>
+}
+
+export interface ExtraView {
+  id: string
+  heading: string
+  section: ExtraSection
+  bullets: Bullet<"bullets">[]
+  blank: boolean
 }
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value)
@@ -80,7 +103,7 @@ const allLinesOf = (value: unknown): string[] =>
 // Left-out lines are blanked rather than dropped, so the rest keep their line numbers.
 const linesOf = (value: unknown): string[] => allLinesOf(value).map((line) => (isLeftOutLine(line) ? "" : line))
 
-const bulletsOf = (field: FieldKey, value: unknown): Bullet[] => {
+const bulletsOf = <Field extends string>(field: Field, value: unknown): Bullet<Field>[] => {
   let number = 0
   return allLinesOf(value).flatMap((line, index) => {
     const raw = line.trim().replace(/^[•○]\s*/, "")
@@ -121,13 +144,37 @@ export function viewOf(resume: Resume): ResumeView {
     })
     titles[name] = text(headings[headingKey])
   }
+  const allOrder = resolveSections(resume)
+  const extras = Object.fromEntries(
+    Object.entries(extrasOf(resume))
+      .filter(([, section]) => sectionIncluded(section))
+      .map(([id, saved]) => {
+        const section = saved.kind === "list" ? { ...saved, bullets: linesOf(saved.bullets).join("\n") } : saved
+        return [
+          id,
+          {
+            id,
+            heading: extraHeading(section),
+            section,
+            bullets: saved.kind === "list" ? bulletsOf("bullets", saved.bullets) : [],
+            blank: !extraHasBody(section),
+          },
+        ]
+      }),
+  )
   return {
     type: resumeTypeOf(resume),
     grammarLanguage: readCheckState(resume).grammarLanguage ?? "english",
     profile: Object.fromEntries(PROFILE_FIELDS.map((field) => [field.key, text(profile[field.key])])) as Record<ProfileKey, string>,
     sections,
     headings: titles,
-    order: sectionOrder(resume.sectionOrder),
+    printedHeadings: Object.fromEntries(SECTION_NAMES.map((name) => [name, titles[name] || SECTIONS[name].title])) as Record<
+      SectionName,
+      string
+    >,
+    order: allOrder.filter((ref): ref is SectionName => extraKey(ref) === null),
+    allOrder,
+    extras,
   }
 }
 
@@ -146,7 +193,13 @@ export function textsOf(view: ResumeView): { place: Place; text: string }[] {
     const value = view.profile[field.key]
     if (value) texts.push({ place: { kind: "profile", field: field.key }, text: value })
   }
-  for (const section of view.order) {
+  for (const ref of view.allOrder) {
+    const id = extraKey(ref)
+    if (id !== null) {
+      texts.push(...extraTexts(view, id))
+      continue
+    }
+    const section = ref as SectionName
     // A section with nothing printed in it isn't printed at all, title and all.
     const printed = view.sections[section].some((entry) => !entry.blank)
     if (view.headings[section] && printed) texts.push({ place: { kind: "heading", section }, text: view.headings[section] })
@@ -164,4 +217,17 @@ export function textsOf(view: ResumeView): { place: Place; text: string }[] {
     }
   }
   return texts
+}
+
+/** Extra prose stays literal; only custom list bullets use the editor's inline formatting. */
+export function extraTexts(view: ResumeView, sectionId: string): { place: Place; text: string }[] {
+  const extra = view.extras[sectionId]
+  if (!extra || extra.blank) return []
+  const result: { place: Place; text: string }[] = [{ place: { kind: "extra-heading", sectionId }, text: extra.heading }]
+  const section = extra.section
+  if (section.kind === "list") {
+    for (const bullet of extra.bullets)
+      result.push({ place: { kind: "extra-text", sectionId, field: "bullets", line: bullet.line }, text: bullet.text })
+  } else if (section.text.trim()) result.push({ place: { kind: "extra-text", sectionId, field: "text" }, text: section.text.trim() })
+  return result
 }

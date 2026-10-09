@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { SECTION_NAMES } from "@/components/editor/sections"
+import { CORE_SECTIONS } from "@/components/editor/sections"
 import { asSaved } from "@/lib/testResume"
 import { toTemplateData } from "./resumeData"
 
@@ -62,16 +62,13 @@ describe("section order", () => {
       "Work",
       "Education",
       "Projects",
-      "Publications",
-      "Volunteership",
-      "Leadership",
-      "Awards",
     ])
   })
 
-  test("every section the editor has is printed, even without a saved order", () => {
-    expect(toTemplateData({}).order).toEqual(SECTION_NAMES)
-    expect(toTemplateData({ sectionOrder: [] }).order).toEqual(SECTION_NAMES)
+  test("without a saved order, the core sections are printed, and an optional one with entries", () => {
+    expect(toTemplateData({}).order).toEqual(CORE_SECTIONS)
+    expect(toTemplateData({ sectionOrder: [] }).order).toEqual(CORE_SECTIONS)
+    expect(toTemplateData({ awardsSection: [{ id: 1, awardName: "Dean's List" }] }).order).toEqual([...CORE_SECTIONS, "Awards"])
   })
 })
 
