@@ -66,7 +66,7 @@ function LeftBar({ hidden, children }: LeftBarProps) {
     <aside
       ref={bar}
       data-covers="top"
-      className={`shrink-0 border-b border-rule bg-paper xl:static xl:block xl:w-[248px] xl:overflow-y-auto xl:border-b-0 xl:border-r xl:px-4 xl:py-7 ${
+      className={`shrink-0 border-b border-rule bg-paper xl:static xl:block xl:w-[256px] xl:overflow-y-auto xl:border-b-0 xl:border-r xl:px-4 xl:py-7 ${
         mode === "write" ? "sticky top-0 z-20" : ""
       } ${hidden ? "hidden" : ""}`}
     >

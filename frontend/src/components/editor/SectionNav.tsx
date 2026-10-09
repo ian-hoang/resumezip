@@ -155,12 +155,19 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
         >
           <GripVertical className="h-3.5 w-3.5" />
         </span>
-        <button type="button" onClick={() => onSelect(name)} className={`${item(isActive)} -ml-1`} aria-current={isActive || undefined}>
+        <button
+          type="button"
+          onClick={() => onSelect(name)}
+          className={`${item(isActive)} relative -ml-1`}
+          aria-current={isActive || undefined}
+        >
           <span className={`font-mono text-[11px] ${isActive ? "text-accent" : ""}`}>{pad(index + 2)}</span>
           {titleOf(name)}
-          {/* How many entries it has, in the list on wide screens. The form lists them, so it's left out of the button's name. */}
+          {/* How many entries it has, in the list on wide screens. It's set at the right edge rather
+              than after the title, so the longest titles still fit. The form lists the entries, so
+              it's left out of the button's name. */}
           {count > 0 && (
-            <span aria-hidden="true" className="ml-auto hidden pl-2 font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
+            <span aria-hidden="true" className="absolute right-2 hidden font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
               {count}
             </span>
           )}
