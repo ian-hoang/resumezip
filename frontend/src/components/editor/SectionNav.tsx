@@ -121,16 +121,19 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
   const allTitles = [...titles.values()].join("\n")
 
   // The white tab behind the chosen section slides from the last one. It's
-  // put in place without sliding when the list itself changes: across
-  // WIDE_SCREEN, shown again after the preview, or a section added, renamed
-  // or moved. It's measured from where the sections are laid out, not where
-  // they're drawn, so one sliding in as it's added doesn't throw it off.
+  // behind its whole row, handle and all, as it is behind Profile, which has
+  // no handle. It's put in place without sliding when the list itself
+  // changes: across WIDE_SCREEN, shown again after the preview, or a section
+  // added, renamed or moved. It's measured from where the sections are laid
+  // out, not where they're drawn, so one sliding in as it's added doesn't
+  // throw it off.
   useLayoutEffect(() => {
     const nav = navRef.current
     const tab = tabRef.current
     if (!nav || !tab) return
+    const rowOf = (button: HTMLElement | null) => button?.closest<HTMLElement>("[data-section-row]") ?? button
     const place = (slide: boolean) => {
-      const chosen = nav.querySelector<HTMLElement>("button[aria-current]")
+      const chosen = rowOf(nav.querySelector<HTMLElement>("button[aria-current]"))
       if (!chosen) return
       let left = 0
       let top = 0
@@ -148,7 +151,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     // The list and the chosen section can change size with nothing else
     // changing, as when the font loads. The observer also reports their sizes
     // as it starts, which isn't a change.
-    const chosen = nav.querySelector<HTMLElement>("button[aria-current]")
+    const chosen = rowOf(nav.querySelector<HTMLElement>("button[aria-current]"))
     const sizes = () => `${nav.clientWidth}x${nav.clientHeight} ${chosen?.offsetWidth}x${chosen?.offsetHeight}`
     let size = sizes()
     const observer = new ResizeObserver(() => {
@@ -160,12 +163,14 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     return () => observer.disconnect()
   }, [active, sections, allTitles, wide, dnd, dragging])
 
-  // The white tab is drawn behind the chosen section, except while one is
-  // being dragged: then the sections move under it, so the chosen one has its own.
   const item = (isActive: boolean) =>
     `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:shrink ${
-      isActive ? `font-medium text-ink ${dragging ? "bg-sheet ring-1 ring-rule" : ""}` : "text-ink-2 hover:text-ink"
+      isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink"
     }`
+  // A row's own background: the white tab is drawn behind the chosen one,
+  // except while a section is dragged, when the rows move under it and the
+  // chosen one has its own. Another is shaded while pointed at.
+  const rowBackground = (isActive: boolean) => (isActive ? (dragging ? "bg-sheet ring-1 ring-rule" : "") : "hover:bg-ink/[0.04]")
 
   // A section, the same with or without dragging, so the list doesn't move as dragging loads.
   const renderSection = (name: SectionRef, index: number, drag?: DraggableProvided, isDragged = false) => {
@@ -177,9 +182,10 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         key={name}
         ref={drag?.innerRef}
         {...drag?.draggableProps}
-        className={`flex shrink-0 items-center rounded-[4px] transition-[opacity,translate] duration-300 ease-out motion-reduce:transition-none ${
+        data-section-row
+        className={`flex shrink-0 items-center rounded-[4px] transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none ${
           added.has(name) ? "starting:-translate-x-2 starting:opacity-0" : ""
-        } ${isDragged ? "bg-sheet shadow-sm ring-1 ring-rule" : ""}`}
+        } ${isDragged ? "bg-sheet shadow-sm ring-1 ring-rule" : rowBackground(isActive)}`}
       >
         <span
           {...drag?.dragHandleProps}
@@ -230,7 +236,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         type="button"
         data-section-ref="Profile"
         onClick={() => onSelect("Profile")}
-        className={item(active === "Profile")}
+        className={`${item(active === "Profile")} ${rowBackground(active === "Profile")}`}
         aria-current={active === "Profile" || undefined}
       >
         <span className="hidden w-3.5 xl:block" aria-hidden="true" />
