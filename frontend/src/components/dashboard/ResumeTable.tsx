@@ -4,10 +4,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
-import type { ResumeWithId } from "@/lib/resume"
+import { RESUME_TAGS, type ResumeWithId } from "@/lib/resume"
 import { downloadResume } from "@/lib/typst/compile"
 import { templateById } from "@/lib/templates"
-import { RESUME_TAGS } from "./CreateResumeModal"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" })

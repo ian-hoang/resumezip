@@ -13,6 +13,13 @@ import type { ChoiceKey, DataKey, FieldKey, HeadingKey, ProfileKey } from "@/com
 import type { CHECK_FIELD, SavedCheck } from "@/lib/check/state"
 import type { ExtraSections } from "@/lib/resumeSections"
 
+/** The tags a resume can have in the dashboard's list. */
+export const RESUME_TAGS = [
+  { id: "personal", name: "Personal" },
+  { id: "academic", name: "Academic" },
+  { id: "professional", name: "Professional" },
+]
+
 /** One entry in a list section, like a job. Only its own section's fields are set. */
 export type Entry = { id: number; leftOut?: true } & { [Key in FieldKey]?: string }
 
@@ -26,7 +33,7 @@ export type Resume = {
   id?: string
   /** Its name in the dashboard's list; not printed. */
   resumeTitle?: string
-  /** "professional", "personal" or "academic" (RESUME_TAGS). */
+  /** One of RESUME_TAGS, by id: "personal", "academic" or "professional". */
   resumeTag?: string
   /** When it last changed, as an ISO date. */
   updatedAt?: string
