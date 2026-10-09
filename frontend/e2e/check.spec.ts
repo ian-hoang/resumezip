@@ -1,5 +1,5 @@
-import { expect, test, type Page } from "@playwright/test"
-import { pageErrors, seriousAccessibilityProblems } from "./helpers"
+import { expect, test, type Locator, type Page } from "@playwright/test"
+import { pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // The editor's left bar switches between the sections (Write) and what the
 // checker found (Check), and remembers which for the visit.
@@ -250,6 +250,52 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
   await expect(advice).toBeVisible()
 
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+  expect(errors).toEqual([])
+})
+
+/** How wide each line a paragraph wraps onto is. */
+const lineWidths = (paragraph: Locator) =>
+  paragraph.evaluate((element) => {
+    const range = document.createRange()
+    range.selectNodeContents(element)
+    const lines = new Map<number, number>()
+    for (const rect of range.getClientRects()) lines.set(Math.round(rect.top), (lines.get(Math.round(rect.top)) ?? 0) + rect.width)
+    return [...lines.values()]
+  })
+
+test("the note under a field doesn't leave a word or two on a line of their own, and sets its sentences apart", async ({ page }) => {
+  const errors = pageErrors(page)
+  // At this width the email's reason runs a word past one line.
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await newResume(page)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await page.getByLabel("Email").fill("ada@example")
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("button", { name: /^\d+ Experience$/ })
+    .click()
+  await page.getByRole("button", { name: "Add experience" }).click()
+  await page.getByLabel("Company").fill("Analytical Engines")
+  await page
+    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tab", { name: /^Check/ })
+    .click()
+  await page
+    .getByRole("tabpanel", { name: /^Check/ })
+    .getByRole("button", { name: /Not a whole email address/ })
+    .click()
+
+  const why = page.getByText("Recruiters reply by email, and application forms ask for it, so it has to work.")
+  const suggestion = page.getByText("Check the email spelling and domain, like jake@gmail.com.")
+  await expect(why).toBeVisible()
+  // Measured once the section has faded in, as it grows into place.
+  await settled(why)
+  const widths = await lineWidths(why)
+  expect(widths).toHaveLength(2)
+  expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2)
+  const [whyBox, suggestionBox] = [await why.boundingBox(), await suggestion.boundingBox()]
+  expect(suggestionBox!.y - (whyBox!.y + whyBox!.height)).toBeGreaterThanOrEqual(8)
+
   expect(errors).toEqual([])
 })
 

@@ -54,11 +54,15 @@ export const levelPill = (level: Level) =>
 /**
  * What the checker found where the person is fixing it, and why it matters.
  * It says how sure the checker is in words, so the field's color isn't the
- * only sign.
+ * only sign. Its lines are balanced, as a sentence a little too long for the
+ * box would otherwise leave a word or two on a line of its own.
  */
 export function FlagNote({ id, finding }: { id?: string; finding: Finding }) {
   return (
-    <div id={id} className="flex flex-col gap-1 rounded-[4px] border border-rule bg-sheet px-3 py-2.5 text-[13px] leading-normal">
+    <div
+      id={id}
+      className="flex flex-col gap-2 rounded-[4px] border border-rule bg-sheet px-3 py-2.5 text-[13px] leading-normal text-balance"
+    >
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink">
         <span className={levelPill(finding.level)}>{LEVELS[finding.level].name}</span>
         {finding.message}
