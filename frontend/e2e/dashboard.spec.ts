@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { pageErrors } from "./helpers"
+import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 const resume = (id: string, resumeTitle: string) => ({
   id,
@@ -25,41 +25,44 @@ async function dashboardWith(page: Page, resumes: (ReturnType<typeof resume> & {
 const cutShort = (element: Locator) =>
   element.evaluate((element) => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
 
-test("a long resume name wraps in the table, and every resume's buttons stay on screen", async ({ page }) => {
+/** The dashboard's cards, one per resume. */
+const cards = (page: Page) => page.getByRole("list", { name: "Resumes" })
+/** The card of the resume with this name. */
+const card = (page: Page, name: string) =>
+  cards(page)
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name, exact: true }) })
+
+test("a long resume name is cut short on its card, and every card's buttons stay on screen", async ({ page }) => {
   const errors = pageErrors(page)
-  // Names far too long for the table, with and without spaces.
+  // Names far too long for a card, with and without spaces.
   const unbroken = `Software_Engineer_Resume_${Array.from({ length: 110 }, (_, index) => index).join("_")}`
   const spaced = Array.from({ length: 12 }, (_, index) => `Senior Staff Engineer ${index}`).join(" ")
   expect(unbroken.length).toBeGreaterThan(300)
   await page.setViewportSize({ width: 1280, height: 800 })
   await dashboardWith(page, [resume("a", unbroken), resume("b", spaced), resume("c", "Short one")])
 
-  const table = page.getByRole("table")
-  await expect(table.getByRole("row")).toHaveCount(4)
-  // The table fits in its scroll box, so nothing's off to the side, and every
-  // row's last button ends inside it (allowing a pixel, as above).
-  const box = await table.evaluate((element) => {
-    const parent = element.parentElement!
-    return { fits: parent.scrollWidth <= parent.clientWidth, right: parent.getBoundingClientRect().right }
-  })
-  expect(box.fits).toBe(true)
-  for (const button of await table.getByRole("button", { name: "Delete" }).all()) {
-    const shown = (await button.boundingBox())!
-    expect(shown.x + shown.width).toBeLessThanOrEqual(box.right + 1)
+  await expect(cards(page).getByRole("listitem")).toHaveCount(3)
+  // Nothing's off to the side, and every card's last button ends inside its
+  // card (allowing a pixel, as layout is in fractions of one).
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  for (const item of await cards(page).getByRole("listitem").all()) {
+    const shown = (await item.getByRole("button", { name: "Delete" }).boundingBox())!
+    const box = (await item.boundingBox())!
+    expect(shown.x + shown.width).toBeLessThanOrEqual(box.x + box.width + 1)
   }
 
   // Each long name is cut short after two lines. Its link still has it in
   // full, for screen readers, and shows it on hover.
   for (const name of [unbroken, spaced]) {
-    const link = table.getByRole("link", { name, exact: true })
+    const link = cards(page).getByRole("link", { name, exact: true })
     await expect(link).toHaveAttribute("title", name)
     expect(await cutShort(link)).toBe(true)
   }
-  expect(await cutShort(table.getByRole("link", { name: "Short one" }))).toBe(false)
+  expect(await cutShort(cards(page).getByRole("link", { name: "Short one" }))).toBe(false)
 
   // Asked whether to delete it, the whole name fits the dialog.
-  const row = table.getByRole("row").filter({ has: page.getByRole("link", { name: unbroken, exact: true }) })
-  await row.getByRole("button", { name: "Delete" }).click()
+  await card(page, unbroken).getByRole("button", { name: "Delete" }).click()
   const dialog = page.getByRole("dialog", { name: "Delete this resume?" })
   await expect(dialog).toContainText(unbroken)
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
@@ -73,8 +76,53 @@ test("on a tablet, two resumes whose names differ only by a number both show it"
   await page.setViewportSize({ width: 834, height: 1112 })
   await dashboardWith(page, [resume("a", name), resume("b", `${name} 2`)])
 
-  const table = page.getByRole("table")
-  for (const title of [name, `${name} 2`]) expect(await cutShort(table.getByRole("link", { name: title, exact: true }))).toBe(false)
+  for (const title of [name, `${name} 2`]) expect(await cutShort(cards(page).getByRole("link", { name: title, exact: true }))).toBe(false)
+  expect(errors).toEqual([])
+})
+
+test("each card shows its resume's first page, drawn in the browser", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Ada")])
+  // A picture made here from the resume, rather than the template's sample.
+  await expect(card(page, "Ada").locator("[data-page] img")).toHaveAttribute("src", /^blob:/)
+  expect(errors).toEqual([])
+})
+
+test("the cards pass accessibility checks", async ({ page }) => {
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  await expect(card(page, "Grace").locator("[data-page] img")).toHaveAttribute("src", /^blob:/)
+  expect(await seriousAccessibilityProblems(page)).toEqual([])
+})
+
+test("for visitors saving data, a card shows its template's sample instead of drawing the resume", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "connection", { value: { saveData: true, effectiveType: "4g" } })
+  })
+  await dashboardWith(page, [resume("a", "Ada")])
+  await expect(card(page, "Ada").locator("[data-page] img")).toHaveAttribute("src", /previews%2Fjake/)
+  expect(errors).toEqual([])
+})
+
+test("an empty dashboard has a blank page to start a resume, and one to open a file", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.goto("/create/dashboard")
+  await expect(page.getByText("No resumes yet.")).toBeVisible()
+
+  const newResume = page.getByRole("main").getByRole("button", { name: /^New resume/ })
+  await newResume.click()
+  const dialog = page.getByRole("dialog", { name: "New resume" })
+  await expect(dialog.getByLabel("Name")).toBeFocused()
+  await page.keyboard.press("Escape")
+  await expect(dialog).toBeHidden()
+  await expect(newResume).toBeFocused()
+
+  const choosing = page.waitForEvent("filechooser")
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: /^Open a file/ })
+    .click()
+  expect((await choosing).isMultiple()).toBe(false)
   expect(errors).toEqual([])
 })
 
@@ -142,9 +190,8 @@ for (const [layout, width] of [
     const errors = pageErrors(page)
     await page.setViewportSize({ width, height: 900 })
     await dashboardWith(page, [{ ...resume("a", "Ada"), headings: { skillsSection: "Toolbox" } }, resume("b", "Grace")])
-    // The cards or the table, whichever shows at this width.
-    const list = width < 768 ? page.getByRole("list").filter({ has: page.getByRole("link", { name: "Ada" }) }) : page.getByRole("table")
-    const row = (name: string) => list.locator("li, tr").filter({ has: page.getByRole("link", { name, exact: true }) })
+    const list = cards(page)
+    const row = (name: string) => card(page, name)
 
     // A copy has everything, under its own id, and gets focus.
     await row("Ada").getByRole("button", { name: "Duplicate" }).click()

@@ -69,6 +69,23 @@ function layOut(): Bar[] {
 
 const percent = (value: number, of: number) => `${(value / of) * 100}%`
 
+/** The page's grey lines, all printed, at any size: a resume not drawn yet, as on a dashboard card. */
+export function PageSketch() {
+  return BARS.map((bar, index) => (
+    <span
+      key={index}
+      aria-hidden="true"
+      className={`absolute rounded-[1px] ${bar.strong ? "bg-ink/20" : "bg-ink/10"}`}
+      style={{
+        left: percent(bar.x, PAGE.width),
+        top: percent(bar.y, PAGE.height),
+        width: percent(bar.w, PAGE.width),
+        height: `max(1px, ${percent(bar.h, PAGE.height)})`,
+      }}
+    />
+  ))
+}
+
 interface PrintingPageProps {
   width: number
   /** The preview has arrived: fade out, then the parent removes this. */

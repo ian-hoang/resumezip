@@ -157,7 +157,7 @@ test("the left bar switches between writing and checking, and remembers which", 
   // a freshly loaded dashboard too, but a new resume, with nothing to check
   // yet, opens on Write.
   await page.goto("/create/dashboard")
-  await page.getByRole("table").getByRole("link").first().click()
+  await page.getByRole("list", { name: "Resumes" }).getByRole("link").first().click()
   await expect(check).toHaveAttribute("aria-selected", "true")
   await expect(preview).toBeVisible()
   await checked()

@@ -8,7 +8,7 @@ import { useResumeContext } from "@/context/ResumeContext"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
 import DeleteResumeModal from "@/components/dashboard/DeleteResumeModal"
 import { ConflictDialog, OpenErrorDialog, ReadingDialog } from "@/components/dashboard/OpenFileDialogs"
-import ResumeTable from "@/components/dashboard/ResumeTable"
+import ResumeCards, { BlankCard } from "@/components/dashboard/ResumeCards"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import NotSaved from "@/components/site/NotSaved"
 import PageIntro from "@/components/site/PageIntro"
@@ -226,7 +226,7 @@ export default function DashboardPage() {
         <UnreadableData />
 
         {loaded && count > 0 && (
-          <ResumeTable
+          <ResumeCards
             resumes={sorted}
             onDuplicate={(resume) => duplicateResume(resume.id)}
             onRename={(resume, title) => renameResume(resume.id, title)}
@@ -235,14 +235,17 @@ export default function DashboardPage() {
         )}
 
         {loaded && count === 0 && (
-          <div className="flex flex-col items-start gap-5 border-t border-ink pt-8">
-            <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
-            <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-              Start one, or open a resume you already have as a PDF or Word file.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {newResumeButton}
-              {openFileButton}
+          <div className="flex flex-col gap-8 border-t border-ink pt-8">
+            <div className="flex flex-col gap-2">
+              <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
+              <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
+                Start one, or open a resume you already have as a PDF or Word file.
+              </p>
+            </div>
+            {/* Blank pages where the cards will be, one for each way to start. */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 md:grid-cols-3 xl:grid-cols-4">
+              <BlankCard icon={Plus} title="New resume" note="Start from a blank page" onClick={() => setCreating(true)} />
+              <BlankCard icon={FileUp} title="Open a file" note="A PDF or Word resume" onClick={chooseFile} />
             </div>
           </div>
         )}

@@ -2,10 +2,13 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import type { LucideIcon } from "lucide-react"
+import { PageSketch } from "@/components/editor/PrintingPage"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
 import type { ResumeWithId } from "@/lib/resume"
-import { downloadResume } from "@/lib/typst/compile"
+import { keepThumbnails, lastThumbnail, thumbnailOf } from "@/lib/thumbnails"
+import { downloadResume, printedOf, savingData, Superseded } from "@/lib/typst/compile"
 import { templateById } from "@/lib/templates"
 import { RESUME_TAGS } from "./CreateResumeModal"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
@@ -29,7 +32,7 @@ const tagName = (tag: string) => RESUME_TAGS.find((option) => option.id === tag?
 
 const nameOf = (resume: ResumeWithId) => resume.resumeTitle || "Untitled resume"
 
-interface ResumeTableProps {
+interface ResumeCardsProps {
   resumes: ResumeWithId[]
   /** Adds a copy of the resume, and returns its id. */
   onDuplicate: (resume: ResumeWithId) => string | undefined
@@ -37,14 +40,13 @@ interface ResumeTableProps {
   onDelete: (resume: ResumeWithId) => void
 }
 
-// The phone cards and the table are both on the page, one of them hidden, so
-// this finds the one showing.
-function focusShown(selector: string) {
-  const shown = [...document.querySelectorAll<HTMLElement>(selector)].find((element) => element.offsetParent !== null)
-  shown?.focus()
-}
+const focusOn = (selector: string) => document.querySelector<HTMLElement>(selector)?.focus()
 
-export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }: ResumeTableProps) {
+/**
+ * The resumes, as cards with a picture of each one's first page. A card opens
+ * its resume, and has the resume's actions: rename, duplicate, download and delete.
+ */
+export default function ResumeCards({ resumes, onDuplicate, onRename, onDelete }: ResumeCardsProps) {
   // Ids of the resumes downloading, and why each one whose last download failed did.
   const [downloading, setDownloading] = useState<string[]>([])
   const [failed, setFailed] = useState<Record<string, Failure>>({})
@@ -65,7 +67,7 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
   useEffect(() => {
     if (!copied) return
     // Focus moves to the copy, at the top of the list.
-    requestAnimationFrame(() => focusShown(`[data-resume-link="${copied}"]`))
+    requestAnimationFrame(() => focusOn(`[data-resume-link="${copied}"]`))
     const timer = setTimeout(() => setCopied(null), COPIED_MS)
     return () => clearTimeout(timer)
   }, [copied])
@@ -84,7 +86,7 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
     if (renaming?.id !== resume.id) return
     if (save) onRename(resume, renaming.draft)
     setRenaming(null)
-    if (refocus) requestAnimationFrame(() => focusShown(`[data-rename="${resume.id}"]`))
+    if (refocus) requestAnimationFrame(() => focusOn(`[data-rename="${resume.id}"]`))
   }
 
   const download = async (resume: ResumeWithId) => {
@@ -115,26 +117,14 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
     }
   }
 
-  const header = "label-mono border-b border-rule py-3.5 text-left font-normal text-ink-2"
-  const cell = "border-b border-rule py-[18px]"
-
-  // The picture opens the resume too. The name's link is the one announced, so this one's skipped.
-  const thumbnail = (resume: ResumeWithId) => (
-    <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0">
-      <Image
-        src={templateById(resume.selectedTemplate).image}
-        alt=""
-        width={46}
-        height={60}
-        className="h-[60px] w-[46px] bg-sheet object-cover object-top ring-1 ring-rule transition-shadow hover:ring-rule-strong"
-      />
-    </Link>
-  )
+  // The pictures of resumes deleted since, here or in another tab, are let go.
+  const ids = JSON.stringify(resumes.map((resume) => resume.id))
+  useEffect(() => keepThumbnails(JSON.parse(ids)), [ids])
 
   // The name, which opens the resume, and a pencil to rename it; or, while
   // renaming, a box to type the name in. On wide screens the pencil shows
-  // when the row is pointed at, or it's focused.
-  const name = (resume: ResumeWithId, className: string) =>
+  // when the card is pointed at, or it's focused.
+  const name = (resume: ResumeWithId) =>
     renaming?.id === resume.id ? (
       <input
         aria-label="Resume name"
@@ -151,18 +141,26 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
           if (event.key === "Enter") finishRenaming(resume, true, true)
           else if (event.key === "Escape") finishRenaming(resume, false, true)
         }}
-        className="w-full min-w-0 border-0 border-b border-accent bg-transparent py-0.5 font-serif text-[21px] leading-tight text-ink outline-none placeholder:text-ink-2 focus-visible:outline-none"
+        className="w-full min-w-0 border-0 border-b border-accent bg-transparent py-0.5 font-serif text-[19px] leading-tight text-ink outline-none placeholder:text-ink-2 focus-visible:outline-none sm:text-[21px]"
       />
     ) : (
       <div className="flex min-w-0 items-start gap-0.5">
-        <Link href={`/create/new/${resume.id}`} title={nameOf(resume)} data-resume-link={resume.id} className={className}>
+        {/* A name breaks anywhere it has to, so however long it is, it can't
+            widen its card. Past two lines it's cut short, and shown in full on hover. */}
+        <Link
+          href={`/create/new/${resume.id}`}
+          title={nameOf(resume)}
+          data-resume-link={resume.id}
+          className="line-clamp-2 min-w-0 flex-1 font-serif text-[19px] leading-tight wrap-anywhere hover:underline hover:underline-offset-4 sm:text-[21px]"
+        >
           {nameOf(resume)}
         </Link>
         <RowAction
           label="Rename"
           data-rename={resume.id}
           onClick={() => setRenaming({ id: resume.id, draft: resume.resumeTitle ?? "" })}
-          className="-my-2 transition-opacity motion-reduce:transition-none md:opacity-0 md:focus-visible:opacity-100 md:group-hover/row:opacity-100"
+          tipAtEnd
+          className="-my-2 transition-opacity motion-reduce:transition-none md:opacity-0 md:focus-visible:opacity-100 md:group-hover/card:opacity-100"
         >
           <PencilIcon />
         </RowAction>
@@ -182,7 +180,7 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
       >
         <DownloadIcon state={downloading.includes(resume.id) ? "busy" : resume.id in downloaded ? "done" : "idle"} />
       </RowAction>
-      <RowAction label="Delete" danger tipAtEnd onClick={() => onDelete(resume)}>
+      <RowAction label="Delete" danger onClick={() => onDelete(resume)}>
         <TrashIcon />
       </RowAction>
     </>
@@ -210,77 +208,123 @@ export default function ResumeTable({ resumes, onDuplicate, onRename, onDelete }
         </div>
       )}
 
-      {/* Phones: one card per resume, with its actions underneath. */}
-      <ul className="border-t border-ink md:hidden">
+      <ul
+        aria-label="Resumes"
+        className="grid grid-cols-2 gap-x-4 gap-y-10 border-t border-ink pt-8 sm:gap-x-8 md:grid-cols-3 md:pt-10 xl:grid-cols-4"
+      >
         {resumes.map((resume) => (
-          <li
-            key={resume.id}
-            className={`group/row flex gap-4 border-b border-rule pb-3 pt-5 transition-colors duration-700 motion-reduce:transition-none ${resume.id === copied ? "bg-accent/5" : ""}`}
-          >
-            {thumbnail(resume)}
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              {name(resume, "line-clamp-2 font-serif text-[21px] leading-tight wrap-anywhere")}
+          <li key={resume.id} className="group/card flex min-w-0 flex-col">
+            {/* The picture opens the resume too. The name's link is the one announced, so this one's skipped. */}
+            <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true">
+              {/* Paper on the desk, lifted a little when pointed at; a new copy is outlined for a moment. */}
+              <div
+                data-page
+                className={`relative aspect-[8.5/11] overflow-hidden bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.08),0_14px_32px_-18px_rgba(17,19,24,0.4)] outline-2 outline-offset-4 transition-[translate,box-shadow,outline-color] duration-500 ease-glide group-hover/card:-translate-y-1 group-hover/card:shadow-[0_2px_4px_rgba(17,19,24,0.08),0_26px_48px_-20px_rgba(17,19,24,0.45)] motion-reduce:transition-none ${
+                  resume.id === copied ? "outline-accent" : "outline-transparent"
+                }`}
+              >
+                <Sheet resume={resume} />
+              </div>
+            </Link>
+            <div className="mt-4 flex min-w-0 flex-col gap-1 border-t border-rule pt-3">
+              {name(resume)}
               <span className="text-[13px] text-ink-2">
                 {[resume.resumeTag && tagName(resume.resumeTag), templateById(resume.selectedTemplate).name].filter(Boolean).join(" · ")}
               </span>
               <span className="font-mono text-[12px] text-ink-2">{formatEdited(resume.updatedAt)}</span>
-              <div className="-ml-2.5 mt-1 flex gap-1">{actions(resume)}</div>
             </div>
+            {/* At the foot of the card, so a row of cards lines its buttons up whatever their names wrap to. */}
+            <div className="-ml-2.5 mt-auto flex gap-1 pt-1">{actions(resume)}</div>
           </li>
         ))}
       </ul>
-
-      {/* Relative, so the screen-reader-only header can't widen the page past the scroll box. */}
-      <div className="relative hidden overflow-x-auto border-t border-ink md:block">
-        <table className="w-full min-w-[640px] border-collapse">
-          <thead>
-            <tr>
-              <th scope="col" className={header}>
-                Resume
-              </th>
-              <th scope="col" className={header}>
-                Template
-              </th>
-              <th scope="col" className={header}>
-                Last edited
-              </th>
-              <th scope="col" className={header}>
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {resumes.map((resume) => (
-              <tr
-                key={resume.id}
-                className={`group/row transition-colors duration-700 motion-reduce:transition-none ${resume.id === copied ? "bg-accent/5" : ""}`}
-              >
-                {/* A name breaks anywhere it has to, so however long it is, it can't
-                    widen the table and push the other columns off the screen. Past
-                    two lines it's cut short, and shown in full on hover. */}
-                <td className={`${cell} pr-8`}>
-                  <div className="flex items-center gap-[18px]">
-                    {thumbnail(resume)}
-                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      {name(
-                        resume,
-                        "line-clamp-2 font-serif text-[21px] leading-tight wrap-anywhere hover:underline hover:underline-offset-4",
-                      )}
-                      {resume.resumeTag && <span className="text-[13px] text-ink-2">{tagName(resume.resumeTag)}</span>}
-                    </div>
-                  </div>
-                </td>
-                {/* On one line each, so the name gets the rest of the row. */}
-                <td className={`${cell} whitespace-nowrap pr-6 text-[15px]`}>{templateById(resume.selectedTemplate).name}</td>
-                <td className={`${cell} whitespace-nowrap pr-6 font-mono text-[13px] text-ink-2`}>{formatEdited(resume.updatedAt)}</td>
-                <td className={cell}>
-                  <div className="flex justify-end gap-1">{actions(resume)}</div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </>
+  )
+}
+
+/**
+ * A resume's first page, drawn in this browser (lib/thumbnails.ts). Until it
+ * is, a sketch of a page with a line passing down it, as the editor's stand-in
+ * page has. Visitors saving data, who don't download the compiler before they
+ * open a resume, and a resume that can't be drawn, get its template's sample.
+ */
+function Sheet({ resume }: { resume: ResumeWithId }) {
+  const [picture, setPicture] = useState(() => lastThumbnail(resume.id))
+  const [sample, setSample] = useState(false)
+  // Drawn again when what the resume prints changes, not when it's renamed.
+  const printed = useMemo(() => JSON.stringify(printedOf(resume)), [resume])
+  const latest = useRef(resume)
+  latest.current = resume
+
+  useEffect(() => {
+    if (savingData()) {
+      setSample(true)
+      return
+    }
+    const wanted = new AbortController()
+    thumbnailOf(latest.current.id, latest.current, wanted.signal).then(
+      (url) => {
+        setPicture(url)
+        setSample(false)
+      },
+      (error) => {
+        if (!(error instanceof Superseded)) setSample(true)
+      },
+    )
+    // A card that's gone, as when the editor opens, doesn't keep the compiler from its preview.
+    return () => wanted.abort()
+  }, [printed])
+
+  if (picture)
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- an object URL made in the browser, which next/image can't resize
+      <img
+        src={picture}
+        alt=""
+        className="absolute inset-0 size-full transition-opacity duration-300 motion-reduce:transition-none starting:opacity-0"
+      />
+    )
+  if (sample)
+    return (
+      <Image
+        src={templateById(resume.selectedTemplate).image}
+        alt=""
+        fill
+        sizes="(min-width: 1280px) 25vw, (min-width: 768px) 33vw, 50vw"
+        className="object-cover object-top"
+      />
+    )
+  return (
+    <>
+      <PageSketch />
+      <span aria-hidden="true" className="absolute inset-0 animate-print-sweep motion-reduce:hidden">
+        <span className="absolute inset-x-[5%] top-0 h-px bg-accent/70 shadow-[0_0_10px_2px_rgba(46,91,230,0.25)]" />
+      </span>
+    </>
+  )
+}
+
+interface BlankCardProps {
+  icon: LucideIcon
+  title: string
+  /** A few words under the title, as a card's details. */
+  note: string
+  onClick: () => void
+}
+
+/** A blank page drawn in dashes, in a card's place, for a way to start: as on a dashboard with no resumes. */
+export function BlankCard({ icon: Icon, title, note, onClick }: BlankCardProps) {
+  return (
+    <button type="button" onClick={onClick} className="group/blank flex min-w-0 flex-col text-left">
+      <span className="flex aspect-[8.5/11] w-full items-center justify-center border border-dashed border-rule-strong transition-[border-color,background-color] duration-300 group-hover/blank:border-ink group-hover/blank:bg-sheet motion-reduce:transition-none">
+        <span className="flex size-12 items-center justify-center rounded-full bg-sheet text-ink ring-1 ring-rule transition-colors duration-300 group-hover/blank:bg-ink group-hover/blank:text-white group-hover/blank:ring-ink motion-reduce:transition-none">
+          <Icon className="size-5" strokeWidth={1.75} aria-hidden="true" />
+        </span>
+      </span>
+      <span className="mt-4 flex flex-col gap-1 border-t border-rule pt-3">
+        <span className="font-serif text-[19px] leading-tight sm:text-[21px]">{title}</span>
+        <span className="text-[13px] text-ink-2">{note}</span>
+      </span>
+    </button>
   )
 }
