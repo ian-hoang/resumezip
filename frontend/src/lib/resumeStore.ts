@@ -47,10 +47,23 @@ export interface ResumeState {
   savedAt: number
   /** Saved data that couldn't be read, kept aside instead of being saved over. */
   unreadable: string[]
+  /**
+   * The resume a file last replaced, as it was before, for undoReplace to put
+   * back; null if there's none. Only kept in memory, until the page closes.
+   */
+  replaced: { id: string; before: Resume } | null
 }
 
 /** Before anything has been read, as when the page is rendered on the server. */
-export const INITIAL_STATE: ResumeState = { resumes: {}, loaded: false, saveStatus: "saved", unsaved: false, savedAt: 0, unreadable: [] }
+export const INITIAL_STATE: ResumeState = {
+  resumes: {},
+  loaded: false,
+  saveStatus: "saved",
+  unsaved: false,
+  savedAt: 0,
+  unreadable: [],
+  replaced: null,
+}
 
 /** How long typing pauses before the changes are saved, in milliseconds. */
 export const SAVE_DELAY = 400
@@ -163,12 +176,28 @@ export function createResumeStore(delay = SAVE_DELAY) {
     flush()
   }
 
-  /** Replaces a resume's content with a file's, keeping its name and tag. */
+  /**
+   * Replaces a resume's content with a file's, keeping its name and tag. The
+   * resume as it was is kept in memory, so undoReplace can put it back.
+   */
   function replace(id: string, content: ResumeContent) {
     if (!has(id)) return
+    const before = state.resumes[id]
     markChanged(id, EVERY_FIELD)
-    const resume = { ...state.resumes[id], ...content, id, updatedAt: new Date().toISOString() }
-    setState({ resumes: { ...state.resumes, [id]: resume } })
+    // The file's own edit time rather than now: an older file's content isn't
+    // new, and the next file opened is compared with this time to say which
+    // copy is newer.
+    const resume = { ...before, ...content, id, updatedAt: content.updatedAt ?? new Date().toISOString() }
+    setState({ resumes: { ...state.resumes, [id]: resume }, replaced: { id, before } })
+    flush()
+  }
+
+  /** Puts back the resume the last replace replaced, as it was then. Changes made to it since are lost. */
+  function undoReplace() {
+    const { replaced } = state
+    if (!replaced || !has(replaced.id)) return
+    markChanged(replaced.id, EVERY_FIELD)
+    setState({ resumes: { ...state.resumes, [replaced.id]: replaced.before }, replaced: null })
     flush()
   }
 
@@ -177,7 +206,7 @@ export function createResumeStore(delay = SAVE_DELAY) {
     if (!has(id)) return
     pending.delete(id)
     deleted.add(id)
-    setState({ resumes: without(state.resumes, id) })
+    setState({ resumes: without(state.resumes, id), ...(state.replaced?.id === id && { replaced: null }) })
     flush()
   }
 
@@ -350,6 +379,7 @@ export function createResumeStore(delay = SAVE_DELAY) {
     create,
     importResume,
     replace,
+    undoReplace,
     remove,
     flush,
     receive,

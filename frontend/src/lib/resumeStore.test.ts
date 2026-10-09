@@ -450,6 +450,42 @@ describe("adding resumes", () => {
     expect(tab.importResume({ id: "other" }, "Grace.pdf", { keepId: false })).not.toBe("other")
   })
 
+  test("replacing a resume with a file keeps the file's edit time, so the next file opened is compared with that", () => {
+    const storage = memoryStorage(saved(ada))
+    const tab = openTab(storage)
+    tab.replace("a", { profileSection: { fullName: "Ada Byron" }, updatedAt: "2026-10-05T09:00:00.000Z" })
+    expect(tab.getState().resumes.a.updatedAt).toBe("2026-10-05T09:00:00.000Z")
+    expect(stored(storage, "a")).toMatchObject({
+      resumeTitle: "Ada",
+      profileSection: { fullName: "Ada Byron" },
+      updatedAt: "2026-10-05T09:00:00.000Z",
+    })
+
+    // A file that doesn't say when it was edited counts as edited now.
+    tab.replace("a", { profileSection: { fullName: "Ada King" } })
+    expect(stored(storage, "a")?.updatedAt).toBe("2026-10-06T12:00:00.000Z")
+  })
+
+  test("replacing a resume with a file can be undone, which puts back and saves the resume as it was", () => {
+    const storage = memoryStorage(saved(ada, grace))
+    const tab = openTab(storage)
+    tab.replace("a", { profileSection: { fullName: "Ada Byron" }, updatedAt: "2026-10-05T09:00:00.000Z" })
+    expect(tab.getState().replaced).toEqual({ id: "a", before: ada })
+
+    tab.undoReplace()
+    expect(tab.getState().resumes.a).toEqual(ada)
+    expect(tab.getState().replaced).toBeNull()
+    expect(stored(storage, "a")).toEqual(ada)
+    expect(openTab(storage).getState().resumes.a).toEqual(ada)
+  })
+
+  test("deleting a resume that was replaced means there's nothing to undo", () => {
+    const tab = openTab(memoryStorage(saved(ada)))
+    tab.replace("a", { profileSection: { fullName: "Ada Byron" } })
+    tab.remove("a")
+    expect(tab.getState().replaced).toBeNull()
+  })
+
   test("resumes saved with the same name are numbered when the page opens, and that's saved", () => {
     const storage = memoryStorage(saved(ada, { ...grace, resumeTitle: "Ada" }))
     const tab = openTab(storage)

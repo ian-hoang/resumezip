@@ -40,9 +40,10 @@ export function OpenErrorDialog({ message, onClose, onRetry }: { message: string
 }
 
 const when = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" })
+const timeOf = (value: unknown) => new Date(typeof value === "string" ? value : NaN).getTime()
 const formatWhen = (value: unknown) => {
-  const date = new Date(typeof value === "string" ? value : NaN)
-  return Number.isNaN(date.getTime()) ? "an unknown time" : when.format(date)
+  const time = timeOf(value)
+  return Number.isNaN(time) ? "an unknown time" : when.format(time)
 }
 
 interface ConflictDialogProps {
@@ -66,20 +67,28 @@ export function ConflictDialog({
   onKeepBoth,
   onReplace,
 }: ConflictDialogProps) {
+  // Said in words, since old PDFs pile up as "resume (1).pdf" and so on, and an older one is easy to pick by mistake.
+  const existingTime = timeOf(existingEdited)
+  const fileTime = timeOf(fileEdited)
+  const fileIs = fileTime > existingTime ? "newer" : fileTime < existingTime ? "older" : null
+  // Replacing is the main button only when it can't lose anything newer.
+  const replaceFirst = fileIs === "newer" && !existingLeftOut
   return (
     <Modal title="You already have this resume" onClose={onCancel}>
       <p className="mt-4 break-words text-[15px] leading-relaxed text-ink-2">
         &ldquo;{existingTitle || "Untitled resume"}&rdquo; is in this browser, last edited {formatWhen(existingEdited)}. The PDF is from{" "}
-        {formatWhen(fileEdited)}.{existingLeftOut && " What you left out of the PDF isn't in the file, so replacing deletes it."}
+        {formatWhen(fileEdited)}.
+        {fileIs && <strong className="font-medium text-ink"> The PDF is {fileIs} than the copy in this browser.</strong>}
+        {existingLeftOut && " What you left out of the PDF isn't in the file, so replacing deletes it."}
       </p>
       <div className="mt-7 flex flex-wrap justify-end gap-2">
         <button type="button" onClick={onCancel} className={quiet}>
           Cancel
         </button>
-        <button type="button" onClick={onKeepBoth} className={existingLeftOut ? primary : secondary}>
+        <button type="button" onClick={onKeepBoth} className={replaceFirst ? secondary : primary}>
           Keep both
         </button>
-        <button type="button" onClick={onReplace} className={existingLeftOut ? secondary : primary}>
+        <button type="button" onClick={onReplace} className={replaceFirst ? primary : secondary}>
           Replace with the PDF
         </button>
       </div>

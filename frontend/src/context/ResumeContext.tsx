@@ -11,6 +11,8 @@ interface ResumeActions {
   createNewResume: (title: string, tag: string, template?: string) => string
   importResume: (content: ResumeContent, title: string, options?: { keepId?: boolean }) => string
   replaceResume: (id: string, content: ResumeContent) => void
+  /** Puts back the resume replaceResume last replaced (see ResumeState.replaced). */
+  undoReplace: () => void
   deleteResume: (id: string) => void
   deleteUnreadable: () => void
   /** The resumes as they are now, for event handlers that don't need to re-render with every change. */
@@ -116,6 +118,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
       },
       importResume: store.importResume,
       replaceResume: store.replace,
+      undoReplace: store.undoReplace,
       deleteResume: (id) => {
         store.remove(id)
         setCurrentResumeId((current) => (current === id ? null : current))

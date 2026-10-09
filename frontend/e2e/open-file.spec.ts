@@ -299,3 +299,73 @@ test("Create resume needs something ticked", async ({ page }) => {
   await expect(review.getByRole("status")).toHaveText("")
   expect(errors).toEqual([])
 })
+
+test("an older PDF of a resume here says it's older and keeps both by default, and replacing with it can be undone", async ({
+  page,
+}, testInfo) => {
+  const errors = pageErrors(page)
+  const resume = {
+    id: "older-pdf",
+    resumeTitle: "Mara's resume",
+    resumeTag: "professional",
+    updatedAt: "2026-10-05T09:00:00.000Z",
+    selectedTemplate: "jake",
+    profileSection: { fullName: "Mara Lin" },
+    workExperienceSection: [{ id: 1, workRole: "Engineer", companyName: "Google", workDescription: "• Built the search index" }],
+  }
+  const saved = () => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), `resume:${resume.id}`)
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, value)
+    },
+    { key: `resume:${resume.id}`, value: JSON.stringify(resume) },
+  )
+  const experience = () =>
+    page
+      .getByRole("navigation", { name: "Sections" })
+      .getByRole("button", { name: /^\d+ Experience$/ })
+      .click()
+  const role = page.getByLabel("Role", { exact: true })
+  const bullets = page.getByLabel("What you did · one bullet per line")
+  const changed = { workRole: "Senior Engineer", workDescription: "• Built the search index\n• Led the ranking team" }
+
+  // The PDF is downloaded, then the resume changes: a new role, and another bullet.
+  await page.goto(`/create/new/${resume.id}`)
+  const downloading = page.waitForEvent("download")
+  await page.getByRole("button", { name: "Download PDF" }).click()
+  const pdf = testInfo.outputPath("older.pdf")
+  await (await downloading).saveAs(pdf)
+  await experience()
+  await role.fill(changed.workRole)
+  await bullets.fill(changed.workDescription)
+  await expect.poll(async () => (await saved()).workExperienceSection[0]).toMatchObject(changed)
+
+  // Opening the PDF says it's older, and the main button, filled in, is the one that deletes nothing.
+  await page.getByRole("link", { name: "Your resumes" }).click()
+  await page.locator('input[type="file"]').setInputFiles(pdf)
+  const conflict = page.getByRole("dialog", { name: "You already have this resume" })
+  await expect(conflict).toContainText("The PDF is older than the copy in this browser.")
+  const white = "rgb(255, 255, 255)"
+  await expect(conflict.getByRole("button", { name: "Keep both" })).toHaveCSS("color", white)
+  await expect(conflict.getByRole("button", { name: "Replace with the PDF" })).not.toHaveCSS("color", white)
+  expect(await seriousAccessibilityProblems(page)).toEqual([])
+
+  // Replaced anyway, the resume has the PDF's content and edit time, so it isn't taken for the newest copy.
+  await conflict.getByRole("button", { name: "Replace with the PDF" }).click()
+  await expect(page).toHaveURL(new RegExp(`/create/new/${resume.id}$`))
+  await experience()
+  await expect(role).toHaveValue("Engineer")
+  await expect(bullets).toHaveValue("• Built the search index")
+  expect((await saved()).updatedAt).toBe(resume.updatedAt)
+
+  // Undo brings back what changed since, and saves it.
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect(page.getByText("This resume is back to the copy that was in this browser.")).toBeFocused()
+  await expect(role).toHaveValue(changed.workRole)
+  await expect(bullets).toHaveValue(changed.workDescription)
+  await expect.poll(async () => (await saved()).workExperienceSection[0]).toMatchObject(changed)
+  await page.reload()
+  await experience()
+  await expect(role).toHaveValue(changed.workRole)
+  expect(errors).toEqual([])
+})

@@ -9,6 +9,7 @@ import { CheckProvider } from "@/components/editor/CheckContext"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
 import ProfileForm from "@/components/editor/ProfileForm"
+import Replaced from "@/components/editor/Replaced"
 import SectionForm from "@/components/editor/SectionForm"
 import { WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
@@ -352,6 +353,7 @@ function Editor({ id }: { id: string }) {
           </div>
         </div>
         <NotSaved className="border-t border-rule px-5 py-2.5 lg:px-6" onDownload={download} downloading={downloading} />
+        <Replaced id={id} className="border-t border-rule px-5 py-2.5 lg:px-6" />
         {failure && (
           <DownloadFailed
             key={failure.count}
