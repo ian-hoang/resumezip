@@ -1,6 +1,6 @@
 "use client"
 
-import { memo, useEffect, useRef, useState } from "react"
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd"
 import { GripVertical } from "lucide-react"
@@ -28,8 +28,12 @@ const pad = (n: number) => String(n).padStart(2, "0")
  */
 function SectionNav({ sections, headings, active, onSelect, onReorder }: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null)
+  const tabRef = useRef<HTMLSpanElement>(null)
+  // The section the white tab was last put behind, so choosing another slides it there.
+  const tabAt = useRef<ActiveSection | null>(null)
   const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia(WIDE_SCREEN).matches)
   const [dnd, setDnd] = useState<DragAndDrop | null>(null)
+  const [dragging, setDragging] = useState(false)
 
   // The drag and drop isn't in the page's first download, as it's only needed
   // once a section is dragged. It loads as soon as the editor opens; until
@@ -74,7 +78,45 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
     if (by) nav.scrollBy({ left: by, behavior: reduced ? "auto" : "smooth" })
   }, [active, wide])
 
+  // The white tab behind the chosen section slides from the last one. It's
+  // put in place without sliding when the list itself changes: across
+  // WIDE_SCREEN, shown again after the preview, or a section renamed or moved.
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    const tab = tabRef.current
+    if (!nav || !tab) return
+    const place = (slide: boolean) => {
+      const chosen = nav.querySelector("button[aria-current]")
+      if (!chosen) return
+      const box = chosen.getBoundingClientRect()
+      const frame = nav.getBoundingClientRect()
+      // Measured from the list's own top left, which scrolls with it in the row of tabs.
+      const left = box.left - frame.left - nav.clientLeft + nav.scrollLeft
+      const top = box.top - frame.top - nav.clientTop + nav.scrollTop
+      tab.style.transitionDuration = slide ? "" : "0s"
+      tab.style.transform = `translate(${left}px, ${top}px)`
+      tab.style.width = `${box.width}px`
+      tab.style.height = `${box.height}px`
+    }
+    place(tabAt.current !== null && tabAt.current !== active)
+    tabAt.current = active
+    // The list and the chosen section can change size with nothing else
+    // changing, as when the font loads. The observer also reports their sizes
+    // as it starts, which isn't a change.
+    const chosen = nav.querySelector<HTMLElement>("button[aria-current]")
+    const sizes = () => `${nav.clientWidth}x${nav.clientHeight} ${chosen?.offsetWidth}x${chosen?.offsetHeight}`
+    let size = sizes()
+    const observer = new ResizeObserver(() => {
+      if (sizes() !== size) place(false)
+      size = sizes()
+    })
+    observer.observe(nav)
+    if (chosen) observer.observe(chosen)
+    return () => observer.disconnect()
+  }, [active, sections, headings, wide, dnd, dragging])
+
   const onDragEnd = ({ source, destination }: DropResult) => {
+    setDragging(false)
     if (!destination || destination.index === source.index) return
     const next = [...sections]
     const [moved] = next.splice(source.index, 1)
@@ -85,20 +127,22 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
   // A section's title as the person named it, or the editor's.
   const titleOf = (name: SectionName) => headings?.[SECTIONS[name].headingKey] || SECTIONS[name].title
 
+  // The white tab is drawn behind the chosen section, except while one is
+  // being dragged: then the sections move under it, so the chosen one has its own.
   const item = (isActive: boolean) =>
     `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:shrink ${
-      isActive ? "bg-sheet font-medium text-ink ring-1 ring-rule" : "text-ink-2 hover:text-ink"
+      isActive ? `font-medium text-ink ${dragging ? "bg-sheet ring-1 ring-rule" : ""}` : "text-ink-2 hover:text-ink"
     }`
 
   // A section, the same with or without dragging, so the list doesn't move as dragging loads.
-  const renderSection = (name: SectionName, index: number, drag?: DraggableProvided, dragging = false) => {
+  const renderSection = (name: SectionName, index: number, drag?: DraggableProvided, isDragged = false) => {
     const isActive = active === name
     return (
       <div
         key={name}
         ref={drag?.innerRef}
         {...drag?.draggableProps}
-        className={`flex shrink-0 items-center rounded-[4px] ${dragging ? "bg-sheet shadow-sm ring-1 ring-rule" : ""}`}
+        className={`flex shrink-0 items-center rounded-[4px] ${isDragged ? "bg-sheet shadow-sm ring-1 ring-rule" : ""}`}
       >
         <span
           {...drag?.dragHandleProps}
@@ -119,8 +163,15 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
     <nav
       ref={navRef}
       aria-label="Sections"
-      className="flex gap-1 overflow-x-auto px-3 py-2 [scrollbar-width:none] xl:flex-col xl:overflow-visible xl:p-0 [&::-webkit-scrollbar]:hidden"
+      className="relative isolate flex gap-1 overflow-x-auto px-3 py-2 [scrollbar-width:none] xl:flex-col xl:overflow-visible xl:p-0 [&::-webkit-scrollbar]:hidden"
     >
+      <span
+        ref={tabRef}
+        aria-hidden="true"
+        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
+          dragging ? "invisible" : ""
+        }`}
+      />
       <span className="label-mono hidden px-2 pb-3 text-ink-2 xl:block">Sections</span>
 
       <button
@@ -135,7 +186,7 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
       </button>
 
       {dnd ? (
-        <dnd.DragDropContext onDragEnd={onDragEnd}>
+        <dnd.DragDropContext onDragStart={() => setDragging(true)} onDragEnd={onDragEnd}>
           <dnd.Droppable droppableId="sections" direction={wide ? "vertical" : "horizontal"}>
             {(drop) => (
               <div ref={drop.innerRef} {...drop.droppableProps} className="flex gap-1 xl:flex-col">
