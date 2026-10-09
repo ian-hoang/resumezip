@@ -5,7 +5,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { AlignLeft, Award, BookOpen, ChevronLeft, ChevronRight, Flag, HandHeart, List, Plus, type LucideIcon } from "lucide-react"
 import type { ExtraKind } from "@/lib/resumeSections"
-import { reducedMotion } from "./layout"
+import { reducedMotion, WIDE_SCREEN } from "./layout"
 import { SECTIONS, type SectionName } from "./sections"
 
 const ICONS: Partial<Record<SectionName, LucideIcon>> = {
@@ -26,6 +26,7 @@ const CLOSE_MS = 150
 // The gap between the button and the menu, and the least between the menu and the window's edges.
 const GAP = 8
 const MARGIN = 16
+// On smaller screens, where the button is in the row of tabs. On wide ones it's as wide as the button, in the left bar.
 const WIDTH = 352
 // About the menu's height with every choice in it: above the button if it fits there.
 const TALL = 240
@@ -38,19 +39,23 @@ interface Placement {
   bottom?: number
   maxHeight: number
   above: boolean
+  /** As narrow as the left bar, so the optional sections are in one column rather than two. */
+  narrow: boolean
 }
 
 function placeBy(button: HTMLElement): Placement {
   const box = button.getBoundingClientRect()
-  const width = Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
-  const left = Math.min(Math.max(MARGIN, box.left), window.innerWidth - MARGIN - width)
+  // In the left bar it stays inside the bar, over the sections, rather than spreading over the form.
+  const narrow = window.matchMedia(WIDE_SCREEN).matches
+  const width = narrow ? box.width : Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
+  const left = narrow ? box.left : Math.min(Math.max(MARGIN, box.left), window.innerWidth - MARGIN - width)
   const below = window.innerHeight - box.bottom
   // Above the button where it fits, as under the left bar's sections; below
   // it in the row of tabs along the top on smaller screens.
   const above = box.top - GAP - MARGIN >= TALL || box.top > below
   return above
-    ? { left, width, bottom: window.innerHeight - box.top + GAP, maxHeight: box.top - GAP - MARGIN, above }
-    : { left, width, top: box.bottom + GAP, maxHeight: below - GAP - MARGIN, above }
+    ? { left, width, bottom: window.innerHeight - box.top + GAP, maxHeight: box.top - GAP - MARGIN, above, narrow }
+    : { left, width, top: box.bottom + GAP, maxHeight: below - GAP - MARGIN, above, narrow }
 }
 
 const item =
@@ -225,8 +230,8 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
                 <div ref={mainPanel} inert={custom} className="w-1/2">
                   {sections.length > 0 && (
                     <>
-                      {/* The first column as wide as its words, so the second has room for "Awards & Certifications". */}
-                      <div className="grid grid-cols-[auto_1fr] gap-0.5">
+                      {/* Two columns where there's room: the first as wide as its words, so the second has room for "Awards & Certifications". */}
+                      <div className={`grid gap-0.5 ${place.narrow ? "" : "grid-cols-[auto_1fr]"}`}>
                         {sections.map((name) => {
                           const Icon = ICONS[name] ?? Plus
                           return (
