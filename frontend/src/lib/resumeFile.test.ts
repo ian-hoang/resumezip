@@ -134,6 +134,24 @@ describe("cleanResume", () => {
     expect(old.sectionsChosen).toBe(true)
   })
 
+  test("keeps what's left out of the PDF, marked as the editor marks it", () => {
+    const hobbies = "00000000-0000-4000-8000-000000000001"
+    const clean = cleanResume({
+      workExperienceSection: [
+        { workRole: "Engineer", workDescription: "• Built a loom\n○ Fed the cat" },
+        { workRole: "Secret agent", leftOut: true },
+        { workRole: "Clerk", leftOut: "yes" },
+      ],
+      extraSections: { [hobbies]: { kind: "text", heading: "Hobbies", text: "Chess", leftOut: true } },
+    })
+    expect(clean.workExperienceSection).toEqual([
+      expect.objectContaining({ id: 1, workDescription: "• Built a loom\n○ Fed the cat" }),
+      expect.objectContaining({ id: 2, workRole: "Secret agent", leftOut: true }),
+      expect.not.objectContaining({ leftOut: expect.anything() }),
+    ])
+    expect(clean.extraSections?.[hobbies]).toEqual({ kind: "text", heading: "Hobbies", text: "Chess", leftOut: true })
+  })
+
   test("turns bullets an earlier version kept as a list into lines, all of them", () => {
     const lines = Array.from({ length: 2000 }, (_, index) => `Shipped release ${index + 1}`)
     const clean = cleanResume({ workExperienceSection: [{ workDescription: lines }] })

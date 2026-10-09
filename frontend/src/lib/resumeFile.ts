@@ -4,7 +4,7 @@
 // another browser or computer.
 
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS } from "@/components/editor/sections"
-import { printedResume } from "@/lib/leftOut"
+import { isLeftOut, printedResume } from "@/lib/leftOut"
 import type { Entry, Headings, Profile, Resume, ResumeContent } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import { extraKey, readExtraSections, resolveSections } from "./resumeSections"
@@ -120,7 +120,9 @@ const bulletText = (value: unknown) =>
 /**
  * Keeps only the fields the editor knows, as strings, with entries numbered
  * 1..n. Files can come from anywhere, so nothing else is trusted. Nothing is
- * cut short: what the editor can hold, an attachment can too.
+ * cut short: what the editor can hold, an attachment can too. What's left out
+ * of the PDF is kept, marked as it is in the editor: an attachment never has
+ * any (toAttachment prints the resume first), but a JSON file does.
  */
 export function cleanResume(input: unknown): ResumeContent {
   const resume = object(input)
@@ -144,6 +146,7 @@ export function cleanResume(input: unknown): ResumeContent {
     const entries = Array.isArray(resume[dataKey]) ? (resume[dataKey] as unknown[]) : []
     clean[dataKey] = entries.map((entry, index): Entry => ({
       id: index + 1,
+      ...(isLeftOut(entry) && { leftOut: true }),
       ...Object.fromEntries(
         fields.map((field) => [
           field.key,
@@ -160,8 +163,7 @@ export function cleanResume(input: unknown): ResumeContent {
   if (resume.extraSections !== undefined) {
     const decoded = readExtraSections(resume.extraSections)
     if (!decoded.complete) throw new AttachmentError("The sections in this PDF are damaged. Try another saved PDF.")
-    // The decoder is an allowlist; omit flags even when cleanResume is called directly.
-    clean.extraSections = Object.fromEntries(Object.entries(decoded.sections).map(([key, { leftOut, ...section }]) => [key, section]))
+    clean.extraSections = decoded.sections
   }
   // The saved order's known sections, then the core ones it lacks and any optional one with entries.
   // That's then only the sections it shows, so it's marked as chosen (see Resume.sectionsChosen).
