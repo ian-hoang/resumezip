@@ -45,8 +45,9 @@ export default function ExtraSectionForm({ sectionId, position, onDelete }: { se
         allowEmpty
         onRename={(heading) => editSection(id, sectionId, { heading })}
         flag={here?.kind === "extra-heading" ? target!.finding : null}
+        end={<DeleteSection onDelete={onDelete} />}
       />
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm text-ink-2">
           <input
             type="checkbox"
@@ -56,13 +57,13 @@ export default function ExtraSectionForm({ sectionId, position, onDelete }: { se
           />
           Include section in the PDF
         </label>
-        <DeleteSection onDelete={onDelete} />
       </div>
       {section.leftOut && <p className="text-sm text-ink-2">This section stays saved here and is left out of the PDF and checks.</p>}
       {section.kind === "text" && (
         <div data-field="text" className="flex flex-col gap-2">
-          <label className="flex flex-col gap-2">
-            <span className="label-mono text-ink-2">Text</span>
+          {/* Its label turns blue while typing in the box, as a field's does. */}
+          <label className="group/field flex flex-col gap-2">
+            <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">Text</span>
             <textarea
               value={section.text}
               onChange={(event) => editSection(id, sectionId, { text: event.target.value })}

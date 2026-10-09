@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { ArrowLeft, Check, Download, Eye, Loader2, PencilLine } from "lucide-react"
+import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
+import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
@@ -36,8 +37,10 @@ const MIN_WAIT_MS = 150
 const MAX_WAIT_MS = 400
 // How long a replaced preview PDF is kept before it's freed.
 const PDF_KEPT_MS = 10_000
-// How long "Saved" stands out after a change is saved, and "Downloaded" shows after a download.
-const SAVED_MS = 1500
+// How long "Saving…" stays after a change is saved, which is SAVE_DELAY after
+// typing stops, so a pause between words doesn't flick it to "Saved" and back.
+const SAVED_AFTER_MS = 800
+// How long "Downloaded" shows after a download.
 const DOWNLOADED_MS = 2000
 
 const EDITOR_ADDRESS = "/create/new/"
@@ -83,6 +86,7 @@ function Editor({ id }: { id: string }) {
   const savedOrder = useResumeField("sectionOrder")
   const headings = useResumeField("headings")
   const extraSections = useResumeField("extraSections")
+  const sectionsChosen = useResumeField("sectionsChosen")
   const [active, setActive] = useState<ActiveSection>("Profile")
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   // What the preview on screen prints, for the checker to know when it's
@@ -125,8 +129,8 @@ function Editor({ id }: { id: string }) {
     return resume ? filledSections(resume).join(" ") : ""
   })
   const sections = useMemo(
-    () => resolveSections({ sectionOrder: savedOrder, extraSections }, filled ? (filled.split(" ") as SectionName[]) : []),
-    [savedOrder, extraSections, filled],
+    () => resolveSections({ sectionOrder: savedOrder, sectionsChosen, extraSections }, filled ? (filled.split(" ") as SectionName[]) : []),
+    [savedOrder, sectionsChosen, extraSections, filled],
   )
   const selected = active === "Profile" || sections.includes(active) ? active : "Profile"
 
@@ -364,15 +368,20 @@ function Editor({ id }: { id: string }) {
               type="button"
               onClick={download}
               disabled={downloading}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait disabled:opacity-80 sm:min-w-[9.5rem]"
+              className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4"
             >
-              {downloading ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : downloaded ? (
-                <Check className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Download className="h-4 w-4" aria-hidden="true" />
-              )}
+              <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
+              {/* Fills along the bottom while the PDF is made, then all the way, and fades, once it's downloaded. */}
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
+                  downloading
+                    ? "scale-x-0 motion-safe:animate-download-progress"
+                    : downloaded
+                      ? "opacity-0 transition-opacity duration-500 motion-reduce:transition-none"
+                      : "scale-x-0"
+                }`}
+              />
               {/* Just "PDF" on phones, so it fits beside the template picker. */}
               {downloaded ? (
                 <span>
@@ -430,7 +439,7 @@ function Editor({ id }: { id: string }) {
                   <SectionForm
                     section={SECTIONS[selected as SectionName]}
                     position={position(sections.indexOf(selected) + 2)}
-                    onDelete={SECTIONS[selected as SectionName].optional ? remove : undefined}
+                    onDelete={remove}
                   />
                 )}
               </div>
@@ -443,7 +452,7 @@ function Editor({ id }: { id: string }) {
               view === "preview" ? "flex max-xl:flex-1" : "hidden"
             }`}
           >
-            <PdfPreview pdfUrl={pdfUrl} error={compileError} updating={switchingTemplate && !compileError} />
+            <PdfPreview pdfUrl={pdfUrl} template={shownTemplate} error={compileError} updating={switchingTemplate && !compileError} />
           </section>
         </CheckProvider>
       </div>
@@ -519,30 +528,50 @@ function ResumeName() {
   )
 }
 
-/** "Saved in this browser", which stands out for a moment each time a change is saved. Nothing while saving fails. */
+/**
+ * "Saving…" from a change until it's saved and typing has paused a moment,
+ * then "Saved in this browser", with a tick that draws itself after a save.
+ * Nothing while saving fails: NotSaved says so instead.
+ */
 function SavedNote() {
   const saveStatus = useResumeState((state) => state.saveStatus)
+  const unsaved = useResumeState((state) => state.unsaved)
   const savedAt = useResumeState((state) => state.savedAt)
-  // A save since the page opened, for a moment.
-  const [justSaved, setJustSaved] = useState(false)
+  // Saved since the page opened, so the tick has something to draw itself for.
   const openedSavedAt = useRef(savedAt)
+  const saved = savedAt !== openedSavedAt.current
+  const [settling, setSettling] = useState(false)
 
   useEffect(() => {
-    if (!savedAt || savedAt === openedSavedAt.current) return
-    setJustSaved(true)
-    const timer = setTimeout(() => setJustSaved(false), SAVED_MS)
+    if (savedAt === openedSavedAt.current) return
+    setSettling(true)
+    const timer = setTimeout(() => setSettling(false), SAVED_AFTER_MS)
     return () => clearTimeout(timer)
   }, [savedAt])
 
   if (saveStatus !== "saved") return null
   return (
-    <span
-      className={`label-mono mr-2 hidden shrink-0 items-center gap-1.5 transition-colors duration-300 xl:inline-flex ${
-        justSaved ? "text-ink" : "text-ink-2"
-      }`}
-    >
-      <Check className={`h-3 w-3 transition-opacity duration-300 ${justSaved ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
-      Saved in this browser
+    <span className="saved-note label-mono mr-2 hidden shrink-0 items-center gap-1.5 text-ink-2 xl:inline-flex">
+      {unsaved || settling ? (
+        "Saving…"
+      ) : (
+        <>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path className={saved ? "tick" : undefined} pathLength={1} d="m5 12.5 4.5 4.5L19 7.5" />
+          </svg>
+          Saved in this browser
+        </>
+      )}
     </span>
   )
 }

@@ -1,10 +1,20 @@
-// The dashboard's icon buttons. Each icon is drawn in parts that move when
-// it's pointed at (see "Row actions" in app/globals.css): the copy lifts off,
-// the arrow bobs into the tray, the bin's lid tips open, the pencil writes.
+// The dashboard's icon buttons, and the editor's on each entry. Each icon is
+// drawn in parts that move when it's pointed at (see "Row actions" in
+// app/globals.css): the copy lifts off, the arrow bobs into the tray, the
+// bin's lid tips open, the pencil writes, the eye blinks, the tick draws.
 
-import type { ReactNode } from "react"
+import type { ReactNode, Ref } from "react"
 
-interface RowActionProps {
+interface TipProps {
+  /** What the tip says, when it's shorter than the label, as "Delete" for "Delete entry 2". */
+  tip?: string
+  /** The tip lines up with the button's right edge, so it stays inside the row. */
+  tipAtEnd?: boolean
+  /** The tip shows under the button, where something above would cut it off. */
+  tipBelow?: boolean
+}
+
+interface RowActionProps extends TipProps {
   label: string
   onClick: () => void
   children: ReactNode
@@ -12,35 +22,90 @@ interface RowActionProps {
   danger?: boolean
   disabled?: boolean
   busy?: boolean
-  /** The label's tip lines up with the button's right edge, so it stays inside the row. */
-  tipAtEnd?: boolean
   className?: string
+  ref?: Ref<HTMLButtonElement>
   [data: `data-${string}`]: string
 }
 
-export function RowAction({ label, onClick, children, danger, disabled, busy, tipAtEnd, className = "", ...data }: RowActionProps) {
+const ROUND =
+  "row-action group/action relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-2 transition-[color,background-color] duration-200 hover:bg-ink/[0.06] motion-reduce:transition-none"
+
+/** The label, in a tip that shows a moment after the button is pointed at, or at once when it has the keyboard. */
+function Tip({ children, tipAtEnd, tipBelow }: { children: ReactNode } & TipProps) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-[3px] bg-ink px-2 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 group-has-[:focus-visible]/action:translate-y-0 group-has-[:focus-visible]/action:opacity-100 ${
+        tipBelow ? "top-full mt-1 -translate-y-1" : "bottom-full mb-1 translate-y-1"
+      } ${tipAtEnd ? "right-0" : "left-1/2 -translate-x-1/2"}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+export function RowAction({
+  label,
+  tip,
+  onClick,
+  children,
+  danger,
+  disabled,
+  busy,
+  tipAtEnd,
+  tipBelow,
+  className = "",
+  ref,
+  ...data
+}: RowActionProps) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       aria-busy={busy || undefined}
       onClick={onClick}
       disabled={disabled}
       {...data}
-      className={`row-action group/action relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-2 transition-[color,background-color] duration-200 hover:bg-ink/[0.06] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:cursor-wait ${
+      className={`${ROUND} focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:cursor-wait ${
         danger ? "hover:text-alert" : "hover:text-ink"
       } ${className}`}
     >
       {children}
-      <span
-        aria-hidden="true"
-        className={`pointer-events-none absolute bottom-full z-10 mb-1 translate-y-1 whitespace-nowrap rounded-[3px] bg-ink px-2 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 ${
-          tipAtEnd ? "right-0" : "left-1/2 -translate-x-1/2"
-        }`}
-      >
-        {label}
-      </span>
+      <Tip tipAtEnd={tipAtEnd} tipBelow={tipBelow}>
+        {tip ?? label}
+      </Tip>
     </button>
+  )
+}
+
+interface RowToggleProps extends TipProps {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  children: ReactNode
+}
+
+/**
+ * A box to tick, drawn as an icon in a round button like RowAction's. The box
+ * itself covers the button, unseen, so it's what's clicked, and what a screen
+ * reader finds, by its label.
+ */
+export function RowToggle({ label, tip, checked, onChange, children, tipAtEnd, tipBelow }: RowToggleProps) {
+  return (
+    <span className={`${ROUND} hover:text-ink`}>
+      <input
+        type="checkbox"
+        aria-label={label}
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+      />
+      {children}
+      <Tip tipAtEnd={tipAtEnd} tipBelow={tipBelow}>
+        {tip ?? label}
+      </Tip>
+    </span>
   )
 }
 
@@ -95,6 +160,28 @@ export function TrashIcon() {
       </g>
       <path d="m6 7 .85 11.2A2 2 0 0 0 8.84 20h6.32a2 2 0 0 0 1.99-1.8L18 7" />
       <path d="M10 11v5M14 11v5" />
+    </svg>
+  )
+}
+
+/** An eye, open while what it's on is in the PDF; a line is drawn through it once it's left out. It blinks. */
+export function EyeIcon({ shut }: { shut: boolean }) {
+  return (
+    <svg {...iconProps} className={`pointer-events-none ${shut ? "is-shut" : ""}`}>
+      <g className="eye">
+        <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+        <circle cx="12" cy="12" r="2.75" />
+      </g>
+      <path className="eye-slash" pathLength={1} d="m4 4 16 16" />
+    </svg>
+  )
+}
+
+/** A tick, which draws itself again when pointed at. */
+export function DoneIcon() {
+  return (
+    <svg {...iconProps}>
+      <path className="done-tick" pathLength={1} d="m5 12.5 4.5 4.5L19 7.5" />
     </svg>
   )
 }

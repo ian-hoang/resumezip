@@ -84,16 +84,12 @@ export function useResumeCheck(resume: Resume, pdf?: PdfReading, grammar?: Gramm
   const restoreFinding = useCallback((finding: Finding) => change((state) => restore(state, finding.key)), [change])
   /** Adds a word, so it isn't flagged as a typo on this resume. */
   const addKnownWord = useCallback((word: string) => change((state) => addWord(state, word)), [change])
-  const setGrammarLanguage = useCallback(
-    (grammarLanguage: "english" | "other") => change((state) => ({ ...state, grammarLanguage })),
-    [change],
-  )
 
   // The actions keep their identity for as long as the resume is open, so
   // what uses only them never re-renders with a new report.
   const actions = useMemo(
-    () => ({ dismiss: dismissFinding, restore: restoreFinding, addWord: addKnownWord, setGrammarLanguage }),
-    [dismissFinding, restoreFinding, addKnownWord, setGrammarLanguage],
+    () => ({ dismiss: dismissFinding, restore: restoreFinding, addWord: addKnownWord }),
+    [dismissFinding, restoreFinding, addKnownWord],
   )
   /** The report, and the resume it's of. */
   return { report, checked: input.resume, actions }

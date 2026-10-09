@@ -3,12 +3,31 @@
 import type React from "react"
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { AlignLeft, Award, BookOpen, ChevronLeft, ChevronRight, Flag, HandHeart, List, Plus, type LucideIcon } from "lucide-react"
+import {
+  AlignLeft,
+  Award,
+  BookOpen,
+  BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  FolderKanban,
+  GraduationCap,
+  HandHeart,
+  List,
+  Plus,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
 import type { ExtraKind } from "@/lib/resumeSections"
-import { reducedMotion } from "./layout"
+import { reducedMotion, WIDE_SCREEN } from "./layout"
 import { SECTIONS, type SectionName } from "./sections"
 
-const ICONS: Partial<Record<SectionName, LucideIcon>> = {
+const ICONS: Record<SectionName, LucideIcon> = {
+  Education: GraduationCap,
+  Work: BriefcaseBusiness,
+  Skills: Wrench,
+  Projects: FolderKanban,
   Publications: BookOpen,
   Volunteership: HandHeart,
   Leadership: Flag,
@@ -26,6 +45,7 @@ const CLOSE_MS = 150
 // The gap between the button and the menu, and the least between the menu and the window's edges.
 const GAP = 8
 const MARGIN = 16
+// On smaller screens, where the button is in the row of tabs. On wide ones it's as wide as the button, in the left bar.
 const WIDTH = 352
 // About the menu's height with every choice in it: above the button if it fits there.
 const TALL = 240
@@ -38,19 +58,23 @@ interface Placement {
   bottom?: number
   maxHeight: number
   above: boolean
+  /** As narrow as the left bar, so the optional sections are in one column rather than two. */
+  narrow: boolean
 }
 
 function placeBy(button: HTMLElement): Placement {
   const box = button.getBoundingClientRect()
-  const width = Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
-  const left = Math.min(Math.max(MARGIN, box.left), window.innerWidth - MARGIN - width)
+  // In the left bar it stays inside the bar, over the sections, rather than spreading over the form.
+  const narrow = window.matchMedia(WIDE_SCREEN).matches
+  const width = narrow ? box.width : Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
+  const left = narrow ? box.left : Math.min(Math.max(MARGIN, box.left), window.innerWidth - MARGIN - width)
   const below = window.innerHeight - box.bottom
   // Above the button where it fits, as under the left bar's sections; below
   // it in the row of tabs along the top on smaller screens.
   const above = box.top - GAP - MARGIN >= TALL || box.top > below
   return above
-    ? { left, width, bottom: window.innerHeight - box.top + GAP, maxHeight: box.top - GAP - MARGIN, above }
-    : { left, width, top: box.bottom + GAP, maxHeight: below - GAP - MARGIN, above }
+    ? { left, width, bottom: window.innerHeight - box.top + GAP, maxHeight: box.top - GAP - MARGIN, above, narrow }
+    : { left, width, top: box.bottom + GAP, maxHeight: below - GAP - MARGIN, above, narrow }
 }
 
 const item =
@@ -58,14 +82,14 @@ const item =
 const icon = "h-4 w-4 shrink-0 text-ink-2 transition-colors duration-150 group-hover:text-ink group-focus-visible:text-ink"
 
 interface AddSectionMenuProps {
-  /** The optional sections that aren't on the resume yet. */
+  /** The sections that aren't on the resume: optional ones, and any it started with that were deleted. */
   sections: readonly SectionName[]
   onAdd: (kind: ExtraKind | SectionName) => void
 }
 
 /**
- * The Add section button, and the menu it opens over the page: the optional
- * sections, then Custom section, which slides over to a text or a bullet list.
+ * The Add section button, and the menu it opens over the page: the sections
+ * the resume doesn't have, then Custom section, which slides over to a text or a bullet list.
  * It's in the page's top layer (a portal), so the left bar's scrolling, and the
  * row of tabs on smaller screens, neither cut it off nor move for it.
  */
@@ -225,10 +249,10 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
                 <div ref={mainPanel} inert={custom} className="w-1/2">
                   {sections.length > 0 && (
                     <>
-                      {/* The first column as wide as its words, so the second has room for "Awards & Certifications". */}
-                      <div className="grid grid-cols-[auto_1fr] gap-0.5">
+                      {/* Two columns where there's room: the first as wide as its words, so the second has room for "Awards & Certifications". */}
+                      <div className={`grid gap-0.5 ${place.narrow ? "" : "grid-cols-[auto_1fr]"}`}>
                         {sections.map((name) => {
-                          const Icon = ICONS[name] ?? Plus
+                          const Icon = ICONS[name]
                           return (
                             <button key={name} type="button" role="menuitem" onClick={() => choose(name)} className={item}>
                               <Icon className={icon} aria-hidden="true" />

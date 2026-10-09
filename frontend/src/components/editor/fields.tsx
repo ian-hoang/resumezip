@@ -98,13 +98,13 @@ export function Field({
     "aria-describedby": flag ? noteId : undefined,
     "aria-invalid": flag?.level === "fix" || undefined,
     className: `w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
-      !flag ? "border-b border-rule-strong focus:border-accent" : "border-b-2 border-accent"
+      !flag ? "border-b border-rule-strong" : "border-b-2 border-accent"
     }`,
   }
   return (
     <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-      <label className="flex min-w-0 flex-col gap-1.5">
-        <span className="label-mono text-ink-2">{label}</span>
+      <label className="group/field relative flex min-w-0 flex-col gap-1.5">
+        <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">{label}</span>
         {multiline ? (
           <textarea
             ref={textareaRef}
@@ -124,6 +124,11 @@ export function Field({
             {...shared}
           />
         )}
+        {/* The field being typed in is underlined in blue, drawn out from the left. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
+        />
       </label>
       {flag && <FlagNote id={noteId} finding={flag} />}
     </div>
@@ -384,9 +389,14 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
   }
 
   return (
-    <div data-field={name} className={`flex min-w-0 flex-col gap-2 ${className}`}>
+    <div data-field={name} className={`group/field flex min-w-0 flex-col gap-2 ${className}`}>
       <div className="flex items-center justify-between gap-3">
-        <label htmlFor={textareaId} id={`${textareaId}-label`} className="label-mono text-ink-2">
+        {/* Blue while typing in the box, as a field's label is; not while on Arrange. */}
+        <label
+          htmlFor={textareaId}
+          id={`${textareaId}-label`}
+          className="label-mono text-ink-2 transition-colors group-has-[textarea:focus]/field:text-accent"
+        >
           {label}
         </label>
         {(arranging || bullets.length > 0) && (
@@ -515,10 +525,12 @@ interface SectionHeadingProps {
   /** What the checker found about the section or its title, while the person is fixing it. */
   flag?: Finding | null
   allowEmpty?: boolean
+  /** At the far end of the title's line, as a section's Delete. */
+  end?: React.ReactNode
 }
 
 /** The big serif title at the top of each section, optionally renameable. */
-export function SectionHeading({ position, title, onRename, flag, allowEmpty = false }: SectionHeadingProps) {
+export function SectionHeading({ position, title, onRename, flag, allowEmpty = false, end }: SectionHeadingProps) {
   const [draft, setDraft] = useState<string | null>(null)
   const renameButton = useRef<HTMLButtonElement>(null)
   // Set when the rename ends from the keyboard, so the focus goes back to the
@@ -540,7 +552,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
     <div className="flex flex-col gap-2.5">
       <span className="label-mono text-ink-2">{position}</span>
       {draft === null ? (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em]">
             {title}
           </h1>
@@ -556,6 +568,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
               <Pencil className="h-4 w-4" />
             </button>
           )}
+          {end && <div className="ml-auto">{end}</div>}
         </div>
       ) : (
         <input

@@ -76,10 +76,9 @@ sent anywhere.
   doesn't know ("Redux", "Kanban"), so there G1 counts only reviewed common
   misspellings ("Comunication") or typing slips in a known tech name. The
   grammar rules leave skill lists alone.
-- The Check panel's spelling language defaults to English. Choosing another
-  language skips G1–G7 and avoids checking its text with Harper. The panel
-  says that spelling and grammar were not evaluated. This per-resume choice
-  is saved under `check`; older resumes keep the English default.
+- Spelling and grammar are checked in English. A resume saved with another
+  language chosen (`grammarLanguage: "other"` under `check`, which the Check
+  panel used to offer) still skips G1–G7 and isn't checked with Harper.
 - Contact and writing preferences can be optional advice (`advisory: true`),
   including missing social links, wording suggestions (B2, B4–B7) and all
   polish rules, so Polish has no points. They are shown and can be

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest"
-import { CORE_SECTIONS } from "@/components/editor/sections"
+import { CORE_SECTIONS, SECTION_NAMES } from "@/components/editor/sections"
 import { memoryStorage } from "./memoryStorage"
 import { printedResume, hasLeftOut } from "./leftOut"
 import { AttachmentError, fromAttachment, MAX_ENTRIES, toAttachment, TooLongError } from "./resumeFile"
@@ -52,13 +52,32 @@ describe("section identity and validation", () => {
     expect(resolveSections({})).toEqual(CORE_SECTIONS)
   })
   test("an optional section shows when it's in the saved order or has entries, and a new resume starts without them", () => {
-    expect(resolveSections({ sectionOrder: ["Awards"] })).toEqual(["Awards", ...CORE_SECTIONS])
+    expect(resolveSections({ sectionOrder: ["Awards", ...CORE_SECTIONS], sectionsChosen: true })).toEqual(["Awards", ...CORE_SECTIONS])
     expect(resolveSections({ publicationsSection: [{ id: 1 }] })).toEqual([...CORE_SECTIONS, "Publications"])
     expect(resolveSections({ publicationsSection: [] })).toEqual(CORE_SECTIONS)
     const store = createResumeStore()
     store.load(memoryStorage({}))
     const id = store.create("New", "professional")
+    expect(store.getState().resumes[id].sectionsChosen).toBe(true)
     expect(resolveSections(store.getState().resumes[id])).toEqual(CORE_SECTIONS)
+  })
+  test("a resume from before sections were added from the list shows an optional one only with entries", () => {
+    // Its order listed every section by default.
+    const old = { sectionOrder: [...SECTION_NAMES], awardsSection: [{ id: 1 }], publicationsSection: [] }
+    expect(resolveSections(old)).toEqual([...CORE_SECTIONS, "Awards"])
+    expect(resolveSections({ ...old, sectionsChosen: true })).toEqual(SECTION_NAMES)
+  })
+  test("an older resume's first change keeps only the sections it shows, so one added after stays while empty", () => {
+    vi.useFakeTimers()
+    const { first, saved } = tabs({ id: "r", sectionOrder: [...SECTION_NAMES], awardsSection: [{ id: 1, awardName: "Prize" }] })
+    first.edit("r", "resumeTitle", "Renamed")
+    expect(first.getState().resumes.r).toMatchObject({ sectionOrder: [...CORE_SECTIONS, "Awards"], sectionsChosen: true })
+    expect(first.addSection("r", "Publications")).toBe("Publications")
+    // Emptied, Awards stays: the person has it on the resume.
+    first.edit("r", "awardsSection", [])
+    expect(resolveSections(first.getState().resumes.r)).toEqual([...CORE_SECTIONS, "Awards", "Publications"])
+    vi.runAllTimers()
+    expect(saved()).toMatchObject({ sectionOrder: [...CORE_SECTIONS, "Awards", "Publications"], sectionsChosen: true })
   })
   test("normalizes missing strings while rejecting invalid structures and identities", () => {
     expect(readExtraSections({ [c]: { kind: "text" } })).toEqual({
@@ -117,7 +136,7 @@ describe("atomic section actions and cross-tab merging", () => {
     expect(resolveSections(first.getState().resumes.r)).not.toContain(one)
     first.flush()
   })
-  test("an optional section is added at the end once, and removing it takes its entries and title", () => {
+  test("a section is added at the end once, and deleting it takes its entries and title", () => {
     const { first } = tabs({ id: "r", sectionOrder: [...CORE_SECTIONS] })
     expect(first.addSection("r", "Awards")).toBe("Awards")
     expect(first.addSection("r", "Awards")).toBe("Awards")
@@ -129,9 +148,11 @@ describe("atomic section actions and cross-tab merging", () => {
     expect(resolveSections(resume)).toEqual(CORE_SECTIONS)
     expect(resume.awardsSection).toEqual([])
     expect(resume.headings).toEqual({})
-    // A core section stays.
+    // One the resume started with can be deleted too, and is added back at the end.
     first.removeSection("r", "Work")
-    expect(resolveSections(first.getState().resumes.r)).toEqual(CORE_SECTIONS)
+    expect(resolveSections(first.getState().resumes.r)).toEqual(CORE_SECTIONS.filter((name) => name !== "Work"))
+    first.addSection("r", "Work")
+    expect(resolveSections(first.getState().resumes.r)).toEqual([...CORE_SECTIONS.filter((name) => name !== "Work"), "Work"])
     first.flush()
   })
   test("preserves untouched member references and exact dirty paths", () => {

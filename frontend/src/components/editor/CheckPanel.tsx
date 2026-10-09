@@ -70,7 +70,7 @@ type Category = (typeof CATEGORIES)[number]
  */
 export default function CheckPanel() {
   const { report, checked, pdf, grammar } = useCheck()
-  const { restore, setGrammarLanguage } = useCheckActions()
+  const { restore } = useCheckActions()
   // The resume as last checked, so places are named as the findings saw them.
   const view = report.view
 
@@ -103,19 +103,6 @@ export default function CheckPanel() {
   return (
     <div className="flex flex-col gap-5 px-3 py-4 xl:p-0">
       <ScoreHeader total={score.total} mustFix={score.mustFix} fixes={fixes} updating={checking.size > 0} />
-      <div className="flex flex-col gap-1.5 px-2 text-sm text-ink-2">
-        <label htmlFor="grammar-language">Spelling and grammar language</label>
-        <select
-          id="grammar-language"
-          value={view.grammarLanguage}
-          onChange={(event) => setGrammarLanguage(event.target.value === "other" ? "other" : "english")}
-          className="rounded border border-rule bg-sheet px-2 py-1.5 text-ink"
-        >
-          <option value="english">English</option>
-          <option value="other">Another language</option>
-        </select>
-        {view.grammarLanguage === "other" && <p>Spelling and grammar are not evaluated for this language.</p>}
-      </div>
       {(waitingFor("pdf") || checkingGrammar) && (
         <div role="status" className="flex flex-col gap-1 px-2 text-sm text-ink-2">
           {waitingFor("pdf") && (
