@@ -7,9 +7,9 @@ import { useOpenResume, useResumeField } from "@/context/ResumeContext"
 import { isLeftOut } from "@/lib/leftOut"
 import type { Entry } from "@/lib/resume"
 import { useCheckActions, useCheckTarget } from "./CheckContext"
-import { nextAnnouncement } from "./arrange"
 import { loadDragAndDrop, loadedDragAndDrop } from "./dragAndDrop"
-import { BulletsField, Field, FlagNote, MoveButtons, SectionHeading, selectLine } from "./fields"
+import { DoneIcon, EyeIcon, PencilIcon, RowAction, RowToggle, TrashIcon } from "@/components/dashboard/RowActions"
+import { BulletsField, Field, FlagNote, SectionHeading, selectLine } from "./fields"
 import { reducedMotion, reveal, scrollerOf } from "./layout"
 import DeleteSection from "./DeleteSection"
 import PaperFromLink from "./PaperFromLink"
@@ -26,7 +26,7 @@ interface SectionFormProps {
 // How long an entry takes to slide open, closed or away (matches duration-300).
 const SLIDE_MS = 300
 
-// How long a moved entry takes to slide to its new place, then how long it
+// How long a dragged entry takes to slide to its new place, then how long it
 // stays lit up after, to show which one moved.
 const MOVE_MS = 200
 const LIT_MS = 900
@@ -116,11 +116,8 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
   const heading = useRef<HTMLDivElement>(null)
   const opened = useRef(openId)
   opened.current = openId
-  // Said to screen readers when an entry moves.
-  const [announcement, setAnnouncement] = useState("")
-  // A move that hasn't slid yet: which entry moved, where each entry was drawn
-  // before it, and the scroller whose scroll anchoring is off meanwhile.
-  const moving = useRef<{ id: number; from: Map<number, number>; scroller?: HTMLElement; frame?: number } | null>(null)
+  // A drop that hasn't lit up yet: which entry moved, and where each entry was drawn before it.
+  const moving = useRef<{ id: number; from: Map<number, number>; frame?: number } | null>(null)
   const [dnd, setDnd] = useState(loadedDragAndDrop)
 
   // Drag and drop puts the entries on the page anew as it arrives, so it
@@ -205,15 +202,12 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
     return () => cancelAnimationFrame(frame)
   }, [openId])
 
-  // The entries slide a frame after a move, not as it's put on the page:
-  // MoveButtons brings the moved entry's button into view first, and it has
-  // to measure where the entry ends up, not where the slide draws it.
+  // A dropped entry lights up a frame after it's put on the page, where it ends up.
   useLayoutEffect(() => {
     const waiting = moving.current
     if (!waiting || waiting.frame !== undefined) return
     waiting.frame = requestAnimationFrame(() => {
       moving.current = null
-      if (waiting.scroller) waiting.scroller.style.overflowAnchor = ""
       slide(elements.current, list.current, waiting.id, waiting.from)
     })
   }, [saved])
@@ -314,34 +308,6 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
     save(entries.map((entry) => (entry.id === id ? { ...entry, [key]: value } : entry)))
 
   /**
-   * Moves an entry up or down one place. Its id stays the same, so it stays
-   * open if it was, and React keeps the focus on the button that moved it.
-   * It slides to its new place, and the entry it passes slides the other way.
-   */
-  const move = (id: number, by: -1 | 1) => {
-    const current = latest.current
-    const from = current.findIndex((entry) => entry.id === id)
-    const to = from + by
-    if (from < 0 || to < 0 || to >= current.length) return
-    const element = elements.current.get(id)
-    if (element) {
-      // From where they're drawn now, or before an earlier move that hasn't slid yet.
-      moving.current ??= { id, from: placesOf(elements.current, list.current) }
-      moving.current.id = id
-      // Scroll anchoring would shift the page as the entries trade places, and
-      // the slide would start with a jump. It's back on once the slide starts.
-      moving.current.scroller = scrollerOf(element)
-      moving.current.scroller.style.overflowAnchor = "none"
-      stopMoving(elements.current)
-    }
-    const next = [...current]
-    next.splice(to, 0, ...next.splice(from, 1))
-    save(next)
-    setConfirmingId(null)
-    setAnnouncement((last) => nextAnnouncement(last, `Moved to ${to + 1} of ${current.length}`))
-  }
-
-  /**
    * Puts a dragged entry where it was dropped, and lights it up there. Drag
    * and drop has moved it there already, and tells screen readers where.
    */
@@ -433,7 +399,7 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
               </div>
 
               <div
-                className="flex shrink-0 flex-wrap items-center justify-end gap-x-4"
+                className="-my-1.5 flex shrink-0 flex-wrap items-center justify-end gap-0.5"
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && confirming) {
                     event.stopPropagation()
@@ -443,81 +409,66 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
               >
                 {!confirming && (
                   <>
-                    <span key="move" className="flex shrink-0 items-center">
-                      <span
-                        {...drag?.dragHandleProps}
-                        aria-label={drag && `Reorder ${name}`}
-                        className="rounded-[4px] p-1.5 text-ink-2 transition-colors hover:text-ink"
-                      >
-                        <GripVertical className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <MoveButtons
-                        name={name}
-                        first={index === 0}
-                        last={index === entries.length - 1}
-                        onMove={(by) => move(entry.id, by)}
-                      />
+                    <span
+                      key="move"
+                      {...drag?.dragHandleProps}
+                      aria-label={drag && `Reorder ${name}`}
+                      className="rounded-[4px] p-1.5 text-ink-2 transition-colors hover:text-ink"
+                    >
+                      <GripVertical className="h-4 w-4" aria-hidden="true" />
                     </span>
-                    <label key="include" className="flex cursor-pointer items-center gap-2 py-2 text-sm text-ink-2">
-                      <input
-                        type="checkbox"
-                        checked={!leftOut}
-                        onChange={(event) => setLeftOut(entry.id, !event.target.checked)}
-                        aria-label={`Include ${name} in the PDF`}
-                        className="h-4 w-4 accent-accent"
-                      />
-                      Include
-                    </label>
+                    <RowToggle
+                      key="include"
+                      label={`Include ${name} in the PDF`}
+                      tip={leftOut ? "Put back in the PDF" : "Leave out of the PDF"}
+                      checked={!leftOut}
+                      onChange={(checked) => setLeftOut(entry.id, !checked)}
+                      tipBelow
+                    >
+                      <EyeIcon shut={leftOut} />
+                    </RowToggle>
                   </>
                 )}
                 {!isOpen ? (
-                  <button
-                    key="edit"
-                    type="button"
-                    onClick={() => open(entry.id, entry.id)}
-                    aria-label={`Edit ${name}`}
-                    className="py-2 text-sm text-ink underline underline-offset-4 hover:decoration-2"
-                  >
-                    Edit
-                  </button>
+                  <RowAction key="edit" label={`Edit ${name}`} tip="Edit" onClick={() => open(entry.id, entry.id)} tipBelow tipAtEnd>
+                    <PencilIcon />
+                  </RowAction>
                 ) : confirming ? (
-                  <>
-                    <span key="question" className="py-2 text-sm text-ink" role="status">
+                  // The question fades in where the buttons were (`starting:` is CSS @starting-style), as tall as them.
+                  <span
+                    key="confirming"
+                    className="flex h-10 items-center gap-4 transition-opacity duration-200 motion-reduce:transition-none starting:opacity-0"
+                  >
+                    <span className="py-2 text-sm text-ink" role="status">
                       Delete this entry?
                     </span>
-                    <button key="cancel" ref={cancelButton} type="button" onClick={() => cancelDelete(entry.id)} className={quiet}>
+                    <button ref={cancelButton} type="button" onClick={() => cancelDelete(entry.id)} className={quiet}>
                       Cancel
                     </button>
                     <button
-                      key="confirm"
                       type="button"
                       onClick={() => confirmRemove(entry.id)}
                       className="py-2 text-sm font-medium text-[#b42318] underline-offset-4 hover:underline"
                     >
                       Delete
                     </button>
-                  </>
+                  </span>
                 ) : (
                   <>
-                    <button
+                    <RowAction
                       key="delete"
-                      data-delete
-                      type="button"
+                      data-delete=""
+                      label={`Delete ${name}`}
+                      tip="Delete"
+                      danger
                       onClick={() => setConfirmingId(entry.id)}
-                      aria-label={`Delete ${name}`}
-                      className="py-2 text-sm text-ink-2 transition-colors hover:text-[#b42318]"
+                      tipBelow
                     >
-                      Delete
-                    </button>
-                    <button
-                      key="done"
-                      type="button"
-                      onClick={() => open(null, entry.id)}
-                      aria-label={`Done editing ${name}`}
-                      className="py-2 text-sm text-ink underline underline-offset-4 hover:decoration-2"
-                    >
-                      Done
-                    </button>
+                      <TrashIcon />
+                    </RowAction>
+                    <RowAction key="done" label={`Done editing ${name}`} tip="Done" onClick={() => open(null, entry.id)} tipBelow tipAtEnd>
+                      <DoneIcon />
+                    </RowAction>
                   </>
                 )}
               </div>
@@ -624,10 +575,6 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
             {entries.map((entry, index) => renderEntry(entry, index))}
           </div>
         ))}
-
-      <p role="status" className="sr-only">
-        {announcement}
-      </p>
 
       {section.fromPaperLink ? (
         <PaperFromLink entries={() => latest.current} owner={() => read()?.profileSection?.fullName ?? ""} onAdd={addEntries}>
