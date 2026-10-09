@@ -1,5 +1,6 @@
 "use client"
 
+import type React from "react"
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd"
@@ -164,7 +165,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
   }, [active, sections, allTitles, wide, dnd, dragging])
 
   const item = (isActive: boolean) =>
-    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:shrink ${
+    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:min-w-0 xl:shrink ${
       isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink"
     }`
   // A row's own background: the white tab is drawn behind the chosen one,
@@ -198,16 +199,18 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         <button
           type="button"
           onClick={() => onSelect(name)}
-          className={`${item(isActive)} relative -ml-1`}
+          className={`${item(isActive)} relative -ml-1 ${count > 0 ? "xl:pr-[calc(0.75rem+var(--digits)*1ch)]" : ""}`}
+          style={{ "--digits": String(count).length } as React.CSSProperties}
           aria-current={isActive || undefined}
           aria-label={`${pad(index + 2)} ${labelOf(name, index)}`}
           data-section-ref={name}
         >
           <span className={`font-mono text-[11px] ${isActive ? "text-accent" : ""}`}>{pad(index + 2)}</span>
-          {titleOf(name)}
-          {/* How many entries it has, in the list on wide screens. It's set at the right edge rather
-              than after the title, so the longest titles still fit. The form lists the entries, so
-              it isn't read out. */}
+          {/* A title too long for the list, as a section can be renamed, is cut short rather than running under the count. */}
+          <span className="min-w-0 truncate">{titleOf(name)}</span>
+          {/* How many entries it has, in the list on wide screens. It's set at the right edge, with
+              room kept for it, so the longest titles still fit beside it. The form lists the entries,
+              so it isn't read out. */}
           {count > 0 && (
             <span aria-hidden="true" className="absolute right-2 hidden font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
               {count}
