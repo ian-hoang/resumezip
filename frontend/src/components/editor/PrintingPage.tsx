@@ -8,7 +8,8 @@ import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 // PDF compiler downloads, the lines keep pace with how much of it has
 // arrived, so the page is also a progress bar. Otherwise they print in
 // quickly. Once they're all in, a line passes down the page until the
-// preview takes its place.
+// preview takes its place. Given a picture of the resume's page, as the
+// dashboard draws (lib/thumbnails.ts), it shows that instead of the lines.
 
 /** A grey line, in points on a US Letter page. */
 interface Bar {
@@ -90,9 +91,11 @@ interface PrintingPageProps {
   width: number
   /** The preview has arrived: fade out, then the parent removes this. */
   leaving?: boolean
+  /** A picture of the resume's first page, shown in place of the lines. */
+  picture?: string
 }
 
-export default function PrintingPage({ width, leaving = false }: PrintingPageProps) {
+export default function PrintingPage({ width, leaving = false, picture }: PrintingPageProps) {
   const status = useSyncExternalStore(onCompilerStatus, compilerStatus, compilerStatus)
   const [explain, setExplain] = useState(false)
 
@@ -120,21 +123,24 @@ export default function PrintingPage({ width, leaving = false }: PrintingPagePro
         className="relative overflow-hidden bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
         style={{ width, height: width * (PAGE.height / PAGE.width) }}
       >
-        {BARS.map((bar, index) => (
-          <span
-            key={index}
-            className={`absolute origin-left rounded-[1px] transition-transform duration-200 ease-out motion-reduce:transition-none ${
-              bar.strong ? "bg-ink/20" : "bg-ink/10"
-            } ${index < printed ? "scale-x-100" : "scale-x-0"}`}
-            style={{
-              left: percent(bar.x, PAGE.width),
-              top: percent(bar.y, PAGE.height),
-              width: percent(bar.w, PAGE.width),
-              height: Math.max(1, bar.h * (width / PAGE.width)),
-              transitionDelay: following ? undefined : `${index * 10}ms`,
-            }}
-          />
-        ))}
+        {/* eslint-disable-next-line @next/next/no-img-element -- an object URL made in the browser, which next/image can't resize */}
+        {picture && <img src={picture} alt="" className="absolute inset-0 size-full" />}
+        {!picture &&
+          BARS.map((bar, index) => (
+            <span
+              key={index}
+              className={`absolute origin-left rounded-[1px] transition-transform duration-200 ease-out motion-reduce:transition-none ${
+                bar.strong ? "bg-ink/20" : "bg-ink/10"
+              } ${index < printed ? "scale-x-100" : "scale-x-0"}`}
+              style={{
+                left: percent(bar.x, PAGE.width),
+                top: percent(bar.y, PAGE.height),
+                width: percent(bar.w, PAGE.width),
+                height: Math.max(1, bar.h * (width / PAGE.width)),
+                transitionDelay: following ? undefined : `${index * 10}ms`,
+              }}
+            />
+          ))}
         {/* The line rides at the top of a layer the page's size, which is moved
             rather than the line itself, so the browser needn't lay the page out
             again as it goes. */}

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
@@ -24,9 +24,11 @@ import type { Resume } from "@/lib/resume"
 import { extraKey, filledSections, resolveSections, type ExtraKind, type SectionRef } from "@/lib/resumeSections"
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
+import { lastThumbnail } from "@/lib/thumbnails"
 import { compilePreview, downloadResume, loadCompiler, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
+import { landed } from "@/lib/viewTransition"
 
 const pad = (n: number) => String(n).padStart(2, "0")
 
@@ -112,6 +114,15 @@ function Editor({ id }: { id: string }) {
 
   // Resizing across the wide-screen width keeps the form where it was scrolled to.
   useKeepFormPlace(mainRef, found)
+
+  // Opened from a picture of the page, the picture moves to the preview once
+  // the editor is on screen, found or not (lib/viewTransition.ts). Until the
+  // first preview is built, the preview shows the latest picture the dashboard
+  // drew of this resume, if there's one, so it lands on the same page.
+  useLayoutEffect(() => {
+    if (loaded) landed()
+  }, [loaded])
+  const [picture] = useState(() => lastThumbnail(id))
 
   // The PDF compiler starts loading as soon as the resume is found, with its
   // template's fonts, before the first preview asks for it. A resume that
@@ -452,7 +463,13 @@ function Editor({ id }: { id: string }) {
               view === "preview" ? "flex max-xl:flex-1" : "hidden"
             }`}
           >
-            <PdfPreview pdfUrl={pdfUrl} template={shownTemplate} error={compileError} updating={switchingTemplate && !compileError} />
+            <PdfPreview
+              pdfUrl={pdfUrl}
+              template={shownTemplate}
+              error={compileError}
+              updating={switchingTemplate && !compileError}
+              picture={picture}
+            />
           </section>
         </CheckProvider>
       </div>

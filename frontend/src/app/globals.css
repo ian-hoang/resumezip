@@ -217,6 +217,52 @@
   }
 }
 
+/* A page opening (lib/viewTransition.ts): the picture clicked, a template's or
+   a resume's card, flies to the editor's page and turns into it, while the
+   pages around it crossfade. The editor's pages (components/editor/PdfPreview.tsx)
+   only take the name while one opens, so nothing else is captured as them. */
+html[data-opening] .resume-page {
+  view-transition-name: resume-page;
+}
+/* A gentler start than ease-glide's: the page crosses most of the screen, and
+   the eye has to catch it leaving before it settles. */
+::view-transition-group(resume-page) {
+  animation-duration: 650ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+/* The picture stays itself most of the way, then hands over to the page. The
+   two add up as they cross, as in the browser's own crossfade, so the page
+   doesn't turn see-through halfway. */
+::view-transition-image-pair(resume-page) {
+  isolation: isolate;
+}
+::view-transition-old(resume-page) {
+  animation: 650ms ease-in both page-leaves;
+  mix-blend-mode: plus-lighter;
+}
+::view-transition-new(resume-page) {
+  animation: 650ms ease-out both page-arrives;
+  mix-blend-mode: plus-lighter;
+}
+@keyframes page-leaves {
+  from,
+  45% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-arrives {
+  from,
+  35% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* Dragging sections and entries (@hello-pangea/dnd) */
 [data-rfd-drag-handle-context-id] {
   cursor: grab;

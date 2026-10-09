@@ -82,6 +82,8 @@ interface PdfPreviewProps {
   updating?: boolean
   /** The template `pdfUrl` is printed in. */
   template?: string | null
+  /** A picture of the resume's first page, for the stand-in page to show until the first preview. */
+  picture?: string
 }
 
 /**
@@ -105,7 +107,7 @@ interface HeldAnchor {
   box: DOMRect
 }
 
-function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPreviewProps) {
+function PdfPreview({ pdfUrl, error, updating = false, template = null, picture }: PdfPreviewProps) {
   const [drawings, setDrawings] = useState<Drawing[]>([])
   const [zoom, setZoom] = useState(1)
   // Catches up with the zoom once it settles. Until then, the pages on screen
@@ -192,10 +194,16 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     })
   }, [pdfUrl, drawWidth, template])
 
-  // Fit the page to the panel.
-  useEffect(() => {
+  // Fit the page to the panel. It's measured before the first paint too, so the
+  // pages have their size from the start: a resume opened from a picture of
+  // its page lands on them (lib/viewTransition.ts), and the observer only
+  // reports after that paint.
+  useLayoutEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
+    const { paddingLeft, paddingRight } = getComputedStyle(scroller)
+    const width = scroller.clientWidth - parseFloat(paddingLeft) - parseFloat(paddingRight)
+    if (width > 0) setAvailableWidth(width)
     // A hidden panel (the form's showing, on small screens) keeps its last width.
     const observer = new ResizeObserver(([entry]) => {
       if (entry.contentRect.width > 0) setAvailableWidth(entry.contentRect.width)
@@ -387,12 +395,15 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
           </div>
         ) : (
           // The out-of-date page fades a little, after a moment, so a quick switch doesn't flicker.
+          // A resume opened from a picture of its page lands here (lib/viewTransition.ts): on
+          // these pages, rather than the stand-in page, which can go before the picture has
+          // landed, and the browser would cut the move short.
           <div
             ref={pagesRef}
-            className={`relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
+            className={`resume-page relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
             style={{ width: pageWidth, minHeight: numPages * pageWidth * PAGE_RATIO + (numPages - 1) * PAGE_GAP }}
           >
-            {!faded && <PrintingPage width={pageWidth} leaving={!waiting} />}
+            {!faded && <PrintingPage width={pageWidth} leaving={!waiting} picture={picture} />}
             {/* A <Document> loads and parses its file, so the drawings of a PDF share one.
                 react-pdf then keeps one page per page number for links within the PDF, and drops
                 it when an older drawing goes; the templates only link out. */}

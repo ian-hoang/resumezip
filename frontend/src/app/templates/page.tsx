@@ -21,7 +21,10 @@ export default function TemplatesPage() {
         <div className="grid grid-cols-1 gap-x-8 gap-y-12 border-t border-ink pt-10 sm:grid-cols-2 lg:grid-cols-3">
           {TEMPLATES.map((template) => (
             <StartWritingLink key={template.id} template={template.id} className="group flex flex-col gap-4">
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-sheet ring-1 ring-rule transition-shadow group-hover:ring-ink">
+              <div
+                data-page
+                className="relative aspect-[8.5/11] w-full overflow-hidden bg-sheet ring-1 ring-rule transition-shadow group-hover:ring-ink"
+              >
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}

@@ -1,8 +1,9 @@
 // Pictures of resumes' first pages, for the dashboard's cards
-// (components/dashboard/ResumeCards.tsx). Each is made in this browser, as a
-// preview is: Typst compiles the resume and pdf.js draws its first page on a
-// canvas. They're kept in memory while the page is open, one per resume, and
-// drawn again once what the resume prints changes.
+// (components/dashboard/ResumeCards.tsx) and for the editor to show while its
+// first preview is made. Each is made in this browser, as a preview is: Typst
+// compiles the resume and pdf.js draws its first page on a canvas. They're
+// kept in memory while the page is open, one per resume, and drawn again once
+// what the resume prints changes.
 
 import type { PDFWorker } from "pdfjs-dist"
 import type { Resume } from "@/lib/resume"

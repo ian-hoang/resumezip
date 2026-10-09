@@ -2,14 +2,17 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import type { LucideIcon } from "lucide-react"
 import { PageSketch } from "@/components/editor/PrintingPage"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
+import { plainClick } from "@/components/site/StartWriting"
 import type { ResumeWithId } from "@/lib/resume"
 import { keepThumbnails, lastThumbnail, thumbnailOf } from "@/lib/thumbnails"
 import { downloadResume, printedOf, savingData, Superseded } from "@/lib/typst/compile"
 import { templateById } from "@/lib/templates"
+import { openPage } from "@/lib/viewTransition"
 import { RESUME_TAGS } from "./CreateResumeModal"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
 
@@ -44,9 +47,11 @@ const focusOn = (selector: string) => document.querySelector<HTMLElement>(select
 
 /**
  * The resumes, as cards with a picture of each one's first page. A card opens
- * its resume, and has the resume's actions: rename, duplicate, download and delete.
+ * its resume, carrying the picture into the editor (lib/viewTransition.ts),
+ * and has the resume's actions: rename, duplicate, download and delete.
  */
 export default function ResumeCards({ resumes, onDuplicate, onRename, onDelete }: ResumeCardsProps) {
+  const router = useRouter()
   // Ids of the resumes downloading, and why each one whose last download failed did.
   const [downloading, setDownloading] = useState<string[]>([])
   const [failed, setFailed] = useState<Record<string, Failure>>({})
@@ -121,6 +126,14 @@ export default function ResumeCards({ resumes, onDuplicate, onRename, onDelete }
   const ids = JSON.stringify(resumes.map((resume) => resume.id))
   useEffect(() => keepThumbnails(JSON.parse(ids)), [ids])
 
+  // A plain click opens the resume from its picture; one with a modifier key
+  // is the browser's, as on any link, for a new tab or window.
+  const open = (event: MouseEvent<HTMLAnchorElement>, resume: ResumeWithId) => {
+    if (!plainClick(event)) return
+    event.preventDefault()
+    openPage(() => router.push(`/create/new/${resume.id}`), event.currentTarget.closest("li")?.querySelector<HTMLElement>("[data-page]"))
+  }
+
   // The name, which opens the resume, and a pencil to rename it; or, while
   // renaming, a box to type the name in. On wide screens the pencil shows
   // when the card is pointed at, or it's focused.
@@ -151,6 +164,7 @@ export default function ResumeCards({ resumes, onDuplicate, onRename, onDelete }
           href={`/create/new/${resume.id}`}
           title={nameOf(resume)}
           data-resume-link={resume.id}
+          onClick={(event) => open(event, resume)}
           className="line-clamp-2 min-w-0 flex-1 font-serif text-[19px] leading-tight wrap-anywhere hover:underline hover:underline-offset-4 sm:text-[21px]"
         >
           {nameOf(resume)}
@@ -215,7 +229,7 @@ export default function ResumeCards({ resumes, onDuplicate, onRename, onDelete }
         {resumes.map((resume) => (
           <li key={resume.id} className="group/card flex min-w-0 flex-col">
             {/* The picture opens the resume too. The name's link is the one announced, so this one's skipped. */}
-            <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true">
+            <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true" onClick={(event) => open(event, resume)}>
               {/* Paper on the desk, lifted a little when pointed at; a new copy is outlined for a moment. */}
               <div
                 data-page

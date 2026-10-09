@@ -131,7 +131,10 @@ export default function Home() {
               template={template.id}
               className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
             >
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-[#171717]">
+              <div
+                data-page
+                className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-[#171717]"
+              >
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}
