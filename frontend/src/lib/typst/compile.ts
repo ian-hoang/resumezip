@@ -4,6 +4,7 @@
 
 import type { Resume } from "@/lib/resume"
 import { toAttachment } from "@/lib/resumeFile"
+import { fileNameOf } from "@/lib/saveFile"
 import { COMPILER_CDN_URL } from "./compilerSource"
 import { templateIdOf, toTemplateData, type TemplateData, type TemplateId } from "./resumeData"
 
@@ -294,7 +295,7 @@ export async function makeDownload(resume: Resume): Promise<() => void> {
   return () => {
     const link = document.createElement("a")
     link.href = url
-    link.download = `${resume.resumeTitle?.trim() || "resume"}.pdf`
+    link.download = fileNameOf(resume, "pdf")
     link.click()
     // Give the browser time to start the download before freeing the PDF.
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
