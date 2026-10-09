@@ -3,7 +3,20 @@ import path from "node:path"
 import { describe, expect, test } from "vitest"
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume, ResumeContent } from "./resume"
-import { AttachmentError, cleanResume, fromAttachment, MAX_ENTRIES, MAX_LENGTH, toAttachment, TooLongError } from "./resumeFile"
+import {
+  AttachmentError,
+  cleanResume,
+  fromAttachment,
+  fromJson,
+  MAX_ENTRIES,
+  MAX_LENGTH,
+  MAX_RESUMES,
+  toAttachment,
+  toJson,
+  toJsonOfAll,
+  TooLongError,
+} from "./resumeFile"
+import { asSaved } from "./testResume"
 
 const SAMPLES = path.resolve("src/lib/typst/preview-samples")
 const samples = readdirSync(SAMPLES).map((file) => JSON.parse(readFileSync(path.join(SAMPLES, file), "utf8")))
@@ -97,6 +110,106 @@ describe("the attachment in a downloaded PDF", () => {
     // Not even one too long to open, so the PDF is read like any other.
     expect(fromAttachment(JSON.stringify({ format: "something-else", notes: "x".repeat(MAX_LENGTH) }))).toBeNull()
     expect(fromAttachment("x".repeat(MAX_LENGTH + 1))).toBeNull()
+  })
+})
+
+describe("a JSON file", () => {
+  const hobbies = "00000000-0000-4000-8000-000000000001"
+  /** A resume in the editor's shape with something left out of every kind, and checker state. */
+  const tailored = (): ResumeContent => ({
+    ...editorResume({}),
+    workExperienceSection: [
+      { ...entries("Work", 1)[0], workDescription: "• Built a loom\n○ Fed the cat" },
+      { ...entries("Work", 2)[1], workRole: "Secret agent", leftOut: true },
+    ],
+    extraSections: { [hobbies]: { kind: "text", heading: "Hobbies", text: "Chess", leftOut: true } },
+    sectionOrder: [...SECTION_NAMES, `extra:${hobbies}`],
+    check: { dismissed: ["rule|profile.email|abc"], words: ["Lovelace"], grammarLanguage: "english" },
+  })
+
+  test("restores a resume exactly, with its name and tag and everything left out of the PDF", () => {
+    const resume = tailored()
+    const text = toJson({ ...resume, resumeTitle: "Ada at Google", resumeTag: "professional" })
+    expect(text).toContain("Secret agent")
+    expect(fromJson(text)).toEqual([{ resume, title: "Ada at Google", tag: "professional" }])
+  })
+
+  test("is laid out to be read, a field to a line", () => {
+    const text = toJson({ ...editorResume({}), resumeTitle: "Ada" })
+    expect(text.split("\n").slice(0, 6)).toEqual([
+      "{",
+      '  "format": "resumezip",',
+      '  "version": 2,',
+      '  "resume": {',
+      '    "id": "a",',
+      '    "resumeTitle": "Ada",',
+    ])
+  })
+
+  test("of every resume restores them all, in order", () => {
+    const ada = { ...tailored(), resumeTitle: "Ada", resumeTag: "academic" }
+    const grace = { ...editorResume({ count: 3 }), id: "g", resumeTitle: "Grace" }
+    const untitled = { ...editorResume({ count: 0 }), id: "u" }
+    const { resumeTitle: _, resumeTag: __, ...adaContent } = ada
+    const { resumeTitle: ___, ...graceContent } = grace
+    expect(fromJson(toJsonOfAll([ada, grace, untitled]))).toEqual([
+      { resume: adaContent, title: "Ada", tag: "academic" },
+      { resume: { ...graceContent, extraSections: {} }, title: "Grace" },
+      { resume: { ...untitled, extraSections: {} } },
+    ])
+  })
+
+  test("from a PDF's attachment opens too, without a name", () => {
+    const resume = editorResume({})
+    expect(fromJson(toAttachment(resume))).toEqual([{ resume: fromAttachment(toAttachment(resume)) }])
+  })
+
+  test("keeps only names and tags the dashboard can show, and checker state it can read", () => {
+    const file = (saved: Record<string, unknown>) =>
+      JSON.stringify({ format: "resumezip", version: 2, resume: { extraSections: {}, ...saved } })
+    expect(fromJson(file({ resumeTitle: "   ", resumeTag: "secret" }))?.[0]).not.toHaveProperty("title")
+    expect(fromJson(file({ resumeTitle: 42, resumeTag: "secret" }))?.[0]).not.toHaveProperty("tag")
+    expect(fromJson(file({ check: { dismissed: [7, "kept"], words: "Lovelace", token: "x" } }))?.[0].resume.check).toEqual({
+      dismissed: ["kept"],
+      words: [],
+    })
+    expect(fromJson(file({}))?.[0].resume).not.toHaveProperty("check")
+  })
+
+  test("that isn't from resumezip isn't read, and a damaged one says so", () => {
+    expect(fromJson(JSON.stringify({ basics: { name: "Ada Lovelace" } }))).toBeNull()
+    expect(fromJson("[]")).toBeNull()
+    expect(fromJson("not json")).toBeNull()
+    for (const damaged of [
+      '{\n  "format": "resumezip",\n  "version": 2,',
+      JSON.stringify({ format: "resumezip", version: 2, resumes: { a: {} } }),
+      JSON.stringify({ format: "resumezip", version: 2, resumes: [{ extraSections: {} }, "junk"] }),
+      JSON.stringify({ format: "resumezip", version: 2 }),
+    ])
+      expect(() => fromJson(damaged)).toThrow("The resume data in this file is damaged. Try another saved file.")
+    expect(() => fromJson(JSON.stringify({ format: "resumezip", version: 3, resume: {} }))).toThrow("This file needs a newer resumezip.")
+  })
+
+  test("won't open more resumes, or entries in one, than it can, rather than cut them off", () => {
+    const empty = asSaved({})
+    expect(fromJson(toJsonOfAll(Array(MAX_RESUMES).fill(empty)))).toHaveLength(MAX_RESUMES)
+    expect(() => fromJson(toJsonOfAll(Array(MAX_RESUMES + 1).fill(empty)))).toThrow(TooLongError)
+    const long: ResumeContent = { ...editorResume({ count: 0 }), publicationsSection: entries("Publications", MAX_ENTRIES) }
+    expect(fromJson(toJsonOfAll([long, long]))).toHaveLength(2)
+    long.workExperienceSection = entries("Work", 1)
+    expect(() => fromJson(toJsonOfAll([empty, long]))).toThrow(TooLongError)
+  })
+
+  test("too long laid out is written on one line, so it opens again", () => {
+    // As long as can be opened, on one line.
+    const resume = editorResume({})
+    const [work] = resume.workExperienceSection!
+    work.workDescription = ""
+    work.workDescription = "x".repeat(MAX_LENGTH - JSON.stringify(JSON.parse(toJson(resume))).length)
+    const text = toJson(resume)
+    expect(text).toHaveLength(MAX_LENGTH)
+    expect(text).not.toContain("\n")
+    expect(fromJson(text)?.[0].resume).toEqual({ ...resume, extraSections: {} })
   })
 })
 
