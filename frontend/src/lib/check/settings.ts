@@ -143,7 +143,7 @@ export const PERSONAL_DETAILS = [
  */
 export const SSN = /\b\d{3}[- ]\d{2}[- ]\d{4}\b|\b(ssn|social security(\s+(number|no\.?))?)\s*[:#]?\s*\d{9}\b/i
 
-// Sections & entries (S1–S9).
+// Sections & entries (S1–S10).
 
 /** A skills line with this many items or more reads as a list to skim past. */
 export const MAX_SKILLS_PER_LINE = 15

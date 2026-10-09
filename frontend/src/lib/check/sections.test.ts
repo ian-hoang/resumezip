@@ -4,13 +4,21 @@ import { runChecks } from "./engine"
 import { RULES } from "./rules"
 import { listOf } from "./sections"
 
-const college = { id: 1, schoolName: "University of Texas at Austin", degree: "B.S. in Computer Science", schoolEndDate: "May 2028" }
+const college = {
+  id: 1,
+  schoolName: "University of Texas at Austin",
+  schoolLocation: "Austin, TX",
+  degree: "B.S. in Computer Science",
+  schoolEndDate: "May 2028",
+}
 const highSchool = { id: 2, schoolName: "Westlake High School", schoolEndDate: "May 2024" }
 
 const jake = {
   profileSection: { fullName: "Jake Ryan" },
   educationSection: [college],
-  workExperienceSection: [{ id: 1, workRole: "Engineer", companyName: "Google", workDescription: "• Built a search index" }],
+  workExperienceSection: [
+    { id: 1, workRole: "Engineer", companyName: "Google", workLocation: "Mountain View, CA", workDescription: "• Built a search index" },
+  ],
   projectsSection: [{ id: 1, projectName: "Gitlytics", techStack: "Next.js, PostgreSQL" }],
   skillsSection: [
     { id: 1, skillName: "Languages", skillDetails: "TypeScript, Python, Go" },
@@ -29,7 +37,7 @@ function check(id: string, resume: Resume, today = OCTOBER_2026) {
 }
 
 test("a whole resume passes every sections rule", () => {
-  for (const id of ["S1", "S2", "S3", "S4", "S5", "S6", "S9"]) {
+  for (const id of ["S1", "S2", "S3", "S4", "S5", "S6", "S9", "S10"]) {
     expect(check(id, jake).status, id).toBe("passed")
   }
   // No high school, and no coursework.
@@ -280,5 +288,34 @@ describe("S9 references", () => {
   test("doesn't flag references used in other ways", () => {
     const work = [{ id: 1, workRole: "Engineer", companyName: "Google", workDescription: "• Wrote API references, available on GitHub" }]
     expect(check("S9", { ...jake, workExperienceSection: work }).status).toBe("passed")
+  })
+})
+
+describe("S10 locations", () => {
+  test("suggests a location for each job, school and role without one", () => {
+    const resume = {
+      ...jake,
+      educationSection: [{ ...college, schoolLocation: " " }],
+      workExperienceSection: [{ ...jake.workExperienceSection[0], workLocation: "" }],
+      volunteerExperienceSection: [
+        { id: 1, volunteerRole: "Tutor", volunteerOrg: "Austin Public Library", volunteerLocation: "Austin, TX" },
+      ],
+      leadershipExperienceSection: [{ id: 1, leadershipRole: "President", leadershipOrg: "Robotics Club" }],
+    }
+    expect(check("S10", resume).findings.map(({ place, level, message }) => ({ place, level, message }))).toEqual([
+      { place: { kind: "entry", section: "Education", entry: 0, field: "schoolLocation" }, level: "look", message: "No location" },
+      { place: { kind: "entry", section: "Work", entry: 0, field: "workLocation" }, level: "look", message: "No location" },
+      { place: { kind: "entry", section: "Leadership", entry: 0, field: "leadershipLocation" }, level: "look", message: "No location" },
+    ])
+  })
+
+  test("leaves projects, awards and empty entries alone", () => {
+    const resume = {
+      ...jake,
+      educationSection: [],
+      workExperienceSection: [{ id: 1, workRole: " " }],
+      awardsSection: [{ id: 1, awardName: "Dean's List" }],
+    }
+    expect(check("S10", resume).status).toBe("skipped")
   })
 })

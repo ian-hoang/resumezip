@@ -1,9 +1,9 @@
-// Sections & entries (S1–S9 in issue #58): what the resume has, and whether
-// each entry says what it is.
+// Sections & entries (S1–S9 in issue #58, and S10): what the resume has, and
+// whether each entry says what it is and where it was.
 
 import { SECTIONS, type FieldKey, type FieldKeyOf, type SectionName } from "@/components/editor/sections"
 import type { Problem, Rule } from "./engine"
-import type { Place } from "./places"
+import { LOCATION_FIELDS, type Place } from "./places"
 import { textsOf, type Entry } from "./resume"
 import {
   COLLEGE_DEGREE,
@@ -138,6 +138,29 @@ const named: Rule = {
               field === "companyName" && { suggestion: "Name the employer, or identify the work as self-employed or freelance." }),
           })
         }
+      }
+    }
+    return checked ? { checked, problems } : null
+  },
+}
+
+const located: Rule = {
+  id: "S10",
+  category: "sections",
+  level: "look",
+  reads: "form",
+  title: "Every job, school and role has its location",
+  why: "Recruiters look at where you worked and studied, and some jobs need someone nearby.",
+  check: ({ resume }) => {
+    let checked = 0
+    const problems: Problem[] = []
+    for (const section of resume.order) {
+      const field = LOCATION_FIELDS[section]
+      if (!field) continue
+      for (const entry of filled(resume.sections[section])) {
+        checked++
+        if (!entry.values[field])
+          problems.push({ place: at(entry, field), message: "No location", suggestion: "Add the city, like “Austin, TX”, or “Remote”." })
       }
     }
     return checked ? { checked, problems } : null
@@ -299,4 +322,15 @@ const references: Rule = {
   }),
 }
 
-export const SECTION_RULES: readonly Rule[] = [experience, education, named, blank, skills, projects, highSchool, coursework, references]
+export const SECTION_RULES: readonly Rule[] = [
+  experience,
+  education,
+  named,
+  blank,
+  skills,
+  projects,
+  highSchool,
+  coursework,
+  references,
+  located,
+]

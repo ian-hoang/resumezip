@@ -2,7 +2,7 @@
 // title, a whole section, an entry (one of its fields, or one bullet), or the
 // PDF's pages. Also how a finding is told apart from others, for dismissing it.
 
-import { PROFILE_FIELDS, SECTIONS, type FieldKey, type ProfileKey, type SectionName } from "@/components/editor/sections"
+import { PROFILE_FIELDS, SECTIONS, type FieldKey, type FieldKeyOf, type ProfileKey, type SectionName } from "@/components/editor/sections"
 import { entryAt, type ResumeView } from "./resume"
 
 export type Place =
@@ -31,6 +31,14 @@ export const LINK_FIELDS: ReadonlySet<ProfileKey | FieldKey | undefined> = new S
   "additionalLink",
   "publicationLink",
 ])
+
+/** Where an entry was, in the sections that have one: jobs, schools and roles. */
+export const LOCATION_FIELDS: { [Section in SectionName]?: FieldKeyOf<Section> } = {
+  Education: "schoolLocation",
+  Work: "workLocation",
+  Volunteership: "volunteerLocation",
+  Leadership: "leadershipLocation",
+}
 
 /** Whether a place is on this resume, so the editor can open it. `pages` is how many the PDF has. */
 export function placeExists(view: ResumeView, place: Place, pages = 0): boolean {
