@@ -3,8 +3,9 @@
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { ArrowLeft, Check, Download, Eye, Loader2, PencilLine } from "lucide-react"
+import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
+import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
@@ -315,15 +316,20 @@ function Editor({ id }: { id: string }) {
               type="button"
               onClick={download}
               disabled={downloading}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait disabled:opacity-80 sm:min-w-[9.5rem]"
+              className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4"
             >
-              {downloading ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : downloaded ? (
-                <Check className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Download className="h-4 w-4" aria-hidden="true" />
-              )}
+              <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
+              {/* Fills along the bottom while the PDF is made, then all the way, and fades, once it's downloaded. */}
+              <span
+                aria-hidden="true"
+                className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
+                  downloading
+                    ? "scale-x-0 motion-safe:animate-download-progress"
+                    : downloaded
+                      ? "opacity-0 transition-opacity duration-500 motion-reduce:transition-none"
+                      : "scale-x-0"
+                }`}
+              />
               {/* Just "PDF" on phones, so it fits beside the template picker. */}
               {downloaded ? (
                 <span>

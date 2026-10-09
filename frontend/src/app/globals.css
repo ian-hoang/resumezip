@@ -91,6 +91,21 @@
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* The line along the bottom of the editor's Download PDF button while the PDF
+   is made. How long that takes isn't known, so it slows as it goes and stops
+   short of the end, which it reaches once the PDF is ready. */
+@theme {
+  --animate-download-progress: download-progress 4s var(--ease-glide) forwards;
+  @keyframes download-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(0.9);
+    }
+  }
+}
+
 /* The line that passes down the preview's stand-in page while it waits (components/editor/PrintingPage.tsx). */
 @theme {
   --animate-print-sweep: print-sweep 1.8s ease-in-out infinite;
@@ -182,18 +197,19 @@
   cursor: grab;
 }
 
-/* Row actions: the dashboard's icon buttons (components/dashboard/RowActions.tsx).
+/* Row actions: the dashboard's icon buttons (components/dashboard/RowActions.tsx),
+   and the editor's Download PDF button, which uses their download icon.
    Each icon's parts move on their own, with a little spring. Only where
    there's a pointer to hover with, and only for people who don't ask for less
    motion. */
-.row-action svg * {
+:is(.row-action, .download-button) svg * {
   transform-box: fill-box;
   transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.row-action svg {
+:is(.row-action, .download-button) svg {
   transition: transform 160ms ease-out;
 }
-.row-action:active:not(:disabled) svg {
+:is(.row-action, .download-button):active:not(:disabled) svg {
   transform: scale(0.86);
 }
 .row-action .trash-lid {
@@ -203,13 +219,12 @@
   transform-origin: left bottom;
 }
 /* A tick that draws itself: here, and in the editor's "Saved in this browser". */
-.row-action .tick,
-.saved-note .tick {
+:is(.row-action, .download-button, .saved-note) .tick {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   animation: tick-draw 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
-.row-action .download-arrow.is-busy {
+:is(.row-action, .download-button) .download-arrow.is-busy {
   animation: arrow-drop 900ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 .row-action .is-copied .copy-front {
@@ -223,7 +238,7 @@
   .row-action:hover .copy-back {
     transform: translate(-1px, 1px);
   }
-  .row-action:hover:not(:disabled) .download-arrow:not(.is-busy) {
+  :is(.row-action, .download-button):hover:not(:disabled) .download-arrow:not(.is-busy) {
     animation: arrow-bob 900ms ease-in-out infinite;
   }
   .row-action:hover .trash-lid {
@@ -235,19 +250,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .row-action svg *,
-  .row-action svg {
+  :is(.row-action, .download-button) svg *,
+  :is(.row-action, .download-button) svg {
     transition: none;
   }
-  .row-action .download-arrow.is-busy,
+  :is(.row-action, .download-button) .download-arrow.is-busy,
   .row-action .is-copied .copy-front {
     animation: none;
   }
-  .row-action .download-arrow.is-busy {
+  :is(.row-action, .download-button) .download-arrow.is-busy {
     opacity: 0.4;
   }
-  .row-action .tick,
-  .saved-note .tick {
+  :is(.row-action, .download-button, .saved-note) .tick {
     animation: none;
     stroke-dashoffset: 0;
   }
