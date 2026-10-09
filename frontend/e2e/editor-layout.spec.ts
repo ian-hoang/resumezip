@@ -209,3 +209,24 @@ test("a field chosen while a new entry slides open keeps the cursor", async ({ p
   await expect(page.getByLabel("Role", { exact: true })).toHaveValue("")
   expect(errors).toEqual([])
 })
+
+test("on a wide screen, the section list says how many entries each section has", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Start writing" }).first().click()
+  await expect(page).toHaveURL(/\/create\/new\//)
+  // The number isn't part of the button's name, as the form lists the entries.
+  await expect(experience(page)).toHaveText(/Experience$/)
+
+  await experience(page).click()
+  await page.getByRole("button", { name: "Add experience" }).click()
+  await page.getByLabel("Role", { exact: true }).fill("Analyst")
+  await expect(experience(page)).toHaveText(/Experience\s*1$/)
+  await page.getByRole("button", { name: "Add experience" }).click()
+  await expect(experience(page)).toHaveText(/Experience\s*2$/)
+  // Sections with nothing in them have no number.
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: /^\d+ Projects$/ })).toHaveText(/Projects$/)
+  await expect(preview(page).getByText("Analyst").first()).toBeVisible()
+  expect(errors).toEqual([])
+})

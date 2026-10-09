@@ -4,10 +4,12 @@ import { memo, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd"
 import { GripVertical } from "lucide-react"
+import { useOpenResume, useResumeState } from "@/context/ResumeContext"
 import type { Headings } from "@/lib/resume"
+import { resumeOf } from "@/lib/resumeStore"
 import { loadDragAndDrop, type DragAndDrop } from "./dragAndDrop"
 import { WIDE_SCREEN } from "./layout"
-import { SECTIONS, type SectionName } from "./sections"
+import { SECTION_NAMES, SECTIONS, type SectionName } from "./sections"
 
 export type ActiveSection = "Profile" | SectionName
 
@@ -34,6 +36,7 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
   const [wide, setWide] = useState(() => typeof window !== "undefined" && window.matchMedia(WIDE_SCREEN).matches)
   const [dnd, setDnd] = useState<DragAndDrop | null>(null)
   const [dragging, setDragging] = useState(false)
+  const counts = useEntryCounts()
 
   // The drag and drop isn't in the page's first download, as it's only needed
   // once a section is dragged. It loads as soon as the editor opens; until
@@ -137,6 +140,7 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
   // A section, the same with or without dragging, so the list doesn't move as dragging loads.
   const renderSection = (name: SectionName, index: number, drag?: DraggableProvided, isDragged = false) => {
     const isActive = active === name
+    const count = counts[name]
     return (
       <div
         key={name}
@@ -154,6 +158,12 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
         <button type="button" onClick={() => onSelect(name)} className={`${item(isActive)} -ml-1`} aria-current={isActive || undefined}>
           <span className={`font-mono text-[11px] ${isActive ? "text-accent" : ""}`}>{pad(index + 2)}</span>
           {titleOf(name)}
+          {/* How many entries it has, in the list on wide screens. The form lists them, so it's left out of the button's name. */}
+          {count > 0 && (
+            <span aria-hidden="true" className="ml-auto hidden pl-2 font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
+              {count}
+            </span>
+          )}
         </button>
       </div>
     )
@@ -213,3 +223,18 @@ function SectionNav({ sections, headings, active, onSelect, onReorder }: Section
 
 // Dragging is costly to render, so it re-renders only when its props change.
 export default memo(SectionNav)
+
+/**
+ * How many entries each section of the open resume has. It's read as one
+ * string, so typing in an entry doesn't re-render the list; adding or
+ * deleting one does.
+ */
+function useEntryCounts(): Record<SectionName, number> {
+  const { id } = useOpenResume()
+  const counts = useResumeState((state) => {
+    const resume = resumeOf(state, id)
+    return SECTION_NAMES.map((name) => resume?.[SECTIONS[name].dataKey]?.length ?? 0).join(",")
+  })
+  const each = counts.split(",").map(Number)
+  return Object.fromEntries(SECTION_NAMES.map((name, index) => [name, each[index]])) as Record<SectionName, number>
+}
