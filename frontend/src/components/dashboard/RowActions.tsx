@@ -3,7 +3,7 @@
 // app/globals.css): the copy lifts off, the arrow bobs into the tray, the
 // bin's lid tips open, the pencil writes, the eye blinks, the tick draws.
 
-import type { ReactNode } from "react"
+import type { ReactNode, Ref } from "react"
 
 interface TipProps {
   /** What the tip says, when it's shorter than the label, as "Delete" for "Delete entry 2". */
@@ -23,6 +23,7 @@ interface RowActionProps extends TipProps {
   disabled?: boolean
   busy?: boolean
   className?: string
+  ref?: Ref<HTMLButtonElement>
   [data: `data-${string}`]: string
 }
 
@@ -54,10 +55,12 @@ export function RowAction({
   tipAtEnd,
   tipBelow,
   className = "",
+  ref,
   ...data
 }: RowActionProps) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       aria-busy={busy || undefined}

@@ -3,12 +3,31 @@
 import type React from "react"
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { AlignLeft, Award, BookOpen, ChevronLeft, ChevronRight, Flag, HandHeart, List, Plus, type LucideIcon } from "lucide-react"
+import {
+  AlignLeft,
+  Award,
+  BookOpen,
+  BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  FolderKanban,
+  GraduationCap,
+  HandHeart,
+  List,
+  Plus,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
 import type { ExtraKind } from "@/lib/resumeSections"
 import { reducedMotion, WIDE_SCREEN } from "./layout"
 import { SECTIONS, type SectionName } from "./sections"
 
-const ICONS: Partial<Record<SectionName, LucideIcon>> = {
+const ICONS: Record<SectionName, LucideIcon> = {
+  Education: GraduationCap,
+  Work: BriefcaseBusiness,
+  Skills: Wrench,
+  Projects: FolderKanban,
   Publications: BookOpen,
   Volunteership: HandHeart,
   Leadership: Flag,
@@ -63,14 +82,14 @@ const item =
 const icon = "h-4 w-4 shrink-0 text-ink-2 transition-colors duration-150 group-hover:text-ink group-focus-visible:text-ink"
 
 interface AddSectionMenuProps {
-  /** The optional sections that aren't on the resume yet. */
+  /** The sections that aren't on the resume: optional ones, and any it started with that were deleted. */
   sections: readonly SectionName[]
   onAdd: (kind: ExtraKind | SectionName) => void
 }
 
 /**
- * The Add section button, and the menu it opens over the page: the optional
- * sections, then Custom section, which slides over to a text or a bullet list.
+ * The Add section button, and the menu it opens over the page: the sections
+ * the resume doesn't have, then Custom section, which slides over to a text or a bullet list.
  * It's in the page's top layer (a portal), so the left bar's scrolling, and the
  * row of tabs on smaller screens, neither cut it off nor move for it.
  */
@@ -233,7 +252,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
                       {/* Two columns where there's room: the first as wide as its words, so the second has room for "Awards & Certifications". */}
                       <div className={`grid gap-0.5 ${place.narrow ? "" : "grid-cols-[auto_1fr]"}`}>
                         {sections.map((name) => {
-                          const Icon = ICONS[name] ?? Plus
+                          const Icon = ICONS[name]
                           return (
                             <button key={name} type="button" role="menuitem" onClick={() => choose(name)} className={item}>
                               <Icon className={icon} aria-hidden="true" />

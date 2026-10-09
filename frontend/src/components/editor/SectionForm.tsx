@@ -19,7 +19,7 @@ interface SectionFormProps {
   section: SectionDef
   /** e.g. "03 / 08" */
   position: string
-  /** Takes the section off the resume, for one that's optional. */
+  /** Takes the section off the resume. */
   onDelete?: () => void
 }
 
@@ -529,14 +529,9 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
           title={title}
           onRename={(name) => updateResume("headings", { ...headings, [section.headingKey]: name })}
           flag={here?.kind === "heading" || here?.kind === "section" ? target!.finding : null}
+          end={onDelete && <DeleteSection onDelete={onDelete} />}
         />
       </div>
-
-      {onDelete && (
-        <div className="flex justify-end">
-          <DeleteSection onDelete={onDelete} />
-        </div>
-      )}
 
       {section.choice && <SectionChoice choice={section.choice} />}
 

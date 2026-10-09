@@ -525,10 +525,12 @@ interface SectionHeadingProps {
   /** What the checker found about the section or its title, while the person is fixing it. */
   flag?: Finding | null
   allowEmpty?: boolean
+  /** At the far end of the title's line, as a section's Delete. */
+  end?: React.ReactNode
 }
 
 /** The big serif title at the top of each section, optionally renameable. */
-export function SectionHeading({ position, title, onRename, flag, allowEmpty = false }: SectionHeadingProps) {
+export function SectionHeading({ position, title, onRename, flag, allowEmpty = false, end }: SectionHeadingProps) {
   const [draft, setDraft] = useState<string | null>(null)
   const renameButton = useRef<HTMLButtonElement>(null)
   // Set when the rename ends from the keyboard, so the focus goes back to the
@@ -550,7 +552,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
     <div className="flex flex-col gap-2.5">
       <span className="label-mono text-ink-2">{position}</span>
       {draft === null ? (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em]">
             {title}
           </h1>
@@ -566,6 +568,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
               <Pencil className="h-4 w-4" />
             </button>
           )}
+          {end && <div className="ml-auto">{end}</div>}
         </div>
       ) : (
         <input

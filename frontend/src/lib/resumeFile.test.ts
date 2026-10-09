@@ -123,14 +123,8 @@ describe("cleanResume", () => {
     expect(cleanResume({ sectionOrder: ["Projects", "Work"] }).sectionOrder).toEqual(["Projects", "Work", "Education", "Skills"])
     const filled = cleanResume({ sectionOrder: ["Work"], awardsSection: [{ awardName: "Prize" }] })
     expect(filled.sectionOrder).toEqual(["Work", "Education", "Skills", "Projects", "Awards"])
-    // A section the person added stays, even empty.
-    expect(cleanResume({ sectionOrder: ["Awards"], sectionsChosen: true }).sectionOrder).toEqual([
-      "Awards",
-      "Education",
-      "Work",
-      "Skills",
-      "Projects",
-    ])
+    // Once sections are chosen, one the person added stays, even empty, and one they deleted stays deleted.
+    expect(cleanResume({ sectionOrder: ["Awards", "Work"], sectionsChosen: true }).sectionOrder).toEqual(["Awards", "Work"])
   })
 
   test("a PDF from before sections were added from the list keeps only those with entries, and is then marked", () => {

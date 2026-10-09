@@ -112,8 +112,8 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
   const counts = new Map<string, number>()
   for (const title of titles.values()) counts.set(title, (counts.get(title) ?? 0) + 1)
   const titleOf = (name: SectionRef) => titles.get(name)!
-  // The optional sections that aren't on the resume, which Add section offers.
-  const addable = SECTION_NAMES.filter((name) => SECTIONS[name].optional && !sections.includes(name))
+  // The sections that aren't on the resume, which Add section offers.
+  const addable = SECTION_NAMES.filter((name) => !sections.includes(name))
   // Two sections can have the same title, so a screen reader also hears where each is.
   const labelOf = (name: SectionRef, index: number) =>
     (counts.get(titleOf(name)) ?? 0) > 1 ? `${titleOf(name)}, section ${index + 2}` : titleOf(name)

@@ -52,7 +52,7 @@ describe("section identity and validation", () => {
     expect(resolveSections({})).toEqual(CORE_SECTIONS)
   })
   test("an optional section shows when it's in the saved order or has entries, and a new resume starts without them", () => {
-    expect(resolveSections({ sectionOrder: ["Awards"], sectionsChosen: true })).toEqual(["Awards", ...CORE_SECTIONS])
+    expect(resolveSections({ sectionOrder: ["Awards", ...CORE_SECTIONS], sectionsChosen: true })).toEqual(["Awards", ...CORE_SECTIONS])
     expect(resolveSections({ publicationsSection: [{ id: 1 }] })).toEqual([...CORE_SECTIONS, "Publications"])
     expect(resolveSections({ publicationsSection: [] })).toEqual(CORE_SECTIONS)
     const store = createResumeStore()
@@ -136,7 +136,7 @@ describe("atomic section actions and cross-tab merging", () => {
     expect(resolveSections(first.getState().resumes.r)).not.toContain(one)
     first.flush()
   })
-  test("an optional section is added at the end once, and removing it takes its entries and title", () => {
+  test("a section is added at the end once, and deleting it takes its entries and title", () => {
     const { first } = tabs({ id: "r", sectionOrder: [...CORE_SECTIONS] })
     expect(first.addSection("r", "Awards")).toBe("Awards")
     expect(first.addSection("r", "Awards")).toBe("Awards")
@@ -148,9 +148,11 @@ describe("atomic section actions and cross-tab merging", () => {
     expect(resolveSections(resume)).toEqual(CORE_SECTIONS)
     expect(resume.awardsSection).toEqual([])
     expect(resume.headings).toEqual({})
-    // A core section stays.
+    // One the resume started with can be deleted too, and is added back at the end.
     first.removeSection("r", "Work")
-    expect(resolveSections(first.getState().resumes.r)).toEqual(CORE_SECTIONS)
+    expect(resolveSections(first.getState().resumes.r)).toEqual(CORE_SECTIONS.filter((name) => name !== "Work"))
+    first.addSection("r", "Work")
+    expect(resolveSections(first.getState().resumes.r)).toEqual([...CORE_SECTIONS.filter((name) => name !== "Work"), "Work"])
     first.flush()
   })
   test("preserves untouched member references and exact dirty paths", () => {

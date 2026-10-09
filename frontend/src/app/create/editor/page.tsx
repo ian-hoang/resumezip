@@ -439,7 +439,7 @@ function Editor({ id }: { id: string }) {
                   <SectionForm
                     section={SECTIONS[selected as SectionName]}
                     position={position(sections.indexOf(selected) + 2)}
-                    onDelete={SECTIONS[selected as SectionName].optional ? remove : undefined}
+                    onDelete={remove}
                   />
                 )}
               </div>

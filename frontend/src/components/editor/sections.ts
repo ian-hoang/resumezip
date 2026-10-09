@@ -44,8 +44,9 @@ interface Definition<Field extends string, Data extends string, Heading extends 
   /** Entries can also be added from a paper's DOI or link. */
   fromPaperLink?: boolean
   /**
-   * Not on a new resume: the person adds it from Add section, and can delete
-   * it. A resume that has entries in it shows it either way.
+   * Not on a new resume: the person adds it from Add section. Any section can
+   * be deleted, and added back; a resume that has entries in it shows it
+   * either way.
    */
   optional?: true
 }

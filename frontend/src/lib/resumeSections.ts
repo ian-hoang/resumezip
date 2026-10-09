@@ -79,21 +79,22 @@ export function extrasOf(resume: { extraSections?: unknown }): ExtraSections {
 /** What resolveSections reads of a resume: its order, its sections, and whether the optional ones have entries. */
 type SavedSections = { sectionOrder?: unknown; sectionsChosen?: unknown; extraSections?: unknown } & { [Key in DataKey]?: unknown }
 
-/** The optional sections with entries in them, which show whether they're in the saved order or not. */
+/** The sections with entries in them, which show whether they're in the saved order or not. */
 export const filledSections = (resume: SavedSections): SectionName[] =>
   SECTION_NAMES.filter((name) => {
     const entries = resume[SECTIONS[name].dataKey]
-    return SECTIONS[name].optional && Array.isArray(entries) && entries.length > 0
+    return Array.isArray(entries) && entries.length > 0
   })
 
 /**
  * The sections the editor shows and the PDF prints, in order: the saved
- * order's, then any core section it lacks, or optional one with entries
- * (`filled`), then sections the person added that it lacks. An optional
- * section in the saved order shows even when it's empty, as the person added
- * it, unless the resume is older than adding them (no `sectionsChosen`): its
- * order listed every section. A view only: opening a resume never repairs
- * order, creates content or generates identities.
+ * order's, then any section with entries it lacks (`filled`), then sections
+ * the person added that it lacks. The saved order holds the sections the
+ * person has (`sectionsChosen`): a new resume's core ones and those added
+ * since, which show even while empty, and not one they deleted. A resume
+ * older than that listed every section, so there an optional section shows
+ * only with entries, and the core ones always do. A view only: opening a
+ * resume never repairs order, creates content or generates identities.
  */
 export function resolveSections(resume: SavedSections, filled: readonly SectionName[] = filledSections(resume)): SectionRef[] {
   const extras = extrasOf(resume)
@@ -112,7 +113,7 @@ export function resolveSections(resume: SavedSections, filled: readonly SectionN
   const shown = (ref: SectionRef) =>
     chosen || !SECTION_NAMES.includes(ref as SectionName) || !SECTIONS[ref as SectionName].optional || filled.includes(ref as SectionName)
   for (const ref of Array.isArray(resume.sectionOrder) ? resume.sectionOrder : []) if (valid(ref) && shown(ref)) add(ref)
-  for (const name of SECTION_NAMES) if (!SECTIONS[name].optional || filled.includes(name)) add(name)
+  for (const name of SECTION_NAMES) if ((!chosen && !SECTIONS[name].optional) || filled.includes(name)) add(name)
   for (const key of Object.keys(extras)) add(extraRef(key))
   return order
 }

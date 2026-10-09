@@ -222,3 +222,25 @@ test("a resume from before sections were added from the list shows only the ones
   await previewShown(page)
   expect(errors).toEqual([])
 })
+
+test("a section the resume started with can be deleted, and added back from the list", async ({ page }) => {
+  const errors = pageErrors(page)
+  await open(page)
+  await previewShown(page)
+  const education = nav(page).getByRole("button", { name: /^\d+ Education$/ })
+  await education.click()
+  await page.getByRole("button", { name: "Delete section", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
+  await page.getByRole("button", { name: "Delete section", exact: true }).click()
+  await expect(education).toHaveCount(0)
+  await expect.poll(async () => (await saved(page)).sectionOrder).not.toContain("Education")
+
+  // Deleted, it's offered in Add section, and comes back at the end.
+  await add(page, "Education")
+  await expect(education).toHaveCount(1)
+  await expect.poll(async () => (await saved(page)).sectionOrder).toEqual(["Work", "Skills", "Projects", "Education"])
+  await page.reload()
+  await expect(education).toHaveCount(1)
+  await previewShown(page)
+  expect(errors).toEqual([])
+})

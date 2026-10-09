@@ -246,9 +246,9 @@ export function createResumeStore(delay = SAVE_DELAY) {
     editSection(id, key, { leftOut: !included })
   }
 
-  /** Takes an optional section off the resume, with its entries, and its title if it was renamed. */
+  /** Takes a section off the resume, with its entries, and its title if it was renamed. Add section puts it back. */
   function removeSection(id: string, name: SectionName) {
-    if (!has(id) || !SECTIONS[name].optional) return
+    if (!has(id)) return
     const resume = state.resumes[id]
     const { dataKey, headingKey } = SECTIONS[name]
     const headings = Object.fromEntries(Object.entries(resume.headings ?? {}).filter(([key]) => key !== headingKey))
