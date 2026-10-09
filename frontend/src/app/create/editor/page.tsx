@@ -13,7 +13,7 @@ import ProfileForm from "@/components/editor/ProfileForm"
 import Replaced from "@/components/editor/Replaced"
 import SectionForm from "@/components/editor/SectionForm"
 import ExtraSectionForm from "@/components/editor/ExtraSectionForm"
-import { WIDE_SCREEN } from "@/components/editor/layout"
+import { reducedMotion, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import TemplatePicker from "@/components/editor/TemplatePicker"
 import { useKeepFormPlace } from "@/components/editor/useKeepFormPlace"
@@ -24,7 +24,7 @@ import type { Resume } from "@/lib/resume"
 import { extraKey, filledSections, resolveSections, type ExtraKind, type SectionRef } from "@/lib/resumeSections"
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
-import { compilePreview, downloadResume, loadCompiler, printedOf, Superseded } from "@/lib/typst/compile"
+import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
 
@@ -42,6 +42,9 @@ const PDF_KEPT_MS = 10_000
 const SAVED_AFTER_MS = 800
 // How long "Downloaded" shows after a download.
 const DOWNLOADED_MS = 2000
+// How long the line along Download PDF takes to fill, however quick the PDF is
+// (download-fill in globals.css). The file is saved as it ends.
+const DOWNLOAD_FILL_MS = 900
 
 const EDITOR_ADDRESS = "/create/new/"
 
@@ -306,8 +309,15 @@ function Editor({ id }: { id: string }) {
     // beside a failure, and a second download in a row is said aloud again.
     setDownloadedAt(0)
     setDownloading(true)
+    // The PDF is often made in a moment, too quick to see the button working.
+    // So the line along it fills in the same time however quick that is, and
+    // the file is saved as it ends, with the tick. With less motion there's no
+    // line, so nothing waits for it.
+    const filled = reducedMotion() ? null : new Promise((done) => setTimeout(done, DOWNLOAD_FILL_MS))
     try {
-      await downloadResume({ ...resume, sectionOrder: resolveSections(resume) })
+      const save = await makeDownload({ ...resume, sectionOrder: resolveSections(resume) })
+      await filled
+      save()
       setFailure(null)
       setDownloadedAt(Date.now())
     } catch (error) {
@@ -371,14 +381,14 @@ function Editor({ id }: { id: string }) {
               className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4"
             >
               <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
-              {/* Fills along the bottom while the PDF is made, then all the way, and fades, once it's downloaded. */}
+              {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
               <span
                 aria-hidden="true"
                 className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
                   downloading
                     ? "scale-x-0 motion-safe:animate-download-progress"
                     : downloaded
-                      ? "opacity-0 transition-opacity duration-500 motion-reduce:transition-none"
+                      ? "scale-x-100 opacity-0 [transition:scale_180ms_ease-out,opacity_450ms_ease-out_200ms] motion-reduce:transition-none"
                       : "scale-x-0"
                 }`}
               />
