@@ -284,13 +284,25 @@ function startNextPreview() {
     })
 }
 
+/**
+ * Compiles a resume to download, with the resume attached, and gives back what
+ * saves it as "<title>.pdf". The editor saves it once its button has shown the
+ * PDF being made.
+ */
+export async function makeDownload(resume: Resume): Promise<() => void> {
+  const url = toUrl(await compileResume(resume, { attach: true }))
+  return () => {
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${resume.resumeTitle?.trim() || "resume"}.pdf`
+    link.click()
+    // Give the browser time to start the download before freeing the PDF.
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
+}
+
 /** Compiles a resume and saves it as "<title>.pdf", with the resume attached. */
 export async function downloadResume(resume: Resume): Promise<void> {
-  const url = toUrl(await compileResume(resume, { attach: true }))
-  const link = document.createElement("a")
-  link.href = url
-  link.download = `${resume.resumeTitle?.trim() || "resume"}.pdf`
-  link.click()
-  // Give the browser time to start the download before freeing the PDF.
-  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  const save = await makeDownload(resume)
+  save()
 }

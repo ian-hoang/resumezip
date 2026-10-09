@@ -91,3 +91,63 @@ test("a failed download says so, and trying again downloads the PDF", async ({ p
   // Only the failures, logged by the editor and dashboard.
   expect(errors.filter((error) => !/^(Error downloading resume:|Failed to build PDF:)/.test(error))).toEqual([])
 })
+
+/** Starts a resume with a name, and waits for its preview, so the compiler is ready and a PDF is made in a moment. */
+async function readyToDownload(page: Page) {
+  await page.goto("/")
+  await page.getByRole("link", { name: "Start writing" }).first().click()
+  await expect(page).toHaveURL(/\/create\/new\//)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await expect(
+    page
+      .getByRole("region", { name: "Live preview" })
+      .getByText(/Ada Lovelace/i)
+      .first(),
+  ).toBeVisible()
+}
+
+test("Download PDF shows the PDF being made, however quick, and saves it as that ends", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.clock.install()
+  await readyToDownload(page)
+  let saved = false
+  page.on("download", () => (saved = true))
+
+  // From here the page's clock only moves when the test moves it. The PDF is
+  // made meanwhile, off the page's clock, but not saved until the line along
+  // the button has filled.
+  await page.clock.pauseAt(Date.now() + 1_000)
+  const button = page.getByRole("button", { name: "Download PDF" })
+  await button.click()
+  await expect(button).toBeDisabled()
+  await page.waitForTimeout(2_000)
+  expect(saved).toBe(false)
+  // Meanwhile the line along the button has filled most of the way. (It wasn't
+  // drawn at all while its keyframes and the class hiding it set different properties.)
+  const line = button.locator('span[aria-hidden="true"]')
+  expect(await line.evaluate((element) => parseFloat(getComputedStyle(element).scale))).toBeGreaterThan(0.9)
+
+  const downloading = page.waitForEvent("download")
+  await page.clock.runFor(1_500)
+  expect((await downloading).suggestedFilename()).toMatch(/\.pdf$/)
+  await expect(page.getByRole("button", { name: "Downloaded" })).toBeVisible()
+  await page.clock.resume()
+  expect(errors).toEqual([])
+})
+
+test.describe("with less motion", () => {
+  test.use({ reducedMotion: "reduce" })
+
+  test("Download PDF saves the PDF as soon as it's made", async ({ page }) => {
+    const errors = pageErrors(page)
+    await page.clock.install()
+    await readyToDownload(page)
+    // With the page's clock stopped, only a PDF saved straight away is saved.
+    await page.clock.pauseAt(Date.now() + 1_000)
+    const downloading = page.waitForEvent("download")
+    await page.getByRole("button", { name: "Download PDF" }).click()
+    expect((await downloading).suggestedFilename()).toMatch(/\.pdf$/)
+    await page.clock.resume()
+    expect(errors).toEqual([])
+  })
+})
