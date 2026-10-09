@@ -11,8 +11,10 @@ interface ResumeActions extends Pick<
   "addSection" | "editSection" | "includeSection" | "removeSection" | "deleteSection" | "reorderSections"
 > {
   createNewResume: (title: string, tag: string, template?: string) => string
-  importResume: (content: ResumeContent, title: string, options?: { keepId?: boolean }) => string
-  replaceResume: (id: string, content: ResumeContent) => void
+  importResume: (content: ResumeContent, title: string, options?: { keepId?: boolean; tag?: string }) => string
+  /** Adds the resumes from a JSON file of them all. */
+  importAll: ResumeStore["importAll"]
+  replaceResume: ResumeStore["replace"]
   undoReplace: (id: string) => void
   /** Adds a copy of a resume, and returns its id. */
   duplicateResume: (id: string) => string | undefined
@@ -114,6 +116,7 @@ export const FormProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       createNewResume: store.create,
       importResume: store.importResume,
+      importAll: store.importAll,
       replaceResume: store.replace,
       undoReplace: store.undoReplace,
       duplicateResume: store.duplicate,
