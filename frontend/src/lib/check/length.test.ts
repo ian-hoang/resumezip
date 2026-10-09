@@ -60,6 +60,32 @@ describe("L2 a few lines on the last page", () => {
 describe("L3 and L4 how a bullet wraps", () => {
   const bullet = "Built a search index that cut query time by 40% for the whole team"
 
+  test.each([
+    ["team", "One word on its last line"],
+    ["whole team", "2 words on its last line"],
+    ["the whole team", "3 words on its last line"],
+    ["the — whole team", "3 words on its last line"],
+    ["for the whole team", null],
+    ["for the whole engineering team", null],
+  ])("L3 applies the three-word limit to a last line of %j", (ending, message) => {
+    const start = "Built a search index for"
+    const pdf = full([line(start, { bullet: true, top: 600 }), line(ending, { top: 612 })])
+    const result = check("L3", resumeWith([`${start} ${ending}`]), pdf)
+    expect(result.status).toBe(message ? "failed" : "passed")
+    expect(result.findings).toEqual(
+      message
+        ? [expect.objectContaining({ place: { kind: "entry", section: "Work", entry: 0, field: "workDescription", line: 0 }, message })]
+        : [],
+    )
+  })
+
+  test.each(["Built", "Built the index"])("L3 leaves a short, unwrapped bullet alone (%j)", (text) => {
+    expect(check("L3", resumeWith([text]), full([line(text, { bullet: true, top: 600 })]))).toMatchObject({
+      status: "passed",
+      findings: [],
+    })
+  })
+
   test("L3 flags a bullet whose last line has 1 to 3 words", () => {
     const pdf = full([
       line("Built a search index that cut query time by 40% for the", { bullet: true, top: 600 }),

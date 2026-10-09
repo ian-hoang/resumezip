@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest"
 import type { Resume } from "@/lib/resume"
+import { asSaved } from "@/lib/testResume"
 import { runChecks } from "./engine"
 import { RULES } from "./rules"
 import { listOf } from "./sections"
+import { dismiss, readCheckState } from "./state"
 
 const college = {
   id: 1,
@@ -292,6 +294,116 @@ describe("S9 references", () => {
 })
 
 describe("S10 locations", () => {
+  const sections = [
+    { section: "Education", dataKey: "educationSection", name: "schoolName", location: "schoolLocation" },
+    { section: "Work", dataKey: "workExperienceSection", name: "companyName", location: "workLocation" },
+    { section: "Volunteership", dataKey: "volunteerExperienceSection", name: "volunteerOrg", location: "volunteerLocation" },
+    { section: "Leadership", dataKey: "leadershipExperienceSection", name: "leadershipOrg", location: "leadershipLocation" },
+  ] as const
+
+  describe.each(sections)("$section", ({ section, dataKey, name, location }) => {
+    test.each([undefined, "", " \t\n\u00a0 "])("flags a missing or blank location (%j)", (value) => {
+      const resume = { [dataKey]: [{ id: 1, [name]: "An organization", [location]: value }] }
+      const result = check("S10", resume)
+      expect(result.status).toBe("failed")
+      expect(result.findings).toEqual([
+        expect.objectContaining({
+          place: { kind: "entry", section, entry: 0, field: location },
+          level: "look",
+          message: "No location",
+          suggestion: "Add the city, like “Austin, TX”, or “Remote”.",
+        }),
+      ])
+    })
+
+    test.each(["Austin, TX", " Remote ", "London, UK"])("accepts a location of %j", (value) => {
+      expect(check("S10", { [dataKey]: [{ id: 1, [name]: "An organization", [location]: value }] })).toMatchObject({
+        status: "passed",
+        findings: [],
+      })
+    })
+
+    test("skips blank and left-out entries while keeping the editor's entry index", () => {
+      const resume = {
+        [dataKey]: [
+          { id: 1, [name]: " \t ", [location]: " " },
+          { id: 2, [name]: "Omitted organization", leftOut: true },
+          { id: 3, [name]: "Printed organization" },
+        ],
+      }
+      expect(check("S10", resume).findings).toEqual([
+        expect.objectContaining({ place: { kind: "entry", section, entry: 2, field: location } }),
+      ])
+    })
+  })
+
+  test("counts only filled, printed entries when giving partial credit", () => {
+    const resume: Resume = {
+      workExperienceSection: [
+        { id: 1, companyName: "Acme", workLocation: "Remote" },
+        { id: 2, companyName: "Local company" },
+        { id: 3, workDescription: "•\n○ Omitted bullet" },
+        { id: 4, companyName: "Omitted company", leftOut: true },
+      ],
+    }
+    const report = runChecks(resume, { rules: RULES.filter((rule) => rule.id === "S10") })
+    expect(report.results).toEqual([expect.objectContaining({ status: "failed", checked: 2, credit: 0.5 })])
+    expect(report.findings).toHaveLength(1)
+  })
+
+  test("checks an entry with only a printed description", () => {
+    expect(check("S10", { workExperienceSection: [{ id: 1, workDescription: "• Built a search index" }] }).findings).toEqual([
+      expect.objectContaining({ place: { kind: "entry", section: "Work", entry: 0, field: "workLocation" } }),
+    ])
+  })
+
+  test.each([null, 42, {}, ["Austin, TX"]])("treats a malformed saved location (%j) as missing", (location) => {
+    const resume = asSaved({ workExperienceSection: [{ id: 1, companyName: "Acme", workLocation: location }] })
+    expect(check("S10", resume)).toMatchObject({ status: "failed", messages: ["No location"] })
+  })
+
+  test("dismisses each entry's suggestion independently and passes once its location is filled", () => {
+    const resume: Resume = {
+      workExperienceSection: [
+        { id: 1, companyName: "Acme" },
+        { id: 2, companyName: "Acme" },
+      ],
+    }
+    const rules = RULES.filter((rule) => rule.id === "S10")
+    const first = runChecks(resume, { rules })
+    expect(first.findings).toHaveLength(2)
+    const saved = { ...resume, check: dismiss(readCheckState(resume), first.findings[0], first) }
+    const after = runChecks(saved, { rules })
+    expect(after.dismissed).toEqual([expect.objectContaining({ key: first.findings[0].key, dismissed: true })])
+    expect(after.findings).toEqual([expect.objectContaining({ key: first.findings[1].key, dismissed: false })])
+    expect(after.results[0]).toMatchObject({ checked: 2, credit: 0.5 })
+
+    const fixed = runChecks(
+      {
+        ...saved,
+        workExperienceSection: [
+          { id: 1, companyName: "Acme" },
+          { id: 2, companyName: "Acme", workLocation: "Remote" },
+        ],
+      },
+      { rules },
+    )
+    expect(fixed.findings).toEqual([])
+    expect(fixed.results[0]).toMatchObject({ status: "passed", credit: 1 })
+  })
+
+  test("leaves the profile location to C4 and skips sections without location fields", () => {
+    const resume: Resume = {
+      profileSection: { fullName: "Ada Lovelace" },
+      projectsSection: [{ id: 1, projectName: "Engine" }],
+      awardsSection: [{ id: 1, awardName: "Scholarship" }],
+      skillsSection: [{ id: 1, skillName: "Languages", skillDetails: "Python" }],
+      publicationsSection: [{ id: 1, publicationTitle: "Notes on the engine" }],
+    }
+    expect(check("S10", resume)).toMatchObject({ status: "skipped", findings: [] })
+    expect(check("C4", resume).status).toBe("failed")
+  })
+
   test("suggests a location for each job, school and role without one", () => {
     const resume = {
       ...jake,

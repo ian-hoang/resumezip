@@ -3,6 +3,26 @@ import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 const PAGES = ["/", "/templates", "/about", "/contact", "/terms", "/create/dashboard", "/does-not-exist"]
 
+test("contact shows the support address before and after opening a message", async ({ page }) => {
+  await page.goto("/contact")
+  const emailLinks = page.getByRole("link", { name: "hello@tryresumezip.com", exact: true })
+  await expect(emailLinks).toHaveCount(1)
+  await expect(emailLinks).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
+
+  await page.getByLabel("Your name").fill("Ada Lovelace")
+  await page.getByLabel("Email address").fill("ada@example.com")
+  await page.getByLabel("Subject", { exact: true }).selectOption("support")
+  await page.getByLabel("Your message").fill("I have a question about my resume.")
+  await page.getByRole("button", { name: "Send with your email app" }).click()
+
+  await expect(page.getByRole("heading", { name: "Check your email app" })).toBeVisible()
+  await expect(emailLinks).toHaveCount(2)
+  for (const link of await emailLinks.all()) {
+    await expect(link).toBeVisible()
+    await expect(link).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
+  }
+})
+
 for (const path of PAGES) {
   test(`${path} loads without errors and passes accessibility checks`, async ({ page }) => {
     const errors = pageErrors(page)
