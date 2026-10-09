@@ -298,6 +298,41 @@ test("a change made just before the page closes is saved", async ({ page }) => {
   expect(errors).toEqual([])
 })
 
+test("the editor says Saving… while typing, and Saved once typing has stopped for a moment", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.clock.install()
+  const key = await startWriting(page)
+  const name = page.getByLabel("Full name")
+  const saving = page.getByText("Saving…")
+  const saved = page.getByText("Saved in this browser")
+  await name.fill("Ada")
+  await expect(previewShows(page.getByRole("region", { name: "Live preview" }), /Ada/i)).toBeVisible()
+  await expect(saved).toBeVisible()
+
+  // From here the page's clock only moves when the test moves it.
+  await page.clock.pauseAt(Date.now() + 1_000)
+  await name.fill("Ada Love")
+  await expect(saving).toBeVisible()
+  // A pause between words is long enough to save, but it still says Saving…,
+  // rather than flicking to Saved and back as the next word is typed.
+  await page.clock.runFor(600)
+  await expect.poll(savedAt(page, key)).toContain("Ada Love")
+  await expect(saving).toBeVisible()
+  await expect(saved).toHaveCount(0)
+  await name.fill("Ada Lovelace")
+  await page.clock.runFor(600)
+  await expect.poll(savedAt(page, key)).toContain("Ada Lovelace")
+  await expect(saving).toBeVisible()
+
+  // Stopped: it says it's saved.
+  await page.clock.runFor(1_000)
+  await expect(saved).toBeVisible()
+  await expect(saving).toHaveCount(0)
+  await page.clock.resume()
+
+  expect(errors).toEqual([])
+})
+
 test("two tabs editing different resumes at once keep both edits", async ({ page, context }) => {
   const errors = pageErrors(page)
   await startWriting(page)

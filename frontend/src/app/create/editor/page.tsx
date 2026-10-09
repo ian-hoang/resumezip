@@ -34,8 +34,10 @@ const MIN_WAIT_MS = 150
 const MAX_WAIT_MS = 400
 // How long a replaced preview PDF is kept before it's freed.
 const PDF_KEPT_MS = 10_000
-// How long "Saved" stands out after a change is saved, and "Downloaded" shows after a download.
-const SAVED_MS = 1500
+// How long "Saving…" stays after a change is saved, which is SAVE_DELAY after
+// typing stops, so a pause between words doesn't flick it to "Saved" and back.
+const SAVED_AFTER_MS = 800
+// How long "Downloaded" shows after a download.
 const DOWNLOADED_MS = 2000
 
 const EDITOR_ADDRESS = "/create/new/"
@@ -462,30 +464,50 @@ function ResumeName() {
   )
 }
 
-/** "Saved in this browser", which stands out for a moment each time a change is saved. Nothing while saving fails. */
+/**
+ * "Saving…" from a change until it's saved and typing has paused a moment,
+ * then "Saved in this browser", with a tick that draws itself after a save.
+ * Nothing while saving fails: NotSaved says so instead.
+ */
 function SavedNote() {
   const saveStatus = useResumeState((state) => state.saveStatus)
+  const unsaved = useResumeState((state) => state.unsaved)
   const savedAt = useResumeState((state) => state.savedAt)
-  // A save since the page opened, for a moment.
-  const [justSaved, setJustSaved] = useState(false)
+  // Saved since the page opened, so the tick has something to draw itself for.
   const openedSavedAt = useRef(savedAt)
+  const saved = savedAt !== openedSavedAt.current
+  const [settling, setSettling] = useState(false)
 
   useEffect(() => {
-    if (!savedAt || savedAt === openedSavedAt.current) return
-    setJustSaved(true)
-    const timer = setTimeout(() => setJustSaved(false), SAVED_MS)
+    if (savedAt === openedSavedAt.current) return
+    setSettling(true)
+    const timer = setTimeout(() => setSettling(false), SAVED_AFTER_MS)
     return () => clearTimeout(timer)
   }, [savedAt])
 
   if (saveStatus !== "saved") return null
   return (
-    <span
-      className={`label-mono mr-2 hidden shrink-0 items-center gap-1.5 transition-colors duration-300 xl:inline-flex ${
-        justSaved ? "text-ink" : "text-ink-2"
-      }`}
-    >
-      <Check className={`h-3 w-3 transition-opacity duration-300 ${justSaved ? "opacity-100" : "opacity-0"}`} aria-hidden="true" />
-      Saved in this browser
+    <span className="saved-note label-mono mr-2 hidden shrink-0 items-center gap-1.5 text-ink-2 xl:inline-flex">
+      {unsaved || settling ? (
+        "Saving…"
+      ) : (
+        <>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path className={saved ? "tick" : undefined} pathLength={1} d="m5 12.5 4.5 4.5L19 7.5" />
+          </svg>
+          Saved in this browser
+        </>
+      )}
     </span>
   )
 }
