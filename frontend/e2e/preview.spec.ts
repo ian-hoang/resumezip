@@ -138,6 +138,30 @@ test("what a change prints lights up on the preview for a moment", async ({ page
   expect(errors).toEqual([])
 })
 
+test("a second copy of a line already on the page lights up too", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.goto("/")
+  await page.getByRole("link", { name: "Start writing" }).first().click()
+  await expect(page).toHaveURL(/\/create\/new\//)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("button", { name: /^\d+ Experience$/ })
+    .click()
+  await page.getByRole("button", { name: "Add experience" }).click()
+  await page.getByLabel("Role", { exact: true }).fill("Engineer")
+  const bullets = page.getByLabel(/^What you did/)
+  await bullets.fill("• Wrote the tests")
+  const lines = page.getByRole("region", { name: "Live preview" }).getByText("Wrote the tests")
+  await expect(lines).toHaveCount(1)
+
+  await bullets.fill("• Wrote the tests\n• Wrote the tests")
+  await expect(lines).toHaveCount(2)
+  await expect(lines.nth(1)).toHaveAttribute("data-changed")
+  await expect(lines.nth(0)).not.toHaveAttribute("data-changed")
+  expect(errors).toEqual([])
+})
+
 test("the preview starts pdf.js's worker once, not for each new PDF", async ({ page }) => {
   const errors = pageErrors(page)
   // Each one loads a 1.3 MB script as it starts.

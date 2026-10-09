@@ -123,8 +123,14 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
   // by page, to light up what the next one changes (lightUpChanges).
   const shownRef = useRef<Drawing | null>(null)
   const shownPagesRef = useRef<(HTMLDivElement | null)[]>([])
-  const printedRef = useRef<{ file: string; template: string | null; pages: Map<number, string[]> } | null>(null)
-  const beforeRef = useRef<{ template: string | null; text: Set<string> } | null>(null)
+  const printedRef = useRef<{
+    file: string
+    template: string | null
+    pages: Map<number, string[]>
+    /** How many of each run of text the PDF before printed that this one's pages haven't matched yet. */
+    unmatched: Map<string, number>
+  } | null>(null)
+  const beforeRef = useRef<{ template: string | null; text: string[] } | null>(null)
 
   // react-pdf and pdf.js are a third of the editor's code, so they aren't in
   // the page's first download: the form can be used sooner, and the stand-in
@@ -285,6 +291,8 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
   /**
    * Lights up the runs of text that the PDF before didn't print, so the line
    * just typed in stands out for a moment (`[data-changed]` in globals.css).
+   * Runs are matched one for one, so a second copy of a line the PDF already
+   * had lights up too.
    * It's called as each page's text layer is drawn, and looks at every page
    * drawn since. The first preview has nothing to compare with, the same PDF
    * drawn again at another zoom lit up already, and a new template moves and
@@ -298,10 +306,12 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     let printed = printedRef.current
     if (printed?.file !== shown.file) {
       // If none of the last PDF's text was drawn (it was replaced first), the one before it is still what to compare with.
-      if (printed?.pages.size) beforeRef.current = { template: printed.template, text: new Set([...printed.pages.values()].flat()) }
-      printed = printedRef.current = { file: shown.file, template: shown.template, pages: new Map() }
+      if (printed?.pages.size) beforeRef.current = { template: printed.template, text: [...printed.pages.values()].flat() }
+      const unmatched = new Map<string, number>()
+      for (const text of beforeRef.current?.text ?? []) unmatched.set(text, (unmatched.get(text) ?? 0) + 1)
+      printed = printedRef.current = { file: shown.file, template: shown.template, pages: new Map(), unmatched }
     }
-    const { pages, template } = printed
+    const { pages, template, unmatched } = printed
     shownPagesRef.current.forEach((box, page) => {
       const layer = box?.querySelector(".textLayer")
       // react-pdf ends a text layer with this once it's all drawn.
@@ -314,9 +324,13 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
         page,
         runs.map((run) => run.textContent ?? ""),
       )
-      const before = beforeRef.current
-      if (before?.template !== template) return
-      const changed = runs.filter((run) => !before.text.has(run.textContent ?? ""))
+      if (beforeRef.current?.template !== template) return
+      const changed = runs.filter((run) => {
+        const text = run.textContent ?? ""
+        const left = unmatched.get(text) ?? 0
+        if (left > 0) unmatched.set(text, left - 1)
+        return left === 0
+      })
       if (changed.length <= MAX_LIT) for (const run of changed) run.dataset.changed = ""
     })
   }, [])
