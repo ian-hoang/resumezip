@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { chooseTemplate, holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
+import { holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // The editor's left bar switches between the sections (Write) and what the
 // checker found (Check), and remembers which for the visit.
@@ -37,26 +37,10 @@ async function openSample(page: Page, id: string, profile: Record<string, string
   await page.goto(`/create/new/${id}`)
 }
 
-// The score's colors (SCORE_COLORS, styles/editor.css), as computed.
-const RED = "rgb(180, 35, 24)"
-const GREEN = "rgb(6, 118, 71)"
-const VIOLET = "rgb(89, 37, 220)"
-
-/** Waits for the score's number, its word and its ring's arc to be drawn in a color, once any fade is done. */
-async function scoreIn(score: Locator, word: string, color: string) {
-  await expect(score.getByText(/^\d+$/)).toHaveCSS("color", color)
-  await expect(score.getByText(word, { exact: true })).toHaveCSS("color", color)
-  // The ring's track, then its arc.
-  await expect(score.locator("circle").nth(1)).toHaveCSS("stroke", color)
-}
-
-/** Whether the ring a perfect score has, in a gradient over the arc, shows. */
-const perfectRingShown = (score: Locator) =>
+/** Whether a perfect score's scale shows, filled with a gradient rather than ink (.score-fill in styles/editor.css). */
+const perfectScaleShown = (score: Locator) =>
   score.evaluate((element) =>
-    [...element.querySelectorAll("span")].some((span) => {
-      const style = getComputedStyle(span)
-      return style.backgroundImage.startsWith("conic-gradient") && style.opacity === "1"
-    }),
+    [...element.querySelectorAll("div")].some((div) => getComputedStyle(div).backgroundImage.startsWith("linear-gradient")),
   )
 
 /** The names of the CSS animations in an element, running or done. */
@@ -80,34 +64,6 @@ const animationsIn = (locator: Locator) =>
         return "animationName" in animation && animation.playState === "running" && !!target && element.contains(target)
       }).length,
   )
-
-/**
- * Notes how much of each arc added to the score ring is drawn the moment it's
- * added, in percent, until the returned function is called.
- */
-async function watchArcs(score: Locator): Promise<() => Promise<number[]>> {
-  const watching = await score.evaluateHandle((element) => {
-    const drawn: number[] = []
-    const observer = new MutationObserver((records) => {
-      for (const node of records.flatMap((record) => [...record.addedNodes])) {
-        if (!(node instanceof SVGCircleElement)) continue
-        // Read before it's painted: a transition that's just started is still where it starts from.
-        const style = getComputedStyle(node)
-        drawn.push(Math.round(100 * (1 - parseFloat(style.strokeDashoffset) / parseFloat(style.strokeDasharray))))
-      }
-    })
-    observer.observe(element, { childList: true, subtree: true })
-    return { drawn, stop: () => observer.disconnect() }
-  })
-  return async () => {
-    const drawn = await watching.evaluate(({ drawn, stop }) => {
-      stop()
-      return drawn
-    })
-    await watching.dispose()
-    return drawn
-  }
-}
 
 test("the left bar switches between writing and checking, and remembers which", async ({ page }) => {
   const errors = pageErrors(page)
@@ -307,8 +263,6 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   await missing.click()
   const email = page.getByLabel("Email")
   await expect(email).toBeFocused()
-  const count = Number((await check.getAttribute("aria-label"))?.match(/^Check, (\d+) to look at$/)?.[1])
-  expect(count).toBeGreaterThan(2)
 
   // With the page's clock stopped, typing never pauses. What the person
   // tells the checker still shows at once.
@@ -316,24 +270,21 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   const advice = panel.getByRole("button", { name: /Profile → LinkedIn Consider adding a LinkedIn profile/ })
   await panel.getByRole("button", { name: "Dismiss: Consider adding a LinkedIn profile" }).click()
   await expect(advice).toBeHidden()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 1} to look at`)
 
   // What's typed isn't checked yet: a fixed wait, to show nothing changes.
   await email.pressSequentially("ada@example.com")
   await page.waitForTimeout(1_000)
   await expect(missing).toBeVisible()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 1} to look at`)
 
   // Once typing pauses, it is.
   await page.clock.resume()
   await expect(missing).toBeHidden()
   await expect(panel.getByRole("status")).toBeHidden()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 2} to look at`)
 
   expect(errors).toEqual([])
 })
 
-test("the score ring moves while the score is worked out: an arc runs round it, it fills up to the score, and it pulses while checked again", async ({
+test("the score moves while it's worked out: dots bounce in its place, the number comes in, and it pulses while checked again", async ({
   page,
 }) => {
   const errors = pageErrors(page)
@@ -343,22 +294,20 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   const score = panel.getByRole("region", { name: "Resume score" })
 
   // A change the preview hasn't caught up with keeps the checks on the PDF
-  // waiting, and the score with them. Meanwhile an arc runs round the ring.
+  // waiting, and the score with them. Meanwhile three dots bounce in its place.
   await holdPreviews(page, true)
   await page.getByLabel("Role").fill("Analyst")
   await page.getByRole("tab", { name: /^Check/ }).click()
   await expect(score).toContainText("Checking")
-  await expect.poll(() => animationsIn(score)).toBeGreaterThan(0)
+  await expect.poll(() => animationNamesIn(score)).toContain("score-dot")
 
-  // Once the score is in, the ring fills up to it from empty, then stops moving.
-  const arcs = await watchArcs(score)
+  // Once the score is in, it shows, and nothing keeps moving.
   await holdPreviews(page, false)
   await expect(score.getByText(/^\d+$/)).toBeVisible()
-  expect(await arcs()).toEqual([0])
   await expect(panel.getByRole("status")).toBeHidden()
   await expect.poll(() => animationsIn(score)).toBe(0)
 
-  // Checked again after a change, the ring keeps the score and pulses until it's done.
+  // Checked again after a change, the score stays and pulses until it's done.
   await holdPreviews(page, true)
   await page.getByLabel("Role").fill("Lead analyst")
   await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
@@ -371,59 +320,32 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   expect(errors).toEqual([])
 })
 
-test("the score's color says how it reads: red when it needs work, green when it's good, and a perfect score shines once", async ({
-  page,
-}) => {
+test("the score's word says how it reads, and a perfect score's scale turns to a gradient a light sweeps along once", async ({ page }) => {
   const errors = pageErrors(page)
   await resumeToCheck(page)
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
   const score = panel.getByRole("region", { name: "Resume score" })
   await page.getByRole("tab", { name: /^Check/ }).click()
   await expect(panel.getByRole("status")).toBeHidden()
-  await scoreIn(score, "Needs work", RED)
-  expect(await perfectRingShown(score)).toBe(false)
+  await expect(score).toContainText("Needs work")
+  expect(await perfectScaleShown(score)).toBe(false)
 
   // A good resume, held at 89 by a missing email (Check stays open for the visit).
   await openSample(page, "no-email", { email: "" })
   await expect(panel.getByRole("status")).toBeHidden()
-  await scoreIn(score, "Good", GREEN)
+  await expect(score).toContainText("Good")
 
-  // With the email added, every check passes: the ring turns to a gradient
-  // that a light sweeps round once, and the number glows.
+  // With the email added, every check passes: the scale turns to a gradient
+  // that a light sweeps along once.
   await panel.getByRole("button", { name: /Add your email address/ }).click()
   await page.getByLabel("Email").fill("marcus.bell@example.com")
   await expect(score.getByText(/^\d+$/)).toHaveText("100")
-  await scoreIn(score, "Perfect", VIOLET)
-  await expect.poll(() => perfectRingShown(score)).toBe(true)
-  await expect.poll(() => animationNamesIn(score)).toContain("score-sweep")
+  await expect(score).toContainText("Perfect")
+  await expect.poll(() => perfectScaleShown(score)).toBe(true)
+  await expect.poll(() => animationNamesIn(score)).toContain("score-glint")
   await expect.poll(() => animationsIn(score)).toBe(0)
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
-  expect(errors).toEqual([])
-})
-
-test("the Check tab's count stays put while a new template's PDF is read, rather than counting the form's rules alone", async ({
-  page,
-}) => {
-  const errors = pageErrors(page)
-  await holdablePreviews(page)
-  await resumeToCheck(page)
-  const checkTab = page.getByRole("tab", { name: /^Check/ })
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
-  await checkTab.click()
-  await expect(panel.getByRole("region", { name: "Resume score" }).getByText(/^\d+$/)).toBeVisible()
-  await expect(panel.getByRole("status")).toBeHidden()
-  const before = await checkTab.textContent()
-
-  // The new template's preview waits on its way to the compiler, so its PDF can't be read yet.
-  await holdPreviews(page, true)
-  await chooseTemplate(page, "Harvard")
-  await checkTab.click()
-  await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
-  await expect(checkTab).toHaveText(before!)
-
-  await holdPreviews(page, false)
-  await expect(panel.getByRole("status")).toBeHidden()
   expect(errors).toEqual([])
 })
 
@@ -436,7 +358,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
   const check = modes.getByRole("tab", { name: /^Check/ })
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
 
-  // No count until there's a name and an entry to check.
+  // The tab says only Check: what it found is in the panel.
   await expect(check).toHaveAccessibleName("Check")
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email").fill("ada@example")
@@ -446,7 +368,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  await expect(check).toHaveAccessibleName(/^Check, \d+ to look at$/)
+  await expect(check).toHaveAccessibleName("Check")
 
   // The email's finding opens the profile, with the cursor in the field and why it matters under it.
   await check.click()
@@ -600,7 +522,7 @@ test("when the preview can't be built, the checker says its PDF checks are left 
 test.describe("with less motion", () => {
   test.use({ reducedMotion: "reduce" })
 
-  test("the score ring stays still: nothing runs round it, it shows the score at once, and it doesn't pulse", async ({ page }) => {
+  test("the score stays still: no dots bounce, it shows at once, and it doesn't pulse", async ({ page }) => {
     const errors = pageErrors(page)
     await holdablePreviews(page)
     await resumeToCheck(page)
@@ -613,11 +535,8 @@ test.describe("with less motion", () => {
     await expect(score).toContainText("Checking")
     expect(await animationsIn(score)).toBe(0)
 
-    const arcs = await watchArcs(score)
     await holdPreviews(page, false)
     await expect(score.getByText(/^\d+$/)).toBeVisible()
-    const [drawn] = await arcs()
-    expect(drawn).toBeGreaterThan(0)
     await expect(panel.getByRole("status")).toBeHidden()
 
     await holdPreviews(page, true)
@@ -630,7 +549,7 @@ test.describe("with less motion", () => {
     expect(errors).toEqual([])
   })
 
-  test("a perfect score's ring shows its gradient at once, with no light sweeping round it", async ({ page }) => {
+  test("a perfect score's scale shows its gradient at once, with no light sweeping along it", async ({ page }) => {
     const errors = pageErrors(page)
     await openSample(page, "perfect")
     await page.getByRole("tab", { name: /^Check/ }).click()
@@ -638,7 +557,7 @@ test.describe("with less motion", () => {
     const score = panel.getByRole("region", { name: "Resume score" })
     await expect(score.getByText(/^\d+$/)).toHaveText("100")
     await expect(score).toContainText("Perfect")
-    expect(await perfectRingShown(score)).toBe(true)
+    expect(await perfectScaleShown(score)).toBe(true)
     expect(await animationNamesIn(score)).toEqual([])
     await expect(panel.getByRole("status")).toBeHidden()
 

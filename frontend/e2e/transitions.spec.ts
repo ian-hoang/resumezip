@@ -69,9 +69,9 @@ test("a section, Write, Check or Style, and the template gallery fade in as they
   const write = await fadingIn(page.getByRole("tab", { name: "Write" }), sections)
   expect(write.some((text) => text.includes("Profile"))).toBe(true)
 
-  // The Style tab shows the templates and Fine-tune in the left panel.
+  // The Style tab shows Fine-tune in the left panel.
   const style = await fadingIn(page.getByRole("tab", { name: "Style" }), page.getByRole("region", { name: "Style" }))
-  expect(style.some((text) => text.includes("Template"))).toBe(true)
+  expect(style.some((text) => text.includes("Fine-tune"))).toBe(true)
   await page.getByRole("tab", { name: "Write" }).click()
   await expect(page.getByRole("region", { name: "Style" })).toBeHidden()
 

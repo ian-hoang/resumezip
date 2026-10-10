@@ -3,12 +3,13 @@ import { expect, test, type Page } from "@playwright/test"
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
 // One header on every page: the home page's is the same pill as the others', over its video.
+// Its one button asks for a star on GitHub; people start writing from the page itself.
 for (const path of ["/", "/templates"]) {
-  test(`the header on ${path} starts a resume, and asks for a star on GitHub beside it`, async ({ page }) => {
+  test(`the header on ${path} asks for a star on GitHub, and nothing else`, async ({ page }) => {
     await page.goto(path)
     const banner = page.getByRole("banner")
-    await expect(banner.getByRole("link", { name: "Start writing", exact: true })).toBeVisible()
     await expect(banner.getByRole("link", { name: "Star on GitHub" })).toHaveAttribute("href", REPO_URL)
+    await expect(banner.getByRole("link", { name: "Start writing" })).toHaveCount(0)
   })
 }
 
@@ -23,8 +24,7 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
 })
 
 // Every page's header starts where the home page's does, so it doesn't jump from page to page.
-// Scrolled, it stays at the top of the
-// screen, and the page starts under it rather than behind it.
+// Scrolled, it stays where it is at the top of the screen, and the page starts under it rather than behind it.
 const pillTop = async (page: Page) => (await page.getByRole("banner").boundingBox())!.y
 for (const width of [390, 1440]) {
   test(`at ${width}px the header starts at the home page's height on every page, and keeps clear of the page as it scrolls`, async ({
@@ -44,8 +44,7 @@ for (const width of [390, 1440]) {
 
       await page.mouse.wheel(0, 600)
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
-      await expect.poll(() => pillTop(page), path).toBeLessThan(top)
-      expect(await pillTop(page), path).toBeGreaterThanOrEqual(0)
+      expect(await pillTop(page), path).toBe(top)
     }
   })
 }

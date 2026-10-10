@@ -103,27 +103,23 @@ for (const [width, height] of [
   })
 }
 
-test("the Style tab lists the templates and Fine-tune, beside the form", async ({ page }) => {
+test("the Style tab holds Fine-tune beside the form, and the header's Template button picks the template on every screen", async ({
+  page,
+}) => {
   const errors = pageErrors(page)
   const preview = await startWriting(page, 1440, 900)
   const style = page.getByRole("region", { name: "Style" })
   const sections = page.getByRole("navigation", { name: "Sections" })
-  // The header's template picker is for narrower screens.
-  await expect(page.getByRole("button", { name: /^Template/ })).toBeHidden()
   await expect(style).toBeHidden()
 
   await styleTab(page).click()
   await expect(styleTab(page)).toHaveAttribute("aria-selected", "true")
   await expect(sections).toBeHidden()
-  await expect(style.getByRole("button", { pressed: true })).toHaveText(/^Jake's/)
   await expect(style.getByRole("heading", { name: "Fine-tune" })).toBeVisible()
-  // The templates and Fine-tune use the panel's whole width, as the section list does.
-  const panel = await boxOf(style)
-  for (const part of [style.getByRole("button", { pressed: true }), style.getByRole("slider", { name: /Text size/ })]) {
-    expect((await boxOf(part)).width).toBeGreaterThan(panel.width - 40)
-  }
-  await style.getByRole("button", { name: "Harvard", exact: true }).click()
-  await expect(style.getByRole("button", { pressed: true })).toHaveText(/^Harvard/)
+  // Fine-tune uses the panel's whole width, as the section list does.
+  expect((await boxOf(style.getByRole("slider", { name: /Text size/ }))).width).toBeGreaterThan((await boxOf(style)).width - 40)
+
+  await chooseTemplate(page, "Harvard")
   // Harvard prints the name in capitals.
   await expect(preview.getByText("ADA LOVELACE", { exact: true })).toBeAttached()
   await expect(templateShown(page)).toContainText("Harvard")
@@ -131,11 +127,6 @@ test("the Style tab lists the templates and Fine-tune, beside the form", async (
   // The form stays beside it, to keep writing in.
   await page.getByLabel("Full name").fill("Ada King")
   await expect(preview.getByText("ADA KING", { exact: true })).toBeAttached()
-
-  // It stays as the window narrows to 1280px.
-  await page.setViewportSize({ width: 1280, height: 800 })
-  await chooseTemplate(page, "Blueprint")
-  await expect(style.getByRole("button", { pressed: true })).toHaveText(/^Blueprint/)
 
   // The arrow keys go round the three tabs.
   await styleTab(page).focus()
@@ -199,7 +190,7 @@ test("Fit shows the whole page, from its top", async ({ page }) => {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
-  test("Style takes the form's place, and Write brings the form back", async ({ page }) => {
+  test("Style takes the form's place, the Template button still picks the template, and Write brings the form back", async ({ page }) => {
     const errors = pageErrors(page)
     await page.goto("/")
     await page.getByRole("link", { name: "Start writing" }).first().click()
@@ -209,8 +200,8 @@ test.describe("on a phone", () => {
     await styleTab(page).tap()
     await expect(style).toBeVisible()
     await expect(page.getByLabel("Full name")).toBeHidden()
-    await style.getByRole("button", { name: "Harvard", exact: true }).tap()
-    // The header's picker says so too.
+    await page.getByRole("button", { name: /^Template/ }).tap()
+    await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name: "Harvard", exact: true }).tap()
     await expect(page.getByRole("button", { name: /^Template/ })).toContainText("Harvard")
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
 

@@ -244,8 +244,9 @@ for (const { width, layout } of [
 
 test("the zoom buttons keep what's in the middle of the preview there", async ({ page }) => {
   const errors = pageErrors(page)
-  // Beside the form, where no pinned bar covers the panel.
-  await page.setViewportSize({ width: 1280, height: 720 })
+  // Beside the form, where no pinned bar covers the panel. Short enough that
+  // the page runs past the panel, so there's room to scroll it as it grows.
+  await page.setViewportSize({ width: 1280, height: 640 })
   const { preview, email } = await startResume(page)
 
   // The middle of what shows of the panel the pages scroll in.

@@ -73,6 +73,8 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
   await page.keyboard.press("ArrowDown")
   await expect(page.getByRole("menuitem", { name: /^Word/ })).toBeFocused()
   await page.keyboard.press("ArrowDown")
+  await expect(page.getByRole("menuitem", { name: /^Save to Google Drive/ })).toBeFocused()
+  await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   await expect(more).toHaveAttribute("aria-expanded", "true")
   // Each choice shows its own mark (Word's W, Drive's triangle, JSON's braces), to find it at a glance.
@@ -87,6 +89,7 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
 
   // Choosing JSON saves "<name>.json", and the keyboard goes back to the ▾.
   await more.click()
+  await page.keyboard.press("ArrowDown")
   await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   const downloading = page.waitForEvent("download")

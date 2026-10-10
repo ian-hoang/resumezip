@@ -142,31 +142,11 @@ export const holdPreviews = (page: Page, hold: boolean): Promise<void> => page.e
 /** How many PDFs the compiler's worker has sent back, with holdablePreviews. */
 export const previewsBuilt = (page: Page): Promise<number> => page.evaluate(() => (window as any).previewsBuilt)
 
-/**
- * Chooses a template: from the gallery behind the Template button on narrower
- * screens, or on wide ones from the left panel's Style tab, which it opens
- * and leaves open.
- */
+/** Chooses a template from the gallery behind the header's Template button, which every screen has. */
 export async function chooseTemplate(page: Page, name: string): Promise<void> {
-  const tab = page.getByRole("tab", { name: "Style" })
-  const picker = page.getByRole("button", { name: /^Template/ })
-  await expect(tab.or(picker).first()).toBeVisible()
-  if (await picker.isVisible()) {
-    await picker.click()
-    await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name, exact: true }).click()
-    return
-  }
-  if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click()
-  await page.getByRole("region", { name: "Style" }).getByRole("button", { name, exact: true }).click()
+  await page.getByRole("button", { name: /^Template/ }).click()
+  await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name, exact: true }).click()
 }
 
-/**
- * What names the resume's template on screen: the Template button on narrower
- * screens, or on wide ones the chosen template in the Style tab, which has to
- * be open to show it.
- */
-export const templateShown = (page: Page): Locator =>
-  page
-    .getByRole("region", { name: "Style" })
-    .getByRole("button", { pressed: true })
-    .or(page.getByRole("button", { name: /^Template/ }))
+/** What names the resume's template on screen: the header's Template button. */
+export const templateShown = (page: Page): Locator => page.getByRole("button", { name: /^Template/ })
