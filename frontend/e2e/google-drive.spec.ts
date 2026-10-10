@@ -280,3 +280,27 @@ test("a token Drive refuses is dropped, so trying again signs in again", async (
 
   expect(errors.filter((error) => !EXPECTED_FAILURE.test(error))).toEqual([])
 })
+
+test("pressing again as a save starts, before the editor says it's saving, doesn't save twice", async ({ page, context }) => {
+  const errors = pageErrors(page)
+  const asked = await fakeGoogle(context, { uploads: [401] })
+  await readyToSave(page)
+  const failed = page.getByRole("alert").filter({ hasText: "Save to Drive failed" })
+  await saveSigningIn(page)
+  await expect(failed).toBeVisible()
+
+  // Presses Try again the moment Google's answer reaches the page: after the
+  // editor takes it, but before it has re-rendered to say it's saving, which
+  // a press can only do from inside the page.
+  await page.evaluate(() => {
+    new BroadcastChannel("google-drive").onmessage = () => {
+      const buttons = document.querySelectorAll<HTMLButtonElement>('[role="alert"] button')
+      ;[...buttons].find((button) => button.textContent?.includes("Try again"))?.click()
+    }
+  })
+  await saveSigningIn(page, () => failed.getByRole("button", { name: "Try again" }).click())
+  await expect(savedCard(page)).toBeVisible()
+  expect(asked.uploads).toEqual(["Bearer token-1", "Bearer token-2"])
+
+  expect(errors.filter((error) => !EXPECTED_FAILURE.test(error))).toEqual([])
+})

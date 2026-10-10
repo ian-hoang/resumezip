@@ -28,6 +28,9 @@ export function useSaveToDrive(prepare: () => PdfFile | null, onSaved: () => voi
   const [failure, setFailure] = useState<Failure | null>(null)
   const [saved, setSaved] = useState<SavedToDrive | null>(null)
   const token = useRef<{ value: string; expiresAt: number } | null>(null)
+  // Set as an upload starts. A press can come before the editor re-renders
+  // with `saving`, as when Google's answer has only just arrived.
+  const uploading = useRef(false)
   // The sign-in Google's window is open for, by its state, and what takes its answer.
   const waiting = useRef<{ state: string; answer: (answer: SignInAnswer | null) => void } | null>(null)
 
@@ -68,7 +71,7 @@ export function useSaveToDrive(prepare: () => PdfFile | null, onSaved: () => voi
   }
 
   const save = async () => {
-    if (saving) return
+    if (uploading.current) return
     // Starts making the PDF, while the person signs in.
     if (!prepare()) return
     let value = token.current && token.current.expiresAt - Date.now() > TOKEN_MARGIN_MS ? token.current.value : null
@@ -87,7 +90,8 @@ export function useSaveToDrive(prepare: () => PdfFile | null, onSaved: () => voi
     }
     // The resume as it is now: it may have changed while Google's window was open.
     const pdf = prepare()
-    if (!pdf) return
+    if (!pdf || uploading.current) return
+    uploading.current = true
     setSaving(true)
     setSaved(null)
     try {
@@ -100,6 +104,7 @@ export function useSaveToDrive(prepare: () => PdfFile | null, onSaved: () => voi
       if (error instanceof DriveError && error.failure === "signed-out") token.current = null
       fail(error, error instanceof DriveError ? error.failure : undefined)
     } finally {
+      uploading.current = false
       setSaving(false)
     }
   }
