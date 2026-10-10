@@ -114,10 +114,11 @@
       box-shadow 200ms ease-out,
       translate 320ms var(--ease-glide);
   }
+  /* Pointed at: a hairline that darkens rather than a heavy outline, and the page lifts. */
   .tile:hover .tile-page,
   .tile:focus-within .tile-page {
     box-shadow:
-      0 0 0 2px var(--color-ink),
+      0 0 0 1px rgb(17 19 24 / 0.45),
       0 16px 32px -20px rgb(17 19 24 / 0.5);
     translate: 0 -2px;
   }
