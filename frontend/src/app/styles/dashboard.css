@@ -57,6 +57,10 @@
     transform-origin: 0 0;
     animation: panel-grow 320ms var(--ease-glide);
   }
+  .search-panel > *,
+  .menu-panel > * {
+    animation: panel-contents 220ms ease-out;
+  }
   .search-row {
     display: flex;
     align-items: center;
@@ -486,7 +490,9 @@
   .deleted-toast,
   .paper-ball,
   .page-arrived,
-  .menu-panel {
+  .menu-panel,
+  .search-panel > *,
+  .menu-panel > * {
     animation: none;
   }
   .tile:hover .tile-page,
@@ -497,10 +503,18 @@
   }
 }
 
+/* Glass can't blur what's behind it while it's see-through or clipped, so a
+   glass panel grows in from its top, solid from its first frame, rather than
+   fading in: a fade would show the page plainly behind it, then frost over at
+   once as it ended. Its contents fade in instead (panel-contents). */
 @keyframes panel-grow {
   from {
+    transform: translateY(-8px) scale(0.97, 0.9);
+  }
+}
+@keyframes panel-contents {
+  from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.96, 0.82);
   }
 }
 @keyframes crumple {
@@ -581,9 +595,9 @@
     opacity: 0;
   }
 }
+/* As panel-grow: the menu grows from its button, and only what's in it fades. */
 @keyframes menu-grow {
   from {
-    opacity: 0;
     transform: scale(0.94);
   }
 }
