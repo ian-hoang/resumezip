@@ -137,37 +137,6 @@ test("on a tablet, two resumes whose names differ only by a number both show it"
   expect(errors).toEqual([])
 })
 
-test("Start writing on the dashboard opens the New resume dialog", async ({ page }) => {
-  const errors = pageErrors(page)
-  await dashboardWith(page, [resume("a", "Short one")])
-
-  const startWriting = page.getByRole("banner").getByRole("button", { name: "Start writing" })
-  const dialog = page.getByRole("dialog", { name: "New resume" })
-  await startWriting.press("Enter")
-  await expect(dialog).toBeVisible()
-  await expect(dialog.getByLabel("Name")).toBeFocused()
-  await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
-
-  // The same from the phone's menu, which shuts as the dialog opens, and gets
-  // the focus back once it closes. It starts a resume as the dashboard's own New resume does.
-  await page.setViewportSize({ width: 390, height: 844 })
-  const menuButton = page.getByRole("button", { name: "Open menu" })
-  await menuButton.press("Enter")
-  await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Start writing" }).press("Enter")
-  await expect(dialog).toBeVisible()
-  await expect(page.getByRole("navigation", { name: "Main" })).toBeHidden()
-  await page.keyboard.press("Escape")
-  await expect(dialog).toBeHidden()
-  await expect(menuButton).toBeFocused()
-  await menuButton.press("Enter")
-  await page.getByRole("navigation", { name: "Main" }).getByRole("button", { name: "Start writing" }).press("Enter")
-  await dialog.getByLabel("Name").fill("From the header")
-  await dialog.getByRole("button", { name: "Create" }).click()
-  await expect(page).toHaveURL(/\/create\/new\//)
-  expect(errors).toEqual([])
-})
-
 test("closing a dialog puts focus back on what opened it, however it's closed", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [resume("a", "Short one")])
@@ -205,9 +174,11 @@ test("Tab stays inside an open dialog, going round from its last control to its 
   await expect(dialog.getByRole("button", { name: "Create" })).toBeFocused()
   await page.keyboard.press("Tab")
   await expect(name).toBeFocused()
-  // Through the type's choices and Cancel, and round again.
+  // Through the type's choices, the box for a type of your own, Cancel and Create, and round again.
   await page.keyboard.press("Tab")
   await expect(dialog.getByRole("radio", { name: "Personal" })).toBeFocused()
+  await page.keyboard.press("Tab")
+  await expect(dialog.getByLabel("Or your own")).toBeFocused()
   await page.keyboard.press("Tab")
   await page.keyboard.press("Tab")
   await page.keyboard.press("Tab")

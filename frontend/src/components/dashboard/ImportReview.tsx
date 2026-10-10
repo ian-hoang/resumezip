@@ -207,7 +207,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
   }
 
   const review = (
-    <Modal title="Here's what we found" onClose={close} wide>
+    <Modal title="Here's what we found" onClose={close} wide fade={false}>
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         {/* Focusable, so the file can be scrolled from the keyboard. */}
         <section

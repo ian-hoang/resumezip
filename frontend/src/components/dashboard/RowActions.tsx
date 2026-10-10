@@ -203,7 +203,6 @@ export function MoreIcon() {
   )
 }
 
-/** A pencil that writes. */
 /** A label tag, for a resume's type. */
 export function TagIcon() {
   return (
@@ -214,6 +213,7 @@ export function TagIcon() {
   )
 }
 
+/** A pencil that writes. */
 export function PencilIcon() {
   return (
     <svg {...iconProps} width={17} height={17}>

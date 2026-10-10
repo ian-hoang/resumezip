@@ -424,7 +424,9 @@ export default function DashboardPage() {
   ]
   const tagged = found.filter((resume) => tag === "all" || tagOf(resume) === tag)
   const shown =
-    sort === "name" ? tagged.sort((a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" })) : tagged
+    sort === "name"
+      ? [...tagged].sort((a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" }))
+      : tagged
   // The latest copies, in case one was renamed or deleted since.
   const failedResumes = kept.filter((resume) => actions.failed[resume.id])
 

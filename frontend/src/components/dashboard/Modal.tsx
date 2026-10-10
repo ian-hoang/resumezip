@@ -9,6 +9,12 @@ interface ModalProps {
   onClose: () => void
   /** A large dialog that lays out its own content, title included (give the title id="modal-title"). */
   wide?: boolean
+  /**
+   * Fades away before onClose is called (the default). Off for a dialog whose
+   * onClose may keep it open, as the import review asking "Discard your
+   * changes?" first: a fade would leave it half gone behind the question.
+   */
+  fade?: boolean
   children: React.ReactNode
 }
 
@@ -28,7 +34,7 @@ export const useModalClose = () => useContext(CloseContext)
 const TABBABLE = "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]"
 
 /** A centred dialog of glass that closes on Escape or a click outside it, and keeps Tab inside it while it's open. */
-export default function Modal({ title, onClose, wide = false, children }: ModalProps) {
+export default function Modal({ title, onClose, wide = false, fade = true, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   // Its own, as another dialog can be open alongside it.
   const titleId = useId()
@@ -37,13 +43,20 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
   // (as when another tab saves) doesn't pull focus back to the first control.
   const latestClose = useRef(onClose)
   latestClose.current = onClose
+  const fades = useRef(fade)
+  fades.current = fade
   // Fading away, after which onClose is called.
   const [closing, setClosing] = useState(false)
   const closingRef = useRef(false)
+  // What had the focus when it opened, to give it back.
+  const opener = useRef<Element | null>(null)
   const close = useRef(() => {
     if (closingRef.current) return
+    if (!fades.current || reducedMotion()) return latestClose.current()
     closingRef.current = true
-    if (reducedMotion()) return latestClose.current()
+    // Focus goes back as it starts to fade, rather than once it's gone: made
+    // inert with the focus in it, Safari would drop the focus on the page instead.
+    if (opener.current instanceof HTMLElement) opener.current.focus()
     setClosing(true)
     setTimeout(() => latestClose.current(), CLOSE_MS)
   })
@@ -58,12 +71,21 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
       const panel = panelRef.current
       const open = document.querySelectorAll('[role="dialog"][aria-modal="true"]')
       if (!panel || open[open.length - 1] !== panel) return
-      // A group of radio buttons is one stop, at the one that's chosen.
+      // A group of radio buttons is one stop: at the one that's chosen, or at
+      // its first when none is, as when a type of your own is typed instead.
+      const radios = (radio: HTMLInputElement) => [
+        ...panel.querySelectorAll<HTMLInputElement>(`input[type="radio"][name="${CSS.escape(radio.name)}"]`),
+      ]
       const tabbable = [...panel.querySelectorAll<HTMLElement>(TABBABLE)].filter(
         (element) =>
           element.tabIndex >= 0 &&
           element.getClientRects().length > 0 &&
-          !(element instanceof HTMLInputElement && element.type === "radio" && !element.checked),
+          !(
+            element instanceof HTMLInputElement &&
+            element.type === "radio" &&
+            !element.checked &&
+            (radios(element).some((radio) => radio.checked) || radios(element)[0] !== element)
+          ),
       )
       if (tabbable.length === 0) return
       event.preventDefault()
@@ -88,11 +110,12 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
     }
     document.addEventListener("keydown", onKeyDown)
     // Start keyboard users inside the dialog, and put them back where they were once it closes.
-    const opener = document.activeElement
+    const openedFrom = document.activeElement
+    opener.current = openedFrom
     panelRef.current?.querySelector<HTMLElement>("input, button")?.focus()
     return () => {
       document.removeEventListener("keydown", onKeyDown)
-      if (opener instanceof HTMLElement) opener.focus()
+      if (openedFrom instanceof HTMLElement) openedFrom.focus()
     }
   }, [])
 
