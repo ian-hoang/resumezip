@@ -101,19 +101,20 @@
 }
 
 /* A page's content fades in as it opens from a header link, so the jump to
-   the top of the new page isn't abrupt. Only `main`: the header is the same on
-   every page and stays still. A fade and no more: moving `main` as well would
-   make it the box its fixed children sit in, and move what's under a click. */
+   the top of the new page isn't abrupt. What's in `main` fades, not `main`
+   itself: it's often the glass sheet, and glass can't blur what's behind it
+   while it's see-through, so it would look clear, then frost over as the fade
+   ended. A fade and no more: moving it as well could move what's under a click. */
 @keyframes page-in {
   from {
     opacity: 0;
   }
 }
-main {
+main > * {
   animation: page-in 450ms var(--ease-glide) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  main {
+  main > * {
     animation: none;
   }
 }
