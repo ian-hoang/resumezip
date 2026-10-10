@@ -432,7 +432,10 @@ export function linesFromPages(pages: PdfPage[]): Line[] {
 
       const left = group[0].x
       const right = Math.max(...group.map((item) => item.right))
-      const baseline = group[0].baseline
+      // Where most of the line's text sits: a heading in a margin beside it can sit a little higher or lower.
+      const weights = new Map<number, number>()
+      for (const item of group) weights.set(item.baseline, (weights.get(item.baseline) ?? 0) + item.text.length)
+      const baseline = [...weights].sort((a, b) => b[1] - a[1])[0][0]
       const box: [number, number, number, number] = [left, height - baseline - size * 0.85, right, height - baseline + size * 0.3]
       const onLine = links.filter(
         (link) => baseline >= link.y0 - 3 && baseline <= link.y1 + 1 && link.x1 >= left - 2 && link.x0 <= right + 2,

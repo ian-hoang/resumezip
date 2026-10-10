@@ -243,3 +243,11 @@ describe("columns", () => {
     expect(texts).toEqual(["Dana Cole", ...right.map((text, i) => (left[i] ? `${left[i]} ${text}` : text))])
   })
 })
+
+describe("where a line sits", () => {
+  test("is where most of its text sits, not a heading in the margin set a little higher", () => {
+    const [line] = linesFromPages([page([item("AWARDS", 60, 700.5, 8), item("Dean's List, State University", 125, 698)])])
+    // Boxes measure down from the top of the 792-point page: the text's baseline is 94 down.
+    expect(line.box?.[3]).toBeCloseTo(94 + 0.3 * 10)
+  })
+})
