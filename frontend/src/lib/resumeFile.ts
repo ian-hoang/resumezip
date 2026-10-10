@@ -15,6 +15,8 @@ import { templateById } from "@/lib/templates"
 import { extraKey, readExtraSections, resolveSections } from "./resumeSections"
 
 export const ATTACHMENT_NAME = "resumezip.json"
+/** Where a Word file keeps its text. A Word file's attachment has the CRC-32 of what's there (see lib/word.ts). */
+export const WORD_DOCUMENT = "word/document.xml"
 
 const FORMAT = "resumezip"
 const VERSION = 2
@@ -50,13 +52,14 @@ const damaged = (noun: FileNoun) => new AttachmentError(`The resume data in this
  * The attachment for a resume: what's printed on it and how it's laid out.
  * Not the resume's name or tag, or what the person left out of it, since
  * anyone who gets the PDF can read it. Opening the PDF again brings back
- * what was printed; what was left out stays only in this browser.
+ * what was printed; what was left out stays only in this browser. A Word
+ * file's also has the CRC-32 of the document it's in (see lib/word.ts).
  */
-export function toAttachment(resume: Resume): string {
+export function toAttachment(resume: Resume, { documentCrc32 }: { documentCrc32?: number } = {}): string {
   const clean = cleanResume(printedResume(resume))
   const version = Object.keys(clean.extraSections ?? {}).length ? VERSION : 1
   if (version === 1) delete clean.extraSections
-  const text = JSON.stringify({ format: FORMAT, version, resume: clean })
+  const text = JSON.stringify({ format: FORMAT, version, resume: clean, ...(documentCrc32 !== undefined && { documentCrc32 }) })
   if (text.length > MAX_LENGTH || entryCount(clean) > MAX_ENTRIES) throw new TooLongError()
   return text
 }
