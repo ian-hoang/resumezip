@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { Star } from "lucide-react"
 import EmailContact from "@/components/site/EmailContact"
-import PageIntro from "@/components/site/PageIntro"
 import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 import { SHEET } from "@/components/site/sheet"
+import { TEMPLATES } from "@/lib/templates"
 
 export const metadata: Metadata = { title: "About" }
 
@@ -19,9 +19,9 @@ const TEXT_LINK = "text-ink underline underline-offset-4 hover:decoration-2"
 
 // What resumezip holds to. Each has to stay true of the app: check the code before changing one.
 const PROMISES = [
-  { title: "Free", text: "Every template and every download. No ads, no paid plans, no watermark." },
-  { title: "Private", text: "Your resume stays in your browser. There's no account, and no copy on our side." },
-  { title: "Open source", text: "All of the code is on GitHub, so anyone can check what it does." },
+  { title: "Free", text: "Every template and download. No ads, no paid plans." },
+  { title: "Private", text: "Your resume stays in your browser. No account, no copy." },
+  { title: "Open source", text: "All of the code is on GitHub, for anyone to check." },
 ]
 
 const MICROSOFT_STARTUPS_URL = "https://www.microsoft.com/en-us/startups"
@@ -47,15 +47,74 @@ function GitHubLogo({ className }: { className?: string }) {
   )
 }
 
+/** "resumezip" in running text, in the logo's own lettering at the text's size. */
+function Wordmark() {
+  return <span className="font-logo font-medium tracking-[-0.02em] text-ink">resumezip</span>
+}
+
+// The resume's section headings and its lines with a date at the right, as Jake's lays them out.
+const RESUME_HEADING = "mt-5 border-b border-ink pb-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] md:text-[13px]"
+const RESUME_ROW = "flex justify-between gap-4"
+
+/**
+ * resumezip introduced as it'd introduce anyone: a one-page resume, in the
+ * look of Jake's template, saying what it's done. Each line has to stay true
+ * of the app, as the promises do; the number of templates is counted.
+ */
+function OwnResume() {
+  return (
+    <figure
+      aria-label="resumezip’s own resume"
+      className="w-full max-w-[600px] bg-white xl:max-w-[480px] 2xl:max-w-[600px] px-6 py-8 font-serif text-[13px] leading-normal text-ink shadow-[0_1px_0_rgb(17_19_24/0.06),0_30px_60px_-30px_rgb(30_40_90/0.5)] md:rotate-1 md:px-12 md:py-10 md:text-[14.5px]"
+    >
+      <div className="text-center">
+        <p className="text-[28px] leading-tight tracking-[-0.01em] md:text-[32px]">resumezip</p>
+        <p className="mt-1 text-[12px] md:text-[12.5px]">tryresumezip.com | github.com/ian-hoang/resumezip | MIT license</p>
+      </div>
+      <p className={RESUME_HEADING}>Experience</p>
+      <p className={`${RESUME_ROW} mt-2`}>
+        <b>Resume builder</b>
+        <span>Mar 2025 – Present</span>
+      </p>
+      <p className={`${RESUME_ROW} italic`}>
+        <span>Your own browser</span>
+        <span>No account</span>
+      </p>
+      <ul className="mt-1.5 list-disc pl-5">
+        <li>Turned what people write into a PDF on their own device, in {TEMPLATES.length} templates</li>
+        <li>
+          Kept <b>0</b> copies of anyone’s resume, by having no server to keep them on
+        </li>
+        <li>Opened its own PDFs again on any computer, each carrying its resume</li>
+      </ul>
+      <p className={RESUME_HEADING}>Skills</p>
+      <p className="mt-2">
+        <b>Promises:</b> Free, Private, Open source
+        <br />
+        <b>Reads:</b> PDF, Word and its own JSON backups
+      </p>
+    </figure>
+  )
+}
+
 export default function AboutPage() {
   return (
     <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
       <main className={SHEET}>
-        <PageIntro label="About" title="Hi, I’m Ian.">
-          I built resumezip because formatting a resume shouldn’t be harder than writing it. It’s free, there’s no sign-up, and I don’t
-          store your resume.
-        </PageIntro>
+        <div className="grid items-center gap-10 xl:grid-cols-[minmax(0,1fr)_auto] xl:gap-12">
+          <div className="flex flex-col gap-5">
+            <span className="label-mono text-ink-2">About</span>
+            <h1 className="font-serif text-5xl leading-[1.02] tracking-[-0.03em] md:text-[80px] md:leading-[0.95]">
+              Here’s <em className="whitespace-nowrap text-accent">our resume.</em>
+            </h1>
+            <p className="max-w-[600px] text-[17px] leading-relaxed text-ink-2">
+              Many resume builders charge you to download your own resume, and keep a copy. <Wordmark /> doesn’t: every template is free and
+              made for the hiring software (ATS) that reads it, and your resume stays in your browser.
+            </p>
+          </div>
+          <OwnResume />
+        </div>
 
         {/* One plain line, set apart by hairlines, rather than a logo wall. */}
         <p className="mt-10 inline-flex flex-wrap items-center gap-x-3 gap-y-1 border-y border-ink/15 py-3 pr-2">
@@ -125,7 +184,7 @@ export default function AboutPage() {
           </h2>
           <div className="md:col-span-2">
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">
-              resumezip has no ads and no paid plans. If it helped you, a star on GitHub helps other people find it.
+              No ads, no paid plans. If <Wordmark /> helped you, a star helps others find it.
             </p>
             <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className={`group ${INK_PILL} mt-6`}>
               {/* Yellow under the pointer, as the header's star is. */}
