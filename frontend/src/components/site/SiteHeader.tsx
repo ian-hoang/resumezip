@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { Menu, Star, X } from "lucide-react"
 import Logo from "./Logo"
-import { StartWritingLink } from "./StartWriting"
 
 const LINKS = [
   { href: "/templates", label: "Templates" },
@@ -26,11 +25,6 @@ interface SitePillProps {
   tone?: "dark" | "light"
   /** Slides the pill up out of the way, as the page scrolls down. Keyboard focus brings it back. */
   tucked?: boolean
-  /**
-   * What "Start writing" does on a page with its own way to start a resume,
-   * instead of going to the dashboard: the dashboard opens its New resume dialog.
-   */
-  onStartWriting?: () => void
 }
 
 /**
@@ -47,11 +41,11 @@ function toTopIfHere(pathname: string, href: string) {
 }
 
 /**
- * The site's header: a glass pill with the logo, the links, "Start writing"
- * and a star on GitHub. The home page places it itself
+ * The site's header: a glass pill with the logo, the links and one button,
+ * Star on GitHub, whose star turns yellow under the pointer. The home page places it itself
  * (components/home/HomeChrome.tsx); every other page has it in SiteHeader's strip.
  */
-export function SitePill({ tone = "light", tucked = false, onStartWriting }: SitePillProps) {
+export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -86,57 +80,25 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
   }, [menuOpen])
 
   // An ink pill on light glass; over the video's dark glass, a white one.
-  const primary = `${PILL} px-[18px] ${
+  const primary = `${PILL} gap-2 px-[18px] ${
     dark ? "bg-white text-ink transition-colors hover:bg-white/85 active:bg-white/75" : "ink-button lift-button"
   }`
-  const secondary = `${PILL} ring-1 ring-inset transition-colors ${
-    dark ? "text-white ring-white/30 hover:ring-white/70" : "bg-sheet/40 text-ink ring-ink/15 hover:ring-ink/40"
-  }`
 
-  // "Start writing" is a button where it opens a dialog, as it doesn't go
-  // anywhere. In the menu it shuts the menu first, as the menu's links do, and
-  // leaves focus on the menu's button for the dialog to put it back on.
-  const startWriting = (className: string, inMenu = false) =>
-    onStartWriting ? (
-      <button
-        type="button"
-        className={className}
-        onClick={() => {
-          if (inMenu) {
-            setMenuOpen(false)
-            buttonRef.current?.focus()
-          }
-          onStartWriting()
-        }}
-      >
-        Start writing
-      </button>
-    ) : (
-      <StartWritingLink className={className} preloadOnHover>
-        Start writing
-      </StartWritingLink>
-    )
-
-  // Beside the links, below lg, there's only room for the star itself; the menu has room to say it all.
   const star = (className: string, inMenu = false) => (
     <a
       href={REPO_URL}
       target="_blank"
       rel="noopener noreferrer"
-      title={inMenu ? undefined : "Star on GitHub"}
-      className={`group gap-2 ${className}`}
+      className={`group ${className}`}
       onClick={() => {
         if (inMenu) setMenuOpen(false)
       }}
     >
       <Star
-        className="h-4 w-4 transition-colors group-hover:fill-[#facc15] group-hover:text-[#facc15] motion-reduce:transition-none"
+        className="h-4 w-4 transition-colors duration-200 group-hover:fill-[#facc15] group-hover:text-[#facc15] motion-reduce:transition-none"
         aria-hidden="true"
       />
-      <span>
-        <span className={inMenu ? undefined : "max-lg:sr-only"}>Star</span>
-        <span className={inMenu ? undefined : "sr-only"}> on GitHub</span>
-      </span>
+      Star on GitHub
     </a>
   )
 
@@ -174,9 +136,8 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
         </nav>
 
         <div className="flex items-center gap-1.5">
-          {/* Phones don't have room for these next to the logo, so they move into the menu. */}
-          {star(`${secondary} hidden h-10 w-10 sm:inline-flex lg:w-auto lg:px-4`)}
-          {startWriting(`${primary} hidden h-10 sm:inline-flex`)}
+          {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
+          {star(`${primary} hidden h-10 sm:inline-flex`)}
           <button
             ref={buttonRef}
             type="button"
@@ -213,10 +174,7 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
             {link.label}
           </Link>
         ))}
-        <div className="mt-2 flex flex-col gap-2 sm:hidden">
-          {startWriting(`${primary} flex h-11`, true)}
-          {star(`${secondary} flex h-11`, true)}
-        </div>
+        <div className="mt-2 flex flex-col sm:hidden">{star(`${primary} flex h-11`, true)}</div>
       </nav>
     </header>
   )
@@ -227,10 +185,10 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
  * the top of the screen. The strip keeps room for the pill, so the page starts
  * under it; around the pill, clicks go through to the page scrolling under it.
  */
-export default function SiteHeader({ onStartWriting }: Pick<SitePillProps, "onStartWriting">) {
+export default function SiteHeader() {
   return (
     <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
-      <SitePill onStartWriting={onStartWriting} />
+      <SitePill />
     </div>
   )
 }

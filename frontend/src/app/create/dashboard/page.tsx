@@ -449,7 +449,7 @@ export default function DashboardPage() {
 
   return (
     <div className="desk flex min-h-screen flex-col">
-      <SiteHeader onStartWriting={() => setCreating(true)} />
+      <SiteHeader />
 
       {/* One etched pane over the sky, holding the title, the toolbar, the resumes and the note. */}
       <main className={`${SHEET} flex flex-col gap-10 md:gap-12`}>
