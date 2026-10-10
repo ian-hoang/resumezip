@@ -1,0 +1,154 @@
+{
+  "id": "preview-swiss",
+  "resumeTitle": "Lukas Brandt",
+  "resumeTag": "professional",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "swiss",
+  "sectionOrder": [
+    "Work",
+    "Projects",
+    "Education",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Lukas Brandt",
+    "email": "lukas.brandt@example.com",
+    "phoneNumber": "(555) 018-7731",
+    "location": "New York, NY",
+    "linkedin": "linkedin.com/in/lukasbrandt",
+    "profileGithub": "",
+    "personalWebsite": "lukasbrandt.design",
+    "summary": "Product designer who makes complicated products feel simple, from billing and checkout to design systems. I sketch on paper first, test with real people early, and care about type and grids down to the last point."
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Rhode Island School of Design",
+      "schoolLocation": "Providence, RI",
+      "degree": "BFA in Graphic Design",
+      "gpa": "",
+      "schoolStartDate": "Sep 2013",
+      "schoolEndDate": "May 2017",
+      "coursework": "Typography, Information Design, Interaction Design, Motion Design, Design History",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Senior Product Designer",
+      "companyName": "IBM",
+      "workLocation": "New York, NY",
+      "workStartDate": "Jan 2022",
+      "workEndDate": "Present",
+      "workDescription": "• Lead design for the IBM Cloud billing pages used by 120,000 accounts, from finance team research to shipped components\n• Redesigned the cost explorer around a single timeline of spending, which cut support tickets about charges by 35%\n• Built 40 components and patterns into the Carbon design system with two engineers, now used by 25 product teams across the company, each with written guidance, code examples and accessibility notes\n• Run a monthly design critique for 30 designers across IBM Cloud and mentor two designers through their first year"
+    },
+    {
+      "id": 2,
+      "workRole": "Product Designer",
+      "companyName": "Nike",
+      "workLocation": "Portland, OR",
+      "workStartDate": "Jun 2019",
+      "workEndDate": "Dec 2021",
+      "workDescription": "• Designed the checkout in the Nike app for 12 countries, with address forms that follow each country's own format\n• Led the redesign of the size and fit guide with the footwear team, and tested it with 200 shoppers in the research lab before it launched in the Nike app and on the website in all 12 of those countries\n• Turned the findings of 30 usability studies into the team's design principles, now part of every new project's kickoff"
+    },
+    {
+      "id": 3,
+      "workRole": "Designer",
+      "companyName": "R/GA",
+      "workLocation": "New York, NY",
+      "workStartDate": "Jul 2017",
+      "workEndDate": "May 2019",
+      "workDescription": "• Designed launch sites and social campaigns for sportswear and consumer electronics clients, from first concept to final files\n• Built the studio's first shared library of web components in Sketch with two developers, which cut the time it takes to start a new client site from two weeks to three days and is still in use at the studio today"
+    },
+    {
+      "id": 4,
+      "workRole": "Design Intern",
+      "companyName": "Pentagram",
+      "workLocation": "New York, NY",
+      "workStartDate": "Jun 2016",
+      "workEndDate": "Aug 2016",
+      "workDescription": "• Set type and built grids for a city library system's new identity, used on signs and printed guides in its 90 branches"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Kanton Grotesk specimen",
+      "projectDate": "2024",
+      "techStack": "Figma, Astro",
+      "projectGithub": "",
+      "additionalLink": "lukasbrandt.design/kanton",
+      "projectDescription": "• A type specimen site for an open-source grotesque typeface, with live demos of every weight, width and language\n• Picked up by two design newsletters in its first week and used by the typeface's authors as its official home page"
+    },
+    {
+      "id": 2,
+      "projectName": "Transit map of Zurich",
+      "projectDate": "2021",
+      "techStack": "Illustrator, D3",
+      "projectGithub": "",
+      "additionalLink": "lukasbrandt.design/zurich",
+      "projectDescription": "• A redrawn map of the city's trams and trains on a strict 45-degree grid, printed as a large poster that sold out twice"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Design",
+      "skillDetails": "Product design, design systems, prototyping, typography, user research"
+    },
+    {
+      "id": 2,
+      "skillName": "Tools",
+      "skillDetails": "Figma, Framer, Illustrator, After Effects, Principle"
+    },
+    {
+      "id": 3,
+      "skillName": "Code",
+      "skillDetails": "HTML, CSS, React, D3"
+    },
+    {
+      "id": 4,
+      "skillName": "Languages",
+      "skillDetails": "English, German"
+    }
+  ],
+  "leadershipExperienceSection": [],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Portfolio Reviewer",
+      "volunteerOrg": "AIGA New York",
+      "volunteerLocation": "New York, NY",
+      "volunteerStartDate": "Sep 2022",
+      "volunteerEndDate": "Present",
+      "volunteerDescription": "• Review portfolios of students and career changers at the chapter's monthly sessions, about 40 portfolios a year"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Young Guns",
+      "awardOrg": "The One Club for Creativity",
+      "awardDate": "2023"
+    },
+    {
+      "id": 2,
+      "awardName": "Certificate of Typographic Excellence",
+      "awardOrg": "Type Directors Club",
+      "awardDate": "2018"
+    },
+    {
+      "id": 3,
+      "awardName": "Best in Show, student work",
+      "awardOrg": "AIGA Rhode Island",
+      "awardDate": "2017"
+    }
+  ]
+}

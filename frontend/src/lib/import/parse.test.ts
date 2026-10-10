@@ -193,6 +193,141 @@ describe("publications", () => {
   })
 })
 
+describe("a single citation", () => {
+  test("that wraps onto two more lines is read as one", () => {
+    const { resume } = read(
+      "Publications",
+      onPage([
+        line([["[1] R. Mehta, S. Okoro, and L. Zhang, “Fast depth completion for small robots", 44]]),
+        line([["with sparse lidar,” IEEE International Conference on Robotics and Automation,", 61]]),
+        line([["Atlanta, GA, May 2025, doi: 10.5555/icra.2025.1187.", 61]]),
+      ]),
+    )
+    expect(resume.publicationsSection).toMatchObject([
+      { publicationTitle: "Fast depth completion for small robots with sparse lidar", publicationDate: "May 2025" },
+    ])
+  })
+
+  test("doesn't take in an entry laid out on lines of its own after it", () => {
+    const { resume } = read(
+      "Publications",
+      onPage([
+        line([["M. Lin and J. Park, “Robot hands that learn,” IROS, 2024.", 54]], { bullet: true }),
+        line(
+          [
+            ["Sparse lidar for small robots", 66],
+            ["May 2025", 480],
+          ],
+          { bold: true },
+        ),
+        line([["M. Lin, S. Okoro and L. Zhang", 66]]),
+        line([["IEEE International Conference on Robotics and Automation", 66]]),
+      ]),
+    )
+    expect(resume.publicationsSection).toHaveLength(2)
+    expect(resume.publicationsSection[1]).toMatchObject({
+      publicationTitle: "Sparse lidar for small robots",
+      publicationAuthors: "M. Lin, S. Okoro and L. Zhang",
+      publicationVenue: "IEEE International Conference on Robotics and Automation",
+      publicationDate: "May 2025",
+    })
+  })
+})
+
+describe("headings in a margin column", () => {
+  const text = (value: string, x: number, baseline: number, { size = 10, bold = false, italic = false } = {}) => ({
+    text: value,
+    x,
+    right: x + value.length * size * 0.5,
+    baseline,
+    size,
+    bold,
+    italic,
+  })
+  // Each heading ends where the text beside it starts, and one too long for
+  // the margin wraps onto the next line, a little higher than the text there.
+  const heading = (value: string, baseline: number) => text(value, 110 - value.length * 4, baseline, { size: 8 })
+  const page = {
+    width: 612,
+    height: 792,
+    links: [],
+    items: [
+      text("Dana Cole", 125, 740, { size: 22 }),
+      text("dana@example.com", 125, 722, { size: 9 }),
+      heading("EXPERIENCE", 690),
+      text("Acme Corp", 125, 690, { bold: true }),
+      text("2021 – Present", 500, 690),
+      text("Data Analyst", 125, 678, { italic: true }),
+      text("– Built the weekly sales report used by 40 managers", 125, 666),
+      heading("SKILLS", 640),
+      text("Languages: Python, SQL", 125, 640),
+      heading("AWARDS &", 610),
+      text("Dean's List, State University", 125, 610),
+      text("2019", 540, 610),
+      heading("CERTIFICATIONS", 600.5),
+      text("Tableau Desktop Specialist, Tableau", 125, 598),
+      text("2022", 540, 598),
+    ],
+  }
+
+  test("set against the text, and wrapped onto two lines, still start their sections", () => {
+    const parsed = parseResume(linesFromPages([page]))
+    const resume = toResumeContent(parsed)
+    expect(parsed.unplaced).toEqual([])
+    expect(resume.workExperienceSection).toMatchObject([
+      { companyName: "Acme Corp", workRole: "Data Analyst", workDescription: "• Built the weekly sales report used by 40 managers" },
+    ])
+    expect(resume.skillsSection).toMatchObject([{ skillName: "Languages", skillDetails: "Python, SQL" }])
+    expect(resume.awardsSection).toMatchObject([
+      { awardName: "Dean's List", awardOrg: "State University", awardDate: "2019" },
+      { awardName: "Tableau Desktop Specialist", awardOrg: "Tableau", awardDate: "2022" },
+    ])
+  })
+
+  test("count one wrapped from words that aren't headings on their own", () => {
+    const items = [
+      text("Dana Cole", 125, 740, { size: 22 }),
+      text("dana@example.com", 125, 722, { size: 9 }),
+      heading("EXPERIENCE", 690),
+      text("Acme Corp", 125, 690, { bold: true }),
+      text("2021 – Present", 500, 690),
+      text("Data Analyst", 125, 678, { italic: true }),
+      heading("ACADEMIC", 650),
+      text("State University", 125, 650, { bold: true }),
+      text("2017 – 2021", 510, 650),
+      heading("BACKGROUND", 640.5),
+      text("B.S. in Statistics", 125, 638, { italic: true }),
+    ]
+    const parsed = parseResume(linesFromPages([{ ...page, items }]))
+    const resume = toResumeContent(parsed)
+    expect(parsed.unplaced).toEqual([])
+    expect(resume.workExperienceSection).toMatchObject([{ companyName: "Acme Corp", workRole: "Data Analyst" }])
+    expect(resume.educationSection).toMatchObject([{ schoolName: "State University", degree: "B.S. in Statistics" }])
+  })
+
+  test("are found when every one wraps, with no word of them a heading on its own", () => {
+    const items = [
+      text("Dana Cole", 125, 740, { size: 22 }),
+      text("dana@example.com", 125, 722, { size: 9 }),
+      heading("PROFESSIONAL", 690),
+      text("Acme Corp", 125, 690, { bold: true }),
+      text("2021 – Present", 500, 690),
+      heading("HISTORY", 680.5),
+      text("Data Analyst", 125, 678, { italic: true }),
+      heading("ACADEMIC", 650),
+      text("State University", 125, 650, { bold: true }),
+      text("2017 – 2021", 510, 650),
+      heading("BACKGROUND", 640.5),
+      text("B.S. in Statistics", 125, 638, { italic: true }),
+    ]
+    const parsed = parseResume(linesFromPages([{ ...page, items }]))
+    const resume = toResumeContent(parsed)
+    expect(parsed.unplaced).toEqual([])
+    expect(resume.workExperienceSection).toMatchObject([{ companyName: "Acme Corp", workRole: "Data Analyst" }])
+    expect(resume.educationSection).toMatchObject([{ schoolName: "State University", degree: "B.S. in Statistics" }])
+  })
+})
+
 describe("a heading it doesn't know by name", () => {
   const heading = (text: string) => line([[text, 36]], { size: 12, bold: true })
   const school = [line([["State University", 36], ["2016 – 2020", 480]], { bold: true }), line([["Bachelor of Science in Nursing", 36]], { italic: true })]

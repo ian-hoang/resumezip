@@ -4,27 +4,37 @@
 import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler"
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
-import { templateById } from "@/lib/templates"
+import { fontsOf, templateById } from "@/lib/templates"
 import { fitOnePage, pageCount } from "@/lib/tune"
+import accent from "./templates/accent.typ"
 import common from "./templates/common.typ"
+import deedy from "./templates/deedy.typ"
 import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
+import margin from "./templates/margin.typ"
 import modernjack from "./templates/modernjack.typ"
+import mono from "./templates/mono.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
+import swiss from "./templates/swiss.typ"
 import type { CompileRequest, CompileResponse, WorkerMessage, WorkerRequest } from "./compile"
 import { COMPILER_CDN_URL, COMPILER_INTEGRITY, COMPILER_SIZE, compileChecked, downloadChecked } from "./compilerSource"
 import { FONT_URLS, fontsFor, lazyFonts } from "./fontFiles"
 
 const SOURCES: Record<string, string> = {
+  "/accent.typ": accent,
   "/common.typ": common,
+  "/deedy.typ": deedy,
   "/ian.typ": ian,
   "/jake.typ": jake,
   "/levelsfyi.typ": levelsfyi,
+  "/margin.typ": margin,
   "/modernjack.typ": modernjack,
+  "/mono.typ": mono,
   "/referme.typ": referme,
   "/resumeworded.typ": resumeworded,
+  "/swiss.typ": swiss,
 }
 
 // Downloads wrap the template in a file that also attaches a copy of the
@@ -162,7 +172,7 @@ function fontBytes(file: string): Uint8Array {
 }
 
 // Downloads the fonts a template's PDFs need, before the first is compiled.
-const fetchFontsOf = (template: string | undefined, text = "") => fetchFonts(fontsFor(templateById(template).font, text))
+const fetchFontsOf = (template: string | undefined, text = "") => fetchFonts(fontsFor(fontsOf(templateById(template)), text))
 
 async function createCompiler(): Promise<TypstCompiler> {
   const instance = createTypstCompiler()

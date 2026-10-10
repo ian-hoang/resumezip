@@ -11,8 +11,9 @@ import { pageErrors, settled, transitionsDone } from "./helpers"
  * content or the fade has started.
  */
 async function fadingIn(control: Locator, shown: Locator): Promise<string[]> {
-  await transitionsDone(control.page())
-  const recording = await control.evaluateHandle((element: HTMLElement) => {
+  const page = control.page()
+  await transitionsDone(page)
+  const recording = await page.evaluateHandle(() => {
     const transitions: { target: Element; text: string }[] = []
     const record = (event: TransitionEvent) => {
       if (event.propertyName === "opacity" && event.target instanceof Element) {
@@ -20,10 +21,13 @@ async function fadingIn(control: Locator, shown: Locator): Promise<string[]> {
       }
     }
     document.addEventListener("transitionrun", record)
-    element.click()
     return { transitions, stop: () => document.removeEventListener("transitionrun", record) }
   })
   try {
+    // Playwright's click finds the control again if it's replaced, as the
+    // section buttons are once drag and drop loads. A click on an element
+    // found a step before can land on a detached one, which React never hears.
+    await control.click()
     await expect(shown).toBeVisible()
     await settled(shown)
     // Preview rendering has its own fades. This assertion concerns the opened

@@ -3,7 +3,7 @@ import path from "node:path"
 import { beforeAll, describe, expect, test } from "vitest"
 import { CompileFormatEnum, createTypstCompiler, createTypstFontBuilder, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler"
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
-import { TEMPLATES } from "@/lib/templates"
+import { fontsOf, TEMPLATES } from "@/lib/templates"
 import { covers, FONT_FILES, FONT_INFO, FONT_URLS, filesOf, fontsFor, lazyFonts } from "./fontFiles"
 import { toTemplateData } from "./resumeData"
 
@@ -36,8 +36,20 @@ describe("coverage", () => {
     ])
   })
 
-  test("a resume in plain English needs only its template's family", () => {
-    expect(fontsFor("Lato", "Ada Lovelace, London · ada@example.com").sort()).toEqual(filesOf("Lato").sort())
+  test("a resume in plain English needs only its template's families", () => {
+    expect(fontsFor([{ family: "Lato" }], "Ada Lovelace, London · ada@example.com").sort()).toEqual(filesOf("Lato").sort())
+    expect(fontsFor([{ family: "Lato" }, { family: "Raleway-v4020" }], "Ada Lovelace").sort()).toEqual(
+      [...filesOf("Lato"), ...filesOf("Raleway-v4020")].sort(),
+    )
+  })
+
+  test("a template that uses only some of its family's weights needs only those", () => {
+    expect(fontsFor([{ family: "Lato", weights: [400, 700] }], "Ada Lovelace").sort()).toEqual([
+      "Lato-Bold.ttf",
+      "Lato-BoldItalic.ttf",
+      "Lato-Italic.ttf",
+      "Lato-Regular.ttf",
+    ])
   })
 
   test("a character the family lacks brings every font that has it", () => {
@@ -46,12 +58,12 @@ describe("coverage", () => {
       (char) => !filesOf("Lato").every((file) => FONT_INFO[file].info.some((face) => covers(face.coverage, char.codePointAt(0)!))),
     )
     expect(missing).toBeDefined()
-    const extra = fontsFor("Lato", greek).filter((file) => !filesOf("Lato").includes(file))
+    const extra = fontsFor([{ family: "Lato" }], greek).filter((file) => !filesOf("Lato").includes(file))
     expect(extra.length).toBeGreaterThan(0)
   })
 
   test("a character no font has brings nothing more", () => {
-    expect(fontsFor("EB Garamond", "张伟 😀").sort()).toEqual(filesOf("EB Garamond").sort())
+    expect(fontsFor([{ family: "EB Garamond" }], "张伟 😀").sort()).toEqual(filesOf("EB Garamond").sort())
   })
 })
 
@@ -77,11 +89,12 @@ describe("the font files", () => {
     expect(JSON.parse(readFileSync(file, "utf8"))).toEqual(actual)
   })
 
-  test("each template's font is the one its text is set in, and one of the files", () => {
+  test("each template's font is the one its text is set in, and its fonts are among the files", () => {
     for (const template of TEMPLATES) {
       const source = readFileSync(path.join(TYPST, "templates", `${template.id}.typ`), "utf8")
       expect(source.match(/#set text\(font: "([^"]+)"/)?.[1], template.id).toBe(template.font)
-      expect(filesOf(template.font).length, template.id).toBeGreaterThan(0)
+      for (const { family, weights } of fontsOf(template))
+        expect(filesOf(family, weights).length, `${template.id}: ${family}`).toBeGreaterThan(0)
     }
   })
 })
@@ -162,8 +175,9 @@ describe("printing with only the fonts a resume needs", () => {
     })
     expect(await print(template.id, data)).toBe(before)
     // The worker downloads these before compiling, so Typst never waits for one.
-    const expected = fontsFor(template.font, JSON.stringify(data))
+    const expected = fontsFor(fontsOf(template), JSON.stringify(data))
     expect([...read].filter((file) => !expected.includes(file))).toEqual([])
-    if (sample) expect([...read].every((file) => filesOf(template.font).includes(file))).toBe(true)
+    if (sample)
+      expect([...read].every((file) => fontsOf(template).some(({ family, weights }) => filesOf(family, weights).includes(file)))).toBe(true)
   })
 })

@@ -60,10 +60,13 @@ jobs:
       - name: Build
         run: npm run build
 
-  # Each browser has a job of its own and they run at the same time, so the
-  # tests take as long as the slower browser rather than both together.
+  # Each browser's tests are split across jobs that run at the same time
+  # (--shard), so they take as long as the slowest part rather than all of
+  # them together. WebKit's take longer, so they're split into more parts.
+  # Each part spends about a minute setting up, so another is only worth it
+  # once a browser's parts each take more than a few minutes.
   browser:
-    name: Browser tests (${{ matrix.browser }})
+    name: Browser tests (${{ matrix.browser }}, ${{ matrix.shard }} of ${{ matrix.shards }})
     # Pinned, not ubuntu-latest: Playwright installs system libraries for the
     # exact Ubuntu release, and ubuntu-latest moves to Ubuntu 26 on
     # October 19, 2026. Move this when Playwright supports it.
@@ -71,12 +74,18 @@ jobs:
     # Room for every try at installing the browser, below, and the tests.
     timeout-minutes: 25
     strategy:
-      # A failure in one browser doesn't stop the other, so a run shows both.
+      # A failure in one part doesn't stop the others, so a run shows them all.
       fail-fast: false
       matrix:
-        browser: [chromium, webkit]
+        include:
+          - { browser: chromium, shard: 1, shards: 2 }
+          - { browser: chromium, shard: 2, shards: 2 }
+          - { browser: webkit, shard: 1, shards: 3 }
+          - { browser: webkit, shard: 2, shards: 3 }
+          - { browser: webkit, shard: 3, shards: 3 }
     env:
       BROWSER: ${{ matrix.browser }}
+      SHARD: ${{ matrix.shard }}/${{ matrix.shards }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,40 +106,55 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ matrix.browser }}-ubuntu-24.04-${{ steps.playwright.outputs.version }}
-      # The browser, unless it was kept, and the system libraries it needs,
-      # from Ubuntu's package servers. A server can go quiet partway (on
-      # October 7, 2026, apt waited on one for 20 minutes, and the job timed
-      # out), so apt gives up on a connection after 20 seconds without data,
-      # tries it twice more, then moves on, and waits for another apt to
-      # finish rather than failing. A failed install is tried again, up to 3
-      # times. A slow download that's still going isn't cut off: stopping one
-      # from outside leaves apt running, holding its lock.
-      - name: Install the browser
+      # The site builds while the browser installs: the browser, unless it
+      # was kept, and the system libraries it needs, from Ubuntu's package
+      # servers, which take longer than the build for WebKit. The install's
+      # output is shown after the build's.
+      #
+      # A package server can go quiet partway (on October 7, 2026, apt waited
+      # on one for 20 minutes, and the job timed out), so apt gives up on a
+      # connection after 20 seconds without data, tries it twice more, then
+      # moves on, and waits for another apt to finish rather than failing. A
+      # failed install is tried again, up to 3 times. A slow download that's
+      # still going isn't cut off: stopping one from outside leaves apt
+      # running, holding its lock.
+      - name: Build, and install the browser meanwhile
         run: |
           printf 'Acquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nAcquire::Retries "2";\nDPkg::Lock::Timeout "120";\n' | sudo tee /etc/apt/apt.conf.d/99timeouts > /dev/null
-          for try in 1 2 3; do
-            npx playwright install --with-deps "$BROWSER" && exit 0
-            echo "::warning::Installing the browser failed, try $try of 3"
-          done
-          exit 1
-      - name: Build
-        run: npm run build
+          install_browser() {
+            for try in 1 2 3; do
+              npx playwright install --with-deps "$BROWSER" && return 0
+              echo "::warning::Installing the browser failed, try $try of 3"
+            done
+            return 1
+          }
+          install_browser > "$RUNNER_TEMP/install-browser.log" 2>&1 &
+          installing=$!
+          npm run build
+          installed=0
+          wait "$installing" || installed=$?
+          echo "::group::Install the browser"
+          cat "$RUNNER_TEMP/install-browser.log"
+          echo "::endgroup::"
+          exit "$installed"
       - name: Browser tests
-        run: npm run test:browser -- --project="$BROWSER"
+        run: npm run test:browser -- --project="$BROWSER" --shard="$SHARD"
       # Screenshots and a replayable trace of whatever failed.
       - name: Keep the report
-        if: failure()
+        # Also when a test failed and then passed when tried again, so a flaky
+        # test can be looked into: each failed try leaves an error-context.md.
+        if: failure() || hashFiles('frontend/test-results/**/error-context.md') != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: browser-test-report-${{ matrix.browser }}
+          name: browser-test-report-${{ matrix.browser }}-${{ matrix.shard }}
           path: |
             frontend/playwright-report
             frontend/test-results
           retention-days: 14
 
-  # The check main requires: it passes only when the tests passed in both
-  # browsers. It runs whatever happened to them, since a required check that
-  # was skipped counts as passed.
+  # The check main requires: it passes only when the tests passed in every
+  # part, in both browsers. It runs whatever happened to them, since a
+  # required check that was skipped counts as passed.
   browser-tests:
     name: Browser tests
     needs: browser
