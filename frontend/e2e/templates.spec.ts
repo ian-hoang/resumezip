@@ -21,7 +21,7 @@ test("/ goes to the search, which finds templates by name, font or style", async
   await expect(cards(page)).toHaveAccessibleName(/^Harvard template/)
 
   await search.fill("serif")
-  await expect(cards(page)).toHaveCount(2)
+  await expect(cards(page)).toHaveCount(3)
   await expect(cards(page).first()).toHaveAccessibleName(/^Jake's template/)
 
   // Escape clears it.
@@ -41,8 +41,8 @@ test("a chip shows the templates with that style, and says it's picked", async (
   await chips.getByRole("button", { name: "Color headings" }).click()
   await expect(chips.getByRole("button", { name: "Color headings" })).toHaveAttribute("aria-pressed", "true")
   await expect(all).toHaveAttribute("aria-pressed", "false")
-  await expect(cards(page)).toHaveCount(2)
-  await expect(page.getByRole("status")).toHaveText("Showing Blueprint and Ian's.")
+  await expect(cards(page)).toHaveCount(3)
+  await expect(page.getByRole("status")).toHaveText("Showing Blueprint, Ian's, and Accent.")
 
   await all.click()
   await expect(cards(page)).toHaveCount(every)
