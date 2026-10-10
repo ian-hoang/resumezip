@@ -32,6 +32,7 @@ import { copyHere } from "@/lib/resumeStore"
 import { saveFile } from "@/lib/saveFile"
 import { loadCompiler, savingData } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
+import { SHEET } from "@/components/site/sheet"
 
 // Only loaded when someone opens a file that isn't a resumezip PDF.
 const ImportReview = dynamic(() => import("@/components/dashboard/ImportReview"))
@@ -450,7 +451,8 @@ export default function DashboardPage() {
     <div className="desk flex min-h-screen flex-col">
       <SiteHeader onStartWriting={() => setCreating(true)} />
 
-      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-10 px-5 pb-24 pt-10 md:gap-12 md:px-10 md:pt-14">
+      {/* One etched pane over the sky, holding the title, the toolbar, the resumes and the note. */}
+      <main className={`${SHEET} flex flex-col gap-10 md:gap-12`}>
         <PageIntro
           label={
             loaded
@@ -559,14 +561,10 @@ export default function DashboardPage() {
 
         {loaded && showing.length === 0 && <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />}
 
-        {/* On glass, as it sits over the sky's brightest clouds. */}
-        <div className="glass glass-frost flex max-w-[720px] flex-wrap items-baseline gap-x-8 gap-y-3 rounded-panel px-5 py-4">
+        <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-ink-2">
           <span className="label-mono text-accent">Stored locally</span>
-          <p className="min-w-0 flex-[1_1_320px] text-sm leading-relaxed text-ink-2">
-            Resumes live in this browser only. Every PDF you download carries its resume, so you can open it here again on any computer.
-            Download all puts every resume in one file, to move them all at once.
-          </p>
-        </div>
+          Only in this browser. Any PDF you download opens here again.
+        </p>
       </main>
 
       <SiteFooter />

@@ -5,6 +5,7 @@ import PageIntro from "@/components/site/PageIntro"
 import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
+import { SHEET } from "@/components/site/sheet"
 
 export const metadata: Metadata = { title: "About" }
 
@@ -19,7 +20,7 @@ export default function AboutPage() {
   return (
     <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-12 md:px-10 md:pt-16">
+      <main className={SHEET}>
         <PageIntro label="About" title="Hi, I’m Ian.">
           I built resumezip because formatting a resume shouldn’t be harder than writing it. It’s free, there’s no sign-up, and I don’t
           store your resume.
