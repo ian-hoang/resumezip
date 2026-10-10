@@ -233,7 +233,8 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
           aria-label="More formats"
           onKeyDown={onMenuKeyDown}
           style={{ left: place.left, width: place.width }}
-          className={`glass glass-frost absolute top-full z-30 mt-2 origin-top-right rounded-panel p-1.5 transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:-translate-y-1 starting:scale-[0.97] starting:opacity-0 ${
+          // It opens over the page, so less of the page's text shows through it than other glass.
+          className={`glass glass-frost absolute top-full z-30 mt-2 origin-top-right rounded-panel p-1.5 [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.94),rgb(255_255_255/0.88))] transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:-translate-y-1 starting:scale-[0.97] starting:opacity-0 ${
             closing ? "-translate-y-1 scale-[0.97] opacity-0 duration-150" : "duration-200"
           }`}
         >
