@@ -95,6 +95,7 @@ export const TEMPLATES = [
     name: "Margin",
     image: "/previews/margin.webp",
     font: "Charis SIL",
+    alsoFonts: ["Linux Biolinum O"],
     added: "2026-10-10",
     tags: ["Serif"],
   },
