@@ -399,23 +399,24 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
   )
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* On wide screens the zoom is in a bar of its own under the page, below. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8 xl:hidden">
+    <div className="relative flex h-full min-h-0 flex-col">
+      {/* On wide screens the zoom is in a pill of its own under the page, below. */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8 xl:justify-center xl:px-2 xl:pb-2 xl:pt-1">
         <span className="label-mono text-ink-2">{updating ? "Preview · updating…" : "Preview · updates as you type"}</span>
-        <div className="flex items-center font-mono text-xs text-ink-2">
+        <div className="flex items-center font-mono text-xs text-ink-2 xl:hidden">
           {zoomControls}
           {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
         </div>
       </div>
 
       {/* Focusable, so the preview can be scrolled from the keyboard. On wide
-          screens it's the stage's canvas, ending above the dock under the page. */}
+          screens the pages scroll in the space between the label and the zoom
+          pill, under soft edges (.preview-canvas in styles/editor.css). */}
       <div
         ref={scrollerRef}
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
-        className="stage-canvas relative min-h-[480px] flex-1 overflow-auto px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:mb-[92px] xl:min-h-0 xl:px-6 xl:pb-7 xl:pt-6"
+        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-2 xl:pb-4 xl:pt-3"
       >
         {loadError || (error && drawings.length === 0) ? (
           <div className="flex h-full min-h-[480px] items-center justify-center text-sm text-ink-2">
@@ -464,7 +465,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
                                   }
                                 : undefined
                             }
-                            className="bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)] xl:shadow-[0_1px_3px_rgba(17,19,24,0.08),0_32px_64px_-24px_rgba(24,44,110,0.4)]"
+                            className="bg-sheet shadow-[0_1px_3px_rgba(17,19,24,0.08),0_32px_64px_-24px_rgba(24,44,110,0.4)]"
                             style={{ width: pageWidth, height: pageHeight(pageWidth, drawing.ratio ?? PAGE_RATIO) }}
                           >
                             <div
@@ -494,8 +495,8 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
         )}
       </div>
 
-      {/* The stage's zoom bar, floating in the dock under the page. */}
-      <div className="stage-zoom glass glass-frost absolute bottom-[26px] hidden h-11 -translate-x-1/2 items-center gap-1 rounded-full px-2 font-mono text-xs text-ink-2 xl:flex">
+      {/* On wide screens, the zoom in a glass pill under the page. */}
+      <div className="glass glass-frost mt-2 hidden h-11 shrink-0 items-center gap-1 self-center rounded-full px-2 font-mono text-xs text-ink-2 xl:flex">
         {zoomControls}
         <span aria-hidden="true" className="mx-1.5 h-5 w-px bg-ink/10" />
         <button
@@ -511,7 +512,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
       {error && (
         <p
           role="status"
-          className="border-t border-rule px-5 py-2 text-xs text-[#b42318] md:px-8 xl:absolute xl:left-1/2 xl:top-5 xl:w-max xl:max-w-[90%] xl:-translate-x-1/2 xl:rounded-full xl:border-0 xl:bg-sheet xl:px-4 xl:shadow-[0_8px_24px_-12px_rgba(17,19,24,0.35)]"
+          className="border-t border-rule px-5 py-2 text-xs text-[#b42318] md:px-8 xl:absolute xl:left-1/2 xl:top-9 xl:w-max xl:max-w-[90%] xl:-translate-x-1/2 xl:rounded-full xl:border-0 xl:bg-sheet xl:px-4 xl:shadow-[0_8px_24px_-12px_rgba(17,19,24,0.35)]"
         >
           Couldn&apos;t update the preview: {error}
         </p>
@@ -520,7 +521,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
   )
 }
 
-/** The zoom's − 100% + buttons: in the bar over the preview, or under the page on the stage. */
+/** The zoom's − 100% + buttons: in the bar over the preview, or in the pill under the page on wide screens. */
 function ZoomControls({ zoom, onOut, onReset, onIn }: { zoom: number; onOut: () => void; onReset: () => void; onIn: () => void }) {
   // At the smallest or largest zoom, its button stays focusable but does nothing, as MoveButtons do.
   const iconButton =

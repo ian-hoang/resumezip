@@ -128,6 +128,8 @@ test("what a change prints lights up on the preview for a moment", async ({ page
     .locator(".textLayer")
     .first()
     .evaluate((layer) => (layer.dataset.replaced = ""))
+  // On wide screens the templates are in the left panel's Style tab.
+  await page.getByRole("tab", { name: "Style" }).click()
   await chooseTemplate(page, "Harvard")
   // Its text, drawn in full: react-pdf ends a text layer with .endOfContent.
   await expect(preview.locator(".textLayer:not([data-replaced]) > .endOfContent")).toBeAttached()

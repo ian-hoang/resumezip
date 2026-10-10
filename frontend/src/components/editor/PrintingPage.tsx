@@ -100,7 +100,7 @@ export default function PrintingPage({ width, leaving = false }: PrintingPagePro
       className={`absolute inset-x-0 top-0 z-10 transition-opacity duration-300 ${leaving ? "opacity-0" : ""}`}
     >
       <div
-        className="relative overflow-hidden bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
+        className="relative overflow-hidden bg-sheet shadow-[0_1px_3px_rgba(17,19,24,0.08),0_32px_64px_-24px_rgba(24,44,110,0.4)]"
         style={{ width, height: width * (PAGE.height / PAGE.width) }}
       >
         {BARS.map((bar, index) => (
@@ -137,7 +137,7 @@ export default function PrintingPage({ width, leaving = false }: PrintingPagePro
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={shown}
-              className="border border-rule bg-sheet px-4 py-3 text-center shadow-[0_12px_32px_-16px_rgba(17,19,24,0.35)]"
+              className="rounded-panel bg-sheet px-5 py-3.5 text-center shadow-[0_12px_32px_-16px_rgba(17,19,24,0.35)] ring-1 ring-ink/[0.06]"
             >
               {/* Once the compiler is in, building it and the first preview are left. */}
               <p aria-hidden="true" className="label-mono text-ink">

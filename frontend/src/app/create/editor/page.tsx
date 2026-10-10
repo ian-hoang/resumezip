@@ -56,9 +56,9 @@ const DOWNLOAD_FILL_MS = 1500
 
 const EDITOR_ADDRESS = "/create/new/"
 
-// The notes under the header: a strip across it, or a card in the stage's left panel on wide screens.
-const BANNER = "border-t border-rule px-5 py-2.5 lg:px-6"
-const PANEL_BANNER = "xl:mx-4 xl:mb-3 xl:rounded-[12px] xl:border xl:border-ink/[0.08] xl:bg-sheet/85 xl:px-4"
+// The notes under the top bar's row, across the top bar: what wasn't saved, a
+// resume replaced by an opened file, a download that failed.
+const BANNER = "border-t border-ink/[0.08] px-5 py-3 lg:px-6"
 
 /**
  * The resume id in an editor address: all of the path after /create/new/, as
@@ -281,14 +281,15 @@ function Editor({ id }: { id: string }) {
   }, [])
 
   // A new section starts at its top: in the form's pane on wide screens, on the page on small ones
-  // (scrolled just far enough that the section tabs stay pinned above it).
+  // (scrolled just far enough that the section tabs stay pinned above it, where the header ends).
   const select = useCallback((section: ActiveSection) => {
     setActive(section)
     if (window.matchMedia(WIDE_SCREEN).matches) {
       if (mainRef.current) mainRef.current.scrollTop = 0
       return
     }
-    const top = headerRef.current?.offsetHeight ?? 0
+    const header = headerRef.current
+    const top = header ? header.offsetTop + header.offsetHeight : 0
     if (window.scrollY > top) window.scrollTo({ top })
   }, [])
 
@@ -316,7 +317,7 @@ function Editor({ id }: { id: string }) {
     )
   }, [sections, selected, id, deleteSection, removeSection, select])
   const chooseTemplate = useCallback((template: TemplateId) => update("selectedTemplate", template), [update])
-  // The same element while what it shows is, so the left bar (memo) doesn't re-render with a new preview.
+  // The same elements while what they show is, so the left bar (memo) doesn't re-render with a new preview.
   const nav = useMemo(
     () => (
       <SectionNav
@@ -331,6 +332,7 @@ function Editor({ id }: { id: string }) {
     ),
     [sections, headings, extraSections, selected, select, reorder, add],
   )
+  const style = useMemo(() => <StylePanel value={selectedTemplate} onChange={chooseTemplate} />, [selectedTemplate, chooseTemplate])
 
   // Coming back to the form returns to where you were in it.
   const show = (next: "edit" | "preview") => {
@@ -388,7 +390,7 @@ function Editor({ id }: { id: string }) {
 
   if (!loaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper">
+      <div className="desk flex min-h-screen items-center justify-center">
         <span className="label-mono text-ink-2">Loading…</span>
       </div>
     )
@@ -397,13 +399,16 @@ function Editor({ id }: { id: string }) {
   // Resumes only exist in the browser that created them.
   if (!found) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-paper px-5 text-center">
+      <div className="desk flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
         <span className="label-mono text-ink-2">Not in this browser</span>
         <h1 className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Resume not found</h1>
         <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
           Resumes are saved in the browser you made them in. Open this link on that device, or start a new one.
         </p>
-        <Link href="/create/dashboard" className="text-sm underline underline-offset-4">
+        <Link
+          href="/create/dashboard"
+          className="mt-2 inline-flex h-11 items-center rounded-full bg-ink px-[18px] text-[15px] font-medium text-white transition-colors hover:bg-black"
+        >
           Go to your resumes
         </Link>
       </div>
@@ -416,165 +421,161 @@ function Editor({ id }: { id: string }) {
   const pagesSaid = pages === null ? "" : pages === 1 ? "1 page" : `${pages} pages`
 
   return (
-    // On wide screens (WIDE_SCREEN) the editor is a stage: the live page is the canvas in the
-    // middle, on a soft blue field, with the writing panel and the Style panel floating as glass
-    // either side of it (.editor-stage in styles/editor.css). Narrower, it's a header, the
-    // section tabs and the form, and an Edit / Preview switch for the preview.
-    <div className="editor-stage flex min-h-screen flex-col max-xl:bg-paper xl:h-screen xl:overflow-hidden">
-      {/* The left bar and the forms share what the checker found, and the download card opens Check. */}
+    // The editor is on the desk at every width. On wide screens (WIDE_SCREEN) it's a top bar over
+    // three panels: the sections (or what Check found, or Style) on the left, the form in the
+    // middle, and the page on the right. Narrower, the same parts stack: the top bar, the left bar's
+    // tabs, the form, and an Edit / Preview switch for the page.
+    <div className="desk flex min-h-screen flex-col pb-24 xl:h-screen xl:gap-4 xl:overflow-hidden xl:p-4">
+      {/* All of it shares what the checker found: the left bar lists it, the forms point at it, and
+          the download card opens Check. */}
       <CheckProvider onSelect={select} preview={preview} unbuilt={unbuilt}>
-        {/* The writing side: the header, the section tabs and the form. On wide screens it's the
-            stage's left panel, with the name at its top and the form scrolling inside it. */}
-        <div
-          className={`stage-panel relative flex flex-col ${view === "edit" ? "flex-1" : ""} xl:fixed xl:inset-y-6 xl:left-6 xl:z-20 xl:w-[var(--stage-left)]`}
-        >
-          <span aria-hidden="true" className="glass glass-frost absolute inset-0 -z-10 hidden rounded-[24px] xl:block" />
-          <header ref={headerRef} className="border-b border-rule bg-sheet xl:shrink-0 xl:border-0 xl:bg-transparent">
-            <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-2.5 lg:px-6 xl:min-h-0 xl:flex-col xl:flex-nowrap xl:items-stretch xl:gap-1 xl:pb-3 xl:pt-5">
-              <div className="flex min-w-0 items-center gap-4 xl:gap-1.5">
-                <Link
-                  href="/create/dashboard"
-                  title="Your resumes"
-                  className="inline-flex shrink-0 items-center gap-1.5 text-sm text-ink-2 transition-colors hover:text-ink xl:-ml-2 xl:h-8 xl:w-8 xl:justify-center xl:rounded-full xl:hover:bg-ink/[0.06]"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5 xl:h-4 xl:w-4" aria-hidden="true" />
-                  <span className="xl:sr-only">Your resumes</span>
-                </Link>
-                <span className="h-5 w-px shrink-0 bg-rule xl:hidden" aria-hidden="true" />
-                <ResumeName />
-              </div>
-              {/* Under the name on wide screens, so it stays put while the name is typed. */}
-              <SavedNote />
-              <div className="flex flex-wrap items-center gap-3 xl:contents">
-                {/* On wide screens the Style panel lists the templates instead. */}
-                <div className="xl:hidden">
-                  <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
-                </div>
-                {/* Download PDF is the main way out; the ▾ beside it has the others. On wide
-                    screens it's the dark pill in the stage's corner, and reads back the paper
-                    and how many pages the PDF has. */}
-                <div className="flex xl:fixed xl:bottom-6 xl:right-6 xl:z-30 xl:rounded-full xl:shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)]">
-                  <button
-                    ref={downloadRef}
-                    type="button"
-                    onClick={download}
-                    disabled={downloading}
-                    // Named for what it does: the paper and pages it shows on wide screens are its description.
-                    aria-label={downloaded ? "Downloaded" : "Download PDF"}
-                    aria-describedby={pdfDetailsId}
-                    className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4 xl:h-[52px] xl:rounded-l-full xl:pl-6 xl:pr-5 xl:text-[15px]"
-                  >
-                    <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
-                    {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
-                    <span
-                      aria-hidden="true"
-                      // The fill's time, and the wait after it, from DOWNLOAD_FILL_MS, as the save is.
-                      style={{ animationDuration: `${DOWNLOAD_FILL_MS}ms, 20s`, animationDelay: `0s, ${DOWNLOAD_FILL_MS}ms` }}
-                      className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
-                        downloading
-                          ? "scale-x-0 motion-safe:animate-download-progress"
-                          : downloaded
-                            ? "scale-x-100 opacity-0 [transition:scale_180ms_ease-out,opacity_450ms_ease-out_200ms] motion-reduce:transition-none"
-                            : "scale-x-0"
-                      }`}
-                    />
-                    {/* Just "PDF" on phones, so it fits beside the template picker. */}
-                    {downloaded ? (
-                      <span>
-                        <span className="max-sm:sr-only">Downloaded</span>
-                        <span className="sm:hidden">PDF</span>
-                      </span>
-                    ) : (
-                      <span>
-                        <span className="max-sm:sr-only">Download </span>PDF
-                      </span>
-                    )}
-                    <span className="label-mono hidden whitespace-nowrap text-white/65 xl:inline">
-                      · {paper}
-                      {pagesSaid && ` · ${pagesSaid}`}
-                    </span>
-                  </button>
-                  <DownloadMenu
-                    choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
-                  />
-                </div>
-                <span id={pdfDetailsId} className="sr-only">
-                  {paper === "A4" ? "A4" : "US Letter"}
-                  {pagesSaid && `, ${pagesSaid}`}
-                </span>
-                <span role="status" className="sr-only">
-                  {downloaded ? "PDF downloaded. This PDF carries your resume. Open it here on any computer to keep editing." : ""}
-                </span>
-                <span role="status" className="sr-only">
-                  {savedAs}
-                </span>
-              </div>
-            </div>
-            <NotSaved className={`${BANNER} ${PANEL_BANNER}`} onDownload={download} downloading={downloading} />
-            <Replaced id={id} className={`${BANNER} ${PANEL_BANNER}`} />
-            {failure && (
-              <DownloadFailed
-                key={failure.count}
-                failure={failure}
-                retrying={downloading}
-                onRetry={download}
-                // By the Download PDF pill on wide screens, where it was pressed.
-                className={`${BANNER} xl:fixed xl:bottom-[92px] xl:right-6 xl:z-30 xl:w-[380px] xl:rounded-[14px] xl:border-0 xl:bg-sheet xl:p-4 xl:shadow-[0_24px_48px_-20px_rgba(17,19,24,0.45)]`}
-              />
-            )}
-          </header>
-
-          <LeftBar hidden={view === "preview"}>{nav}</LeftBar>
-
-          <main
-            ref={mainRef}
-            className={`min-w-0 flex-1 px-5 pb-28 pt-9 sm:px-10 xl:block xl:overflow-y-auto xl:border-t xl:border-ink/[0.08] xl:px-6 xl:pb-12 xl:pt-6 ${view === "preview" ? "hidden" : ""}`}
-          >
-            {/* The fields fit the form's own width rather than the window's. Each grid of
-                them is in a container (ProfileForm, SectionForm), not the whole form, so
-                an entry being dragged isn't in one: SectionForm says why. */}
-            <div className="mx-auto max-w-[640px]">
-              {/* Each section fades in as it's chosen: a new key mounts it anew, and
-                  `starting:` (CSS @starting-style) is where its transition starts from. */}
-              <div
-                key={selected}
-                className="transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:translate-y-1 starting:opacity-0"
+        {/* The glass makes the top bar a stacking context, so it's raised (z-40) over the panels
+            and the Edit / Preview switch: the menus, the gallery and the download card that open
+            from it go over them. */}
+        <header ref={headerRef} className="glass glass-frost relative z-40 mx-3 mt-3 rounded-panel xl:m-0 xl:shrink-0">
+          <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2.5 pl-4 pr-2.5 sm:pl-5">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <Link
+                href="/create/dashboard"
+                className="-ml-2 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-sm text-ink-2 transition-colors hover:bg-ink/[0.05] hover:text-ink"
               >
-                {selected === "Profile" ? (
-                  <ProfileForm position={position(1)} />
-                ) : extraKey(selected) !== null ? (
-                  <ExtraSectionForm sectionId={extraKey(selected)!} position={position(sections.indexOf(selected) + 2)} onDelete={remove} />
-                ) : (
-                  <SectionForm
-                    section={SECTIONS[selected as SectionName]}
-                    position={position(sections.indexOf(selected) + 2)}
-                    onDelete={remove}
-                  />
-                )}
-              </div>
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                Your resumes
+              </Link>
+              <span className="h-5 w-px shrink-0 bg-ink/15" aria-hidden="true" />
+              <ResumeName />
             </div>
-          </main>
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              {/* Here rather than after the name, so it stays put while the name is typed. */}
+              <SavedNote />
+              {/* On wide screens the Style tab lists the templates instead. */}
+              <div className="xl:hidden">
+                <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+              </div>
+              {/* Download PDF is the main way out; the ▾ beside it has the others. On wide
+                  screens it reads back the paper and how many pages the PDF has, and the card
+                  after a download drops in under it. */}
+              <div className="relative flex">
+                <button
+                  ref={downloadRef}
+                  type="button"
+                  onClick={download}
+                  disabled={downloading}
+                  // Named for what it does: the paper and pages it shows on wide screens are its description.
+                  aria-label={downloaded ? "Downloaded" : "Download PDF"}
+                  aria-describedby={pdfDetailsId}
+                  className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full bg-ink pl-[18px] pr-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
+                >
+                  <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
+                  {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
+                  <span
+                    aria-hidden="true"
+                    // The fill's time, and the wait after it, from DOWNLOAD_FILL_MS, as the save is.
+                    style={{ animationDuration: `${DOWNLOAD_FILL_MS}ms, 20s`, animationDelay: `0s, ${DOWNLOAD_FILL_MS}ms` }}
+                    className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
+                      downloading
+                        ? "scale-x-0 motion-safe:animate-download-progress"
+                        : downloaded
+                          ? "scale-x-100 opacity-0 [transition:scale_180ms_ease-out,opacity_450ms_ease-out_200ms] motion-reduce:transition-none"
+                          : "scale-x-0"
+                    }`}
+                  />
+                  {/* Just "PDF" on phones, so it fits beside the template picker. */}
+                  {downloaded ? (
+                    <span>
+                      <span className="max-sm:sr-only">Downloaded</span>
+                      <span className="sm:hidden">PDF</span>
+                    </span>
+                  ) : (
+                    <span>
+                      <span className="max-sm:sr-only">Download </span>PDF
+                    </span>
+                  )}
+                  <span className="label-mono hidden whitespace-nowrap text-white/65 xl:inline">
+                    · {paper}
+                    {pagesSaid && ` · ${pagesSaid}`}
+                  </span>
+                </button>
+                <DownloadMenu
+                  choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
+                />
+                {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} onCheck={() => show("edit")} />}
+              </div>
+              <span id={pdfDetailsId} className="sr-only">
+                {paper === "A4" ? "A4" : "US Letter"}
+                {pagesSaid && `, ${pagesSaid}`}
+              </span>
+              <span role="status" className="sr-only">
+                {downloaded ? "PDF downloaded. This PDF carries your resume. Open it here on any computer to keep editing." : ""}
+              </span>
+              <span role="status" className="sr-only">
+                {savedAs}
+              </span>
+            </div>
+          </div>
+          <NotSaved className={BANNER} onDownload={download} downloading={downloading} />
+          <Replaced id={id} className={BANNER} />
+          {failure && <DownloadFailed key={failure.count} failure={failure} retrying={downloading} onRetry={download} className={BANNER} />}
+        </header>
+
+        <div className="flex flex-1 flex-col xl:min-h-0 xl:flex-row xl:gap-4">
+          <LeftBar hidden={view === "preview"} style={style}>
+            {nav}
+          </LeftBar>
+
+          {/* The form, on a glass sheet. On wide screens it's the middle panel, as wide as is
+              comfortable to write in, and scrolls inside it (useKeepFormPlace keeps the place
+              across the two). In Style mode on narrower screens, Style takes its place. */}
+          <div
+            className={`editor-form glass glass-frost mx-3 mt-3 rounded-panel sm:mx-auto sm:w-[calc(100%-48px)] sm:max-w-[720px] xl:m-0 xl:flex xl:w-[clamp(536px,38vw,640px)] xl:max-w-none xl:shrink-0 xl:flex-col xl:overflow-hidden ${
+              view === "preview" ? "hidden" : ""
+            }`}
+          >
+            <main ref={mainRef} className="min-w-0 flex-1 px-5 pb-12 pt-8 sm:px-10 xl:overflow-y-auto xl:px-7 xl:pb-14 xl:pt-7">
+              {/* The fields fit the form's own width rather than the window's. Each grid of
+                  them is in a container (ProfileForm, SectionForm), not the whole form, so
+                  an entry being dragged isn't in one: SectionForm says why. */}
+              <div className="mx-auto max-w-[640px]">
+                {/* Each section fades in as it's chosen: a new key mounts it anew, and
+                    `starting:` (CSS @starting-style) is where its transition starts from. */}
+                <div
+                  key={selected}
+                  className="transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:translate-y-1 starting:opacity-0"
+                >
+                  {selected === "Profile" ? (
+                    <ProfileForm position={position(1)} />
+                  ) : extraKey(selected) !== null ? (
+                    <ExtraSectionForm
+                      sectionId={extraKey(selected)!}
+                      position={position(sections.indexOf(selected) + 2)}
+                      onDelete={remove}
+                    />
+                  ) : (
+                    <SectionForm
+                      section={SECTIONS[selected as SectionName]}
+                      position={position(sections.indexOf(selected) + 2)}
+                      onDelete={remove}
+                    />
+                  )}
+                </div>
+              </div>
+            </main>
+          </div>
+
+          {/* The page, on the desk: on wide screens in the room the panels leave. */}
+          <section
+            aria-label="Live preview"
+            className={`mt-3 min-w-0 flex-col xl:mt-0 xl:flex xl:flex-1 xl:overflow-hidden ${view === "preview" ? "flex max-xl:flex-1" : "hidden"}`}
+          >
+            <PdfPreview
+              pdfUrl={pdfUrl}
+              template={shownTemplate}
+              error={compileError}
+              updating={switchingTemplate && !compileError}
+              onPages={setPages}
+            />
+          </section>
         </div>
-
-        {/* On wide screens, the canvas between the panels. */}
-        <section
-          aria-label="Live preview"
-          className={`min-w-0 flex-col bg-desk pb-20 xl:fixed xl:inset-y-0 xl:left-[var(--stage-canvas-left)] xl:right-[var(--stage-canvas-right)] xl:flex xl:overflow-hidden xl:bg-transparent xl:pb-0 ${
-            view === "preview" ? "flex max-xl:flex-1" : "hidden"
-          }`}
-        >
-          <PdfPreview
-            pdfUrl={pdfUrl}
-            template={shownTemplate}
-            error={compileError}
-            updating={switchingTemplate && !compileError}
-            onPages={setPages}
-          />
-        </section>
-
-        <StylePanel value={selectedTemplate} onChange={chooseTemplate} />
-
-        {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} onCheck={() => show("edit")} />}
       </CheckProvider>
 
       <div
@@ -583,7 +584,7 @@ function Editor({ id }: { id: string }) {
           typing ? "pointer-events-none translate-y-3 opacity-0" : ""
         }`}
       >
-        <div role="group" aria-label="View" className="flex gap-1 rounded-[4px] bg-ink p-1 shadow-[0_12px_32px_-12px_rgba(17,19,24,0.5)]">
+        <div role="group" aria-label="View" className="flex gap-1 rounded-full bg-ink p-1 shadow-[0_12px_32px_-12px_rgba(17,19,24,0.5)]">
           {(["edit", "preview"] as const).map((option) => {
             const Icon = option === "edit" ? PencilLine : Eye
             return (
@@ -592,8 +593,8 @@ function Editor({ id }: { id: string }) {
                 type="button"
                 aria-pressed={view === option}
                 onClick={() => show(option)}
-                className={`inline-flex h-9 items-center gap-2 rounded-[3px] px-4 text-sm font-medium transition-colors ${
-                  view === option ? "bg-paper text-ink" : "text-white/70 hover:text-white"
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors ${
+                  view === option ? "bg-sheet text-ink" : "text-white/70 hover:text-white"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -610,7 +611,7 @@ function Editor({ id }: { id: string }) {
 }
 
 /**
- * The resume's name, in the header and the tab's title. A component of its
+ * The resume's name, in the top bar and the tab's title. A component of its
  * own, so typing a name doesn't re-render the editor.
  */
 function ResumeName() {
@@ -645,7 +646,7 @@ function ResumeName() {
       onKeyDown={(event) => {
         if (event.key === "Enter") event.currentTarget.blur()
       }}
-      className="min-w-0 max-w-[58vw] border-0 border-b border-transparent bg-transparent py-0.5 font-serif lg:max-w-[40vw] text-[19px] text-ink outline-none transition-colors placeholder:text-ink-2 hover:border-rule-strong focus:border-accent focus-visible:outline-none xl:w-full xl:max-w-none xl:text-[23px] xl:tracking-[-0.01em]"
+      className="min-w-0 max-w-[50vw] border-0 border-b border-transparent bg-transparent py-0.5 font-serif text-[19px] text-ink outline-none transition-colors placeholder:text-ink-2 hover:border-rule-strong focus:border-accent focus-visible:outline-none lg:max-w-[36vw] xl:text-[21px] xl:tracking-[-0.01em]"
     />
   )
 }
@@ -673,7 +674,7 @@ function SavedNote() {
 
   if (saveStatus !== "saved") return null
   return (
-    <span className="saved-note label-mono hidden shrink-0 items-center gap-1.5 text-ink-2 xl:ml-[30px] xl:flex">
+    <span className="saved-note label-mono mr-2 hidden shrink-0 items-center gap-1.5 text-ink-2 xl:inline-flex">
       {unsaved || settling ? (
         "Saving…"
       ) : (

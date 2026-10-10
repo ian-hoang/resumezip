@@ -34,13 +34,12 @@ function placeBy(button: HTMLElement): { left: number; width: number } {
 }
 
 const item =
-  "flex w-full flex-col gap-0.5 rounded-[3px] px-2.5 py-2 text-left outline-none transition-colors duration-150 hover:bg-paper focus-visible:bg-paper"
+  "flex w-full flex-col gap-0.5 rounded-full px-4 py-2 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 
 /**
  * The ▾ beside Download PDF, and the menu of the other ways to download it
- * (WAI-ARIA menu button). Arrows move through the menu, Escape and Tab close
- * it, and either way the keyboard goes back to the ▾. On wide screens the
- * button is the pill in the stage's bottom corner, so the menu opens upward.
+ * (WAI-ARIA menu button), which opens under it. Arrows move through the menu,
+ * Escape and Tab close it, and either way the keyboard goes back to the ▾.
  */
 export default function DownloadMenu({ choices }: { choices: DownloadChoice[] }) {
   const menuId = useId()
@@ -143,7 +142,7 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
         aria-controls={open ? menuId : undefined}
         onClick={() => (open ? close() : show())}
         onKeyDown={onButtonKeyDown}
-        className="inline-flex h-10 w-9 items-center justify-center rounded-r-[4px] border-l border-white/20 bg-ink text-white transition-colors hover:bg-black aria-expanded:bg-black xl:h-[52px] xl:w-12 xl:rounded-r-full xl:border-white/15 xl:pr-1"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-r-full border-l border-white/15 bg-ink pr-1 text-white transition-colors hover:bg-black aria-expanded:bg-black xl:h-11 xl:w-11"
       >
         <ChevronDown
           className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
@@ -160,8 +159,8 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
           aria-label="More formats"
           onKeyDown={onMenuKeyDown}
           style={{ left: place.left, width: place.width }}
-          className={`absolute top-full z-30 mt-2 origin-top-right rounded-[4px] bg-sheet p-1.5 shadow-[0_18px_40px_-16px_rgba(17,19,24,0.3)] ring-1 ring-rule transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:-translate-y-1 starting:scale-[0.97] starting:opacity-0 xl:top-auto xl:bottom-full xl:mb-3 xl:mt-0 xl:origin-bottom-right xl:rounded-[14px] xl:starting:translate-y-1 ${
-            closing ? "-translate-y-1 scale-[0.97] opacity-0 duration-150 xl:translate-y-1" : "duration-200"
+          className={`glass glass-frost absolute top-full z-30 mt-2 origin-top-right rounded-panel p-1.5 transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:-translate-y-1 starting:scale-[0.97] starting:opacity-0 ${
+            closing ? "-translate-y-1 scale-[0.97] opacity-0 duration-150" : "duration-200"
           }`}
         >
           {choices.map(({ title, hint, onChoose }) => (

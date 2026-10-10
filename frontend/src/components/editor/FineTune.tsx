@@ -79,7 +79,7 @@ export default function FineTune() {
         type="button"
         onClick={() => update("tune", null)}
         disabled={readTune(saved).tune === null}
-        className="self-start text-[13px] text-ink-2 underline decoration-rule-strong underline-offset-4 transition-colors hover:text-ink hover:decoration-ink disabled:cursor-default disabled:text-ink-2/50 disabled:no-underline"
+        className="inline-flex h-8 items-center self-start rounded-full bg-sheet/70 px-3.5 text-[13px] text-ink ring-1 ring-ink/15 transition-[box-shadow,color] hover:ring-ink/40 disabled:cursor-default disabled:bg-transparent disabled:text-ink-2/60 disabled:ring-ink/[0.08]"
       >
         Reset to the template&rsquo;s
       </button>
@@ -144,17 +144,17 @@ function Slider({ label, scale, value, shown, spoken, onChange }: SliderProps) {
   )
 }
 
-// Letter or A4, as two segments of one control: radio buttons, so arrow keys move between them.
+// Letter or A4, as two segments of one pill: radio buttons, so arrow keys move between them.
 function PaperChoice({ value, onChange }: { value: Paper; onChange: (paper: Paper) => void }) {
   const name = useId()
   return (
-    <fieldset className="grid grid-cols-2 gap-1 rounded-[10px] bg-ink/[0.06] p-1">
+    <fieldset className="grid grid-cols-2 gap-1 rounded-full bg-ink/[0.06] p-1">
       <legend className="sr-only">Paper</legend>
       {(Object.keys(PAPER_NAMES) as Paper[]).map((paper) => (
         <label
           key={paper}
-          className={`cursor-pointer rounded-[7px] py-1.5 text-center text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-            paper === value ? "bg-white text-ink shadow-[0_1px_2px_rgb(17_19_24/0.12)]" : "text-ink-2 hover:text-ink"
+          className={`cursor-pointer rounded-full py-1.5 text-center text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+            paper === value ? "bg-white text-ink shadow-[0_1px_3px_rgb(17_19_24/0.12)]" : "text-ink-2 hover:text-ink"
           }`}
         >
           <input type="radio" name={name} value={paper} checked={paper === value} onChange={() => onChange(paper)} className="sr-only" />
@@ -165,7 +165,7 @@ function PaperChoice({ value, onChange }: { value: Paper; onChange: (paper: Pape
   )
 }
 
-// A square switch: an inked box with its white square to the right when on.
+// A pill switch: inked, with its white knob to the right, when on.
 function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
   return (
     <button
@@ -173,17 +173,15 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
       role="switch"
       aria-checked={on}
       onClick={() => onChange(!on)}
-      className="flex items-center gap-3 self-start text-sm"
+      className="flex items-center gap-3 self-start rounded-full text-sm"
     >
       <span
         aria-hidden
-        className={`flex h-[18px] w-9 shrink-0 items-center rounded-[3px] border p-[3px] transition-colors ${
-          on ? "border-ink bg-ink" : "border-rule-strong bg-white"
-        }`}
+        className={`flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors ${on ? "bg-ink" : "bg-ink/[0.14]"}`}
       >
         <span
-          className={`size-2.5 rounded-[1.5px] transition-transform duration-200 ease-glide motion-reduce:transition-none ${
-            on ? "translate-x-[18px] bg-white" : "bg-rule-strong"
+          className={`size-4 rounded-full bg-white shadow-[0_1px_2px_rgb(17_19_24/0.25)] transition-transform duration-200 ease-glide motion-reduce:transition-none ${
+            on ? "translate-x-4" : ""
           }`}
         />
       </span>
