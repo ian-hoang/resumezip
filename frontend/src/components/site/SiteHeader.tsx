@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, Star, X } from "lucide-react"
 import Logo from "./Logo"
 import { StartWritingLink } from "./StartWriting"
 
@@ -17,12 +17,16 @@ const WIDE_HEADER = "(min-width: 48rem)"
 
 const CTA = "label-caps items-center whitespace-nowrap bg-accent px-[18px] text-white transition-colors hover:bg-[#2550d4]"
 
+const REPO_URL = "https://github.com/ian-hoang/resumezip"
+
 interface SiteHeaderProps {
   /**
    * "overlay" sits on top of the home page's video; "light" is for every other page.
    * Only the colors differ, so nothing moves when you go from one page to another.
    */
   variant?: "overlay" | "light"
+  /** Asks for a star on GitHub where "Start writing" goes, for the home page, which has its own "Start writing" links. */
+  starOnGitHub?: boolean
   /**
    * What "Start writing" does on a page with its own way to start a resume,
    * instead of going to the dashboard: the dashboard opens its New resume dialog.
@@ -30,7 +34,7 @@ interface SiteHeaderProps {
   onStartWriting?: () => void
 }
 
-export default function SiteHeader({ variant = "light", onStartWriting }: SiteHeaderProps) {
+export default function SiteHeader({ variant = "light", starOnGitHub = false, onStartWriting }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -63,11 +67,28 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
     }
   }, [menuOpen])
 
-  // A button where it opens a dialog, as it doesn't go anywhere. In the menu it
-  // shuts the menu first, as the menu's links do, and leaves focus on the menu's
-  // button for the dialog to put it back on.
-  const startWriting = (className: string, inMenu = false) =>
-    onStartWriting ? (
+  // The header's one button. "Start writing" is a button where it opens a
+  // dialog, as it doesn't go anywhere. In the menu it shuts the menu first, as
+  // the menu's links do, and leaves focus on the menu's button for the dialog
+  // to put it back on.
+  const action = (className: string, inMenu = false) =>
+    starOnGitHub ? (
+      <a
+        href={REPO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${className} gap-2`}
+        onClick={() => {
+          if (inMenu) setMenuOpen(false)
+        }}
+      >
+        <Star className="h-4 w-4 fill-[#facc15] text-[#facc15]" aria-hidden="true" />
+        {/* Beside the links, below lg, there's only room for "Star". */}
+        <span>
+          Star<span className="md:max-lg:sr-only"> on GitHub</span>
+        </span>
+      </a>
+    ) : onStartWriting ? (
       <button
         type="button"
         className={className}
@@ -92,16 +113,18 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
       ref={headerRef}
       className={`relative font-system ${overlay ? "z-10 text-white" : "z-30 border-b border-rule bg-paper text-ink"}`}
     >
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:h-[72px] md:px-10">
+      {/* With links, the outer columns are equal, so the links stay put whatever the button says.
+          Below lg the gaps are tighter: at 768px, in wider system fonts, the links only just fit on one line. */}
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr] md:px-10 md:max-lg:gap-4">
         <Link
           href="/"
-          className="flex items-center gap-2.5 font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 justify-self-start font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
         >
           <Logo className="h-5 w-auto" />
           resumezip
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Main" className="hidden items-center gap-5 md:flex lg:gap-8">
           {LINKS.map((link) => (
             <Link
               key={link.href}
@@ -113,9 +136,9 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-self-end">
           {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
-          {startWriting(`${CTA} hidden h-10 sm:inline-flex`)}
+          {action(`${CTA} hidden h-10 sm:inline-flex`)}
           <button
             ref={buttonRef}
             type="button"
@@ -149,7 +172,7 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
             {link.label}
           </Link>
         ))}
-        {startWriting(`${CTA} mt-2 inline-flex h-11 justify-center sm:hidden`, true)}
+        {action(`${CTA} mt-2 inline-flex h-11 justify-center sm:hidden`, true)}
       </nav>
     </header>
   )
