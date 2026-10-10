@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 import { Search, X } from "lucide-react"
 import type { ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
@@ -126,6 +126,28 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
     return () => page.removeAttribute("data-spotlight")
   }, [place])
 
+  // Lifted, the veil and the search go into the browser's top layer, as manual popovers, over
+  // everything on the page. Left in the page, they'd be inside its stacking contexts (the sheet,
+  // the toolbar), and WebKit only blurs what's in the same one: the veil and the field's glass
+  // would show the page plainly through them. The search is the same element throughout, so
+  // focus and typing carry over. Before paint, so it never shows in its old place first.
+  const veil = useRef<HTMLDivElement>(null)
+  const lifted = place !== "down"
+  useLayoutEffect(() => {
+    const parts = [veil.current, root.current].filter((part): part is HTMLDivElement => part !== null)
+    if (!lifted || !parts.every((part) => "showPopover" in part)) return
+    for (const part of parts) {
+      part.setAttribute("popover", "manual")
+      part.showPopover()
+    }
+    return () => {
+      for (const part of parts) {
+        if (part.matches(":popover-open")) part.hidePopover()
+        part.removeAttribute("popover")
+      }
+    }
+  }, [lifted])
+
   const go = (resume: ResumeWithId) => {
     setListing(false)
     router.push(`/create/new/${resume.id}`)
@@ -162,8 +184,6 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
       : `${found.length} ${found.length === 1 ? "resume matches" : "resumes match"} “${query.trim()}”`
     : ""
 
-  const lifted = place !== "down"
-
   return (
     // The toolbar's place for it, which keeps its height while the search is lifted out of it.
     <div className="relative h-10">
@@ -175,7 +195,7 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
             <span className="truncate">{query || "Search resumes"}</span>
           </div>
           {/* A press on the page puts the search back, as focus leaving it does. */}
-          <div aria-hidden="true" className={`search-veil ${place === "landing" ? "is-leaving" : ""}`} onPointerDown={land} />
+          <div ref={veil} aria-hidden="true" className={`search-veil ${place === "landing" ? "is-leaving" : ""}`} onPointerDown={land} />
         </>
       )}
       <div
