@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } fro
 import type { PDFWorker } from "pdfjs-dist"
 import type { Resume } from "@/lib/resume"
 import { compileResume, failureOf, printedOf } from "@/lib/typst/compile"
+import { startPdfWorker } from "@/lib/import/pdfWorker"
 
 /** How wide the page is drawn, in pixels: twice the widest tile, so it's sharp on high-density screens. */
 const DRAWN_WIDTH = 560
@@ -41,7 +42,8 @@ let started = false
 // Set when the compiler can't be downloaded or keeps breaking: the template pictures stay for this visit.
 let stopped = false
 let drawing = false
-let pdfWorker: PDFWorker | null = null
+// One that can't start is forgotten, so the next picture tries again.
+let pdfWorker: Promise<PDFWorker> | null = null
 
 function printedKey(resume: Resume): string | null {
   if (printedKeys.has(resume)) return printedKeys.get(resume)!
@@ -146,8 +148,11 @@ async function drawWanted() {
   } finally {
     drawing = false
     // Nothing's on screen, as when the dashboard was left: pdf.js's worker isn't needed till it's back.
-    if (wanted.size === 0) {
-      pdfWorker?.destroy()
+    if (wanted.size === 0 && pdfWorker) {
+      void pdfWorker.then(
+        (worker) => worker.destroy(),
+        () => {},
+      )
       pdfWorker = null
     }
   }
@@ -159,8 +164,11 @@ async function draw(resume: Resume): Promise<string> {
   const { loadPdfjs } = await import("@/lib/import/open")
   const { getDocument, PDFWorker } = await loadPdfjs()
   // One pdf.js worker for every picture: given none, pdf.js starts one per PDF.
-  if (!pdfWorker || pdfWorker.destroyed) pdfWorker = new PDFWorker()
-  const task = getDocument({ data: pdf, isEvalSupported: false, worker: pdfWorker })
+  pdfWorker ??= startPdfWorker(PDFWorker).catch((error) => {
+    pdfWorker = null
+    throw error
+  })
+  const task = getDocument({ data: pdf, isEvalSupported: false, worker: await pdfWorker })
   try {
     const page = await (await task.promise).getPage(1)
     const viewport = page.getViewport({ scale: DRAWN_WIDTH / page.getViewport({ scale: 1 }).width })

@@ -115,6 +115,7 @@ beforeEach(async () => {
     }
     return {
       GlobalWorkerOptions: {},
+      PDFWorker: class {},
       getDocument: () => {
         const file = { closed: false }
         opened.push(file)
@@ -136,6 +137,8 @@ beforeEach(async () => {
       },
     }
   })
+  // So is pdf.js's worker, which starts at once (pdfWorker.test.ts tests it).
+  vi.doMock("./pdfWorker", () => ({ PDF_WORKER_URL: "pdf.worker.min.mjs", startPdfWorker: async () => ({ destroy: () => {} }) }))
   ;({ openResumeFile, OpenFileError } = await import("./open"))
 })
 

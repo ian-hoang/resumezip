@@ -8,12 +8,14 @@ import type { PDFWorker } from "pdfjs-dist"
 import { MAX_PAGES, TooMuchTextError } from "@/lib/import/limits"
 import { readPdf } from "@/lib/import/lines"
 import { loadPdfjs, readInWorker, until } from "@/lib/import/open"
+import { startPdfWorker } from "@/lib/import/pdfWorker"
 import type { PdfReading } from "./engine"
 import type { PdfSectionLayout } from "./extraPdf"
 
 // pdf.js's worker for these readings. Closing a document stops what it's
-// reading there, and leaves the worker for the next one.
-let pdfWorker: PDFWorker | null = null
+// reading there, and leaves the worker for the next one. One that can't start
+// is forgotten, so the next reading tries again.
+let pdfWorker: Promise<PDFWorker> | null = null
 
 /**
  * The preview at `url`, as read; null if it can't be read, as when it's past
@@ -23,8 +25,12 @@ let pdfWorker: PDFWorker | null = null
 export async function readPreview(url: string, signal: AbortSignal, checkerLayout?: PdfSectionLayout[]): Promise<PdfReading | null> {
   const data = new Uint8Array(await (await fetch(url, { signal })).arrayBuffer())
   const { getDocument, PDFWorker } = await until(loadPdfjs(), signal)
-  if (!pdfWorker || pdfWorker.destroyed) pdfWorker = new PDFWorker()
-  const task = getDocument({ data, isEvalSupported: false, fontExtraProperties: true, worker: pdfWorker })
+  pdfWorker ??= startPdfWorker(PDFWorker).catch((error) => {
+    pdfWorker = null
+    throw error
+  })
+  const worker = await until(pdfWorker, signal)
+  const task = getDocument({ data, isEvalSupported: false, fontExtraProperties: true, worker })
   const close = () => void task.destroy().catch(() => {})
   signal.addEventListener("abort", close, { once: true })
   try {

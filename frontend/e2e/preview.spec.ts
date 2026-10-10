@@ -187,6 +187,30 @@ test("the preview starts pdf.js's worker once, not for each new PDF", async ({ p
   expect(errors).toEqual([])
 })
 
+test("the preview starts pdf.js's worker again when its download fails", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "The page sees its workers' requests in Chromium")
+  const errors = pageErrors(page)
+  // The worker's first download fails, as when a connection drops for a
+  // moment; the fetch that puts it in the cache early goes through. Left to
+  // itself, pdf.js would give up on workers and draw on the page's own thread
+  // for the rest of the visit, or, if that download failed too, not at all.
+  let failed = false
+  await page.route(/pdf\.worker/, (route) => {
+    if (failed || route.request().resourceType() === "fetch") return route.continue()
+    failed = true
+    return route.abort()
+  })
+  await page.goto("/")
+  await page.getByRole("link", { name: "Start writing" }).first().click()
+  await expect(page).toHaveURL(/\/create\/new\//)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  const preview = page.getByRole("region", { name: "Live preview" })
+  await expect(preview.getByText(/Ada Lovelace/i).first()).toBeVisible()
+  expect(failed).toBe(true)
+  expect(page.workers().filter((worker) => worker.url().includes("pdf.worker"))).toHaveLength(1)
+  expect(errors).toEqual([])
+})
+
 /** Starts a resume with a name and email, and waits for the email in the preview. */
 async function startResume(page: Page) {
   await page.goto("/")

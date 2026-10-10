@@ -24,6 +24,7 @@ import { storedFile, zipDirectory } from "@/lib/zip"
 import { MAX_BYTES, MAX_PAGES, TIME_LIMIT_MS, TooMuchTextError } from "./limits"
 import { readPdf, type Line, type PageSize, type PdfPage } from "./lines"
 import type { ParsedResume } from "./parse"
+import { PDF_WORKER_URL, startPdfWorker } from "./pdfWorker"
 import type { ReadRequest, ReadResult } from "./read"
 
 export type OpenedFile =
@@ -60,7 +61,7 @@ let pdfjs: Promise<typeof import("pdfjs-dist")> | null = null
 export function loadPdfjs() {
   pdfjs ??= import("pdfjs-dist")
     .then((module) => {
-      module.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+      module.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL
       return module
     })
     .catch((error) => {
@@ -163,9 +164,14 @@ async function attachedResume(doc: PDFDocumentProxy, signal: AbortSignal): Promi
 }
 
 async function openPdf(data: ArrayBuffer, title: string, fileName: string, signal: AbortSignal): Promise<OpenedFile> {
-  const { getDocument } = await until(loadPdfjs(), signal)
-  const task = getDocument({ data: new Uint8Array(data), isEvalSupported: false, fontExtraProperties: true })
-  // Closing the document ends pdf.js's worker, which stops whatever it's reading.
+  const { getDocument, PDFWorker } = await until(loadPdfjs(), signal)
+  // Not until(): a worker that starts just as reading stops is still ended, with the document.
+  const worker = await startPdfWorker(PDFWorker, signal)
+  const task = getDocument({ data: new Uint8Array(data), isEvalSupported: false, fontExtraProperties: true, worker })
+  // The document has a worker of its own, which closing it ends, stopping
+  // whatever it's reading. pdf.js ends the worker a task owns, as it does one
+  // it started itself.
+  task._worker = worker
   const close = () => void task.destroy().catch(() => {})
   signal.addEventListener("abort", close, { once: true })
   let shown = false

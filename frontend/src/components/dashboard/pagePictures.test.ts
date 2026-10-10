@@ -46,6 +46,7 @@ describe("a picture being drawn when its resume is deleted", () => {
     vi.unstubAllGlobals()
     vi.doUnmock("@/lib/typst/compile")
     vi.doUnmock("@/lib/import/open")
+    vi.doUnmock("@/lib/import/pdfWorker")
   })
 
   test("isn't stored once it's drawn, and its URL is let go of", async () => {
@@ -60,12 +61,10 @@ describe("a picture being drawn when its resume is deleted", () => {
     vi.doMock("@/lib/import/open", () => ({
       loadPdfjs: async () => ({
         getDocument: () => ({ promise: Promise.resolve({ getPage: async () => page }), destroy: async () => {} }),
-        PDFWorker: class {
-          destroyed = false
-          destroy() {}
-        },
+        PDFWorker: class {},
       }),
     }))
+    vi.doMock("@/lib/import/pdfWorker", () => ({ startPdfWorker: async () => ({ destroy() {} }) }))
     vi.stubGlobal("document", {
       createElement: () => ({ getContext: () => ({}), toBlob: (done: (blob: Blob) => void) => done(new Blob()) }),
     })
