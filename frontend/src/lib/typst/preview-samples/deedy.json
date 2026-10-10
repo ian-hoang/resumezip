@@ -1,0 +1,143 @@
+{
+  "id": "preview-deedy",
+  "resumeTitle": "Rohan Mehta",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "deedy",
+  "sectionOrder": [
+    "Education",
+    "Skills",
+    "Work",
+    "Publications",
+    "Projects",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Rohan Mehta",
+    "email": "rohan.mehta@example.com",
+    "phoneNumber": "(555) 012-3307",
+    "location": "Pittsburgh, PA",
+    "linkedin": "linkedin.com/in/rohanmehta",
+    "profileGithub": "github.com/rmehta",
+    "personalWebsite": "rohanmehta.dev"
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Carnegie Mellon University",
+      "schoolLocation": "Pittsburgh, PA",
+      "degree": "B.S. in Computer Science, Minor in Machine Learning",
+      "gpa": "3.85 / 4.0",
+      "schoolStartDate": "Aug 2022",
+      "schoolEndDate": "May 2026",
+      "coursework": "Distributed Systems, Computer Systems, Machine Learning, Computer Vision, Algorithm Design, Parallel Computer Architecture",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Software Engineering Intern",
+      "companyName": "NVIDIA",
+      "workLocation": "Santa Clara, CA",
+      "workStartDate": "May 2025",
+      "workEndDate": "Aug 2025",
+      "workDescription": "• Wrote CUDA kernels for the attention layers in an internal inference library, speeding up long prompts by 1.8 times on H100 GPUs\n• Built a benchmark suite that runs on every pull request across four GPU types and posts its results back to the code review\n• Profiled memory use across 30 models and moved two buffers onto shared memory, so the largest models run with twice the batch size"
+    },
+    {
+      "id": 2,
+      "workRole": "Software Engineering Intern",
+      "companyName": "Microsoft",
+      "workLocation": "Redmond, WA",
+      "workStartDate": "May 2024",
+      "workEndDate": "Aug 2024",
+      "workDescription": "• Built a feature in Azure DevOps that suggests reviewers for a pull request from who last changed the same files and how quickly they reviewed\n• Wrote the service in C# and the page in TypeScript and React, and rolled it out to 5,000 internal repositories behind a feature flag\n• Wrote the design doc and led its review with three senior engineers"
+    },
+    {
+      "id": 3,
+      "workRole": "Teaching Assistant",
+      "companyName": "Carnegie Mellon University",
+      "workLocation": "Pittsburgh, PA",
+      "workStartDate": "Jan 2024",
+      "workEndDate": "Present",
+      "workDescription": "• Run a weekly recitation for 35 students and hold office hours on the malloc, shell and proxy labs, the hardest three of the term\n• Rewrote the cache lab's autograder in Python so students see why tests fail\n• Wrote 12 new practice problems and their solutions for exam reviews"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "raftkv",
+      "projectDate": "2025",
+      "techStack": "Go, gRPC",
+      "projectGithub": "github.com/rmehta/raftkv",
+      "additionalLink": "",
+      "projectDescription": "• A replicated key-value store built on Raft with snapshots and membership changes, tested under random network partitions"
+    },
+    {
+      "id": 2,
+      "projectName": "tartanplan",
+      "projectDate": "2024",
+      "techStack": "TypeScript, Next.js",
+      "projectGithub": "github.com/rmehta/tartanplan",
+      "additionalLink": "",
+      "projectDescription": "• A course planner that checks a four-year schedule against degree rules and prerequisites, used by 1,200 students each term\n• Scrapes the course catalog nightly and keeps each plan in the browser"
+    }
+  ],
+  "publicationsSection": [
+    {
+      "id": 1,
+      "publicationTitle": "Fast depth completion for small robots with sparse lidar",
+      "publicationAuthors": "R. Mehta, S. Okoro, and L. Zhang",
+      "publicationVenue": "IEEE International Conference on Robotics and Automation",
+      "publicationDetails": "Atlanta, GA",
+      "publicationDate": "May 2025",
+      "publicationLink": "10.5555/icra.2025.1187"
+    }
+  ],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Python, C++, Go, C, TypeScript, SQL"
+    },
+    {
+      "id": 2,
+      "skillName": "Machine learning",
+      "skillDetails": "PyTorch, JAX, CUDA, NumPy, OpenCV"
+    },
+    {
+      "id": 3,
+      "skillName": "Systems",
+      "skillDetails": "Linux, Docker, Kubernetes, AWS, Git"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "President",
+      "leadershipOrg": "ScottyLabs",
+      "leadershipLocation": "Pittsburgh, PA",
+      "leadershipStartDate": "Aug 2024",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Lead a student group of 80 that builds course and campus tools, and run TartanHacks, a hackathon for 600 students\n• Started a mentoring program that pairs first-year members with seniors on a real project each semester, now 40 pairs a year"
+    }
+  ],
+  "volunteerExperienceSection": [],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Dean's List, every semester",
+      "awardOrg": "Carnegie Mellon University",
+      "awardDate": "2022 – 2025"
+    },
+    {
+      "id": 2,
+      "awardName": "Honorable Mention",
+      "awardOrg": "ICPC North America Championship",
+      "awardDate": "2024"
+    }
+  ]
+}

@@ -53,7 +53,11 @@ server to build a PDF.
    page in `public/previews/<id>.webp` (1280 px wide, from the editor's
    preview), made from its own sample resume in `preview-samples/<id>.json`,
    and its `font`: the family its `#set text(font: ...)` names, which is
-   downloaded before its first PDF. A test checks the two match.
+   downloaded before its first PDF. A test checks the two match. Name any
+   other family it sets words in as `alsoFonts`, and, when it uses only some
+   of its family's weights, those as `weights`, so it downloads no more than
+   it prints with. A template with a column of sections on the left names
+   them as `firstColumn`, so the resume checker expects them first in the PDF.
    Every page that lists templates reads that list.
 
 Templates can only use the fonts in `fonts/`, listed in `fontFiles.ts`. They're
@@ -68,6 +72,10 @@ is served under a name with its content's hash, which changes when the font does
 | `Lato-*.ttf` | Lato | [Google Fonts](https://fonts.google.com/specimen/Lato) | SIL Open Font License 1.1 |
 | `texgyreheros-*.otf` | TeX Gyre Heros | [CTAN](https://ctan.org/pkg/tex-gyre) | GUST Font License |
 | `EBGaramond-*.ttf` | EB Garamond | [EBGaramond12](https://github.com/octaviopardo/EBGaramond12) | SIL Open Font License 1.1 |
+| `CharisSIL-*.ttf` | Charis SIL | [Google Fonts](https://fonts.google.com/specimen/Charis+SIL) | SIL Open Font License 1.1 |
+| `IBMPlexMono-*.ttf` | IBM Plex Mono | [Google Fonts](https://fonts.google.com/specimen/IBM+Plex+Mono) | SIL Open Font License 1.1 |
+| `SourceSans3-*.ttf` | Source Sans 3 | [Google Fonts](https://fonts.google.com/specimen/Source+Sans+3) | SIL Open Font License 1.1 |
+| `Raleway-v4020-*.otf` | Raleway, as "Raleway-v4020" | [Raleway v4.020](https://github.com/impallari/Raleway) | SIL Open Font License 1.1 |
 
 The compiler knows every font from the start, from what `fonts/info.json` says
 about each (its family, style, which characters it has and a hash of the
@@ -82,11 +90,14 @@ both ways to check. After adding or changing a font, write `info.json` again:
 UPDATE_FONT_INFO=1 npx vitest run src/lib/typst/fontFiles.test.ts
 ```
 
-All but Lato are trimmed copies: Latin (with Vietnamese), Greek, Cyrillic,
-punctuation, currency and common symbols, keeping kerning, ligatures, accents
-and small caps, without hinting. That halves their size. Each trimmed font says so in its description
-(name ID 10), as the GUST Font License asks. Lato is left as it was, because
-its license reserves the name "Lato" for unmodified copies.
+New Computer Modern, TeX Gyre Heros and EB Garamond are trimmed copies: Latin
+(with Vietnamese), Greek, Cyrillic, punctuation, currency and common symbols,
+keeping kerning, ligatures, accents and small caps, without hinting. That halves
+their size. Each trimmed font says so in its description (name ID 10), as the
+GUST Font License asks. The rest are left as they were, because their licenses
+reserve their names ("Lato", "Charis" and "SIL", "Plex", "Source", "Raleway")
+for unmodified copies. Raleway comes from its own project rather than Google
+Fonts, as the copies Google Fonts serves have no small capitals.
 
 Resumes printed with the trimmed fonts are identical to ones printed with the
 originals. To trim a new font the same way, with

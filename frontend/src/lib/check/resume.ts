@@ -7,6 +7,7 @@
 
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS, type FieldKey, type ProfileKey, type SectionName } from "@/components/editor/sections"
 import { isLeftOut, isLeftOutLine } from "@/lib/leftOut"
+import { firstColumnOf, templateById } from "@/lib/templates"
 import type { Resume } from "@/lib/resume"
 import { plainText } from "@/lib/typst/resumeData"
 import {
@@ -144,7 +145,10 @@ export function viewOf(resume: Resume): ResumeView {
     })
     titles[name] = text(headings[headingKey])
   }
-  const allOrder = resolveSections(resume)
+  // In the order the PDF holds them, with a left column's sections first.
+  const left = firstColumnOf(templateById(resume.selectedTemplate))
+  const resolved = resolveSections(resume)
+  const allOrder = [...resolved.filter((ref) => left.includes(ref)), ...resolved.filter((ref) => !left.includes(ref))]
   const extras = Object.fromEntries(
     Object.entries(extrasOf(resume))
       .filter(([, section]) => sectionIncluded(section))

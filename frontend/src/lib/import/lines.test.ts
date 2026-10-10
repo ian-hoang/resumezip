@@ -187,3 +187,67 @@ describe("hyphens", () => {
     })
   })
 })
+
+/** Text on a page, half its size wide a letter, as pdf.js gives it. */
+const item = (text: string, x: number, baseline: number, size = 10) => ({
+  text,
+  x,
+  right: x + text.length * size * 0.5,
+  baseline,
+  size,
+  bold: false,
+  italic: false,
+})
+const page = (items: ReturnType<typeof item>[]) => ({ width: 612, height: 792, items, links: [] })
+
+describe("bullets", () => {
+  test("a dash set apart from its text starts a bullet, as a dot does", () => {
+    const lines = linesFromPages([
+      page([item("-", 40, 700), item("Ran the storefront cache", 56, 700), item("-", 40, 688), item("Led incident reviews", 56, 688)]),
+    ])
+    expect(lines.map(({ bullet, text, x }) => ({ bullet, text, x }))).toEqual([
+      { bullet: true, text: "Ran the storefront cache", x: 56 },
+      { bullet: true, text: "Led incident reviews", x: 56 },
+    ])
+  })
+})
+
+describe("columns", () => {
+  // A narrow column on the left and a wider one on the right, their lines
+  // level with each other, under a name across both.
+  const name = item("Dana Cole", 150, 740, 24)
+  const left = ["Education", "State University", "B.S. in Cell Biology, 2022", "Skills", "Python, R, SQL, ImageJ", "Lab safety, PCR"]
+  const right = [
+    "Experience",
+    "Acme Labs | Research Assistant",
+    "Jun 2022 - Present | Boston, MA",
+    "Ran 300 assays a week for the drug screening team and kept",
+    "the lab's sample records up to date in its tracking system",
+    "Wrote the scripts that turned plate readings into reports",
+    "Trained six new assistants on the plate readers and robots",
+    "Ordered the lab's supplies and kept its budget each quarter",
+    "Kept the freezer inventory and logged where each sample was",
+    "Presented results at the team's weekly meeting with the leads",
+  ]
+  const leftItems = left.map((text, i) => item(text, 36, 700 - 12 * i))
+  const rightItems = right.map((text, i) => item(text, 230, 700 - 12 * i))
+
+  test("one written whole before the other is read as a column, however narrow", () => {
+    const texts = linesFromPages([page([name, ...leftItems, ...rightItems])]).map((line) => line.text)
+    expect(texts).toEqual(["Dana Cole", ...left, ...right])
+  })
+
+  test("text written line by line across both, like dates beside entries, isn't", () => {
+    const written = rightItems.flatMap((rightItem, i) => (leftItems[i] ? [leftItems[i], rightItem] : [rightItem]))
+    const texts = linesFromPages([page([name, ...written])]).map((line) => line.text)
+    expect(texts).toEqual(["Dana Cole", ...right.map((text, i) => (left[i] ? `${left[i]} ${text}` : text))])
+  })
+})
+
+describe("where a line sits", () => {
+  test("is where most of its text sits, not a heading in the margin set a little higher", () => {
+    const [line] = linesFromPages([page([item("AWARDS", 60, 700.5, 8), item("Dean's List, State University", 125, 698)])])
+    // Boxes measure down from the top of the 792-point page: the text's baseline is 94 down.
+    expect(line.box?.[3]).toBeCloseTo(94 + 0.3 * 10)
+  })
+})

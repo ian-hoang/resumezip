@@ -13,11 +13,36 @@ import { differences, readBack, render, samples } from "./testRender"
  * starts differing and isn't listed fails the test.
  */
 const KNOWN_GAPS: Record<string, string[]> = {
+  // Roles and degrees are printed in capitals, so their original case can't be read back.
+  accent: [
+    "education[0].degree",
+    "education[1].degree",
+    "leadership[0].role",
+    "volunteer[0].role",
+    "work[0].role",
+    "work[1].role",
+    "work[2].role",
+  ],
+  // Names of schools, employers, groups and projects, and skill categories,
+  // are printed in capitals, so their original case can't be read back.
+  deedy: [
+    "education[0].school",
+    "leadership[0].organization",
+    "projects[0].name",
+    "projects[1].name",
+    "skills[0].name",
+    "skills[1].name",
+    "skills[2].name",
+    "work[1].company",
+    "work[2].company",
+  ],
   ian: [],
   // A comma inside an award's name reads as the start of the organization.
   jake: ["awards[0].name", "awards[0].organization"],
   levelsfyi: [],
+  margin: [],
   modernjack: [],
+  mono: [],
   // "Organization, City, ST" on one line all reads as the location, and a
   // comma or dash inside an award's name reads as the start of the organization.
   referme: [
@@ -46,6 +71,7 @@ const KNOWN_GAPS: Record<string, string[]> = {
     "work[1].company",
     "work[2].company",
   ],
+  swiss: [],
 }
 
 // What a resume prints, minus differences that print the same or are
