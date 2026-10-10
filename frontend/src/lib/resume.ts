@@ -12,6 +12,7 @@
 import type { ChoiceKey, DataKey, FieldKey, HeadingKey, ProfileKey } from "@/components/editor/sections"
 import type { CHECK_FIELD, SavedCheck } from "@/lib/check/state"
 import type { ExtraSections } from "@/lib/resumeSections"
+import type { Tune } from "@/lib/tune"
 
 /** The tags a resume can have in the dashboard's list. */
 export const RESUME_TAGS = [
@@ -51,6 +52,8 @@ export type Resume = {
   profileSection?: Profile | null
   /** Sections beyond the built-in ones, by key, read with extrasOf (lib/resumeSections.ts). */
   extraSections?: ExtraSections
+  /** Adjustments to the template's sizes and page, from Fine-tune (lib/tune.ts). */
+  tune?: Tune | null
 } & { [Key in DataKey]?: Entry[] | null } & { [Key in ChoiceKey]?: string } & {
   /** What the person told the checker, read with readCheckState (lib/check/state.ts). */
   [Key in typeof CHECK_FIELD]?: SavedCheck | null

@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Each part of the site keeps its own styles in a file of its own. */
+@import "./styles/glass.css";
+@import "./styles/home.css";
+@import "./styles/dashboard.css";
+@import "./styles/editor.css";
 
 /* resumezip design tokens: use them as bg-paper, text-ink, border-rule, ... */
 @theme {
