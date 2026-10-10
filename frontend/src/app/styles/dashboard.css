@@ -103,25 +103,6 @@
   .search-spot {
     position: relative;
   }
-  /* In the top layer (a popover, SearchBar.tsx), without the browser's own
-     popover box: no border, padding, fill or scroll. */
-  .search-spot:popover-open,
-  .search-veil:popover-open {
-    margin: 0;
-    border: 0;
-    padding: 0;
-    color: inherit;
-    overflow: visible;
-  }
-  .search-spot:popover-open {
-    background: none;
-    bottom: auto;
-    height: auto;
-  }
-  .search-veil:popover-open {
-    width: 100%;
-    height: 100%;
-  }
   .search-spot[data-lifted],
   .search-spot[data-landing] {
     position: fixed;
