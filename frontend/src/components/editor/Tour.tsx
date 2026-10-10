@@ -72,7 +72,12 @@ function rememberSeen() {
 export default function Tour() {
   const [shown, setShown] = useState(false)
   useEffect(() => {
-    if (firstVisit()) setShown(true)
+    if (!firstVisit()) return
+    // Remembered as it opens rather than as it closes: the dialog's close
+    // event can come late while the editor is busy drawing the preview, and a
+    // reload or a step away before it would show the tour again.
+    rememberSeen()
+    setShown(true)
   }, [])
   return shown ? <TourDialog onClosed={() => setShown(false)} /> : null
 }
@@ -106,7 +111,6 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
       // dialog open again is from a close this effect's cleanup made, and it
       // opened again since (as React's development mode does on purpose).
       if (dialog.open) return
-      rememberSeen()
       closed.current()
     }
     dialog.addEventListener("close", onClose)

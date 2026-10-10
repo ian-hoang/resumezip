@@ -90,6 +90,20 @@ test("Escape closes the tour, and so does Close, for good", async ({ page }) => 
   expect(errors).toEqual([])
 })
 
+test("a tour left open, by a reload or a step away, doesn't show again on the next visit", async ({ page }) => {
+  const errors = pageErrors(page)
+  await startWriting(page)
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await previewShown(page)
+  await page.reload()
+  await expect(page.getByLabel("Full name")).toBeVisible()
+  // A fixed wait: proving nothing opens.
+  await page.waitForTimeout(1_000)
+  await expect(page.getByRole("dialog")).toHaveCount(0)
+  await previewShown(page)
+  expect(errors).toEqual([])
+})
+
 test("where the browser won't let the site save, the tour doesn't show, as it would on every visit", async ({ page }) => {
   const errors = pageErrors(page)
   // As in Chrome set to "Don't allow sites to save data on your device".
