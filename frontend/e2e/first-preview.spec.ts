@@ -80,8 +80,6 @@ test("a resume downloads only its template's fonts, and another template's once 
   const jakes = await drawn()
 
   // Harvard is set in EB Garamond.
-  // On wide screens the templates are in the left panel's Style tab.
-  await page.getByRole("tab", { name: "Style" }).click()
   await chooseTemplate(page, "Harvard")
   await expect.poll(() => fonts.filter((font) => font.startsWith("EBGaramond")).length).toBe(4)
   await expect.poll(drawn).not.toBe(jakes)
