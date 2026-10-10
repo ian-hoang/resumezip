@@ -38,7 +38,7 @@
     transform: translateY(calc(-100% - 3rem));
   }
 
-  /* An underline that draws itself from the left, under the header's links. */
+  /* An underline that draws itself from the left, under the header's and the footer's links. */
   .nav-underline {
     --underline: var(--color-accent);
     background: linear-gradient(var(--underline), var(--underline)) no-repeat left bottom / 0% 1.5px;
@@ -198,28 +198,39 @@
     mask-image: linear-gradient(to bottom, transparent 50%, #000 75%);
   }
 
-  /* The templates page's cards: a hover or focus lifts the page and slides up "Use template". */
+  /* The templates page's cards: paper on the desk. A hover or focus lifts the
+     page and brings up "Use this template" over its foot. */
   .template-card .template-page {
+    box-shadow:
+      0 1px 2px rgb(17 19 24 / 0.08),
+      0 14px 30px -18px rgb(30 40 90 / 0.4);
     transition:
       transform 300ms var(--ease-glide),
       box-shadow 300ms var(--ease-glide);
   }
   .template-card .template-use {
-    transform: translateY(100%);
-    transition: transform 300ms var(--ease-glide);
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 200ms var(--ease-glide),
+      transform 300ms var(--ease-glide);
   }
   .template-card:hover .template-page,
   .template-card:focus-visible .template-page {
     transform: translateY(-6px);
-    box-shadow: 0 24px 40px -20px rgb(17 19 24 / 0.45);
+    box-shadow:
+      0 1px 2px rgb(17 19 24 / 0.08),
+      0 28px 44px -22px rgb(30 40 90 / 0.5);
   }
   .template-card:hover .template-use,
   .template-card:focus-visible .template-use {
+    opacity: 1;
     transform: none;
   }
   /* Without a pointer to hover with, it's always there to say what a tap does. */
   @media (hover: none) {
     .template-card .template-use {
+      opacity: 1;
       transform: none;
     }
   }

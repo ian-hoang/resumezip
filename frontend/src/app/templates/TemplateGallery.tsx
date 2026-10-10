@@ -4,6 +4,7 @@ import Image from "next/image"
 import { useEffect, useId, useRef, useState } from "react"
 import { ArrowUpRight, Search } from "lucide-react"
 import { StartWritingLink } from "@/components/site/StartWriting"
+import { OUTLINE_PILL } from "@/components/site/pills"
 import { TEMPLATE_TAGS, TEMPLATES, templateMatches, type TemplateId, type TemplateTag } from "@/lib/templates"
 
 const names = new Intl.ListFormat("en", { type: "conjunction" })
@@ -64,7 +65,7 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
             Search templates
           </label>
           <Search
-            className="pointer-events-none absolute left-5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-2"
+            className="pointer-events-none absolute left-[18px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-ink-2"
             aria-hidden="true"
           />
           <input
@@ -85,12 +86,12 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
             placeholder="Search by name, font or style"
             autoComplete="off"
             spellCheck={false}
-            className="peer h-14 w-full rounded-[4px] border border-rule-strong bg-sheet pl-[52px] pr-14 text-[16px] text-ink transition-[border-color,box-shadow] placeholder:text-ink-2 hover:border-ink focus:border-accent focus:shadow-[0_0_0_4px_rgb(46_91_230/0.15)] focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="peer h-12 w-full rounded-full bg-sheet/80 pl-12 pr-14 text-[16px] text-ink shadow-[0_12px_32px_-20px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/15 transition-[box-shadow,background-color] placeholder:text-ink-2 hover:ring-ink/40 focus:bg-sheet focus:shadow-[0_0_0_4px_rgb(46_91_230/0.15)] focus:outline-none focus:ring-accent [&::-webkit-search-cancel-button]:hidden"
           />
           {/* Only a hint for a keyboard; it goes once the search has focus. */}
           <kbd
             aria-hidden="true"
-            className="label-mono pointer-events-none absolute right-4 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[3px] border border-rule-strong text-ink-2 peer-focus:hidden [@media(hover:none)]:hidden"
+            className="label-mono pointer-events-none absolute right-3 top-1/2 inline-flex h-6 min-w-8 -translate-y-1/2 items-center justify-center rounded-full px-2 text-ink-2 ring-1 ring-inset ring-ink/15 peer-focus:hidden [@media(hover:none)]:hidden"
           >
             /
           </kbd>
@@ -105,8 +106,8 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                 type="button"
                 aria-pressed={pressed}
                 onClick={() => pick(option)}
-                className={`h-10 rounded-[4px] border px-4 text-[15px] transition-colors ${
-                  pressed ? "border-ink bg-ink text-white" : "border-rule-strong bg-sheet text-ink hover:border-ink"
+                className={`h-10 rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow] ${
+                  pressed ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40"
                 }`}
               >
                 {option ?? "All"}
@@ -121,10 +122,10 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
       </p>
 
       {shown.length > 0 ? (
-        <div className="grid grid-cols-1 gap-x-8 gap-y-12 border-t border-ink pt-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 border-t border-ink/15 pt-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((template) => (
             <StartWritingLink key={template.id} template={template.id} className="template-card group flex flex-col gap-4">
-              <div className="template-page relative aspect-[8.5/11] w-full overflow-hidden bg-sheet ring-1 ring-rule group-hover:ring-ink">
+              <div className="template-page relative aspect-[8.5/11] w-full bg-sheet">
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}
@@ -132,32 +133,29 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                   sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className="object-cover object-top"
                 />
-                {template.id === newId && <span className="label-mono absolute right-3 top-3 bg-accent px-2 py-1 text-white">New</span>}
-                <span
-                  aria-hidden="true"
-                  className="template-use absolute inset-x-0 bottom-0 flex h-12 items-center justify-center gap-2 bg-ink text-[15px] font-medium text-white"
-                >
-                  Use template <ArrowUpRight className="h-4 w-4" />
+                {template.id === newId && (
+                  <span className="label-mono absolute right-3 top-3 rounded-full bg-accent px-2.5 py-1 text-white">New</span>
+                )}
+                <span aria-hidden="true" className="template-use absolute inset-x-0 bottom-5 flex justify-center">
+                  <span className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-[18px] text-[15px] font-medium tracking-[-0.01em] text-white shadow-[0_12px_28px_-12px_rgb(17_19_24/0.6)]">
+                    Use this template <ArrowUpRight className="h-4 w-4" />
+                  </span>
                 </span>
               </div>
-              <div className="flex items-baseline justify-between gap-3 border-t border-rule pt-3">
-                <span className="text-[15px]">{template.name}</span>
+              <div className="flex items-baseline justify-between gap-3 pt-1">
+                <span className="font-serif text-[22px] leading-tight tracking-[-0.015em]">{template.name}</span>
                 <span className="label-mono text-right text-ink-2">{template.font}</span>
               </div>
             </StartWritingLink>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-start gap-4 border-t border-ink pt-10">
+        <div className="flex flex-col items-start gap-4 border-t border-ink/15 pt-10">
           <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No template matches that.</p>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
             Try a template’s name, a font like Garamond or Lato, or one of the styles above.
           </p>
-          <button
-            type="button"
-            onClick={clear}
-            className="inline-flex h-11 items-center rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
-          >
+          <button type="button" onClick={clear} className={OUTLINE_PILL}>
             Show every template
           </button>
         </div>

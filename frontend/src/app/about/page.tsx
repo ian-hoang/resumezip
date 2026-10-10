@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Star } from "lucide-react"
 import PageIntro from "@/components/site/PageIntro"
+import { INK_PILL } from "@/components/site/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 
@@ -16,9 +17,9 @@ const TEXT_LINK = "text-ink underline underline-offset-4 hover:decoration-2"
 
 export default function AboutPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-paper">
+    <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-12 md:px-10 md:pt-16">
         <PageIntro label="About" title="Hi, I’m Ian.">
           I built resumezip because formatting a resume shouldn’t be harder than writing it. It’s free, there’s no sign-up, and I don’t
           store your resume.
@@ -30,12 +31,7 @@ export default function AboutPage() {
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">
               resumezip has no ads and no paid plans. If it helped you, a star on GitHub helps other people find it.
             </p>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex h-11 items-center gap-2 rounded-[4px] bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-black"
-            >
+            <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className={`${INK_PILL} mt-6`}>
               <Star className="h-4 w-4" aria-hidden="true" />
               Star on GitHub
             </a>

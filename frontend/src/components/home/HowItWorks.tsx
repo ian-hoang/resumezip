@@ -64,63 +64,59 @@ export default function HowItWorks() {
   const visible = pinned ? shown : STEPS.length
 
   return (
-    <section ref={sectionRef} aria-labelledby="how" data-tone="light" data-tick className={pinned ? "h-[300svh]" : undefined}>
-      <div className={pinned ? "sticky top-0 flex h-svh flex-col overflow-hidden bg-white" : "bg-white"}>
-        <div className="border-b border-[#d4d4d4]">
-          <div className="flex items-center justify-between px-5 py-7 md:px-10">
-            <h2 id="how" className="label-section text-accent">
-              How it works
-            </h2>
-            <span aria-hidden="true" className="label-section tabular-nums text-[#5c5c5c]">
-              {visible} / {STEPS.length}
-            </span>
-          </div>
+    <section ref={sectionRef} aria-labelledby="how" data-tone="light" data-tick className={`desk ${pinned ? "h-[300svh]" : ""}`}>
+      <div className={pinned ? "sticky top-0 flex h-svh flex-col overflow-hidden" : undefined}>
+        <div className="flex items-center justify-between px-5 py-7 md:px-10">
+          <h2 id="how" className="label-mono text-accent">
+            How it works
+          </h2>
+          <span aria-hidden="true" className="label-mono tabular-nums text-ink-2">
+            {visible} / {STEPS.length}
+          </span>
         </div>
 
         <div className={pinned ? "relative min-h-0 flex-1" : undefined}>
           <div
             className={
               pinned
-                ? `absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 bg-white px-5 text-center ${EASE} ${
+                ? `absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 px-5 text-center ${EASE} ${
                     visible === 0 ? "opacity-100" : "pointer-events-none -translate-y-8 opacity-0"
                   }`
-                : "flex flex-col items-center gap-5 px-5 py-16 text-center"
+                : "flex flex-col items-center gap-5 px-5 pb-16 pt-8 text-center"
             }
           >
             <p className="font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[80px] md:leading-[0.92]">Pick. Write. Send.</p>
-            <p className="text-xl leading-[1.35] tracking-[-0.015em] text-[#5c5c5c]">From a blank page to a finished PDF.</p>
+            <p className="text-xl leading-[1.35] tracking-[-0.015em] text-ink-2">From a blank page to a finished PDF.</p>
           </div>
 
-          <div className={`grid md:grid-cols-3 ${pinned ? "h-full grid-rows-3 md:grid-rows-1" : "border-t border-[#d4d4d4]"}`}>
+          <div
+            className={`grid gap-3 px-3 md:grid-cols-3 md:gap-5 md:px-10 ${pinned ? "h-full grid-rows-3 pb-3 md:grid-rows-1 md:pb-10" : "pb-16"}`}
+          >
             {STEPS.map((step, index) => (
               <div
                 key={step.word}
-                className={`min-h-0 overflow-hidden border-[#d4d4d4] ${index > 0 ? "border-t md:border-l md:border-t-0" : ""}`}
+                className={`flex min-h-0 gap-4 overflow-hidden rounded-panel bg-sheet/75 px-5 py-5 shadow-[0_24px_48px_-30px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/[0.06] md:flex-col md:gap-3 md:px-8 md:pb-8 md:pt-7 ${EASE} ${
+                  index < visible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
+                }`}
               >
-                <div
-                  className={`flex h-full gap-4 bg-white px-5 py-6 md:flex-col md:gap-3 md:px-10 md:pb-10 md:pt-8 ${EASE} ${
-                    index < visible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
-                  }`}
-                >
-                  <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-none md:gap-3">
-                    {/* On phones the number sits beside the word, leaving the step's text room to fit. */}
-                    <div className="flex items-baseline gap-3 md:flex-col md:items-start">
-                      <span className="font-serif text-[36px] leading-none text-accent md:text-[64px]">{index + 1}</span>
-                      <span className="font-serif text-[44px] leading-[0.95] tracking-[-0.03em] md:text-[80px]">{step.word}</span>
-                    </div>
-                    <p className="mt-1 max-w-[300px] text-base leading-[1.35] tracking-[-0.015em] text-[#5c5c5c] md:mt-2 md:text-xl">
-                      {step.text}
-                    </p>
+                <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-none md:gap-3">
+                  {/* On phones the number sits beside the word, leaving the step's text room to fit. */}
+                  <div className="flex items-baseline gap-3 md:flex-col md:items-start">
+                    <span className="font-serif text-[36px] leading-none text-accent md:text-[64px]">{index + 1}</span>
+                    <span className="font-serif text-[44px] leading-[0.95] tracking-[-0.03em] md:text-[80px]">{step.word}</span>
                   </div>
-                  <div className="flex shrink-0 items-center justify-center md:flex-1 md:items-end">
-                    <Image
-                      src={step.art}
-                      alt=""
-                      width={240}
-                      height={240}
-                      className="h-[clamp(88px,16svh,140px)] w-auto md:h-[clamp(140px,28svh,260px)]"
-                    />
-                  </div>
+                  <p className="mt-1 max-w-[300px] text-base leading-[1.35] tracking-[-0.015em] text-ink-2 md:mt-2 md:text-xl">
+                    {step.text}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center justify-center md:flex-1 md:items-end">
+                  <Image
+                    src={step.art}
+                    alt=""
+                    width={240}
+                    height={240}
+                    className="h-[clamp(88px,16svh,140px)] w-auto md:h-[clamp(140px,28svh,260px)]"
+                  />
                 </div>
               </div>
             ))}

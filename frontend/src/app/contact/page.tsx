@@ -6,14 +6,26 @@ import Link from "next/link"
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import PageIntro from "@/components/site/PageIntro"
+import { INK_PILL, OUTLINE_PILL } from "@/components/site/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 
 const SECTION = "mt-16 grid gap-8 border-t border-ink pt-6 md:grid-cols-3 md:gap-12"
 const HEADING = "font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]"
-const LABEL = "label-mono text-ink-2"
+// Underlined fields, as the editor's: the label turns blue while its field has focus, and a blue line draws under it.
+const BOX = "group/field relative flex flex-col gap-1.5"
+const LABEL = "label-mono text-ink-2 transition-colors group-focus-within/field:text-accent"
 const FIELD =
-  "w-full border-0 border-b border-rule-strong bg-transparent py-2 text-base text-ink outline-none focus:border-accent placeholder:text-ink-2/60"
+  "w-full border-0 border-b border-rule-strong bg-transparent py-2 text-base text-ink outline-none placeholder:text-ink-2/50 focus-visible:outline-none"
+
+function FocusLine() {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent shadow-[0_0_10px_rgb(46_91_230/0.55)] transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
+    />
+  )
+}
 
 const CONTACT_EMAIL = "hello@tryresumezip.com"
 
@@ -49,9 +61,9 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper">
+    <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-12 md:px-10 md:pt-16">
         <PageIntro label="Contact" title="Get in touch">
           Have questions or feedback? We’d love to hear from you.
         </PageIntro>
@@ -80,18 +92,14 @@ export default function ContactPage() {
                   </a>
                   .
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setIsSubmitted(false)}
-                  className="mt-6 inline-flex h-11 cursor-pointer items-center rounded-[4px] border border-rule-strong px-5 text-sm text-ink transition-colors hover:border-ink"
-                >
+                <button type="button" onClick={() => setIsSubmitted(false)} className={`${OUTLINE_PILL} mt-6`}>
                   Back to the form
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col gap-8">
                 <div className="grid gap-8 sm:grid-cols-2">
-                  <div className="flex flex-col gap-1.5">
+                  <div className={BOX}>
                     <label htmlFor="name" className={LABEL}>
                       Your name
                     </label>
@@ -106,9 +114,10 @@ export default function ContactPage() {
                       placeholder="John Doe"
                       className={FIELD}
                     />
+                    <FocusLine />
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
+                  <div className={BOX}>
                     <label htmlFor="email" className={LABEL}>
                       Email address
                     </label>
@@ -123,10 +132,11 @@ export default function ContactPage() {
                       placeholder="you@example.com"
                       className={FIELD}
                     />
+                    <FocusLine />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className={BOX}>
                   <label htmlFor="subject" className={LABEL}>
                     Subject
                   </label>
@@ -153,9 +163,10 @@ export default function ContactPage() {
                       className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-2"
                     />
                   </div>
+                  <FocusLine />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className={BOX}>
                   <label htmlFor="message" className={LABEL}>
                     Your message
                   </label>
@@ -167,15 +178,13 @@ export default function ContactPage() {
                     required
                     rows={6}
                     placeholder="Type your message here…"
-                    className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-base leading-relaxed text-ink outline-none focus:border-accent placeholder:text-ink-2/60"
+                    className={`${FIELD} resize-y leading-relaxed`}
                   />
+                  <FocusLine />
                 </div>
 
                 <div>
-                  <button
-                    type="submit"
-                    className="inline-flex h-11 cursor-pointer items-center rounded-[4px] bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-black"
-                  >
+                  <button type="submit" className={INK_PILL}>
                     Send with your email app
                   </button>
                 </div>
