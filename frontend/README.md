@@ -60,6 +60,9 @@ npm run test:browser   # after a build; see below
   app changes either.
   Word drops the attachment when it saves, and then the file opens like any
   Word file.
+- Save to Google Drive, in the same ▾ menu, uploads the PDF straight from the
+  browser once Google's sign-in window hands back a token (`src/lib/googleDrive.ts`
+  explains how). `/google-drive` is the page that window comes back to.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's
   fields. Its README explains how.
 - `src/lib/check/` is the resume checker: fixed rules that say what to fix on

@@ -18,6 +18,9 @@ import { reducedMotion, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import TemplatePicker from "@/components/editor/TemplatePicker"
 import { useKeepFormPlace } from "@/components/editor/useKeepFormPlace"
+import { usePdfFile } from "@/components/editor/usePdfFile"
+import { useSaveToDrive } from "@/components/editor/useSaveToDrive"
+import { useSharePdf } from "@/components/editor/useSharePdf"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
@@ -108,8 +111,17 @@ function Editor({ id }: { id: string }) {
   const [downloadedAt, setDownloadedAt] = useState(0)
   const downloaded = downloadedAt > 0
   const [failure, setFailure] = useState<Failure | null>(null)
-  // Said to screen readers once another format is downloaded.
+  // Said to screen readers once another format is downloaded, or the PDF is shared or saved to Google Drive.
   const [savedAs, setSavedAs] = useState("")
+  // Said again, even when it's the same as last time.
+  const announce = (message: string) => {
+    setSavedAs("")
+    requestAnimationFrame(() => setSavedAs(message))
+  }
+  // The PDF that Share PDF and Save to Google Drive hand on, made once per change.
+  const preparePdf = usePdfFile()
+  const sharePdf = useSharePdf(preparePdf, () => announce("PDF shared"))
+  const drive = useSaveToDrive(preparePdf, () => announce("PDF saved to Google Drive"))
   // Small screens show the form or the preview, not both.
   const [view, setView] = useState<"edit" | "preview">("edit")
   const [typing, setTyping] = useState(false)
@@ -349,12 +361,6 @@ function Editor({ id }: { id: string }) {
     }
   }
 
-  // Says aloud that another format was downloaded, even when it's the same as last time.
-  const sayDownloaded = (what: string) => {
-    setSavedAs("")
-    requestAnimationFrame(() => setSavedAs(`${what} downloaded`))
-  }
-
   // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
   // Its code downloads the first time it's chosen.
   const downloadWord = async () => {
@@ -365,10 +371,10 @@ function Editor({ id }: { id: string }) {
       saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
       // Only a failed Word file is put right; a failed PDF still is one.
       setFailure((previous) => (previous?.of ? null : previous))
-      sayDownloaded("Word file")
+      announce("Word file downloaded")
     } catch (error) {
       console.error("Error downloading the Word file:", error)
-      setFailure((previous) => nextFailure(previous, error, "Word file"))
+      setFailure((previous) => nextFailure(previous, error, { of: "Word file" }))
     }
   }
 
@@ -377,7 +383,7 @@ function Editor({ id }: { id: string }) {
     const resume = read()
     if (!resume) return
     saveFile(toJson(resume), fileNameOf(resume, "json"), "application/json")
-    sayDownloaded("JSON")
+    announce("JSON downloaded")
   }
 
   if (!loaded) {
@@ -464,7 +470,21 @@ function Editor({ id }: { id: string }) {
                 choices={[
                   { title: "Word", hint: "To edit in Word, Google Docs or Pages", onChoose: downloadWord },
                   { title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson },
+                  ...(sharePdf.shareable ? [{ title: "Share PDF", hint: "Send it to another app", onChoose: sharePdf.share }] : []),
+                  { title: "Save to Google Drive", hint: "Puts the PDF in your Drive. Google asks you first.", onChoose: drive.save },
                 ]}
+                busy={sharePdf.making}
+                onOpen={sharePdf.shareable ? preparePdf : undefined}
+                notice={
+                  drive.saving
+                    ? { title: "Saving to Google Drive…", working: true }
+                    : drive.saved && {
+                        title: "Saved to Google Drive",
+                        file: drive.saved.name,
+                        link: { href: drive.saved.link, label: "Open it", name: "Open it in Google Drive" },
+                      }
+                }
+                onNoticeClose={drive.dismiss}
               />
             </div>
             <span role="status" className="sr-only">
@@ -483,6 +503,26 @@ function Editor({ id }: { id: string }) {
             failure={failure}
             retrying={downloading}
             onRetry={failure.of ? downloadWord : download}
+            className="border-t border-rule px-5 py-2.5 lg:px-6"
+          />
+        )}
+        {sharePdf.failure && (
+          <DownloadFailed
+            key={sharePdf.failure.count}
+            doing="share"
+            failure={sharePdf.failure}
+            retrying={sharePdf.sharing}
+            onRetry={sharePdf.share}
+            className="border-t border-rule px-5 py-2.5 lg:px-6"
+          />
+        )}
+        {drive.failure && (
+          <DownloadFailed
+            key={drive.failure.count}
+            doing="save"
+            failure={drive.failure}
+            retrying={drive.saving}
+            onRetry={drive.save}
             className="border-t border-rule px-5 py-2.5 lg:px-6"
           />
         )}

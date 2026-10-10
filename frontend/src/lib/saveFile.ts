@@ -11,3 +11,13 @@ export function saveFile(data: BlobPart, name: string, type: string) {
   // Give the browser time to start the download before freeing the file.
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
+
+/**
+ * Whether the browser can hand a PDF to another app through the system's share
+ * sheet (the Web Share API), as phones' browsers can. Computers vary, and
+ * Firefox can't.
+ */
+export function canSharePdf(): boolean {
+  const pdf = new File([], "resume.pdf", { type: "application/pdf" })
+  return typeof navigator.canShare === "function" && navigator.canShare({ files: [pdf] })
+}
