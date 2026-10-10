@@ -8,6 +8,7 @@ import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, us
 import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import DownloadedCard from "@/components/editor/DownloadedCard"
+import { DriveIcon, JsonIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
 import DownloadMenu from "@/components/editor/DownloadMenu"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
@@ -501,10 +502,22 @@ function Editor({ id }: { id: string }) {
                 </button>
                 <DownloadMenu
                   choices={[
-                    { title: "Word", hint: "To edit in Word, Google Docs or Pages", onChoose: downloadWord },
-                    { title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson },
-                    ...(sharePdf.shareable ? [{ title: "Share PDF", hint: "Send it to another app", onChoose: sharePdf.share }] : []),
-                    { title: "Save to Google Drive", hint: "Puts the PDF in your Drive. Google asks you first.", onChoose: drive.save },
+                    { title: "Word", hint: "To edit in Word, Google Docs or Pages", icon: <WordIcon />, onChoose: downloadWord },
+                    {
+                      title: "JSON",
+                      hint: "A backup with everything, even what the PDF leaves out",
+                      icon: <JsonIcon />,
+                      onChoose: downloadJson,
+                    },
+                    ...(sharePdf.shareable
+                      ? [{ title: "Share PDF", hint: "Send it to another app", icon: <ShareIcon />, onChoose: sharePdf.share }]
+                      : []),
+                    {
+                      title: "Save to Google Drive",
+                      hint: "Puts the PDF in your Drive. Google asks you first.",
+                      icon: <DriveIcon />,
+                      onChoose: drive.save,
+                    },
                   ]}
                   busy={sharePdf.making}
                   onOpen={sharePdf.shareable ? preparePdf : undefined}
@@ -514,6 +527,7 @@ function Editor({ id }: { id: string }) {
                       : drive.saved && {
                           title: "Saved to Google Drive",
                           file: drive.saved.name,
+                          icon: <DriveIcon />,
                           link: { href: drive.saved.link, label: "Open it", name: "Open it in Google Drive" },
                         }
                   }

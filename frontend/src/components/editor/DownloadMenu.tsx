@@ -11,6 +11,8 @@ export interface DownloadChoice {
   title: string
   /** What it's for, in a few words. */
   hint: string
+  /** Its mark, as Word's W (FormatIcons.tsx). */
+  icon?: React.ReactNode
   onChoose: () => void
 }
 
@@ -25,6 +27,8 @@ export interface MenuNotice {
   working?: boolean
   /** The file it's about, as "Ada's resume.pdf". */
   file?: string
+  /** Its mark once it's done, as Drive's triangle; a tick otherwise. */
+  icon?: React.ReactNode
   /** What was made, as the file in Drive: `label` is shown, and `name` is what it's called aloud. */
   link?: { href: string; label: string; name: string }
 }
@@ -50,8 +54,9 @@ function placeBy(button: HTMLElement): { left: number; width: number } {
   return { left: left - from, width }
 }
 
+// A choice's mark on the left, its title and hint beside it.
 const item =
-  "flex w-full flex-col gap-0.5 rounded-row px-4 py-2 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
+  "grid w-full grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-x-3 gap-y-0.5 rounded-row py-2 pl-3 pr-4 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 
 interface DownloadMenuProps {
   choices: DownloadChoice[]
@@ -232,7 +237,7 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
             closing ? "-translate-y-1 scale-[0.97] opacity-0 duration-150" : "duration-200"
           }`}
         >
-          {choices.map(({ title, hint, onChoose }) => (
+          {choices.map(({ title, hint, icon, onChoose }) => (
             <button
               key={title}
               type="button"
@@ -243,8 +248,9 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
               }}
               className={item}
             >
-              <span className="text-sm font-medium text-ink">{title}</span>
-              <span className="text-[13px] leading-snug text-ink-2">{hint}</span>
+              <span className="col-start-1 row-span-2 row-start-1 mt-0.5 size-6 [&>svg]:size-6">{icon}</span>
+              <span className="col-start-2 text-sm font-medium text-ink">{title}</span>
+              <span className="col-start-2 text-[13px] leading-snug text-ink-2">{hint}</span>
             </button>
           ))}
         </div>
@@ -267,10 +273,12 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
             event.preventDefault()
             closeNotice()
           }}
-          className="absolute top-full z-20 mt-2 flex items-start gap-2.5 rounded-[4px] bg-sheet py-3 pl-3.5 pr-2 shadow-[0_18px_40px_-16px_rgba(17,19,24,0.3)] ring-1 ring-rule transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:-translate-y-1 starting:opacity-0"
+          className="glass glass-frost absolute top-full z-20 mt-2 flex items-start gap-3 rounded-panel py-3.5 pl-4 pr-2.5 transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:-translate-y-1 starting:opacity-0"
         >
           {notice.working ? (
             <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-ink-2" aria-hidden="true" />
+          ) : notice.icon ? (
+            <span className="mt-px size-5 shrink-0 [&>svg]:size-5">{notice.icon}</span>
           ) : (
             <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
           )}
@@ -298,7 +306,7 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
               type="button"
               aria-label="Close"
               onClick={closeNotice}
-              className="-my-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-ink-2 transition-colors hover:bg-paper hover:text-ink"
+              className="-my-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-ink/[0.06] hover:text-ink"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
