@@ -34,7 +34,7 @@ import { extraKey, filledSections, resolveSections, type ExtraKind, type Section
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
 import { fileNameOf, saveFile } from "@/lib/saveFile"
-import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
+import { compilePreview, forgetPreviewFit, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
 
@@ -149,6 +149,13 @@ function Editor({ id }: { id: string }) {
   useEffect(() => {
     if (found) loadCompiler(template)
   }, [found, template])
+
+  // Fine-tune says what keeping the last preview to one page did; a resume
+  // opened here hasn't had a preview yet, so that's forgotten, as it is on leaving.
+  useEffect(() => {
+    forgetPreviewFit()
+    return forgetPreviewFit
+  }, [id])
 
   // The saved order, plus any sections missing from older resumes.
   // The optional sections with entries, which show even when the saved order lacks them. As

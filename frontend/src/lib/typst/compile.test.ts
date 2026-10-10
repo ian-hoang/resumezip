@@ -73,6 +73,7 @@ let onCompilerStatus: typeof import("./compile").onCompilerStatus
 let savingData: typeof import("./compile").savingData
 let previewFit: typeof import("./compile").previewFit
 let onPreviewFit: typeof import("./compile").onPreviewFit
+let forgetPreviewFit: typeof import("./compile").forgetPreviewFit
 
 /** The elements the page added to its head. */
 let addedToHead: object[] = []
@@ -100,6 +101,7 @@ beforeEach(async () => {
     savingData,
     previewFit,
     onPreviewFit,
+    forgetPreviewFit,
   } = await import("./compile"))
 })
 
@@ -349,6 +351,27 @@ describe("what keeping the preview to one page took", () => {
     await vi.advanceTimersByTimeAsync(10)
     expect(preview.value).toMatch(/^blob:/)
     expect(previewFit()).toBeNull()
+  })
+
+  test("is forgotten when a preview can't be built, and when the editor opens another resume", async () => {
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    track(compilePreview(onePage("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(previewFit()).not.toBeNull()
+
+    FakeWorker.answer = ({ id }) => ({ id, error: "unknown variable: foo", failure: "resume" })
+    track(compilePreview(onePage("Ada Lovelace")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(previewFit()).toBeNull()
+
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    track(compilePreview(onePage("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    const heard = vi.fn()
+    onPreviewFit(heard)
+    forgetPreviewFit()
+    expect(previewFit()).toBeNull()
+    expect(heard).toHaveBeenCalledTimes(1)
   })
 
   test("isn't told for a download", async () => {

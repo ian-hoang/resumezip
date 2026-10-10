@@ -285,12 +285,22 @@ export function onPreviewFit(listener: () => void): () => void {
   return () => fitListeners.delete(listener)
 }
 
-function showFit(printed: Printed, fit: Fit | undefined) {
-  const next = fit ? { template: printed.template, tune: printed.data.tune, fit } : null
+function setFit(next: PreviewFit | null) {
   if (JSON.stringify(next) === JSON.stringify(shownFit)) return
   shownFit = next
   for (const listener of fitListeners) listener()
 }
+
+function showFit(printed: Printed, fit: Fit | undefined) {
+  setFit(fit ? { template: printed.template, tune: printed.data.tune, fit } : null)
+}
+
+/**
+ * Forgets what keeping the last preview to one page did, as the editor opens
+ * another resume: with the same template and settings, it would otherwise
+ * show the last resume's "Text set to …" until its own preview is ready.
+ */
+export const forgetPreviewFit = () => setFit(null)
 
 /**
  * Compiles a preview and returns an object URL for the PDF. Revoke it when
@@ -322,11 +332,18 @@ function startNextPreview() {
   if (!next) return
   previewRunning = true
   send(next.printed)
-    .then(({ pdf, fit }) => {
-      // A preview withdrawn while it compiled isn't shown, so what it did isn't either.
-      if (!next.signal?.aborted) showFit(next.printed, fit)
-      return toUrl(pdf)
-    })
+    .then(
+      ({ pdf, fit }) => {
+        // A preview withdrawn while it compiled isn't shown, so what it did isn't either.
+        if (!next.signal?.aborted) showFit(next.printed, fit)
+        return toUrl(pdf)
+      },
+      (error) => {
+        // A preview that couldn't be built did nothing to the page: what the last one did no longer stands.
+        if (!next.signal?.aborted) setFit(null)
+        throw error
+      },
+    )
     .then(next.resolve, next.reject)
     .finally(() => {
       previewRunning = false
