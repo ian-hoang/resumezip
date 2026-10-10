@@ -35,6 +35,8 @@ const unprintable = new Set<string>()
 const printedKeys = new WeakMap<Resume, string | null>()
 const listeners = new Set<() => void>()
 
+// Every resume the dashboard has, as it last said (keepPictures); null until it has.
+let known: Set<string> | null = null
 let started = false
 // Set when the compiler can't be downloaded or keeps breaking: the template pictures stay for this visit.
 let stopped = false
@@ -86,11 +88,22 @@ export function picturesToForget(all: ReadonlyMap<string, Picture>, kept: Readon
  * dashboard calls it with every resume it has, as they change.
  */
 export function keepPictures(ids: Iterable<string>) {
-  const { ids: gone, urls } = picturesToForget(pictures, new Set(ids))
+  known = new Set(ids)
+  const { ids: gone, urls } = picturesToForget(pictures, known)
   if (gone.length === 0) return
   for (const id of gone) pictures.delete(id)
   for (const url of urls) URL.revokeObjectURL(url)
   for (const listener of listeners) listener()
+}
+
+/**
+ * Whether a picture drawn for `id` is still worth keeping: not when its resume
+ * was deleted while it was drawn, when its URL is let go of at once instead.
+ */
+export function keepDrawn(id: string, url: string): boolean {
+  if (!known || known.has(id)) return true
+  URL.revokeObjectURL(url)
+  return false
 }
 
 /** Starts drawing the pictures on screen, and those that come into view later. */
@@ -121,7 +134,8 @@ async function drawWanted() {
         continue
       }
       try {
-        setPicture(id, { printed, url: await draw(resume) })
+        const url = await draw(resume)
+        if (keepDrawn(id, url)) setPicture(id, { printed, url })
       } catch (error) {
         // A resume its template can't lay out is left for the editor to explain. When the
         // compiler can't download, or breaks, the rest would only fail too.
