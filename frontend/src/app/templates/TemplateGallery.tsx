@@ -15,8 +15,8 @@ const typingIn = (target: EventTarget | null) =>
 
 /**
  * The templates page's list: one glass bar with a search, chips to filter by
- * style and how many are shown, which stays under the header as the page
- * scrolls; and a card for each template that starts a resume with it. Pointed
+ * style and how many are shown; and a card for each template that starts a
+ * resume with it. Pointed
  * at, a card's page brings up a glass plate with its details and Use. `newId`
  * is the template marked as new, if one is.
  */
@@ -61,10 +61,8 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
 
   return (
     <div className="flex flex-col gap-12">
-      {/* Under the header as the page scrolls (its strip is 76px tall, 84px from md), with a
-          thicker frost than the search's own, for the pages passing under it. On wide screens
-          it's one line; narrower, the chips go under the search and scroll sideways. */}
-      <div className="search-field sticky top-[76px] z-20 flex flex-col gap-1 rounded-[28px] p-2 [--search-blur:16px] [--search-fill:linear-gradient(180deg,rgb(255_255_255/0.72),rgb(255_255_255/0.52))] md:top-[84px] xl:flex-row xl:items-center xl:gap-2 xl:rounded-full">
+      {/* On wide screens it's one line; narrower, the chips go under the search and scroll sideways. */}
+      <div className="search-field flex flex-col gap-1 rounded-[28px] p-2 [--search-blur:16px] [--search-fill:linear-gradient(180deg,rgb(255_255_255/0.72),rgb(255_255_255/0.52))] xl:flex-row xl:items-center xl:gap-2 xl:rounded-full">
         <div className="relative w-full shrink-0 xl:w-[300px]">
           <label htmlFor={searchId} className="sr-only">
             Search templates
