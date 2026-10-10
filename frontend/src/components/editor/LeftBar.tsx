@@ -105,6 +105,8 @@ function LeftBar({ hidden, children }: LeftBarProps) {
               aria-controls={`${id}-panel`}
               aria-label={count === null ? undefined : `${option.label}, ${count} to look at`}
               tabIndex={selected ? 0 : -1}
+              // The download card's Check it first puts the keyboard here.
+              data-mode-tab={option.id}
               onClick={() => choose(option.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={`inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[3px] text-sm font-medium transition-colors ${

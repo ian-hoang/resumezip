@@ -7,6 +7,7 @@ import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
+import DownloadedCard from "@/components/editor/DownloadedCard"
 import DownloadMenu from "@/components/editor/DownloadMenu"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
@@ -115,6 +116,8 @@ function Editor({ id }: { id: string }) {
   const [downloadedAt, setDownloadedAt] = useState(0)
   const downloaded = downloadedAt > 0
   const [failure, setFailure] = useState<Failure | null>(null)
+  // The PDF just downloaded, while the card about it shows.
+  const [savedPdf, setSavedPdf] = useState<{ file: string; at: number } | null>(null)
   // Said to screen readers once another format is downloaded.
   const [savedAs, setSavedAs] = useState("")
   // How many pages the preview on screen has, for Download PDF to say.
@@ -127,6 +130,7 @@ function Editor({ id }: { id: string }) {
   const compileMs = useRef(MIN_WAIT_MS)
   const headerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
+  const downloadRef = useRef<HTMLButtonElement>(null)
   const pdfDetailsId = useId()
 
   // Resizing across the wide-screen width keeps the form where it was scrolled to.
@@ -341,6 +345,7 @@ function Editor({ id }: { id: string }) {
     // Each try takes back the last one's "Downloaded", so it never shows
     // beside a failure, and a second download in a row is said aloud again.
     setDownloadedAt(0)
+    setSavedPdf(null)
     setDownloading(true)
     // The PDF is often made in a moment, too quick to see the button working.
     // So the line along it fills in the same time however quick that is, and
@@ -352,7 +357,9 @@ function Editor({ id }: { id: string }) {
       await filled
       save()
       setFailure(null)
-      setDownloadedAt(Date.now())
+      const at = Date.now()
+      setDownloadedAt(at)
+      setSavedPdf({ file: fileNameOf(resume, "pdf"), at })
     } catch (error) {
       console.error("Error downloading resume:", error)
       setFailure((previous) => nextFailure(previous, error))
@@ -360,6 +367,13 @@ function Editor({ id }: { id: string }) {
       setDownloading(false)
     }
   }
+
+  // The download card's Got it, or its time running out. If it had the
+  // keyboard, the keyboard goes back to Download PDF rather than the page.
+  const closeSavedPdf = useCallback((refocus: boolean) => {
+    setSavedPdf(null)
+    if (refocus) downloadRef.current?.focus()
+  }, [])
 
   // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
   const downloadJson = () => {
@@ -406,7 +420,7 @@ function Editor({ id }: { id: string }) {
     // either side of it (.editor-stage in styles/editor.css). Narrower, it's a header, the
     // section tabs and the form, and an Edit / Preview switch for the preview.
     <div className="editor-stage flex min-h-screen flex-col max-xl:bg-paper xl:h-screen xl:overflow-hidden">
-      {/* The left bar and the forms share what the checker found. */}
+      {/* The left bar and the forms share what the checker found, and the download card opens Check. */}
       <CheckProvider onSelect={select} preview={preview} unbuilt={unbuilt}>
         {/* The writing side: the header, the section tabs and the form. On wide screens it's the
             stage's left panel, with the name at its top and the form scrolling inside it. */}
@@ -440,6 +454,7 @@ function Editor({ id }: { id: string }) {
                     and how many pages the PDF has. */}
                 <div className="flex xl:fixed xl:bottom-6 xl:right-6 xl:z-30 xl:rounded-full xl:shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)]">
                   <button
+                    ref={downloadRef}
                     type="button"
                     onClick={download}
                     disabled={downloading}
@@ -487,7 +502,7 @@ function Editor({ id }: { id: string }) {
                   {pagesSaid && `, ${pagesSaid}`}
                 </span>
                 <span role="status" className="sr-only">
-                  {downloaded ? "PDF downloaded" : ""}
+                  {downloaded ? "PDF downloaded. This PDF carries your resume. Open it here on any computer to keep editing." : ""}
                 </span>
                 <span role="status" className="sr-only">
                   {savedAs}
@@ -557,6 +572,8 @@ function Editor({ id }: { id: string }) {
         </section>
 
         <StylePanel value={selectedTemplate} onChange={chooseTemplate} />
+
+        {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} onCheck={() => show("edit")} />}
       </CheckProvider>
 
       <div
