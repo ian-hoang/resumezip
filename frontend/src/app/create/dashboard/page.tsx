@@ -387,10 +387,12 @@ export default function DashboardPage() {
   const showing = sorted.filter((resume) => resume.id !== deletedId || leaving.has(resume.id))
   const found = showing.filter((resume) => matches(resume, query))
   const tagOf = (resume: ResumeWithId) => resume.resumeTag?.toLowerCase() ?? ""
+  // Counted without the one crumpling away, so the tabs agree with the count above them at once.
+  const counted = found.filter((resume) => resume.id !== deletedId)
   const tags = [
-    { id: "all", name: "All", count: found.length },
-    ...[...new Set([...RESUME_TAGS.map((option) => option.id), ...found.map(tagOf).filter(Boolean)])]
-      .map((id) => ({ id, name: tagName(id), count: found.filter((resume) => tagOf(resume) === id).length }))
+    { id: "all", name: "All", count: counted.length },
+    ...[...new Set([...RESUME_TAGS.map((option) => option.id), ...counted.map(tagOf).filter(Boolean)])]
+      .map((id) => ({ id, name: tagName(id), count: counted.filter((resume) => tagOf(resume) === id).length }))
       .filter((option) => option.count > 0 || option.id === tag),
   ]
   const tagged = found.filter((resume) => tag === "all" || tagOf(resume) === tag)

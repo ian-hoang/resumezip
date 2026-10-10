@@ -350,6 +350,21 @@ test("the tags show their resumes, with how many each has", async ({ page }) => 
   expect(errors).toEqual([])
 })
 
+test("a deleted resume leaves the tags' counts at once, while its page crumples away", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.clock.install()
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace", { resumeTag: "personal" }), resume("c", "Kestrel")])
+  const tags = page.getByRole("group", { name: "Show" }).getByRole("button")
+  await expect(tags).toHaveText(["All 3", "Personal 1", "Professional 2"])
+  // Time stands still from here, so the page that's deleted is still crumpling when the tags are read.
+  await page.clock.pauseAt(Date.now() + 2_000)
+  await tile(page, "Ada").getByRole("button", { name: "More for “Ada”" }).click()
+  await page.getByRole("menuitem", { name: "Delete" }).click()
+  await expect(page.getByRole("button", { name: "Undo" })).toBeVisible()
+  await expect(tags).toHaveText(["All 2", "Personal 1", "Professional 1"])
+  expect(errors).toEqual([])
+})
+
 test("a resume the checker finds nothing to fix in is stamped Ready, and one without an email isn't", async ({ page }) => {
   const errors = pageErrors(page)
   const sample = JSON.parse(readFileSync("src/lib/typst/preview-samples/jake.json", "utf8"))
