@@ -21,12 +21,16 @@ function ArrowUpRight() {
   )
 }
 
+// An outline pill on the video and the blue, which fills with white from the bottom as it's pointed at (home.css).
+const OUTLINE_PILL =
+  "ink-fill inline-flex h-11 items-center self-start rounded-full border px-[18px] text-[15px] font-medium tracking-[-0.01em]"
+
 // Sections say what they're drawn on (data-tone), for the header's tint, and
 // data-tick gives them a tick at the side of the page (HomeChrome.tsx).
 export default function Home() {
   return (
     // A column, so the margins of the header's strip and the hero, which overlap by the news bar's height, don't collapse.
-    <div className="home relative flex flex-col bg-sheet font-system text-[#171717]">
+    <div className="home relative flex flex-col bg-sheet text-ink">
       <NewsBar />
       <HomeChrome />
 
@@ -47,29 +51,27 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-wrap items-end justify-between gap-8 px-5 pb-6 pt-12 md:px-10 md:pb-10">
-          <div className="flex w-full max-w-[420px] flex-col gap-7 bg-white px-7 pb-5 pt-7 text-[#171717]">
+          <div className="flex w-full max-w-[420px] flex-col gap-6 bg-white px-7 pb-6 pt-7 text-ink">
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">
               resumezip is a free, open-source resume builder that runs in your browser. Pick a template, write, and download the PDF.
             </p>
             <Magnetic>
-              <StartWritingLink className="group flex items-center justify-between gap-4 border-t border-[#171717] pt-4" preloadOnHover>
-                <span className="magnet-pull magnet-pull-soft label-caps decoration-2 underline-offset-4 group-hover:underline">
-                  Start writing
-                </span>
-                <span className="magnet-pull inline-flex h-7 w-7 items-center justify-center bg-accent text-white group-hover:bg-[#2550d4]">
+              <StartWritingLink
+                className="group flex h-12 items-center justify-between gap-4 rounded-full bg-ink pl-6 pr-1.5 text-white transition-colors hover:bg-black"
+                preloadOnHover
+              >
+                <span className="magnet-pull magnet-pull-soft text-[15px] font-medium tracking-[-0.01em]">Start writing</span>
+                <span className="magnet-pull inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink">
                   <ArrowUpRight />
                 </span>
               </StartWritingLink>
             </Magnetic>
           </div>
           <div className="flex max-w-[340px] flex-col gap-4">
-            <span className="label-caps">Free · Saved in your browser</span>
+            <span className="label-mono">Free · Saved in your browser</span>
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">Nothing to install. No sign-up.</p>
-            <Link
-              href="/templates"
-              className="ink-fill label-caps inline-flex h-11 items-center self-start border border-white/70 px-[18px]"
-            >
-              <span className="ink-fill-label inline-flex items-center gap-3">
+            <Link href="/templates" className={`${OUTLINE_PILL} border-white/70`}>
+              <span className="ink-fill-label inline-flex items-center gap-2.5">
                 See templates <ArrowUpRight />
               </span>
             </Link>
@@ -79,7 +81,10 @@ export default function Home() {
 
       <section data-tone="blue" data-tick className="relative bg-accent text-white">
         <div className="flex flex-col gap-24 px-5 pb-24 pt-8 md:gap-[200px] md:px-10 md:pb-[120px]">
-          <span className="label-section">Why resumezip</span>
+          <span className="label-mono">
+            {/* The name stays in lower case, as everywhere. */}
+            Why <span className="normal-case">resumezip</span>
+          </span>
           <div className="max-w-[760px]">
             <FocusWords
               lines={[
@@ -102,11 +107,8 @@ export default function Home() {
                 },
               ]}
             >
-              <StartWritingLink
-                className="ink-fill label-caps inline-flex h-11 items-center self-start border border-white px-[18px]"
-                preloadOnHover
-              >
-                <span className="ink-fill-label inline-flex items-center gap-3">
+              <StartWritingLink className={`${OUTLINE_PILL} border-white`} preloadOnHover>
+                <span className="ink-fill-label inline-flex items-center gap-2.5">
                   Start writing <ArrowUpRight />
                 </span>
               </StartWritingLink>
@@ -121,11 +123,11 @@ export default function Home() {
       <section aria-labelledby="templates" data-tone="blue" data-tick className="bg-accent text-white">
         <div className="border-b border-white/25">
           <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-7 md:px-10">
-            <h2 id="templates" className="label-section">
+            <h2 id="templates" className="label-mono">
               Templates
             </h2>
-            <Link href="/templates" className="ink-fill label-caps inline-flex h-10 items-center border border-white px-4">
-              <span className="ink-fill-label inline-flex items-center gap-3">
+            <Link href="/templates" className={`${OUTLINE_PILL} border-white`}>
+              <span className="ink-fill-label inline-flex items-center gap-2.5">
                 See all <ArrowUpRight />
               </span>
             </Link>
@@ -139,7 +141,7 @@ export default function Home() {
               template={template.id}
               className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
             >
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-[#171717]">
+              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-ink">
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}
@@ -148,7 +150,7 @@ export default function Home() {
                   className="object-cover object-top"
                 />
               </div>
-              <span className="label-caps">{template.name}</span>
+              <span className="font-serif text-[22px] leading-tight tracking-[-0.015em]">{template.name}</span>
             </StartWritingLink>
           ))}
         </div>

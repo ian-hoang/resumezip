@@ -52,12 +52,12 @@ export default function FloatingStart() {
       >
         <StartWritingLink
           preloadOnHover
-          className="group flex items-center gap-4 rounded-full bg-[#171717] py-1.5 pl-6 pr-1.5 text-white shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)] transition-colors hover:bg-black"
+          className="group flex items-center gap-4 rounded-full bg-ink py-1.5 pl-6 pr-1.5 text-white shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)] transition-colors hover:bg-black"
         >
           <span className="whitespace-nowrap text-[16px] tracking-[-0.015em]">Start writing. It’s free.</span>
           <span
             aria-hidden="true"
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-accent px-4 text-[15px] font-medium transition-colors group-hover:bg-[#2550d4]"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-medium text-ink transition-colors group-hover:bg-white/85"
           >
             Start
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">

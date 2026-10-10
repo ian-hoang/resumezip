@@ -5,7 +5,7 @@ import { useId, useState } from "react"
 import Link from "next/link"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
-const TEXT_LINK = "text-[#171717] underline underline-offset-4 hover:decoration-2"
+const TEXT_LINK = "text-ink underline underline-offset-4 hover:decoration-2"
 
 // Each answer has to stay true of the app: check the code before changing one.
 const QUESTIONS: { question: string; answer: React.ReactNode }[] = [
@@ -68,16 +68,16 @@ export default function Questions() {
   const id = useId()
 
   return (
-    <section aria-labelledby="questions" data-tone="light" data-tick className="bg-white">
+    <section aria-labelledby="questions" data-tone="light" data-tick className="desk">
       <div className="grid gap-10 px-5 pb-24 pt-8 md:grid-cols-[minmax(0,5fr)_minmax(0,9fr)] md:gap-10 md:px-10 md:pb-[120px] md:pt-[72px]">
         <div className="flex flex-col gap-4">
-          <h2 id="questions" className="label-section text-accent">
+          <h2 id="questions" className="label-mono text-accent">
             Questions
           </h2>
           <p className="max-w-[420px] font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[64px]">Asked before you start.</p>
         </div>
 
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
           {QUESTIONS.map((item, index) => {
             const expanded = open === index
             const button = `${id}-q${index}`
@@ -85,7 +85,11 @@ export default function Questions() {
             return (
               <div
                 key={item.question}
-                className={`border transition-colors duration-200 ${expanded ? "border-[#171717]" : "border-[#d4d4d4] hover:border-[#a3a3a3]"}`}
+                className={`rounded-panel ring-1 ring-inset transition-[background-color,box-shadow] duration-300 ease-glide motion-reduce:transition-none ${
+                  expanded
+                    ? "bg-sheet shadow-[0_24px_48px_-28px_rgb(30_40_90/0.45)] ring-ink/10"
+                    : "bg-sheet/55 ring-ink/[0.06] hover:bg-sheet/85"
+                }`}
               >
                 <h3>
                   <button
@@ -94,7 +98,7 @@ export default function Questions() {
                     aria-expanded={expanded}
                     aria-controls={panel}
                     onClick={() => setOpen(expanded ? null : index)}
-                    className="flex w-full items-center justify-between gap-6 px-5 py-5 text-left text-lg leading-[1.3] tracking-[-0.015em] md:px-6 md:py-6 md:text-xl"
+                    className="flex w-full items-center justify-between gap-6 rounded-panel px-5 py-5 text-left text-lg leading-[1.3] tracking-[-0.015em] md:px-7 md:py-6 md:text-xl"
                   >
                     {item.question}
                     <span aria-hidden="true" className="question-sign relative h-3.5 w-3.5 shrink-0" data-open={expanded || undefined} />
@@ -109,7 +113,7 @@ export default function Questions() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <p className="max-w-[620px] px-5 pb-6 text-base leading-[1.5] tracking-[-0.01em] text-[#5c5c5c] md:px-6 md:text-[17px]">
+                    <p className="max-w-[620px] px-5 pb-6 text-base leading-[1.5] tracking-[-0.01em] text-ink-2 md:px-7 md:text-[17px]">
                       {item.answer}
                     </p>
                   </div>

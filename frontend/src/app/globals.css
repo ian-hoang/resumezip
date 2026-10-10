@@ -81,13 +81,14 @@
   }
 }
 
-/* Fonts are loaded by next/font in app/layout.tsx. The home page uses the
-   system font (font-system); the app uses Geist. */
+/* Fonts are loaded by next/font in app/layout.tsx. Every page, the home page
+   included, uses Newsreader for titles (font-serif), Geist for everything read
+   or pressed (font-sans, the default), Geist Mono for label-mono, and Outfit
+   for the wordmark. */
 @theme inline {
   --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
   --font-logo: var(--font-outfit), var(--font-geist), sans-serif; /* the "resumezip" wordmark */
 }
 
@@ -148,28 +149,14 @@
   }
 }
 
-/* Small monospace caps for metadata: "03 / 08", "SAVED IN THIS BROWSER". */
+/* Small monospace caps, the site's one label style: for facts about things
+   ("03 / 08", "SAVED IN THIS BROWSER") and eyebrows over titles. Buttons and
+   links say their words in sentence case instead. */
 @utility label-mono {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* Small bold caps for the home page's labels and buttons: "START WRITING". */
-@utility label-caps {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* A slightly larger label-caps for the home page's section titles: "HOW IT WORKS". */
-@utility label-section {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
