@@ -2,89 +2,102 @@
 
 /* In the components layer, so a Tailwind utility on the same element still wins. */
 @layer components {
-  /* The search bar (SearchBar.tsx): a glass pill that stays at the top of the
-     screen, and widens while it's being used. */
-  .search-dock {
-    position: sticky;
-    top: 12px;
-    z-index: 30;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
+  /* The row above the resumes (Filters.tsx): the search, the tag chips, and
+     sort and view. On phones each on a line of its own; then the search with
+     sort and view beside it, and the chips under them; and on wide screens all
+     on one line. */
+  .dash-toolbar {
+    display: grid;
+    grid-template-areas: "search" "chips" "controls";
+    align-items: center;
+    gap: 12px;
   }
-  .search-bar {
+  .dash-toolbar-search {
+    grid-area: search;
+    /* Over the pages below it, for its panel. */
     position: relative;
+    z-index: 20;
+  }
+  .dash-toolbar-chips {
+    grid-area: chips;
+  }
+  .dash-toolbar-controls {
+    grid-area: controls;
     display: flex;
     align-items: center;
-    gap: 4px;
-    width: 100%;
-    max-width: 580px;
-    padding: 6px;
-    border-radius: 999px;
-    pointer-events: auto;
-    transition: max-width 420ms var(--ease-glide);
+    justify-content: space-between;
+    gap: 8px;
   }
-  .search-bar.is-wide,
-  .search-bar:focus-within {
-    max-width: 780px;
+  @media (min-width: 40rem) {
+    .dash-toolbar {
+      grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+      grid-template-areas: "search controls" "chips chips";
+    }
+    .dash-toolbar-controls {
+      justify-content: flex-end;
+    }
   }
-  .search-field {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    height: 44px;
-    padding: 0 16px;
-    border-radius: 999px;
-    background: rgb(255 255 255 / 0.72);
-    box-shadow: inset 0 0 0 1px var(--color-rule);
-    transition: box-shadow 200ms ease-out;
+  @media (min-width: 80rem) {
+    .dash-toolbar {
+      grid-template-columns: 260px minmax(0, 1fr) auto;
+      grid-template-areas: "search chips controls";
+      column-gap: 16px;
+    }
   }
-  /* A soft blue halo, drawn with shadows so nothing moves. */
-  .search-field:focus-within {
-    box-shadow:
-      inset 0 0 0 1.5px var(--color-accent),
-      0 0 0 4px rgb(46 91 230 / 0.14);
-  }
-  /* The panel grows down out of the bar. */
+
+  /* The matches, in a glass panel that grows down out of the search. */
   .search-panel {
     position: absolute;
     top: calc(100% + 8px);
-    right: 0;
     left: 0;
-    max-height: min(70vh, 480px);
+    width: max(100%, min(400px, calc(100vw - 2.5rem)));
+    max-height: min(70vh, 420px);
     overflow-y: auto;
-    padding: 12px 8px 8px;
-    border-radius: 24px;
-    transform-origin: 50% 0;
+    padding: 6px;
+    transform-origin: 0 0;
     animation: panel-grow 320ms var(--ease-glide);
   }
   .search-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 8px 12px 8px 8px;
-    border-radius: 14px;
+    gap: 12px;
+    padding: 7px 18px 7px 14px;
+    border-radius: 999px;
     cursor: pointer;
     transition: background-color 120ms;
   }
   .search-row:hover,
-  .search-row:focus-visible,
   .search-row.is-picked {
-    background: rgb(17 19 24 / 0.05);
-  }
-  .search-row:focus-visible {
-    outline-offset: -2px;
+    background: rgb(17 19 24 / 0.06);
   }
   .search-open {
     opacity: 0;
     transition: opacity 120ms;
   }
   .search-row:hover .search-open,
-  .search-row:focus-visible .search-open,
   .search-row.is-picked .search-open {
     opacity: 1;
+  }
+
+  /* The search's matches and the menus open over the pages' small print: a
+     whiter fill than glass-frost's keeps their own words clear. */
+  .search-panel,
+  .menu-panel {
+    --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.78));
+  }
+
+  /* Behind a dialog, and a file dragged over the page: the page pales and blurs. */
+  .dialog-backdrop {
+    background: rgb(226 231 243 / 0.5);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+    backdrop-filter: blur(8px) saturate(1.2);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .dialog-backdrop {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: rgb(226 231 243 / 0.92);
+    }
   }
 
   /* A resume as its first page (ResumeGrid.tsx). */
@@ -323,8 +336,7 @@
     width: 100%;
     aspect-ratio: 8.5 / 11;
     padding: 20px 16px;
-    border: 1.5px dashed var(--color-rule-strong);
-    border-radius: 2px;
+    border: 1.5px dashed rgb(17 19 24 / 0.22);
     color: var(--color-ink-2);
     text-align: center;
     transition:
@@ -335,7 +347,7 @@
   .drop-tile:hover,
   .new-slot:hover {
     border-color: var(--color-ink-2);
-    background: rgb(255 255 255 / 0.5);
+    background: rgb(255 255 255 / 0.55);
   }
   .drop-tile:hover .drop-arrow {
     animation: arrow-lift 900ms ease-in-out infinite;
@@ -384,7 +396,7 @@
     max-width: min(460px, 100%);
     min-height: 56px;
     padding: 8px 8px 8px 12px;
-    border-radius: 16px;
+    border-radius: var(--radius-panel);
     background: var(--color-ink);
     color: white;
     box-shadow: 0 18px 40px -16px rgb(17 19 24 / 0.55);
@@ -415,9 +427,15 @@
     animation: page-in 400ms ease-out both;
   }
 
+  /* MoreMenu.tsx's menus grow out of their buttons: up for a page's More, down for Sort. */
+  .menu-panel {
+    animation: menu-grow 200ms var(--ease-glide);
+  }
   .more-menu {
     transform-origin: 100% 100%;
-    animation: menu-grow 200ms var(--ease-glide);
+  }
+  .sort-menu {
+    transform-origin: 100% 0;
   }
 }
 
@@ -443,8 +461,6 @@
 /* With less motion, everything is where it ends up at once: a deleted resume is
    simply gone (the page skips the wait too), and nothing grows, lands or hops. */
 @media (prefers-reduced-motion: reduce) {
-  .search-bar,
-  .search-field,
   .tile-page,
   .tile-tag,
   .tile-actions,
@@ -466,7 +482,7 @@
   .deleted-toast,
   .paper-ball,
   .page-arrived,
-  .more-menu {
+  .menu-panel {
     animation: none;
   }
   .tile:hover .tile-page,
@@ -577,7 +593,7 @@
 @keyframes menu-grow {
   from {
     opacity: 0;
-    transform: translateY(4px) scale(0.94);
+    transform: scale(0.94);
   }
 }
 @keyframes dot-hop {

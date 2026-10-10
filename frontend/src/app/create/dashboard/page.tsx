@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { FileDown, FileUp } from "lucide-react"
+import { FileDown, FileUp, Plus } from "lucide-react"
 import { openResumes, useResumeContext } from "@/context/ResumeContext"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
 import DeletedToast from "@/components/dashboard/DeletedToast"
@@ -16,6 +16,7 @@ import ResumeTable, { tagName } from "@/components/dashboard/ResumeTable"
 import SearchBar, { matches } from "@/components/dashboard/SearchBar"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import { focusShown, nameOf, useListActions } from "@/components/dashboard/useListActions"
+import { INK_PILL, OUTLINE_PILL } from "@/components/dashboard/pills"
 import { useReadiness } from "@/components/dashboard/useReadiness"
 import DownloadFailed from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
@@ -408,37 +409,29 @@ export default function DashboardPage() {
   const failedResumes = kept.filter((resume) => actions.failed[resume.id])
 
   const openFileButton = (
-    <button
-      type="button"
-      onClick={chooseFile}
-      className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
-    >
+    <button type="button" onClick={chooseFile} className={`${OUTLINE_PILL} h-11`}>
       <FileUp className="h-4 w-4" aria-hidden="true" />
       Open a file
     </button>
   )
   const downloadAllButton = (
-    <button
-      type="button"
-      onClick={downloadAll}
-      className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
-    >
+    <button type="button" onClick={downloadAll} className={`${OUTLINE_PILL} h-11`}>
       <FileDown className="h-4 w-4" aria-hidden="true" />
       Download all
     </button>
   )
-  // The search bar is there once there's something to search.
-  const withBar = loaded && showing.length > 0
+  const newResumeButton = (
+    <button type="button" onClick={() => setCreating(true)} className={`${INK_PILL} h-11`}>
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      New resume
+    </button>
+  )
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper">
+    <div className="desk flex min-h-screen flex-col">
       <SiteHeader onStartWriting={() => setCreating(true)} />
 
-      <main
-        className={`mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-12 px-5 pb-24 md:px-10 ${withBar ? "pt-4 md:pt-5" : "pt-16 md:pt-20"}`}
-      >
-        {withBar && <SearchBar resumes={kept} query={query} onQuery={setQuery} onNew={() => setCreating(true)} />}
-
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-10 px-5 pb-24 pt-10 md:gap-12 md:px-10 md:pt-14">
         <PageIntro
           label={
             loaded
@@ -451,6 +444,7 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {downloadAllButton}
                 {openFileButton}
+                {newResumeButton}
               </div>
             ) : undefined
           }
@@ -483,9 +477,18 @@ export default function DashboardPage() {
 
         {loaded && showing.length > 0 && (
           <div className="flex flex-col gap-8">
-            <Filters tags={tags} tag={tag} onTag={setTag} sort={sort} onSort={setSort} view={view} onView={chooseView} />
+            <Filters
+              search={<SearchBar resumes={kept} query={query} onQuery={setQuery} />}
+              tags={tags}
+              tag={tag}
+              onTag={setTag}
+              sort={sort}
+              onSort={setSort}
+              view={view}
+              onView={chooseView}
+            />
             {shown.length === 0 ? (
-              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <p className="font-serif text-[24px] leading-tight tracking-[-0.02em]">
                   {query.trim() ? (
                     <>
@@ -501,7 +504,7 @@ export default function DashboardPage() {
                     setQuery("")
                     setTag("all")
                   }}
-                  className="text-sm font-medium text-ink underline underline-offset-4"
+                  className={OUTLINE_PILL}
                 >
                   Show all
                 </button>
@@ -549,8 +552,8 @@ export default function DashboardPage() {
       />
 
       {dragging && (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-paper/95 p-4 backdrop-blur-sm">
-          <div className="flex h-full flex-col items-center justify-center gap-2 rounded-[4px] border-2 border-dashed border-accent">
+        <div aria-hidden="true" className="dialog-backdrop pointer-events-none fixed inset-0 z-40 p-4">
+          <div className="flex h-full flex-col items-center justify-center gap-2 rounded-panel border-2 border-dashed border-accent bg-sheet/40">
             <p className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Drop to open</p>
             <p className="label-mono text-ink-2">PDF, Word or JSON file</p>
           </div>

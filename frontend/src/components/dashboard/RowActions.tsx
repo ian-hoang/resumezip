@@ -38,7 +38,7 @@ function Tip({ children, tipAtEnd, tipBelow }: { children: ReactNode } & TipProp
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-[3px] bg-ink px-2 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 group-has-[:focus-visible]/action:translate-y-0 group-has-[:focus-visible]/action:opacity-100 ${
+      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 group-has-[:focus-visible]/action:translate-y-0 group-has-[:focus-visible]/action:opacity-100 ${
         tipBelow ? "top-full mt-1 -translate-y-1" : "bottom-full mb-1 translate-y-1"
       } ${tipAtEnd ? "right-0" : "left-1/2 -translate-x-1/2"}`}
     >

@@ -10,28 +10,28 @@ export interface MenuItem {
   danger?: boolean
 }
 
-interface MoreMenuProps {
-  /** What the button's called, as "More for “Ada”". Its tip says "More". */
-  label: string
-  items: MenuItem[]
-  [data: `data-${string}`]: string
-}
+/** A menu's panel: glass, grown out of its button (dashboard.css). Its items are pills, as MENU_ITEM. */
+export const MENU_PANEL = "menu-panel glass glass-frost absolute z-30 flex min-w-[168px] flex-col gap-0.5 rounded-panel p-1.5"
+export const MENU_ITEM =
+  "row-action flex h-10 items-center gap-2.5 rounded-full px-3.5 text-left text-sm transition-colors hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none"
+
+const itemsIn = (menu: HTMLElement | null) => [...(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])]
 
 /**
- * A round More button with a small menu of the actions that don't fit beside
- * it. Arrow keys move through the menu, Escape or Tab closes it, and choosing
- * an item, or clicking anywhere else, closes it too.
+ * What a button with a small menu needs: arrow keys move through the menu,
+ * Escape or Tab closes it, and clicking anywhere else closes it too. It
+ * opens on the item that's chosen, if one is.
  */
-export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
+export function useMenu() {
   const [open, setOpen] = useState(false)
   const button = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
-  const id = useId()
 
   useEffect(() => {
     if (!open) return
     // It opens beside its button, which is on screen.
-    menu.current?.querySelector<HTMLElement>("[role=menuitem]")?.focus({ preventScroll: true })
+    const items = itemsIn(menu.current)
+    ;(items.find((item) => item.getAttribute("aria-checked") === "true") ?? items[0])?.focus({ preventScroll: true })
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node
       if (!menu.current?.contains(target) && !button.current?.contains(target)) setOpen(false)
@@ -46,7 +46,7 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
   }
 
   const onKeyDown = (event: KeyboardEvent) => {
-    const options = [...(menu.current?.querySelectorAll<HTMLElement>("[role=menuitem]") ?? [])]
+    const options = itemsIn(menu.current)
     const at = options.indexOf(document.activeElement as HTMLElement)
     const move = (to: number) => {
       event.preventDefault()
@@ -63,6 +63,24 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
       close(true)
     } else if (event.key === "Tab") close(false)
   }
+
+  return { open, setOpen, button, menu, close, onKeyDown }
+}
+
+interface MoreMenuProps {
+  /** What the button's called, as "More for “Ada”". Its tip says "More". */
+  label: string
+  items: MenuItem[]
+  [data: `data-${string}`]: string
+}
+
+/**
+ * A round More button with a small menu of the actions that don't fit beside
+ * it. Choosing an item closes the menu.
+ */
+export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
+  const { open, setOpen, button, menu, close, onKeyDown } = useMenu()
+  const id = useId()
 
   return (
     <div className="relative">
@@ -85,7 +103,7 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
           role="menu"
           aria-label={label}
           onKeyDown={onKeyDown}
-          className="more-menu glass glass-frost absolute bottom-full right-0 z-30 mb-2 flex min-w-[168px] flex-col rounded-[14px] p-1.5"
+          className={`${MENU_PANEL} more-menu bottom-full right-0 mb-2`}
         >
           {items.map((item) => (
             <button
@@ -97,9 +115,7 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
                 close(false)
                 item.onSelect()
               }}
-              className={`row-action flex h-10 items-center gap-2.5 rounded-[9px] px-3 text-left text-sm transition-colors hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none ${
-                item.danger ? "text-alert" : "text-ink"
-              }`}
+              className={`${MENU_ITEM} ${item.danger ? "text-alert" : "text-ink"}`}
             >
               {item.icon}
               {item.label}

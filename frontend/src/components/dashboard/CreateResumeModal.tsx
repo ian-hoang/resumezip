@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { RESUME_TAGS } from "@/lib/resume"
 import Modal from "./Modal"
+import { INK_PILL, OUTLINE_PILL } from "./pills"
 
 interface CreateResumeModalProps {
   onClose: () => void
@@ -29,7 +30,7 @@ export default function CreateResumeModal({ onClose, onCreate }: CreateResumeMod
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Software engineer, 2026"
-            className="border-0 border-b border-rule-strong bg-transparent py-2 text-base text-ink outline-none placeholder:text-ink-2/60 focus:border-accent"
+            className="border-0 border-b border-ink/25 bg-transparent py-2 text-base text-ink outline-none placeholder:text-ink-2/70 focus:border-accent"
           />
         </label>
 
@@ -39,8 +40,8 @@ export default function CreateResumeModal({ onClose, onCreate }: CreateResumeMod
             {RESUME_TAGS.map((option) => (
               <label
                 key={option.id}
-                className={`cursor-pointer rounded-[4px] border px-3.5 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-                  tag === option.id ? "border-ink bg-ink text-white" : "border-rule-strong text-ink hover:border-ink"
+                className={`inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-sm transition-[background-color,box-shadow] duration-200 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent motion-reduce:transition-none ${
+                  tag === option.id ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-ink/15 hover:bg-sheet hover:ring-ink/40"
                 }`}
               >
                 <input
@@ -58,10 +59,10 @@ export default function CreateResumeModal({ onClose, onCreate }: CreateResumeMod
         </fieldset>
 
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-10 px-4 text-sm text-ink-2 hover:text-ink">
+          <button type="button" onClick={onClose} className={OUTLINE_PILL}>
             Cancel
           </button>
-          <button type="submit" className="h-10 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black">
+          <button type="submit" className={INK_PILL}>
             Create
           </button>
         </div>

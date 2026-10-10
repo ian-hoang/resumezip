@@ -1,16 +1,15 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
-import { ChevronDown, Plus, Search, X } from "lucide-react"
+import { Search, X } from "lucide-react"
 import type { ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import PagePicture from "./PagePicture"
 import { editedAgo } from "./ResumeGrid"
 import { nameOf } from "./useListActions"
 
-/** How many resumes the panel lists. */
+/** How many matches the panel under the search lists. */
 const LISTED = 5
 
 // Lower case, without accents, so "resume" finds "Résumé".
@@ -36,92 +35,88 @@ function marked(name: string, query: string): ReactNode {
   )
 }
 
+// Whether a key pressed in this element is typing, which "/" mustn't take over.
+const typingIn = (target: EventTarget | null) =>
+  target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+
 interface SearchBarProps {
   /** Every resume, last edited first. */
   resumes: ResumeWithId[]
   query: string
   onQuery: (query: string) => void
-  onNew: () => void
 }
 
 /**
- * The glass bar at the top of the dashboard, which stays in view. Its search
- * filters the resumes below by name or template, and lists the first few
- * that match: arrow keys pick one, Enter opens it, Escape clears the search.
- * Recent lists the resumes edited last, in a panel that grows out of the bar.
+ * The search at the start of the dashboard's toolbar. It filters the resumes
+ * below by name or template, and lists the first few that match in a panel
+ * under it: arrow keys pick one, Enter opens it, Escape clears the search.
+ * "/" anywhere else on the page goes to it.
  */
-export default function SearchBar({ resumes, query, onQuery, onNew }: SearchBarProps) {
+export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
   const router = useRouter()
-  // What the panel under the bar shows, if anything.
-  const [panel, setPanel] = useState<"search" | "recent" | null>(null)
+  const [listing, setListing] = useState(false)
   // The match picked with the arrow keys, by its place in the list.
   const [active, setActive] = useState(0)
   const root = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLInputElement>(null)
-  const recentButton = useRef<HTMLButtonElement>(null)
   const panelId = useId()
   const optionId = useId()
 
   const found = query.trim() ? resumes.filter((resume) => matches(resume, query)) : []
-  const listed = panel === "search" ? found.slice(0, LISTED) : resumes.slice(0, LISTED)
+  const listed = found.slice(0, LISTED)
   const picked = Math.min(active, listed.length - 1)
+  const open = listing && listed.length > 0
+
+  // "/" goes to the search, as on many sites, unless it's being typed somewhere or a dialog is open.
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || typingIn(event.target)) return
+      if (document.querySelector('[aria-modal="true"]')) return
+      event.preventDefault()
+      input.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   // A press anywhere else closes the panel.
   useEffect(() => {
-    if (!panel) return
+    if (!listing) return
     const onPointerDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setPanel(null)
+      if (!root.current?.contains(event.target as Node)) setListing(false)
     }
     document.addEventListener("pointerdown", onPointerDown)
     return () => document.removeEventListener("pointerdown", onPointerDown)
-  }, [panel])
+  }, [listing])
 
-  const open = (resume: ResumeWithId) => {
-    setPanel(null)
+  const go = (resume: ResumeWithId) => {
+    setListing(false)
     router.push(`/create/new/${resume.id}`)
   }
 
-  const onSearchKey = (event: KeyboardEvent<HTMLInputElement>) => {
+  const onKey = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing) return
     if (event.key === "Escape") {
-      if (!query && !panel) return
+      if (!query && !listing) return
       event.preventDefault()
       onQuery("")
-      setPanel(null)
+      setListing(false)
     } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       if (!query.trim()) return
       event.preventDefault()
-      if (panel !== "search") {
-        setPanel("search")
+      if (!open) {
+        setListing(true)
         setActive(0)
         return
       }
       const step = event.key === "ArrowDown" ? 1 : -1
-      setActive((picked + step + listed.length) % Math.max(1, listed.length))
-    } else if (event.key === "Enter" && panel === "search" && listed[picked]) {
+      setActive((picked + step + listed.length) % listed.length)
+    } else if (event.key === "Enter" && open && listed[picked]) {
       event.preventDefault()
-      open(listed[picked])
+      go(listed[picked])
     }
   }
 
-  // In Recent, the arrow keys move between the resumes, and Escape goes back to the button.
-  const onRecentKey = (event: KeyboardEvent) => {
-    if (panel !== "recent" || event.target === input.current) return
-    const links = [...(root.current?.querySelectorAll<HTMLElement>("[data-recent]") ?? [])]
-    const at = links.indexOf(document.activeElement as HTMLElement)
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault()
-      const step = event.key === "ArrowDown" ? 1 : -1
-      links[at < 0 ? 0 : (at + step + links.length) % links.length]?.focus()
-    } else if (event.key === "Escape") {
-      event.preventDefault()
-      setPanel(null)
-      recentButton.current?.focus()
-    }
-  }
-
-  const searching = panel === "search"
-  const wide = panel !== null || query !== ""
   const matching = query.trim()
     ? found.length === 0
       ? `No resume matches “${query.trim()}”`
@@ -129,138 +124,97 @@ export default function SearchBar({ resumes, query, onQuery, onNew }: SearchBarP
     : ""
 
   return (
-    <div className="search-dock">
-      <div
-        ref={root}
-        className={`search-bar glass ${wide ? "is-wide" : ""}`}
-        onKeyDown={onRecentKey}
-        onBlur={(event) => {
-          // Focus leaving the bar and its panel closes the panel.
-          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPanel(null)
-        }}
-      >
-        <div className="search-field">
-          <Search className="h-4 w-4 shrink-0 text-ink-2" aria-hidden="true" />
-          <input
-            ref={input}
-            type="text"
-            role="combobox"
-            aria-label="Search your resumes"
-            aria-autocomplete="list"
-            aria-expanded={searching}
-            aria-controls={searching ? panelId : undefined}
-            aria-activedescendant={searching && listed[picked] ? `${optionId}-${picked}` : undefined}
-            placeholder="Search resumes"
-            autoComplete="off"
-            spellCheck={false}
-            value={query}
-            onChange={(event) => {
-              onQuery(event.target.value)
-              setActive(0)
-              setPanel(event.target.value.trim() ? "search" : null)
+    <div
+      ref={root}
+      className="relative"
+      onBlur={(event) => {
+        // Focus leaving the search and its panel closes the panel.
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setListing(false)
+      }}
+    >
+      <div className="flex h-10 items-center gap-2.5 rounded-full bg-sheet/70 pl-3.5 pr-2 ring-1 ring-ink/15 transition-[background-color,box-shadow] duration-200 focus-within:bg-sheet focus-within:shadow-[0_0_0_5px_rgb(46_91_230/0.14)] focus-within:ring-[1.5px] focus-within:ring-accent hover:ring-ink/40 motion-reduce:transition-none">
+        <Search className="h-4 w-4 shrink-0 text-ink-2" aria-hidden="true" />
+        <input
+          ref={input}
+          type="text"
+          role="combobox"
+          aria-label="Search your resumes"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls={open ? panelId : undefined}
+          aria-activedescendant={open && listed[picked] ? `${optionId}-${picked}` : undefined}
+          placeholder="Search resumes"
+          autoComplete="off"
+          spellCheck={false}
+          value={query}
+          onChange={(event) => {
+            onQuery(event.target.value)
+            setActive(0)
+            setListing(event.target.value.trim() !== "")
+          }}
+          onFocus={() => {
+            if (query.trim()) setListing(true)
+          }}
+          onKeyDown={onKey}
+          className="peer min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-2"
+        />
+        {query ? (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => {
+              onQuery("")
+              setListing(false)
+              input.current?.focus()
             }}
-            onFocus={() => {
-              if (query.trim()) setPanel("search")
-            }}
-            onKeyDown={onSearchKey}
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-2/80"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Clear search"
-              onClick={() => {
-                onQuery("")
-                setPanel(null)
-                input.current?.focus()
-              }}
-              className="-mr-1.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-2 hover:bg-ink/[0.06] hover:text-ink"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        <button
-          ref={recentButton}
-          type="button"
-          aria-expanded={panel === "recent"}
-          aria-controls={panel === "recent" ? panelId : undefined}
-          onClick={() => setPanel((panel) => (panel === "recent" ? null : "recent"))}
-          className="inline-flex h-10 shrink-0 items-center gap-1 rounded-full px-3 text-sm font-medium text-ink transition-colors hover:bg-ink/[0.06] sm:px-4"
-        >
-          Recent
-          <ChevronDown
-            className={`h-4 w-4 transition-transform duration-200 motion-reduce:transition-none ${panel === "recent" ? "rotate-180" : ""}`}
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-ink/[0.06] hover:text-ink"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        ) : (
+          // Only a hint for a keyboard; it goes once the search has focus, and on touch screens.
+          <kbd
             aria-hidden="true"
-          />
-        </button>
-        <button
-          type="button"
-          onClick={onNew}
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New<span className="sr-only"> resume</span>
-        </button>
-
-        {panel && (
-          <div className="search-panel glass glass-frost">
-            {/* While searching, the status below says this. */}
-            <p className="label-mono px-3 pb-2 pt-1 text-ink-2" aria-hidden={searching || undefined}>
-              {searching ? matching : "Recently edited"}
-            </p>
-            {searching ? (
-              <ul id={panelId} role="listbox" aria-label="Matching resumes">
-                {listed.map((resume, index) => (
-                  <li
-                    key={resume.id}
-                    id={`${optionId}-${index}`}
-                    role="option"
-                    aria-selected={index === picked}
-                    // Keeps focus in the search, which a click would take away.
-                    onMouseDown={(event) => event.preventDefault()}
-                    onMouseMove={() => setActive(index)}
-                    onClick={() => open(resume)}
-                    className={`search-row ${index === picked ? "is-picked" : ""}`}
-                  >
-                    <Row resume={resume} query={query} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <ul id={panelId} aria-label="Recently edited">
-                {listed.map((resume) => (
-                  <li key={resume.id}>
-                    <Link href={`/create/new/${resume.id}`} data-recent="" onClick={() => setPanel(null)} className="search-row">
-                      <Row resume={resume} query="" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            className="pointer-events-none inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-[11px] text-ink-2 ring-1 ring-ink/15 peer-focus:hidden [@media(hover:none)]:hidden"
+          >
+            /
+          </kbd>
         )}
       </div>
+
+      {open && (
+        <div className="search-panel glass glass-frost rounded-panel">
+          <ul id={panelId} role="listbox" aria-label="Matching resumes">
+            {listed.map((resume, index) => (
+              <li
+                key={resume.id}
+                id={`${optionId}-${index}`}
+                role="option"
+                aria-selected={index === picked}
+                // Keeps focus in the search, which a click would take away.
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseMove={() => setActive(index)}
+                onClick={() => go(resume)}
+                className={`search-row ${index === picked ? "is-picked" : ""}`}
+              >
+                <PagePicture id={resume.id} resume={resume} sizes="40px" className="h-[44px] w-[34px] shrink-0 ring-1 ring-ink/10" />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate text-[15px] font-medium text-ink">{marked(nameOf(resume), query)}</span>
+                  <span className="label-mono truncate text-ink-2">
+                    {templateById(resume.selectedTemplate).name} · {editedAgo(resume.updatedAt)}
+                  </span>
+                </span>
+                <span className="search-open label-mono shrink-0 text-ink-2" aria-hidden="true">
+                  ↵ Open
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p role="status" className="sr-only">
         {matching}
       </p>
     </div>
-  )
-}
-
-function Row({ resume, query }: { resume: ResumeWithId; query: string }) {
-  return (
-    <>
-      <PagePicture id={resume.id} resume={resume} sizes="46px" className="h-[52px] w-10 shrink-0 ring-1 ring-rule" />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-[15px] font-medium text-ink">{marked(nameOf(resume), query)}</span>
-        <span className="label-mono truncate text-ink-2">
-          {templateById(resume.selectedTemplate).name} · Edited {editedAgo(resume.updatedAt).toLowerCase()}
-        </span>
-      </span>
-      <span className="search-open label-mono shrink-0 text-ink-2" aria-hidden="true">
-        ↵ Open
-      </span>
-    </>
   )
 }

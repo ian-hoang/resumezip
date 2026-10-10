@@ -41,7 +41,7 @@ export default function EmptyShelf({ onNew, onChooseFile, dragging }: EmptyShelf
             key={opacity}
             aria-hidden="true"
             style={{ opacity }}
-            className={`aspect-[8.5/11] rounded-[2px] border border-dashed border-rule-strong ${
+            className={`aspect-[8.5/11] border border-dashed border-ink/20 ${
               index === 0 ? "hidden md:block" : index === 1 ? "hidden lg:block" : "hidden xl:block"
             }`}
           />

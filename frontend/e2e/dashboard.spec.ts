@@ -158,6 +158,38 @@ test("closing a dialog puts focus back on what opened it, however it's closed", 
   expect(errors).toEqual([])
 })
 
+test("the Sort menu puts the resumes in order by name, from the keyboard", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [
+    resume("a", "Grace", { updatedAt: "2026-10-08T12:00:00.000Z" }),
+    resume("b", "Ada", { updatedAt: "2026-10-01T12:00:00.000Z" }),
+    resume("c", "Kestrel", { updatedAt: "2026-10-05T12:00:00.000Z" }),
+  ])
+  await expect(pages(page).getByRole("link")).toHaveText(["Grace", "Kestrel", "Ada"])
+
+  // It opens on the order chosen; the arrow keys go to the other.
+  const sort = page.getByRole("button", { name: "Sort Last edited" })
+  await sort.press("Enter")
+  const menu = page.getByRole("menu", { name: "Sort by" })
+  await expect(menu.getByRole("menuitemradio", { name: "Last edited" })).toBeFocused()
+  await expect(menu.getByRole("menuitemradio", { name: "Last edited" })).toHaveAttribute("aria-checked", "true")
+  expect(await seriousAccessibilityProblems(page)).toEqual([])
+  await page.keyboard.press("ArrowDown")
+  await page.keyboard.press("Enter")
+  await expect(menu).toHaveCount(0)
+  await expect(pages(page).getByRole("link")).toHaveText(["Ada", "Grace", "Kestrel"])
+  await expect(page.getByRole("button", { name: "Sort Name" })).toBeFocused()
+
+  // Escape closes it without changing anything.
+  await page.keyboard.press("Enter")
+  await expect(menu.getByRole("menuitemradio", { name: "Name" })).toBeFocused()
+  await page.keyboard.press("Escape")
+  await expect(menu).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Sort Name" })).toBeFocused()
+  await expect(pages(page).getByRole("link")).toHaveText(["Ada", "Grace", "Kestrel"])
+  expect(errors).toEqual([])
+})
+
 for (const [layout, width] of [
   ["phone", 390],
   ["wide screen", 1280],
@@ -284,6 +316,12 @@ test("the search finds resumes by name or template, and opens one from the keybo
   ])
   const search = page.getByRole("combobox", { name: "Search your resumes" })
 
+  // "/" goes to it from anywhere on the page, without typing itself.
+  await expect(pages(page).getByRole("link")).toHaveCount(3)
+  await page.keyboard.press("/")
+  await expect(search).toBeFocused()
+  await expect(search).toHaveValue("")
+
   // By name: only it's left on the page, and listed under the search, ready to open.
   await search.fill("kest")
   await expect(pages(page).getByRole("link")).toHaveText(["For Kestrel Health"])
@@ -291,6 +329,7 @@ test("the search finds resumes by name or template, and opens one from the keybo
   await expect(page.getByRole("listbox", { name: "Matching resumes" }).getByRole("option", { selected: true })).toContainText(
     "For Kestrel Health",
   )
+  expect(await seriousAccessibilityProblems(page)).toEqual([])
 
   // By template, Harvard; the arrow keys pick another, and Escape starts again.
   await search.fill("harv")
@@ -312,30 +351,6 @@ test("the search finds resumes by name or template, and opens one from the keybo
   await expect(page.getByLabel("Resume name")).toHaveValue("For Kestrel Health")
   // Let the preview finish, so the compiler's download isn't cut off as the page closes.
   await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
-  expect(errors).toEqual([])
-})
-
-test("Recent lists the resumes edited last, and the keyboard can go through them", async ({ page }) => {
-  const errors = pageErrors(page)
-  await dashboardWith(page, [
-    resume("a", "Older", { updatedAt: "2026-09-01T12:00:00.000Z" }),
-    resume("b", "Newest", { updatedAt: "2026-10-08T12:00:00.000Z" }),
-    resume("c", "Middle", { updatedAt: "2026-10-01T12:00:00.000Z" }),
-  ])
-  const recent = page.getByRole("button", { name: "Recent" })
-  await recent.click()
-  await expect(recent).toHaveAttribute("aria-expanded", "true")
-  const listed = page.getByRole("list", { name: "Recently edited" }).getByRole("link")
-  await expect(listed).toHaveText([/^Newest/, /^Middle/, /^Older/])
-  expect(await seriousAccessibilityProblems(page)).toEqual([])
-
-  await recent.press("ArrowDown")
-  await expect(listed.first()).toBeFocused()
-  await page.keyboard.press("ArrowDown")
-  await expect(listed.nth(1)).toBeFocused()
-  await page.keyboard.press("Escape")
-  await expect(recent).toBeFocused()
-  await expect(recent).toHaveAttribute("aria-expanded", "false")
   expect(errors).toEqual([])
 })
 
