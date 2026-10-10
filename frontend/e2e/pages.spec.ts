@@ -22,9 +22,7 @@ test("contact, on the about page, gives the support address to write to or copy"
 test("/terms#privacy opens the privacy policy, and a tab's address opens it from the page too", async ({ page }) => {
   await page.goto("/terms#privacy")
   await expect(page.getByRole("tab", { name: "Privacy policy" })).toHaveAttribute("aria-selected", "true")
-  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText(
-    "If you press Save to Google Drive, Google asks you first",
-  )
+  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText("save a PDF to your own Google Drive when you ask")
 
   await page.evaluate(() => (window.location.hash = "faq"))
   await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")
