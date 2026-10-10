@@ -343,7 +343,7 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
       ref={addButton}
       type="button"
       onClick={add}
-      className="inline-flex h-10 items-center gap-2 self-start rounded-[4px] border border-rule-strong px-3.5 text-sm text-ink transition-colors hover:border-ink"
+      className="inline-flex h-10 items-center gap-2 self-start rounded-full bg-sheet/70 px-4 text-sm text-ink ring-1 ring-ink/15 transition-shadow hover:ring-ink/40"
     >
       <Plus className="h-3.5 w-3.5" aria-hidden="true" />
       {addLabel}
@@ -413,7 +413,7 @@ function SectionForm({ section, position, onDelete }: SectionFormProps) {
                       key="move"
                       {...drag?.dragHandleProps}
                       aria-label={drag && `Reorder ${name}`}
-                      className="rounded-[4px] p-1.5 text-ink-2 transition-colors hover:text-ink"
+                      className="rounded-full p-1.5 text-ink-2 transition-colors hover:text-ink"
                     >
                       <GripVertical className="h-4 w-4" aria-hidden="true" />
                     </span>
@@ -600,7 +600,7 @@ function SectionChoice({ choice }: { choice: ChoiceDef<ChoiceKey> }) {
           {choice.options.map((option) => (
             <label
               key={option.value}
-              className={`cursor-pointer rounded-[4px] border px-3 py-1.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+              className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
                 option === selected ? "border-ink bg-ink text-white" : "border-rule-strong text-ink hover:border-ink"
               }`}
             >
