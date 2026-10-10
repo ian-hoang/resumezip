@@ -48,15 +48,6 @@ const QUESTIONS: { question: string; answer: React.ReactNode }[] = [
     answer:
       "Yes. Open a PDF or Word (.docx) file from Your resumes, and resumezip sorts it into the editor’s fields for you to check. It’s read in your browser, not uploaded.",
   },
-  {
-    question: "What happens if I clear my browser?",
-    answer:
-      "The resumes saved in it go too, as we don’t keep a copy. Keep the PDFs you download, or a JSON file of them all from Download all, and open it to bring them back. Safari also clears a site’s data after seven days of use without a visit.",
-  },
-  {
-    question: "Can I use it on my phone?",
-    answer: "Yes. On a phone, the editor has an Edit and Preview switch at the bottom: write, then see the page as it will print.",
-  },
 ]
 
 /** Opens on the one people ask most. */
