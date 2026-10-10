@@ -145,10 +145,16 @@ export default function DashboardPage() {
 
   const sorted = useMemo(
     () =>
-      // Each with the id it's saved under, which is what opens it.
+      // Each with the id it's saved under, which is what opens it. Resumes
+      // edited at the same moment go by name, rather than in whatever order
+      // the browser keeps its storage in.
       Object.entries(resumes)
         .map(([id, resume]): ResumeWithId => ({ ...resume, id }))
-        .sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()),
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime() ||
+            nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" }),
+        ),
     [resumes],
   )
   // Every resume but one deleted a moment ago; that one shows while it crumples away.
