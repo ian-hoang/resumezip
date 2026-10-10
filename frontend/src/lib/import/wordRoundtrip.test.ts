@@ -21,12 +21,11 @@ const second = "22222222-2222-4222-8222-222222222222"
  */
 const KNOWN_GAPS: Record<string, string[]> = {
   ian: [],
-  // A comma inside an award's name reads as the start of the organization.
-  jake: ["awards[0].name", "awards[0].organization"],
+  jake: [],
   levelsfyi: [],
   modernjack: [],
-  // A comma or dash inside an award's name reads as the start of the organization.
-  referme: ["awards[0].name", "awards[0].organization", "awards[1].name", "awards[1].organization"],
+  // A dash inside an award's name reads as the start of the organization.
+  referme: ["awards[0].name", "awards[0].organization"],
   resumeworded: [],
 }
 

@@ -269,8 +269,9 @@ function documentOf(data: TemplateData): { xml: string; links: string[] } {
           add("Normal", [...(skill.name ? [{ text: `${skill.name}:`, bold: true }, { text: " " }] : []), { text: skill.details }])
         break
       case "awards":
+        // Set apart by a bar rather than the comma some templates use, as an award's name can have a comma in it.
         for (const award of data.awards) {
-          entry([[[{ text: award.name, bold: true }, { text: award.organization && `, ${award.organization}` }], [{ text: award.date }]]])
+          entry([[[{ text: award.name, bold: true }, { text: award.organization && ` | ${award.organization}` }], [{ text: award.date }]]])
         }
         break
     }
