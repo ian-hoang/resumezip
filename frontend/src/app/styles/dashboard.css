@@ -1,1 +1,587 @@
 /* Styles for the dashboard (components under src/components/dashboard and its pages). */
+
+/* In the components layer, so a Tailwind utility on the same element still wins. */
+@layer components {
+  /* The search bar (SearchBar.tsx): a glass pill that stays at the top of the
+     screen, and widens while it's being used. */
+  .search-dock {
+    position: sticky;
+    top: 12px;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    max-width: 580px;
+    padding: 6px;
+    border-radius: 999px;
+    pointer-events: auto;
+    transition: max-width 420ms var(--ease-glide);
+  }
+  .search-bar.is-wide,
+  .search-bar:focus-within {
+    max-width: 780px;
+  }
+  .search-field {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.72);
+    box-shadow: inset 0 0 0 1px var(--color-rule);
+    transition: box-shadow 200ms ease-out;
+  }
+  /* A soft blue halo, drawn with shadows so nothing moves. */
+  .search-field:focus-within {
+    box-shadow:
+      inset 0 0 0 1.5px var(--color-accent),
+      0 0 0 4px rgb(46 91 230 / 0.14);
+  }
+  /* The panel grows down out of the bar. */
+  .search-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
+    max-height: min(70vh, 480px);
+    overflow-y: auto;
+    padding: 12px 8px 8px;
+    border-radius: 24px;
+    transform-origin: 50% 0;
+    animation: panel-grow 320ms var(--ease-glide);
+  }
+  .search-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background-color 120ms;
+  }
+  .search-row:hover,
+  .search-row:focus-visible,
+  .search-row.is-picked {
+    background: rgb(17 19 24 / 0.05);
+  }
+  .search-row:focus-visible {
+    outline-offset: -2px;
+  }
+  .search-open {
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+  .search-row:hover .search-open,
+  .search-row:focus-visible .search-open,
+  .search-row.is-picked .search-open {
+    opacity: 1;
+  }
+
+  /* A resume as its first page (ResumeGrid.tsx). */
+  .tile-page {
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px var(--color-rule),
+      0 1px 2px rgb(17 19 24 / 0.06);
+    transition:
+      box-shadow 200ms ease-out,
+      translate 320ms var(--ease-glide);
+  }
+  .tile:hover .tile-page,
+  .tile:focus-within .tile-page {
+    box-shadow:
+      0 0 0 2px var(--color-ink),
+      0 16px 32px -20px rgb(17 19 24 / 0.5);
+    translate: 0 -2px;
+  }
+  .tile.is-copied .tile-page {
+    box-shadow:
+      0 0 0 2px var(--color-accent),
+      0 16px 32px -20px rgb(17 19 24 / 0.5);
+  }
+  .tile-tag {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    padding: 3px 7px 2px;
+    border: 1px solid var(--color-rule-strong);
+    border-radius: 2px;
+    background: var(--color-sheet);
+    color: var(--color-ink);
+    /* label-mono's, set here so phones can make it smaller. */
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* What can be done with a resume. On phones, a row of buttons under its
+     name; wider, a glass bar over the foot of its page that shows while the
+     page is pointed at or has focus in it, and always on touch screens. */
+  .tile-actions {
+    display: flex;
+    margin: 6px 0 0 -10px;
+  }
+  .tile-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .tile-open {
+    display: none;
+  }
+  @media (max-width: 39.99rem) {
+    .tile-bar.glass {
+      box-shadow: none;
+    }
+    .tile-bar.glass::before,
+    .tile-bar.glass::after {
+      display: none;
+    }
+  }
+  @media (min-width: 40rem) {
+    .tile-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      aspect-ratio: 8.5 / 11;
+      margin: 0;
+      padding: 10px;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      translate: 0 6px;
+      transition:
+        opacity 180ms ease-out,
+        translate 320ms var(--ease-glide);
+    }
+    .tile-bar {
+      padding: 4px;
+      border-radius: 999px;
+      pointer-events: auto;
+    }
+    .tile:hover .tile-actions,
+    .tile:focus-within .tile-actions {
+      opacity: 1;
+      translate: 0 -2px;
+    }
+    /* The bar covers the tag; it would only peek out from under it. */
+    .tile-tag {
+      transition: opacity 180ms ease-out;
+    }
+    .tile:hover .tile-tag,
+    .tile:focus-within .tile-tag {
+      opacity: 0;
+    }
+    .tile-open {
+      display: inline-flex;
+      align-items: center;
+      height: 40px;
+      margin-right: 2px;
+      padding: 0 16px;
+      border-radius: 999px;
+      background: var(--color-ink);
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background-color 150ms;
+    }
+    .tile-open:hover {
+      background: black;
+    }
+  }
+  @media (min-width: 40rem) and (hover: none) {
+    .tile-actions {
+      opacity: 1;
+      translate: 0 0;
+    }
+    .tile-tag {
+      display: none;
+    }
+  }
+
+  /* The checker's stamp: blue ink, set down at an angle. Site only; it's never in a PDF. */
+  .ready-stamp {
+    position: absolute;
+    right: 9%;
+    bottom: 18%;
+    padding: 5px 9px 4px;
+    border: 2px solid currentColor;
+    border-radius: 4px;
+    box-shadow:
+      inset 0 0 0 2px rgb(255 255 255 / 0.9),
+      inset 0 0 0 3px currentColor;
+    background: rgb(255 255 255 / 0.82);
+    color: var(--color-accent);
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    rotate: -8deg;
+    pointer-events: none;
+  }
+  @media (max-width: 39.99rem) {
+    .ready-stamp {
+      padding: 3px 6px 2px;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+    }
+    .tile-tag {
+      bottom: 6px;
+      left: 6px;
+      padding: 2px 5px 1px;
+      font-size: 9px;
+    }
+  }
+  .ready-stamp.is-landing {
+    animation: stamp-land 560ms cubic-bezier(0.2, 0.9, 0.25, 1.15) 120ms both;
+  }
+
+  /* Deleting from the pages: the page crumples into a ball and is gone (480 ms, LEAVING_MS in the page). */
+  .tile.is-crumpling .tile-page {
+    animation: crumple 480ms cubic-bezier(0.55, 0, 0.45, 1) forwards;
+  }
+  .tile.is-crumpling .tile-page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+      from 20deg at 42% 46%,
+      rgb(17 19 24 / 0.22),
+      transparent 9%,
+      rgb(17 19 24 / 0.14) 21%,
+      transparent 33%,
+      rgb(17 19 24 / 0.2) 47%,
+      transparent 60%,
+      rgb(17 19 24 / 0.12) 74%,
+      transparent 86%,
+      rgb(17 19 24 / 0.18)
+    );
+    animation: creases 480ms ease-out forwards;
+  }
+  .tile.is-crumpling > :not(.tile-page) {
+    opacity: 0;
+    transition: opacity 160ms ease-out;
+  }
+  /* Undo smooths it out again (RETURNING_MS). */
+  .tile.is-returning .tile-page {
+    animation: crumple 420ms var(--ease-glide) reverse both;
+  }
+
+  /* Deleting from the list: the row folds up like paper, and the rows under it close the gap (P4). */
+  .fold-cell {
+    display: grid;
+    grid-template-rows: 1fr;
+  }
+  .fold-cell > * {
+    min-height: 0;
+  }
+  .fold-row.is-folding,
+  .fold-row.is-unfolding {
+    transform-origin: 50% 0;
+  }
+  .fold-row.is-folding {
+    animation: paper-fold 480ms cubic-bezier(0.55, 0, 0.35, 1) forwards;
+  }
+  .fold-row.is-folding .fold-cell {
+    animation: fold-close 300ms cubic-bezier(0.4, 0, 0.2, 1) 160ms forwards;
+  }
+  .fold-row.is-unfolding {
+    animation: paper-fold 420ms var(--ease-glide) reverse both;
+  }
+  .fold-row.is-unfolding .fold-cell {
+    animation: fold-close 260ms var(--ease-glide) reverse both;
+  }
+  .fold-row.is-folding .fold-cell > *,
+  .fold-row.is-unfolding .fold-cell > * {
+    overflow: hidden;
+  }
+
+  /* The last tile, which takes a file to open, and the empty dashboard's New resume. */
+  .drop-tile,
+  .new-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    aspect-ratio: 8.5 / 11;
+    padding: 20px 16px;
+    border: 1.5px dashed var(--color-rule-strong);
+    border-radius: 2px;
+    color: var(--color-ink-2);
+    text-align: center;
+    transition:
+      border-color 200ms,
+      background-color 200ms,
+      box-shadow 200ms;
+  }
+  .drop-tile:hover,
+  .new-slot:hover {
+    border-color: var(--color-ink-2);
+    background: rgb(255 255 255 / 0.5);
+  }
+  .drop-tile:hover .drop-arrow {
+    animation: arrow-lift 900ms ease-in-out infinite;
+  }
+  .drop-tile.is-dragging {
+    border-color: var(--color-accent);
+    background: var(--color-sheet);
+    box-shadow: 0 0 0 6px rgb(46 91 230 / 0.14);
+    color: var(--color-accent);
+  }
+  .new-slot {
+    border-color: var(--color-ink-2);
+  }
+  .new-slot-plus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: white;
+    transition: scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .new-slot:hover .new-slot-plus {
+    scale: 1.08;
+  }
+
+  /* "Deleted · Undo", at the foot of the screen (DeletedToast.tsx), with the crumpled page in it. */
+  .deleted-toast-dock {
+    position: fixed;
+    right: 0;
+    bottom: 24px;
+    left: 0;
+    z-index: 45;
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+    pointer-events: none;
+  }
+  .deleted-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(460px, 100%);
+    min-height: 56px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 16px;
+    background: var(--color-ink);
+    color: white;
+    box-shadow: 0 18px 40px -16px rgb(17 19 24 / 0.55);
+    pointer-events: auto;
+    animation: toast-in 360ms var(--ease-glide) both;
+  }
+  .paper-ball {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%;
+    background:
+      conic-gradient(
+        from 40deg,
+        rgb(17 19 24 / 0.18),
+        transparent 14%,
+        rgb(17 19 24 / 0.12) 30%,
+        transparent 46%,
+        rgb(17 19 24 / 0.2) 62%,
+        transparent 80%
+      ),
+      radial-gradient(circle at 35% 30%, #ffffff, #d9d9d4 70%, #b9b9b3);
+    animation: ball-land 560ms cubic-bezier(0.3, 1.4, 0.5, 1) 120ms both;
+  }
+
+  /* A page's picture fades in over its template's once it's drawn. */
+  .page-arrived {
+    animation: page-in 400ms ease-out both;
+  }
+
+  .more-menu {
+    transform-origin: 100% 100%;
+    animation: menu-grow 200ms var(--ease-glide);
+  }
+}
+
+/* The More button's tip would show over its own menu. Outside the layers, to
+   beat the tip's Tailwind utilities. */
+.more-button[aria-expanded="true"] > span {
+  display: none;
+}
+
+/* The More dots hop, one after another, like the other row actions' icons (app/globals.css). */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .row-action:hover .more-dot {
+    animation: dot-hop 480ms ease-in-out;
+  }
+  .row-action:hover .more-dot:nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .row-action:hover .more-dot:nth-child(3) {
+    animation-delay: 140ms;
+  }
+}
+
+/* With less motion, everything is where it ends up at once: a deleted resume is
+   simply gone (the page skips the wait too), and nothing grows, lands or hops. */
+@media (prefers-reduced-motion: reduce) {
+  .search-bar,
+  .search-field,
+  .tile-page,
+  .tile-tag,
+  .tile-actions,
+  .drop-tile,
+  .new-slot,
+  .new-slot-plus {
+    transition: none;
+  }
+  .search-panel,
+  .ready-stamp.is-landing,
+  .tile.is-crumpling .tile-page,
+  .tile.is-crumpling .tile-page::after,
+  .tile.is-returning .tile-page,
+  .fold-row.is-folding,
+  .fold-row.is-folding .fold-cell,
+  .fold-row.is-unfolding,
+  .fold-row.is-unfolding .fold-cell,
+  .drop-tile:hover .drop-arrow,
+  .deleted-toast,
+  .paper-ball,
+  .page-arrived,
+  .more-menu {
+    animation: none;
+  }
+  .tile:hover .tile-page,
+  .tile:focus-within .tile-page,
+  .tile:hover .tile-actions,
+  .tile:focus-within .tile-actions {
+    translate: none;
+  }
+}
+
+@keyframes panel-grow {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96, 0.82);
+  }
+}
+@keyframes stamp-land {
+  from {
+    opacity: 0;
+    scale: 1.9;
+  }
+  55% {
+    opacity: 1;
+    scale: 0.94;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes crumple {
+  0% {
+    transform: none;
+    border-radius: 0;
+    filter: none;
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.86, 0.78) rotate(-3deg) skewX(5deg);
+    border-radius: 6%;
+    filter: contrast(1.08);
+  }
+  62% {
+    transform: translateY(8%) scale(0.4) rotate(-20deg) skewY(-6deg);
+    border-radius: 38%;
+    filter: blur(0.8px) grayscale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(46%) scale(0.1) rotate(-48deg);
+    border-radius: 50%;
+    filter: blur(3px) grayscale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes creases {
+  from {
+    opacity: 0;
+  }
+  45%,
+  to {
+    opacity: 1;
+  }
+}
+@keyframes paper-fold {
+  0% {
+    transform: perspective(900px) rotateX(0deg);
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: perspective(900px) rotateX(-92deg);
+    opacity: 0;
+  }
+}
+@keyframes fold-close {
+  to {
+    grid-template-rows: 0fr;
+  }
+}
+@keyframes arrow-lift {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+@keyframes ball-land {
+  from {
+    opacity: 0;
+    transform: translate(-6px, -40px) rotate(-120deg) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: translate(0, 2px) rotate(-10deg) scale(1.04);
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes menu-grow {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.94);
+  }
+}
+@keyframes dot-hop {
+  40% {
+    transform: translateY(-3px);
+  }
+}
