@@ -16,6 +16,13 @@ const CUT_SHORT = [
 // Safari can report a load cut short just before the request for the next page.
 const BEFORE_LEAVING_MS = 500
 
+// Safari sometimes reports a load cut short as an error thrown by the page
+// rather than logging it. Playwright splits a thrown error's text at its first
+// colon, here the one in "http://", into a name ("Cannot load http") and a
+// message ("/localhost:…"), dropping the character after the colon. Put back
+// together, it reads as it does when it's logged.
+const thrownText = (error: Error) => (/ https?$/.test(error.name) ? `${error.name}:/${error.message}` : error.message)
+
 /**
  * Collects the errors a page throws or logs, for a test to check at the end.
  * Logged errors end with where they came from, e.g. "… (at http://…/page)".
@@ -42,15 +49,17 @@ export function pageErrors(page: Page): string[] {
     loaded = true
     leaving = false
   })
-  page.on("pageerror", (error) => errors.push(error.message))
-  page.on("console", (message) => {
-    if (message.type() !== "error") return
-    const entry = `${message.text()} (at ${message.location().url})`
-    if (CUT_SHORT.some((pattern) => pattern.test(message.text()))) {
+  // `text` is the error as Safari words it, to tell a load cut short.
+  const add = (entry: string, text: string) => {
+    if (CUT_SHORT.some((pattern) => pattern.test(text))) {
       if (leaving) return
       recent.push({ entry, at: Date.now() })
     }
     errors.push(entry)
+  }
+  page.on("pageerror", (error) => add(error.message, thrownText(error)))
+  page.on("console", (message) => {
+    if (message.type() === "error") add(`${message.text()} (at ${message.location().url})`, message.text())
   })
   return errors
 }
