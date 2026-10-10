@@ -19,6 +19,7 @@ import { reducedMotion, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import StylePanel from "@/components/editor/StylePanel"
 import TemplatePicker from "@/components/editor/TemplatePicker"
+import Tour from "@/components/editor/Tour"
 import { useKeepFormPlace } from "@/components/editor/useKeepFormPlace"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
@@ -602,6 +603,8 @@ function Editor({ id }: { id: string }) {
           })}
         </div>
       </div>
+
+      <Tour />
     </div>
   )
 }
