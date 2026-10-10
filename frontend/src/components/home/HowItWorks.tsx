@@ -2,13 +2,12 @@
 
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
-import { TEMPLATES } from "@/lib/templates"
 
 const STEPS = [
   {
     word: "Pick",
-    // Counted from the list, so it stays right as templates are added.
-    text: `Choose from ${TEMPLATES.length} templates. Switch any time; your words stay put.`,
+    // No count: it changes as templates are added.
+    text: "Choose a template. Switch any time; your words stay put.",
     art: "/how-it-works/pick.svg",
   },
   {
@@ -65,7 +64,7 @@ export default function HowItWorks() {
   const visible = pinned ? shown : STEPS.length
 
   return (
-    <section ref={sectionRef} aria-labelledby="how" className={pinned ? "h-[300svh]" : undefined}>
+    <section ref={sectionRef} aria-labelledby="how" data-tone="light" data-tick className={pinned ? "h-[300svh]" : undefined}>
       <div className={pinned ? "sticky top-0 flex h-svh flex-col overflow-hidden bg-white" : "bg-white"}>
         <div className="border-b border-[#d4d4d4]">
           <div className="flex items-center justify-between px-5 py-7 md:px-10">
