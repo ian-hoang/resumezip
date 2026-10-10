@@ -292,7 +292,11 @@ function ScoreRing({ total, updating }: { total: number | "checking" | null; upd
       >
         {scored ? (
           <>
-            <span className="text-[22px] font-medium leading-none tabular-nums">{total}</span>
+            <span className="relative text-[22px] font-medium leading-none tabular-nums">
+              {/* Unseen under the rolling digits, unless there's less motion, when it shows as it is. */}
+              <span className="opacity-0 motion-reduce:opacity-100">{total}</span>
+              <Odometer value={total} />
+            </span>
             <span className="mt-0.5 font-mono text-[10px] leading-none text-ink-2" aria-hidden="true">
               / 100
             </span>
@@ -308,6 +312,23 @@ function ScoreRing({ total, updating }: { total: number | "checking" | null; upd
         )}
       </p>
     </div>
+  )
+}
+
+/**
+ * The score's digits, each rolling up or down to its new value like an
+ * odometer's (`.odometer-digit` in styles/editor.css). Keyed from the right,
+ * so the ones stay the ones when the score gains a digit, and roll rather
+ * than appear. Drawn over the number itself, which is what's read.
+ */
+function Odometer({ value }: { value: number }) {
+  const digits = String(value).split("")
+  return (
+    <span aria-hidden="true" className="absolute inset-0 flex justify-center motion-reduce:hidden">
+      {digits.map((digit, index) => (
+        <span key={digits.length - 1 - index} className="odometer-digit" style={{ "--digit": digit } as React.CSSProperties} />
+      ))}
+    </span>
   )
 }
 

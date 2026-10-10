@@ -1,1 +1,25 @@
 /* Styles for the editor (components under src/components/editor and its pages). */
+
+@layer components {
+  /* The checker's score, rolling like an odometer when it changes
+     (components/editor/CheckPanel.tsx). Each digit is a strip of 0 to 9 drawn
+     by CSS, so the page's text, and what's read aloud, is just the number,
+     which sits unseen under it. With less motion the number shows as it is,
+     and these aren't drawn. */
+  .odometer-digit {
+    display: inline-block;
+    width: 1ch;
+    height: 1em;
+    overflow: hidden;
+    line-height: 1;
+  }
+  .odometer-digit::before {
+    content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+    display: block;
+    white-space: pre;
+    line-height: 1;
+    text-align: center;
+    transform: translateY(calc(var(--digit) * -1em));
+    transition: transform 600ms var(--ease-glide);
+  }
+}
