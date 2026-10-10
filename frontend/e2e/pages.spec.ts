@@ -23,6 +23,18 @@ test("contact shows the support address before and after opening a message", asy
   }
 })
 
+// Google's sign-in, for Save to Google Drive, links to the privacy policy this way.
+test("/terms#privacy opens the privacy policy, and a tab's address opens it from the page too", async ({ page }) => {
+  await page.goto("/terms#privacy")
+  await expect(page.getByRole("tab", { name: "Privacy policy" })).toHaveAttribute("aria-selected", "true")
+  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText(
+    "If you press Save to Google Drive, Google asks you first",
+  )
+
+  await page.evaluate(() => (window.location.hash = "faq"))
+  await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")
+})
+
 for (const path of PAGES) {
   test(`${path} loads without errors and passes accessibility checks`, async ({ page }) => {
     const errors = pageErrors(page)

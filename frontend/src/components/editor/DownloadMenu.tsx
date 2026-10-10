@@ -2,20 +2,37 @@
 
 import type React from "react"
 import { useEffect, useId, useRef, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { Check, ChevronDown, Loader2, X } from "lucide-react"
 import { reducedMotion } from "./layout"
 
-/** A way to take the resume out of resumezip other than the PDF. */
+/** A way to take the resume out of resumezip other than Download PDF. */
 export interface DownloadChoice {
-  /** What it is, as "JSON". */
+  /** What it is, as "JSON" or "Share PDF". */
   title: string
   /** What it's for, in a few words. */
   hint: string
   onChoose: () => void
 }
 
+/**
+ * What a choice says once it's pressed, in a card that drops from the ▾ as the
+ * menu does: Save to Google Drive saving, then saved.
+ */
+export interface MenuNotice {
+  /** The first line, as "Saved to Google Drive". */
+  title: string
+  /** Still at work: a spinner instead of the tick, and it stays until it's done. */
+  working?: boolean
+  /** The file it's about, as "Ada's resume.pdf". */
+  file?: string
+  /** What was made, as the file in Drive: `label` is shown, and `name` is what it's called aloud. */
+  link?: { href: string; label: string; name: string }
+}
+
 // How long the menu takes to fade away, in milliseconds (matches duration-150).
 const CLOSE_MS = 150
+// How long a notice that's done stays, in milliseconds, while the pointer and keyboard are elsewhere.
+const NOTICE_MS = 6000
 // The least between the menu and the window's edges.
 const MARGIN = 16
 const WIDTH = 288
@@ -36,12 +53,25 @@ function placeBy(button: HTMLElement): { left: number; width: number } {
 const item =
   "flex w-full flex-col gap-0.5 rounded-row px-4 py-2 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 
+interface DownloadMenuProps {
+  choices: DownloadChoice[]
+  /** A choice is getting its file ready, as Share PDF may after it's pressed: the ▾ spins. */
+  busy?: boolean
+  /** Called as the menu opens, so a choice can get its file ready before it's pressed. */
+  onOpen?: () => void
+  /** What a choice says once it's pressed, while the menu's closed. */
+  notice?: MenuNotice | null
+  /** Takes the notice away: once it's done and has been shown a while, or it's closed. */
+  onNoticeClose?: () => void
+}
+
 /**
- * The ▾ beside Download PDF, and the menu of the other ways to download it
- * (WAI-ARIA menu button), which opens under it. Arrows move through the menu,
- * Escape and Tab close it, and either way the keyboard goes back to the ▾.
+ * The ▾ beside Download PDF, and the menu of the other ways to take the
+ * resume out (WAI-ARIA menu button). Arrows move through the menu, Escape and
+ * Tab close it, and either way the keyboard goes back to the ▾. A choice's
+ * notice shows in the same place once the menu's closed.
  */
-export default function DownloadMenu({ choices }: { choices: DownloadChoice[] }) {
+export default function DownloadMenu({ choices, busy = false, onOpen, notice = null, onNoticeClose }: DownloadMenuProps) {
   const menuId = useId()
   const button = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
@@ -59,6 +89,7 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
     fromEnd.current = last
     setClosing(false)
     setPlace(placeBy(button.current))
+    onOpen?.()
   }
 
   // It fades away, then goes. `refocus` puts the keyboard back on the ▾.
@@ -78,6 +109,39 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
   latestClose.current = close
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
+
+  // Where the notice is while there's one. It stays by the ▾ as the window is resized.
+  const [noticePlace, setNoticePlace] = useState<{ left: number; width: number } | null>(null)
+  const noticed = notice !== null
+  useEffect(() => {
+    if (!noticed) return setNoticePlace(null)
+    const follow = () => {
+      if (button.current) setNoticePlace(placeBy(button.current))
+    }
+    follow()
+    window.addEventListener("resize", follow)
+    return () => window.removeEventListener("resize", follow)
+  }, [noticed])
+
+  // A notice that's done goes after a while, unless the pointer or the keyboard is on it.
+  const [holding, setHolding] = useState(false)
+  const latestNoticeClose = useRef(onNoticeClose)
+  latestNoticeClose.current = onNoticeClose
+  const done = noticed && !notice.working
+  useEffect(() => {
+    if (!done || holding) return
+    const goes = window.setTimeout(() => latestNoticeClose.current?.(), NOTICE_MS)
+    return () => window.clearTimeout(goes)
+  }, [done, holding])
+  useEffect(() => {
+    if (!noticed) setHolding(false)
+  }, [noticed])
+
+  // Closed from the keyboard or with ×, the keyboard goes back to the ▾.
+  const closeNotice = () => {
+    button.current?.focus()
+    onNoticeClose?.()
+  }
 
   // The first choice, or the last, gets the keyboard, so arrows move through them.
   useEffect(() => {
@@ -140,14 +204,19 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
+        aria-busy={busy || undefined}
         onClick={() => (open ? close() : show())}
         onKeyDown={onButtonKeyDown}
         className="inline-flex h-10 w-10 items-center justify-center rounded-r-full border-l border-white/15 bg-ink pr-1 text-white transition-colors hover:bg-black aria-expanded:bg-black xl:h-11 xl:w-11"
       >
-        <ChevronDown
-          className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        )}
       </button>
 
       {place && (
@@ -178,6 +247,62 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
               <span className="text-[13px] leading-snug text-ink-2">{hint}</span>
             </button>
           ))}
+        </div>
+      )}
+
+      {notice && noticePlace && !place && (
+        // It drops in from the ▾ as the menu does. Not a live region: the editor says it aloud itself.
+        <div
+          role="group"
+          aria-label={notice.title}
+          style={{ left: noticePlace.left, width: noticePlace.width }}
+          onPointerEnter={() => setHolding(true)}
+          onPointerLeave={() => setHolding(false)}
+          onFocus={() => setHolding(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setHolding(false)
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || notice.working) return
+            event.preventDefault()
+            closeNotice()
+          }}
+          className="absolute top-full z-20 mt-2 flex items-start gap-2.5 rounded-[4px] bg-sheet py-3 pl-3.5 pr-2 shadow-[0_18px_40px_-16px_rgba(17,19,24,0.3)] ring-1 ring-rule transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:-translate-y-1 starting:opacity-0"
+        >
+          {notice.working ? (
+            <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-ink-2" aria-hidden="true" />
+          ) : (
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-ink">{notice.title}</p>
+            {(notice.file || notice.link) && (
+              <p className="mt-0.5 flex items-baseline gap-3 text-[13px] leading-snug">
+                {notice.file && <span className="min-w-0 truncate text-ink-2">{notice.file}</span>}
+                {notice.link && (
+                  <a
+                    href={notice.link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={notice.link.name}
+                    className="ml-auto shrink-0 font-medium text-ink underline underline-offset-4"
+                  >
+                    {notice.link.label}
+                  </a>
+                )}
+              </p>
+            )}
+          </div>
+          {!notice.working && (
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={closeNotice}
+              className="-my-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] text-ink-2 transition-colors hover:bg-paper hover:text-ink"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
       )}
     </div>

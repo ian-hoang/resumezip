@@ -48,8 +48,8 @@ interface ConflictDialogProps {
   existingTitle?: string
   existingEdited: unknown
   fileEdited: unknown
-  /** A PDF, or a JSON file, which has what's left out of the PDF too. */
-  from: "pdf" | "json"
+  /** A PDF, a Word file, or a JSON file, which has what's left out of the PDF too. */
+  from: "pdf" | "docx" | "json"
   /** Whether the resume in this browser has something left out of the PDF, which the PDF doesn't hold. */
   existingLeftOut: boolean
   onCancel: () => void
@@ -57,7 +57,7 @@ interface ConflictDialogProps {
   onReplace: () => void
 }
 
-/** A resumezip PDF or JSON file of a resume that's already in this browser, but different. */
+/** A resumezip PDF, Word file or JSON file of a resume that's already in this browser, but different. */
 export function ConflictDialog({
   existingTitle,
   existingEdited,
@@ -68,11 +68,11 @@ export function ConflictDialog({
   onKeepBoth,
   onReplace,
 }: ConflictDialogProps) {
-  const file = from === "pdf" ? "PDF" : "file"
+  const file = from === "pdf" ? "PDF" : from === "docx" ? "Word file" : "file"
   // Without both times, neither copy is newer (NaN compares false).
   const fileOlder = timeOf(fileEdited) < timeOf(existingEdited)
   const fileNewer = timeOf(fileEdited) > timeOf(existingEdited)
-  const losesLeftOut = from === "pdf" && existingLeftOut
+  const losesLeftOut = from !== "json" && existingLeftOut
   // Replacing is the main choice only when it loses nothing.
   const replaceFirst = fileNewer && !losesLeftOut
   return (

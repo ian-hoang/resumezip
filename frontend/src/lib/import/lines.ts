@@ -4,6 +4,7 @@
 
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { TextContent } from "pdfjs-dist/types/src/display/api"
+import { zipDirectory } from "@/lib/zip"
 import { MAX_CHARACTERS, MAX_WORD_XML_BYTES, TooMuchTextError } from "./limits"
 
 /** A stretch of text in one style; `start` and `end` index into its part's text. */
@@ -546,35 +547,17 @@ export function linesFromHtml(html: string): Line[] {
  * to say whether it's a Word file at all.
  */
 export function unzippedXmlSize(data: ArrayBuffer): number | null {
-  const view = new DataView(data)
-  // The directory's end record closes the file, followed by a comment of up to 64 KB.
-  const last = view.byteLength - 22
-  for (let end = last; end >= Math.max(0, last - 0xffff); end--) {
-    if (view.getUint32(end, true) !== 0x06054b50) continue
-    // A ZIP64 file's directory is found from another record, just before this one.
-    if (end >= 20 && view.getUint32(end - 20, true) === 0x07064b50) return Infinity
-    // The directory sits just before this record. It's found from its size,
-    // not the place it's given at, which counts from where the zip starts: a
-    // file can have something else before that, and mammoth's unzipper allows for it.
-    let at = end - view.getUint32(end + 12, true)
-    if (at < 0) return null
-    let total = 0
-    for (let count = view.getUint16(end + 10, true); count > 0; count--) {
-      if (at + 46 > view.byteLength || view.getUint32(at, true) !== 0x02014b50) return null
-      const size = view.getUint32(at + 24, true)
-      const nameLength = view.getUint16(at + 28, true)
-      if (at + 46 + nameLength > view.byteLength) return null
-      const name = new TextDecoder().decode(new Uint8Array(data, at + 46, nameLength))
-      if (/\.(?:xml|rels)$/i.test(name)) {
-        // The real size is kept elsewhere (ZIP64).
-        if (size === 0xffffffff) return Infinity
-        total += size
-      }
-      at += 46 + nameLength + view.getUint16(at + 30, true) + view.getUint16(at + 32, true)
-    }
-    return total
+  const files = zipDirectory(data)
+  if (files === "zip64") return Infinity
+  if (!files) return null
+  let total = 0
+  for (const { name, size } of files) {
+    if (!/\.(?:xml|rels)$/i.test(name)) continue
+    // The real size is kept elsewhere (ZIP64).
+    if (size === 0xffffffff) return Infinity
+    total += size
   }
-  return null
+  return total
 }
 
 interface Mammoth {

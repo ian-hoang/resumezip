@@ -53,6 +53,16 @@ npm run test:browser   # after a build; see below
   everything the PDF leaves out: the name and tag, what's left out, and what
   the checker was told. Download all, on the dashboard, holds every resume as
   a list under `resumes`. "Open a file" opens both.
+- `src/lib/word.ts` makes the Word file in the same menu: the PDF's words in
+  one plain layout for every template, as a zip of XML files written without a
+  package (`src/lib/zip.ts`). It carries the PDF's attachment, with CRC-32s of
+  its text and its links' addresses, so it opens again exactly until another
+  app changes either.
+  Word drops the attachment when it saves, and then the file opens like any
+  Word file.
+- Save to Google Drive, in the same ▾ menu, uploads the PDF straight from the
+  browser once Google's sign-in window hands back a token (`src/lib/googleDrive.ts`
+  explains how). `/google-drive` is the page that window comes back to.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's
   fields. Its README explains how.
 - `src/lib/check/` is the resume checker: fixed rules that say what to fix on
@@ -64,7 +74,9 @@ npm run test:browser   # after a build; see below
 to a PDF without its attachment, reads it back through the importer, and
 checks it prints the same resume. Fields that don't read back yet are listed in
 `KNOWN_GAPS` in `src/lib/import/roundtrip.test.ts`; when you fix one, delete it
-there. A new template needs a sample and an entry in that list.
+there. It does the same with each sample's Word file, read as if Word had saved
+it without its attachment (`src/lib/import/wordRoundtrip.test.ts`). A new
+template needs a sample and an entry in both lists.
 
 `npm run test:browser` runs the browser tests in `e2e/` against the production
 build, in Chrome and in WebKit (Safari's engine). They make a resume, check the

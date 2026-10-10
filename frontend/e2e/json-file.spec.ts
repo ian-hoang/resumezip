@@ -65,10 +65,13 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
       .first(),
   ).toBeVisible()
 
-  // The ▾ opens its menu from the keyboard, and Escape puts the keyboard back on it.
+  // The ▾ opens its menu from the keyboard on its first choice, arrows move
+  // through it, and Escape puts the keyboard back on the ▾.
   const more = page.getByRole("button", { name: "More formats" })
   const json = page.getByRole("menuitem", { name: /^JSON/ })
   await more.focus()
+  await page.keyboard.press("ArrowDown")
+  await expect(page.getByRole("menuitem", { name: /^Word/ })).toBeFocused()
   await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   await expect(more).toHaveAttribute("aria-expanded", "true")
@@ -82,6 +85,7 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
 
   // Choosing JSON saves "<name>.json", and the keyboard goes back to the ▾.
   await more.click()
+  await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   const downloading = page.waitForEvent("download")
   await page.keyboard.press("Enter")
