@@ -8,31 +8,47 @@ import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 const AUTH = "https://accounts.google.com/o/oauth2/v2/auth"
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3/files"
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
+const PDF_PART = "Content-Type: application/pdf\r\n\r\n"
 
-interface Upload {
-  authorization: string
-  /** The file's name, from the metadata sent with it. */
-  name: string
-  pdf: Buffer
+declare global {
+  interface Window {
+    /** What the editor handed fetch for each upload to Drive, noted by a test: its Content-Type, and its body as base64. */
+    sentToDrive?: { type: string; body: string }[]
+  }
 }
 
 /**
  * Stands in for Google. Each sign-in takes the next of `signIns` (a token, or
  * declined), and each upload the next of `uploads` (Drive's answer's status);
- * after them, it signs in and saves. Returns what Google was asked, and lets
- * a test hold Drive's answers back until it's ready.
+ * after them, it signs in and saves. Returns what Google was asked (each
+ * upload's Authorization header), and lets a test hold Drive's answers back
+ * until it's ready.
  */
 async function fakeGoogle(context: BrowserContext, { signIns = [], uploads = [] }: { signIns?: "declined"[]; uploads?: number[] } = {}) {
   let held: Promise<void> = Promise.resolve()
   let release = () => {}
   const asked = {
     signIns: [] as URL[],
-    uploads: [] as Upload[],
+    uploads: [] as string[],
     hold: () => {
       held = new Promise((resolve) => (release = resolve))
     },
     release: () => release(),
   }
+  // WebKit doesn't give a test the body of a request sent as a Blob, so each
+  // upload's is read in the page, as it's handed to fetch (sentToDrive).
+  await context.addInitScript((upload) => {
+    window.sentToDrive = []
+    const send = window.fetch
+    window.fetch = async (input, init) => {
+      if (String(input).startsWith(upload) && init?.body instanceof Blob) {
+        let binary = ""
+        for (const byte of new Uint8Array(await init.body.arrayBuffer())) binary += String.fromCharCode(byte)
+        window.sentToDrive!.push({ type: new Headers(init.headers).get("content-type")!, body: btoa(binary) })
+      }
+      return send(input, init)
+    }
+  }, UPLOAD)
   await context.route(`${AUTH}**`, (route) => {
     const url = new URL(route.request().url())
     asked.signIns.push(url)
@@ -60,16 +76,7 @@ async function fakeGoogle(context: BrowserContext, { signIns = [], uploads = [] 
         headers: { ...cors, "access-control-allow-methods": "POST", "access-control-allow-headers": "authorization, content-type" },
       })
     }
-    const boundary = request.headers()["content-type"].match(/boundary=(\S+)/)![1]
-    const body = request.postDataBuffer()!
-    const text = body.toString("latin1")
-    const metadata = text.indexOf("\r\n\r\n") + 4
-    const pdf = text.indexOf("Content-Type: application/pdf\r\n\r\n") + "Content-Type: application/pdf\r\n\r\n".length
-    asked.uploads.push({
-      authorization: request.headers()["authorization"],
-      name: JSON.parse(text.slice(metadata, text.indexOf("\r\n", metadata))).name,
-      pdf: body.subarray(pdf, text.lastIndexOf(`\r\n--${boundary}--`)),
-    })
+    asked.uploads.push(request.headers()["authorization"])
     await held
     const status = uploads.shift() ?? 200
     const id = `file-${asked.uploads.length}`
@@ -80,6 +87,22 @@ async function fakeGoogle(context: BrowserContext, { signIns = [], uploads = [] 
     })
   })
   return asked
+}
+
+/** The PDFs the editor sent Drive, in order, with the names sent with them. */
+async function sentToDrive(page: Page): Promise<{ name: string; pdf: Buffer }[]> {
+  const sent = await page.evaluate(() => window.sentToDrive!)
+  return sent.map(({ type, body }) => {
+    const boundary = type.match(/boundary=(\S+)/)![1]
+    const bytes = Buffer.from(body, "base64")
+    const text = bytes.toString("latin1")
+    const metadata = text.indexOf("\r\n\r\n") + 4
+    const pdf = text.indexOf(PDF_PART) + PDF_PART.length
+    return {
+      name: JSON.parse(text.slice(metadata, text.indexOf("\r\n", metadata))).name,
+      pdf: bytes.subarray(pdf, text.lastIndexOf(`\r\n--${boundary}--`)),
+    }
+  })
 }
 
 /** Starts a resume called "Ada's resume", and waits for its preview, so the compiler is ready. */
@@ -158,8 +181,9 @@ test("Save to Google Drive signs in with Google in a window of its own, then put
   )
   await expect(page.getByRole("status").filter({ hasText: "PDF saved to Google Drive" })).toBeAttached()
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
-  const [upload] = asked.uploads
-  expect(upload).toMatchObject({ authorization: "Bearer token-1", name: "Ada's resume.pdf" })
+  expect(asked.uploads).toEqual(["Bearer token-1"])
+  const [upload] = await sentToDrive(page)
+  expect(upload.name).toBe("Ada's resume.pdf")
 
   // It carries the resume, so it opens again in another browser.
   const elsewhere = await browser.newContext()
@@ -179,7 +203,7 @@ test("Save to Google Drive signs in with Google in a window of its own, then put
     "href",
     "https://drive.google.com/file/d/file-2/view",
   )
-  expect(asked.uploads.map(({ authorization }) => authorization)).toEqual(["Bearer token-1", "Bearer token-1"])
+  expect(asked.uploads).toEqual(["Bearer token-1", "Bearer token-1"])
   expect(opened).toBe(false)
 
   // × closes the card, and the keyboard goes back to the ▾.
@@ -252,7 +276,7 @@ test("a token Drive refuses is dropped, so trying again signs in again", async (
 
   await saveSigningIn(page, () => failed.getByRole("button", { name: "Try again" }).click())
   await expect(savedCard(page)).toBeVisible()
-  expect(asked.uploads.map(({ authorization }) => authorization)).toEqual(["Bearer token-1", "Bearer token-2"])
+  expect(asked.uploads).toEqual(["Bearer token-1", "Bearer token-2"])
 
   expect(errors.filter((error) => !EXPECTED_FAILURE.test(error))).toEqual([])
 })
