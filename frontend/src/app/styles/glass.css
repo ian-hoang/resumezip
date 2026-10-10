@@ -72,16 +72,19 @@
 
   /* The desk: the soft blue field every app page sits on, and the glass floats
      over. It stays put as the page scrolls, so the light doesn't slide away
-     with the content (browsers that don't fix backgrounds, as on iOS, scroll it). */
+     with the content (browsers that don't fix backgrounds, as on iOS, scroll it).
+     Secondary text on it is a shade darker than on paper: ink-2 against the
+     glows' bluest spots is 3.1:1, this is 4.55:1 at worst (4.5:1 is the minimum). */
   .desk {
+    --color-ink-2: #4b4e55;
     background-color: #eef1f8;
     background-image:
       /* Faint grain, so the field reads as paper rather than a flat fill. */
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.07 0 0 0 0 0.09 0 0 0 0 0.16 0.16 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
-      radial-gradient(55% 60% at 6% 2%, rgb(168 185 242 / 0.75), transparent 70%),
-      radial-gradient(45% 55% at 98% 10%, rgb(46 91 230 / 0.26), transparent 70%),
-      radial-gradient(65% 60% at 84% 106%, rgb(46 91 230 / 0.38), transparent 72%),
-      radial-gradient(55% 55% at -6% 104%, rgb(168 185 242 / 0.8), transparent 70%),
+      radial-gradient(55% 60% at 6% 2%, rgb(168 185 242 / 0.6), transparent 70%),
+      radial-gradient(45% 55% at 98% 10%, rgb(46 91 230 / 0.2), transparent 70%),
+      radial-gradient(65% 60% at 84% 106%, rgb(46 91 230 / 0.26), transparent 72%),
+      radial-gradient(55% 55% at -6% 104%, rgb(168 185 242 / 0.65), transparent 70%),
       radial-gradient(45% 45% at 50% 46%, rgb(255 255 255 / 0.6), transparent 80%);
     background-attachment: fixed;
   }
