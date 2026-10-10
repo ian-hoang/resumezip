@@ -79,6 +79,8 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
   const listed = found.slice(0, LISTED)
   const picked = Math.min(active, listed.length - 1)
   const open = listing && listed.length > 0
+  // Typed in, with nothing to list: the panel says so, rather than staying away.
+  const nothing = listing && query.trim() !== "" && found.length === 0
 
   // "/" goes to the search, as on many sites, unless it's being typed somewhere or a dialog is open.
   useEffect(() => {
@@ -114,11 +116,13 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
   }
   useEffect(() => () => window.clearTimeout(landing.current), [])
 
-  // The header, a pill the same shape, tucks away above the screen while the search is up (home.css).
+  // Said on the page while the search is lifted or landing: the header, a pill the same
+  // shape, tucks away above the screen while it's up (home.css), and the page's main part
+  // rises over the footer so the veil covers it too (dashboard.css).
   useEffect(() => {
-    if (place !== "up") return
+    if (place === "down") return
     const page = document.documentElement
-    page.setAttribute("data-spotlight", "")
+    page.setAttribute("data-spotlight", place)
     return () => page.removeAttribute("data-spotlight")
   }, [place])
 
@@ -249,6 +253,12 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
           )}
         </div>
 
+        {nothing && (
+          // The status below says it to screen readers.
+          <div aria-hidden="true" className="search-panel glass glass-frost rounded-panel">
+            <p className="px-4 py-3 text-[15px] text-ink-2">{matching}</p>
+          </div>
+        )}
         {open && (
           <div className="search-panel glass glass-frost rounded-panel">
             <ul id={panelId} role="listbox" aria-label="Matching resumes">

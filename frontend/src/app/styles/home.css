@@ -24,7 +24,7 @@
   }
   .site-pill[data-tucked]:not(:focus-within),
   /* And on every page, while the dashboard's search is lifted into the middle of the screen (SearchBar.tsx). */
-  [data-spotlight] .site-pill:not(:focus-within) {
+  [data-spotlight="up"] .site-pill:not(:focus-within) {
     transform: translateY(calc(-100% - 3rem));
   }
 

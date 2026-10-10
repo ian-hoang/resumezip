@@ -135,6 +135,12 @@
     width: 100%;
     max-height: min(60vh, 460px);
   }
+  /* The page's main part is a layer of its own (an etched pane), which the
+     footer after it paints over: while the search is lifted, it rises over the
+     footer, so the veil in it covers the whole screen. */
+  [data-spotlight] main {
+    z-index: 45;
+  }
   .search-veil {
     position: fixed;
     inset: 0;

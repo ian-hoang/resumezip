@@ -448,7 +448,8 @@ test("the search finds resumes by name or template, and opens one from the keybo
 
 test("in use, the search lifts into the middle of the screen, and Escape or a press on the page puts it back", async ({ page }) => {
   const errors = pageErrors(page)
-  await page.setViewportSize({ width: 1280, height: 800 })
+  // Tall, so the footer is on screen under the page once nothing matches.
+  await page.setViewportSize({ width: 1280, height: 1200 })
   await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
   const search = page.getByRole("combobox", { name: "Search your resumes" })
   // Whether it's in the middle of the screen, rather than at the start of the toolbar.
@@ -465,6 +466,42 @@ test("in use, the search lifts into the middle of the screen, and Escape or a pr
   await expect(page.getByRole("banner")).not.toBeInViewport()
   await search.fill("ada")
   await expect(page.getByRole("listbox", { name: "Matching resumes" })).toBeVisible()
+
+  // With nothing to list, it says so; and the softened page covers the whole
+  // screen, the footer included (on a tall screen, with the page now short).
+  await search.fill("zzz")
+  // The panel's line and the screen readers' status say the same.
+  await expect(page.getByText("No resume matches “zzz”").filter({ visible: true })).toHaveCount(2)
+  // Once the veil's faded in, the footer under it is blurred too: no sharp edges
+  // (as its zipper's teeth have), only small steps from one pixel to the next.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  )
+  const footer = (await page.getByRole("contentinfo").boundingBox())!
+  const top = Math.max(0, Math.round(footer.y))
+  expect(top).toBeLessThan(1100)
+  const shot = await page.screenshot({ clip: { x: 120, y: top, width: 1040, height: 1200 - top } })
+  const sharpest = await page.evaluate(async (png) => {
+    const image = new Image()
+    image.src = `data:image/png;base64,${png}`
+    await image.decode()
+    const canvas = document.createElement("canvas")
+    canvas.width = image.width
+    canvas.height = image.height
+    const context = canvas.getContext("2d")!
+    context.drawImage(image, 0, 0)
+    const { data, width, height } = context.getImageData(0, 0, image.width, image.height)
+    let most = 0
+    for (let y = 0; y < height; y++)
+      for (let x = 1; x < width; x++) most = Math.max(most, Math.abs(data[(y * width + x) * 4] - data[(y * width + x - 1) * 4]))
+    return most
+  }, shot.toString("base64"))
+  expect(sharpest).toBeLessThan(60)
 
   // Escape starts again first, then puts it back and lets go of it; "/" lifts it again.
   await search.press("Escape")
