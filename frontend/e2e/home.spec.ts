@@ -36,6 +36,9 @@ test("closing the news leaves the header and the heading where they were", async
   await page.goto("/")
   await expect(news(page)).toBeVisible()
   await page.evaluate(() => document.fonts.ready.then(() => undefined))
+  // The bar slides in from above the screen. Part-way, its button is partly
+  // off the top, and the click scrolls the page to reach it.
+  await news(page).evaluate((bar) => Promise.all(bar.getAnimations().map((animation) => animation.finished)))
   const heading = await page.getByRole("heading", { level: 1 }).boundingBox()
   const header = await page.getByRole("banner").boundingBox()
   await news(page).getByRole("button", { name: "Close the news" }).click()
