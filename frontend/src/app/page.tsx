@@ -1,16 +1,14 @@
-import Image from "next/image"
 import Link from "next/link"
 import FloatingStart from "@/components/home/FloatingStart"
 import FocusWords from "@/components/home/FocusWords"
 import HeroVideo from "@/components/home/HeroVideo"
 import HomeChrome from "@/components/home/HomeChrome"
+import CheckDemo from "@/components/home/CheckDemo"
 import HowItWorks from "@/components/home/HowItWorks"
-import Magnetic from "@/components/home/Magnetic"
 import PrefetchCompiler from "@/components/home/PrefetchCompiler"
 import Questions from "@/components/home/Questions"
 import SiteFooter from "@/components/site/SiteFooter"
 import { StartWritingLink } from "@/components/site/StartWriting"
-import { TEMPLATES } from "@/lib/templates"
 
 function ArrowUpRight() {
   return (
@@ -48,21 +46,19 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-wrap items-end justify-between gap-8 px-5 pb-6 pt-12 md:px-10 md:pb-10">
-          <div className="flex w-full max-w-[420px] flex-col gap-6 bg-white px-7 pb-6 pt-7 text-ink">
+          {/* The square box: the sentence, a rule, and Start writing in capitals beside a blue square arrow. */}
+          <div className="flex w-full max-w-[420px] flex-col gap-7 bg-white px-7 pb-5 pt-7 text-ink">
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">
               resumezip is a free, open-source resume builder that runs in your browser. Pick a template, write, and download the PDF.
             </p>
-            <Magnetic>
-              <StartWritingLink
-                className="ink-button lift-button group flex h-12 items-center justify-between gap-4 rounded-full pl-6 pr-1.5"
-                preloadOnHover
-              >
-                <span className="magnet-pull magnet-pull-soft text-[15px] font-medium tracking-[-0.01em]">Start writing</span>
-                <span className="magnet-pull inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink">
-                  <ArrowUpRight />
-                </span>
-              </StartWritingLink>
-            </Magnetic>
+            <StartWritingLink className="group flex items-center justify-between gap-4 border-t border-ink pt-4" preloadOnHover>
+              <span className="text-[13px] font-semibold uppercase tracking-[0.1em] decoration-2 underline-offset-4 group-hover:underline">
+                Start writing
+              </span>
+              <span className="inline-flex h-7 w-7 items-center justify-center bg-accent text-white transition duration-200 group-hover:bg-[#2550d4] motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5">
+                <ArrowUpRight />
+              </span>
+            </StartWritingLink>
           </div>
           <div className="flex max-w-[340px] flex-col gap-4">
             <span className="label-mono">Free · Saved in your browser</span>
@@ -114,41 +110,7 @@ export default function Home() {
 
       <HowItWorks />
 
-      <section aria-labelledby="templates" data-tone="blue" data-tick className="cloud-seam bg-accent text-white">
-        <div className="border-b border-white/25">
-          <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-7 md:px-10">
-            <h2 id="templates" className="label-section">
-              Templates
-            </h2>
-            <Link href="/templates" className={`${OUTLINE_PILL} border-white`}>
-              <span className="ink-fill-label inline-flex items-center gap-2.5">
-                See all <ArrowUpRight />
-              </span>
-            </Link>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-px bg-white/25">
-          {/* A few to show the range; "See all" has the rest. */}
-          {TEMPLATES.slice(0, 4).map((template) => (
-            <StartWritingLink
-              key={template.id}
-              template={template.id}
-              className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
-            >
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-ink">
-                <Image
-                  src={template.image}
-                  alt={`${template.name} template`}
-                  fill
-                  sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover object-top"
-                />
-              </div>
-              <span className="font-serif text-[22px] leading-tight tracking-[-0.015em]">{template.name}</span>
-            </StartWritingLink>
-          ))}
-        </div>
-      </section>
+      <CheckDemo />
 
       <Questions />
 
