@@ -43,6 +43,10 @@ async function newResume(page: Page) {
   await page.goto("/")
   await page.getByRole("link", { name: "Start writing" }).first().click()
   await expect(page).toHaveURL(/\/create\/new\//)
+  // The section buttons are replaced by draggable ones once drag and drop
+  // loads. fadingIn finds its button and then clicks it, so on a busy machine
+  // the click could land on the old one, no longer on the page.
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Reorder Experience" })).toBeVisible()
 }
 
 test("a section, Write or Check, the Style panel and the template gallery fade in as they're chosen", async ({ page }) => {
