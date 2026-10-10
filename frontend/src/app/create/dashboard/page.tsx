@@ -445,7 +445,13 @@ export default function DashboardPage() {
     </button>
   )
   const downloadAllButton = (
-    <button type="button" onClick={downloadAll} className={`${OUTLINE_PILL} h-11`}>
+    // With nothing to download it's there, as the rest of the page is, but can't be used.
+    <button
+      type="button"
+      onClick={downloadAll}
+      disabled={total === 0}
+      className={`${OUTLINE_PILL} h-11 disabled:cursor-default disabled:opacity-45 disabled:hover:bg-sheet/70 disabled:hover:ring-ink/15`}
+    >
       <FileDown className="h-4 w-4" aria-hidden="true" />
       Download all
     </button>
@@ -470,8 +476,9 @@ export default function DashboardPage() {
               : "Stored in this browser"
           }
           title="Your resumes"
+          // The same with no resumes, so the page doesn't change shape when the first arrives.
           actions={
-            total > 0 ? (
+            loaded ? (
               <div className="flex flex-wrap gap-2">
                 {downloadAllButton}
                 {openFileButton}
@@ -506,7 +513,7 @@ export default function DashboardPage() {
           {announcement}
         </p>
 
-        {loaded && showing.length > 0 && (
+        {loaded && (
           <div className="flex flex-col gap-8">
             <Filters
               search={<SearchBar resumes={kept} query={query} onQuery={setQuery} />}
@@ -518,7 +525,9 @@ export default function DashboardPage() {
               view={view}
               onView={chooseView}
             />
-            {shown.length === 0 ? (
+            {showing.length === 0 ? (
+              <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />
+            ) : shown.length === 0 ? (
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <p className="font-serif text-[24px] leading-tight tracking-[-0.02em]">
                   {query.trim() ? (
@@ -568,8 +577,6 @@ export default function DashboardPage() {
             )}
           </div>
         )}
-
-        {loaded && showing.length === 0 && <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />}
 
         <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-ink-2">
           <span className="label-mono text-accent">Stored locally</span>

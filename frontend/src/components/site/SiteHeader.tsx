@@ -17,6 +17,10 @@ const WIDE_HEADER = "(min-width: 48rem)"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
+// The phone menu's fill: nearly solid, so the hero's words don't show through its links.
+const MENU_FILL_DARK = "[--glass-fill:linear-gradient(180deg,rgb(28_30_36/0.96),rgb(17_19_24/0.94))]"
+const MENU_FILL_LIGHT = "[--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))]"
+
 // No display of its own: beside the logo these show from sm up, and in the menu below that.
 const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em]"
 
@@ -151,17 +155,22 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
         </div>
       </div>
 
-      {/* Drops over the page instead of pushing it down. Once it starts to close,
-          inert keeps the keyboard out of it; once closed, visibility (which changes
-          at the end of its transition) hides it too. */}
+      {/* A card that drops in below the pill, over the page, with a small spring
+          (.menu-card in home.css); the pill itself never changes. It moves in
+          rather than fading or being uncovered: glass can't blur what's behind it
+          while it's see-through or clipped, so either would show the page plainly
+          through it, then frost over at once. Its links fade in just after, one by one. Once it starts
+          to close, inert keeps the keyboard out of it; once closed, visibility
+          (which changes at the end of its transition) hides it too. */}
       <nav
         aria-label="Main"
         inert={!menuOpen}
-        className={`glass ${dark ? "glass-smoke" : "glass-frost"} absolute inset-x-0 top-full mt-2 flex flex-col rounded-panel px-5 pb-4 pt-2 transition-[opacity,transform,visibility] duration-200 ease-glide motion-reduce:transition-none md:hidden ${
-          menuOpen ? "" : "invisible -translate-y-2 opacity-0"
-        }`}
+        data-open={menuOpen || undefined}
+        className={`menu-card glass ${
+          dark ? `glass-smoke ${MENU_FILL_DARK}` : `glass-frost ${MENU_FILL_LIGHT}`
+        } absolute inset-x-0 top-full mt-2 flex flex-col rounded-panel px-5 pb-4 pt-2 md:hidden`}
       >
-        {LINKS.map((link) => (
+        {LINKS.map((link, index) => (
           <Link
             key={link.href}
             href={link.href}
@@ -169,12 +178,15 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
               setMenuOpen(false)
               toTopIfHere(pathname, link.href)(event)
             }}
-            className="py-3 text-[17px] tracking-[-0.01em]"
+            style={{ "--i": index } as React.CSSProperties}
+            className="menu-item py-3 text-[17px] tracking-[-0.01em]"
           >
             {link.label}
           </Link>
         ))}
-        <div className="mt-2 flex flex-col sm:hidden">{star(`${primary} flex h-11`, true)}</div>
+        <div style={{ "--i": LINKS.length } as React.CSSProperties} className="menu-item mt-2 flex flex-col sm:hidden">
+          {star(`${primary} flex h-11`, true)}
+        </div>
       </nav>
     </header>
   )
@@ -187,7 +199,7 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
  */
 export default function SiteHeader() {
   return (
-    <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
+    <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] items-start justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
       <SitePill />
     </div>
   )

@@ -46,18 +46,19 @@ export default function FloatingStart() {
       </div>
       {/* Hidden, it's out of the way of the keyboard and screen readers too. */}
       <div
-        className={`fixed inset-x-0 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 flex justify-center px-5 transition-[opacity,transform,visibility] duration-300 ease-glide motion-reduce:transition-none ${
-          shown ? "" : "invisible translate-y-3 opacity-0"
+        // It slides up from under the foot of the screen rather than fading in: it's glass, which stops blurring while see-through.
+        className={`fixed inset-x-0 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-30 flex justify-center px-5 transition-[transform,visibility] duration-300 ease-glide motion-reduce:transition-none ${
+          shown ? "" : "invisible translate-y-28"
         }`}
       >
         <StartWritingLink
           preloadOnHover
-          className="group flex items-center gap-4 rounded-full bg-ink py-1.5 pl-6 pr-1.5 text-white shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)] transition-[background-color,scale] duration-150 hover:bg-[#2b2f3a] active:scale-[0.98] active:bg-black motion-reduce:active:scale-100"
+          className="glass glass-float group flex items-center gap-4 rounded-full py-1.5 pl-6 pr-1.5 text-ink transition-[scale] duration-150 active:scale-[0.98] motion-reduce:active:scale-100"
         >
           <span className="whitespace-nowrap text-[16px] tracking-[-0.015em]">Start writing. It’s free.</span>
           <span
             aria-hidden="true"
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-medium text-ink transition-colors group-hover:bg-white/85"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-4 text-[15px] font-medium text-white transition-colors group-hover:bg-[#2b2f3a]"
           >
             Start
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">

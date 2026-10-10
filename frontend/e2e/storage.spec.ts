@@ -406,7 +406,8 @@ test("two tabs editing different resumes at once keep both edits", async ({ page
 test("an open dialog keeps focus where it is when another tab saves", async ({ page, context }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
-  await page.getByRole("button", { name: "New resume" }).click()
+  // The header's; with no resumes yet, the empty page under it has one too.
+  await page.getByRole("button", { name: "New resume" }).first().click()
   const dialog = page.getByRole("dialog", { name: "New resume" })
   await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused()
   const create = dialog.getByRole("button", { name: "Create" })

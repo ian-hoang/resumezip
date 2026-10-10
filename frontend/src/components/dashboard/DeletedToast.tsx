@@ -40,7 +40,7 @@ export default function DeletedToast({ title, onUndo, onDone }: DeletedToastProp
   return (
     <div className="deleted-toast-dock">
       <div
-        className="deleted-toast"
+        className="deleted-toast glass glass-clear"
         onPointerEnter={() => setHeld((held) => ({ ...held, pointer: true }))}
         onPointerLeave={() => setHeld((held) => ({ ...held, pointer: false }))}
       >
@@ -57,7 +57,7 @@ export default function DeletedToast({ title, onUndo, onDone }: DeletedToastProp
             setHeld((held) => ({ ...held, keyboard }))
           }}
           onBlur={() => setHeld((held) => ({ ...held, keyboard: false }))}
-          className="h-9 shrink-0 rounded-full bg-sheet px-4 text-sm font-medium text-ink transition-colors hover:bg-white focus-visible:outline-accent-soft"
+          className="ink-button h-9 shrink-0 rounded-full px-4 text-sm font-medium"
         >
           Undo
         </button>

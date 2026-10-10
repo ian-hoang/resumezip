@@ -114,6 +114,8 @@ function Editor({ id }: { id: string }) {
   const [pdfResume, setPdfResume] = useState<Resume | undefined>(undefined)
   const [unbuilt, setUnbuilt] = useState<string | null>(null)
   const [compileError, setCompileError] = useState<string | null>(null)
+  // How many times Take the tour was pressed: each one opens the tour again.
+  const [tourAsked, setTourAsked] = useState(0)
   const [downloading, setDownloading] = useState(false)
   // When the last download finished, while the button says so; 0 otherwise.
   const [downloadedAt, setDownloadedAt] = useState(0)
@@ -414,18 +416,21 @@ function Editor({ id }: { id: string }) {
   // Resumes only exist in the browser that created them.
   if (!found) {
     return (
-      <div className="desk flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-        <span className="label-mono text-ink-2">Not in this browser</span>
-        <h1 className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Resume not found</h1>
-        <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-          Resumes are saved in the browser you made them in. Open this link on that device, or start a new one.
-        </p>
-        <Link
-          href="/create/dashboard"
-          className="ink-button lift-button mt-2 inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
-        >
-          Go to your resumes
-        </Link>
+      <div className="desk flex min-h-screen items-center justify-center px-4">
+        {/* On a pane of glass over the sky, as the site's pages are. */}
+        <div className="glass glass-frost flex w-full max-w-[520px] flex-col items-center gap-4 rounded-panel px-6 py-12 text-center sm:px-12">
+          <span className="label-mono text-ink-2">Not in this browser</span>
+          <h1 className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Resume not found</h1>
+          <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
+            Resumes are saved in the browser you made them in. Open this link on that device, or start a new one.
+          </p>
+          <Link
+            href="/create/dashboard"
+            className="ink-button lift-button mt-2 inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
+          >
+            Go to your resumes
+          </Link>
+        </div>
       </div>
     )
   }
@@ -460,6 +465,16 @@ function Editor({ id }: { id: string }) {
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               {/* Here rather than after the name, so it stays put while the name is typed. */}
               <SavedNote />
+              {/* The first-visit tour, again, whenever it's wanted. */}
+              <button
+                type="button"
+                aria-label="Take the tour"
+                title="Take the tour"
+                onClick={() => setTourAsked((count) => count + 1)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sheet/70 text-[15px] font-medium text-ink ring-1 ring-ink/15 transition-shadow hover:ring-ink/40"
+              >
+                ?
+              </button>
               <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
               {/* Download PDF is the main way out; the ▾ beside it has the others. The button's
                   least width fits "Download PDF", so it doesn't shrink when it says Downloaded. */}
@@ -628,11 +643,12 @@ function Editor({ id }: { id: string }) {
 
       <div
         data-covers="bottom"
-        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-[opacity,transform] duration-200 xl:hidden ${
-          typing ? "pointer-events-none translate-y-3 opacity-0" : ""
+        // Out of the way while typing, below the foot of the screen: it slides rather than fades, as see-through glass stops blurring.
+        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-transform duration-200 xl:hidden ${
+          typing ? "pointer-events-none translate-y-24" : ""
         }`}
       >
-        <div role="group" aria-label="View" className="flex gap-1 rounded-full bg-ink p-1 shadow-[0_12px_32px_-12px_rgba(17,19,24,0.5)]">
+        <div role="group" aria-label="View" className="glass glass-clear flex gap-1 rounded-full p-1">
           {(["edit", "preview"] as const).map((option) => {
             const Icon = option === "edit" ? PencilLine : Eye
             return (
@@ -642,7 +658,7 @@ function Editor({ id }: { id: string }) {
                 aria-pressed={view === option}
                 onClick={() => show(option)}
                 className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors ${
-                  view === option ? "bg-sheet text-ink" : "text-white/70 hover:text-white"
+                  view === option ? "bg-ink text-white" : "text-ink-2 hover:text-ink"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -653,7 +669,7 @@ function Editor({ id }: { id: string }) {
         </div>
       </div>
 
-      <Tour />
+      <Tour asked={tourAsked} />
     </div>
   )
 }

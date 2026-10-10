@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
-import { newTemplate } from "@/lib/templates"
+import { newTemplate, TEMPLATES } from "@/lib/templates"
 import TemplateGallery from "./TemplateGallery"
 import { SHEET } from "@/components/site/sheet"
 
@@ -16,10 +16,16 @@ export default function TemplatesPage() {
       <SiteHeader />
 
       <main className={`${SHEET} flex flex-col gap-10`}>
-        <div className="flex flex-col items-center gap-5 text-center">
-          <span className="label-mono text-ink-2">Templates</span>
-          <h1 className="font-serif text-5xl leading-[1.02] tracking-[-0.03em] md:text-[88px] md:leading-[0.95]">Pick a template.</h1>
-          <p className="text-[17px] leading-relaxed text-ink-2">Switch any time; your writing stays put.</p>
+        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
+          <div className="flex flex-col gap-4">
+            <span className="label-mono text-ink-2">Templates · {TEMPLATES.length}, all free</span>
+            <h1 className="font-serif text-5xl leading-[1.02] tracking-[-0.035em] md:text-[96px] md:leading-[0.95]">
+              Pick a <em className="text-accent">template</em>.
+            </h1>
+          </div>
+          <p className="max-w-[340px] text-[17px] leading-relaxed text-ink-2 md:pb-3 md:text-right">
+            Switch any time; your writing stays put.
+          </p>
         </div>
 
         <TemplateGallery newId={marked?.id} />

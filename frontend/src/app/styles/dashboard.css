@@ -45,6 +45,135 @@
     }
   }
 
+  /* The search field (and the templates page's bar and plates): clear glass,
+     with a lit top edge and a rim, a little whiter than the sheet it sits on. Its blur is on ::before, as .glass's is
+     (styles/glass.css), so its words stay sharp. */
+  .search-field {
+    position: relative;
+    isolation: isolate;
+    border-radius: 999px;
+    box-shadow:
+      0 10px 24px -14px rgb(17 19 24 / 0.35),
+      0 1px 3px -1px rgb(17 19 24 / 0.12);
+  }
+  .search-field::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(var(--search-blur, 6px)) saturate(1.1);
+    backdrop-filter: blur(var(--search-blur, 6px)) saturate(1.1);
+    background:
+      radial-gradient(120% 90% at 22% -10%, rgb(255 255 255 / 0.55), transparent 55%),
+      var(--search-fill, linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.26)));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      inset 0 -1px 0 rgb(255 255 255 / 0.5),
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.55),
+      inset 0 -12px 20px -14px rgb(17 19 24 / 0.2);
+  }
+  .search-field::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.2px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.98),
+      rgb(255 255 255 / 0.15) 30%,
+      transparent 50%,
+      rgb(255 255 255 / 0.15) 70%,
+      rgb(255 255 255 / 0.85)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  /* In use, the search lifts into the middle of the screen (SearchBar.tsx),
+     over a veil that softens the page, and drops in there. It moves without
+     fading: glass under a fading parent stops blurring, and would show the
+     page through it. Going back, it fades as a nearly solid sheet instead. */
+  .search-spot {
+    position: relative;
+  }
+  .search-spot[data-lifted],
+  .search-spot[data-landing] {
+    position: fixed;
+    z-index: 10;
+    inset-inline: 0;
+    top: max(96px, 16vh);
+    width: min(680px, calc(100vw - 32px));
+    margin-inline: auto;
+  }
+  .search-spot[data-lifted] {
+    animation: spot-in 340ms var(--ease-glide);
+  }
+  .search-spot[data-landing] {
+    animation: spot-out 200ms ease-in forwards;
+  }
+  .search-spot[data-lifted] .search-field,
+  .search-spot[data-landing] .search-field {
+    --search-blur: 18px;
+    --search-fill: linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.56));
+    box-shadow:
+      0 30px 70px -20px rgb(17 19 24 / 0.5),
+      0 3px 10px -3px rgb(17 19 24 / 0.2);
+  }
+  .search-spot[data-landing] .search-field::before {
+    --search-fill: rgb(255 255 255 / 0.94);
+  }
+  .search-spot[data-lifted] .search-panel,
+  .search-spot[data-landing] .search-panel {
+    top: calc(100% + 10px);
+    width: 100%;
+    max-height: min(60vh, 460px);
+  }
+  /* The page's main part is a layer of its own (an etched pane), which the
+     footer after it paints over: while the search is lifted, it rises over the
+     footer, so the veil in it covers the whole screen. */
+  [data-spotlight] main {
+    z-index: 45;
+  }
+  .search-veil {
+    position: fixed;
+    inset: 0;
+    background: rgb(40 56 100 / 0.16);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: veil-in 280ms ease-out;
+  }
+  .search-veil.is-leaving {
+    animation: veil-out 200ms ease-in forwards;
+  }
+  @keyframes spot-in {
+    from {
+      transform: translateY(-12px) scale(0.97);
+    }
+  }
+  @keyframes spot-out {
+    to {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+  }
+  @keyframes veil-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes veil-out {
+    to {
+      opacity: 0;
+    }
+  }
+
   /* The matches, in a glass panel that grows down out of the search. */
   .search-panel {
     position: absolute;
@@ -56,6 +185,10 @@
     padding: 6px;
     transform-origin: 0 0;
     animation: panel-grow 320ms var(--ease-glide);
+  }
+  .search-panel > *,
+  .menu-panel > * {
+    animation: panel-contents 220ms ease-out;
   }
   .search-row {
     display: flex;
@@ -93,10 +226,16 @@
     backdrop-filter: blur(8px) saturate(1.2);
   }
   @media (prefers-reduced-transparency: reduce) {
-    .dialog-backdrop {
+    .dialog-backdrop,
+    .search-veil {
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
       background: rgb(226 231 243 / 0.92);
+    }
+    .search-field::before {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: rgb(255 255 255 / 0.96);
     }
   }
 
@@ -110,10 +249,11 @@
       box-shadow 200ms ease-out,
       translate 320ms var(--ease-glide);
   }
+  /* Pointed at: a hairline that darkens rather than a heavy outline, and the page lifts. */
   .tile:hover .tile-page,
   .tile:focus-within .tile-page {
     box-shadow:
-      0 0 0 2px var(--color-ink),
+      0 0 0 1px rgb(17 19 24 / 0.45),
       0 16px 32px -20px rgb(17 19 24 / 0.5);
     translate: 0 -2px;
   }
@@ -369,11 +509,13 @@
     min-height: 56px;
     padding: 8px 8px 8px 12px;
     border-radius: var(--radius-panel);
-    background: var(--color-ink);
-    color: white;
-    box-shadow: 0 18px 40px -16px rgb(17 19 24 / 0.55);
+    color: var(--color-ink);
     pointer-events: auto;
     animation: toast-in 360ms var(--ease-glide) both;
+  }
+  /* What's in it fades in as it rises; the glass itself only moves, as see-through glass stops blurring. */
+  .deleted-toast > * {
+    animation: panel-contents 260ms ease-out;
   }
   .paper-ball {
     flex-shrink: 0;
@@ -478,15 +620,20 @@
   .tile.is-crumpling .tile-page,
   .tile.is-crumpling .tile-page::after,
   .tile.is-returning .tile-page,
+  .search-spot[data-lifted],
+  .search-veil,
   .fold-row.is-folding,
   .fold-row.is-folding .fold-cell,
   .fold-row.is-unfolding,
   .fold-row.is-unfolding .fold-cell,
   .drop-tile:hover .drop-arrow,
   .deleted-toast,
+  .deleted-toast > *,
   .paper-ball,
   .page-arrived,
-  .menu-panel {
+  .menu-panel,
+  .search-panel > *,
+  .menu-panel > * {
     animation: none;
   }
   .tile:hover .tile-page,
@@ -497,10 +644,18 @@
   }
 }
 
+/* Glass can't blur what's behind it while it's see-through or clipped, so a
+   glass panel grows in from its top, solid from its first frame, rather than
+   fading in: a fade would show the page plainly behind it, then frost over at
+   once as it ended. Its contents fade in instead (panel-contents). */
 @keyframes panel-grow {
   from {
+    transform: translateY(-8px) scale(0.97, 0.9);
+  }
+}
+@keyframes panel-contents {
+  from {
     opacity: 0;
-    transform: translateY(-10px) scale(0.96, 0.82);
   }
 }
 @keyframes crumple {
@@ -560,10 +715,10 @@
     transform: translateY(-2px);
   }
 }
+/* Up from under the foot of the screen, solid all the way (it's glass). */
 @keyframes toast-in {
   from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.96);
+    transform: translateY(calc(100% + 32px));
   }
 }
 @keyframes ball-land {
@@ -581,9 +736,9 @@
     opacity: 0;
   }
 }
+/* As panel-grow: the menu grows from its button, and only what's in it fades. */
 @keyframes menu-grow {
   from {
-    opacity: 0;
     transform: scale(0.94);
   }
 }

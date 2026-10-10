@@ -101,19 +101,20 @@
 }
 
 /* A page's content fades in as it opens from a header link, so the jump to
-   the top of the new page isn't abrupt. Only `main`: the header is the same on
-   every page and stays still. A fade and no more: moving `main` as well would
-   make it the box its fixed children sit in, and move what's under a click. */
+   the top of the new page isn't abrupt. What's in `main` fades, not `main`
+   itself: it's often the glass sheet, and glass can't blur what's behind it
+   while it's see-through, so it would look clear, then frost over as the fade
+   ended. A fade and no more: moving it as well could move what's under a click. */
 @keyframes page-in {
   from {
     opacity: 0;
   }
 }
-main {
+main > * {
   animation: page-in 450ms var(--ease-glide) backwards;
 }
 @media (prefers-reduced-motion: reduce) {
-  main {
+  main > * {
     animation: none;
   }
 }
@@ -194,9 +195,10 @@ main {
     background-color: #000;
     scale: 0.97;
   }
+  /* Its own: an ink tint wouldn't show on ink. */
   &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+    background-color: #2b2f3a;
+    background-image: none;
   }
   @media (prefers-reduced-motion: reduce) {
     &:active:not(:disabled) {
@@ -279,9 +281,19 @@ main {
     color: transparent;
   }
 
+  /* Keyboard focus: a soft ink tint over what has it, rather than a ring
+     round it. A background image, so it lies over the element's own
+     background colour rather than replacing it; text fields show focus with
+     their own underline or border, so they're left out. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+    outline: none;
+  }
+  :focus-visible:not(input, textarea, select, [contenteditable]) {
+    background-image: linear-gradient(rgb(17 19 24 / 0.08), rgb(17 19 24 / 0.08));
+  }
+  /* A text link's underline thickens too, so focus shows on it whatever it's over. */
+  a:focus-visible {
+    text-decoration-thickness: 2px;
   }
 
   /* Buttons show the hand, as links do: Tailwind's base styles give them the

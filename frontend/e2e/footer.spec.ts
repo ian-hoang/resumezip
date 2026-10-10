@@ -3,7 +3,7 @@ import { pageErrors } from "./helpers"
 
 test("the footer is a wordmark and its links to a screen reader: the zipper is only a picture", async ({ page }) => {
   const errors = pageErrors(page)
-  await page.goto("/contact")
+  await page.goto("/about")
   const footer = page.getByRole("contentinfo")
 
   await expect(footer.getByRole("link", { name: "resumezip" })).toHaveAttribute("href", "/")
@@ -24,7 +24,7 @@ test("the footer's zipper stays still as the page is scrolled to it and away", a
       )
     }
   })
-  await page.goto("/contact")
+  await page.goto("/about")
   await page.keyboard.press("End")
   await page.keyboard.press("Home")
   await page.keyboard.press("End")
