@@ -8,6 +8,7 @@ import PagePicture from "./PagePicture"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
 import { tagName } from "./ResumeTable"
 import { nameOf, type ListActions } from "./useListActions"
+import { morph } from "./viewSwitch"
 
 const dayFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" })
 const yearFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" })
@@ -51,7 +52,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
 
   return (
     <ul aria-label="Resumes" className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4 xl:grid-cols-5">
-      {resumes.map((resume) => {
+      {resumes.map((resume, index) => {
         const href = `/create/new/${resume.id}`
         const name = nameOf(resume)
         const busy = downloading.includes(resume.id)
@@ -63,7 +64,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
               resume.id === copied ? "is-copied" : ""
             }`}
           >
-            <div className="tile-page relative aspect-[8.5/11]">
+            <div className="tile-page relative aspect-[8.5/11]" style={morph("page", index)}>
               {/* The picture opens the resume too. The name's link is the one announced, so this one's skipped. */}
               <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
                 <PagePicture
@@ -103,6 +104,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
                 href={href}
                 title={name}
                 data-resume-link={resume.id}
+                style={morph("name", index)}
                 className="mt-3 line-clamp-2 font-serif text-[19px] leading-tight wrap-anywhere hover:underline hover:underline-offset-4 md:text-[21px]"
               >
                 {name}
