@@ -1,17 +1,21 @@
 // Fine-tune's settings as each template prints them (lib/tune.ts,
 // templates/common.typ), checked on the printed page.
 
+import { readFileSync } from "node:fs"
+import path from "node:path"
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import { describe, expect, test } from "vitest"
 import { readPdf, type PdfPage } from "@/lib/import/lines"
 import { readBack, render, samples } from "@/lib/import/testRender"
 import { TEMPLATES } from "@/lib/templates"
-import type { Tune } from "@/lib/tune"
+import { fitOnePage, pageCount, type Tune } from "@/lib/tune"
 import { toTemplateData } from "./resumeData"
 
 const ids = TEMPLATES.map((template) => template.id)
 const sampleOf = (id: string): Record<string, unknown> => samples.find((sample) => sample.selectedTemplate === id)
+// The Modern Jake's sample runs onto a second page in Jake's and in Harvard.
+const twoPages = JSON.parse(readFileSync(path.resolve("src/lib/typst/preview-samples/modernjack.json"), "utf8"))
 
 async function pagesOf(pdf: Uint8Array): Promise<PdfPage[]> {
   const doc = (await getDocument({ data: pdf, isEvalSupported: false, fontExtraProperties: true }).promise) as unknown as PDFDocumentProxy
@@ -89,5 +93,43 @@ describe.each(ids)("%s", (id) => {
         .replace(/[\s-]/g, "")
     const sample = sampleOf(id)
     expect(await text({ ...sample, tune })).toBe(await text(sample))
+  })
+})
+
+describe("keeping to one page", () => {
+  test.each(["jake", "resumeworded"])("fits a resume two pages long in %s, at the largest size that does", async (id) => {
+    const resume = { ...twoPages, selectedTemplate: id }
+    expect((await readBack(await render(resume))).pages).toHaveLength(2)
+
+    const printAt = async (size: number) => {
+      const pdf = await render({ ...resume, tune: { size, onePage: true } })
+      return { pages: pageCount(pdf), printed: pdf }
+    }
+    const { fit, printed } = await fitOnePage(1, printAt)
+    expect(fit.fits).toBe(true)
+    expect(fit.size).toBeLessThan(1)
+    expect((await readBack(printed)).pages).toHaveLength(1)
+    // A step larger runs over.
+    expect((await printAt(fit.size + 0.025)).pages).toBe(2)
+  })
+
+  test("says when even the smallest size runs over", async () => {
+    const work = Array.from({ length: 12 }, (_, i) => ({ ...twoPages.workExperienceSection[0], id: i + 1 }))
+    const resume = { ...twoPages, selectedTemplate: "jake", workExperienceSection: work }
+    const { fit, printed } = await fitOnePage(1, async (size) => {
+      const pdf = await render({ ...resume, tune: { size, onePage: true } })
+      return { pages: pageCount(pdf), printed: pdf }
+    })
+    expect(fit).toEqual({ size: 0.85, fits: false })
+    expect((await readBack(printed)).pages.length).toBeGreaterThan(1)
+  })
+
+  test("counts the pages Typst prints, whatever the name on them", async () => {
+    for (const fullName of ["Maya Okafor", "A (/Type /Page) /Count 9"]) {
+      for (const id of ["jake", "modernjack"]) {
+        const pdf = await render({ ...twoPages, selectedTemplate: id, profileSection: { ...twoPages.profileSection, fullName } })
+        expect(pageCount(pdf)).toBe((await readBack(pdf)).pages.length)
+      }
+    }
   })
 })

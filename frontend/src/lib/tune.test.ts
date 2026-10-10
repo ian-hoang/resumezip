@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, test } from "vitest"
 import { TEMPLATES } from "@/lib/templates"
-import { printedTune, readTune, TEMPLATE_SETTINGS, withSetting } from "./tune"
+import { fitOnePage, pageCount, printedTune, readTune, smallerSizes, TEMPLATE_SETTINGS, withSetting } from "./tune"
 
 describe("a saved tune", () => {
   test("is nothing when there's none, as in resumes from before Fine-tune", () => {
@@ -68,6 +68,68 @@ describe("changing one setting", () => {
 
   test("keeps a step's float error out of what's saved", () => {
     expect(withSetting(null, "size", 1 - 0.025 * 3)).toEqual({ size: 0.925 })
+  })
+})
+
+describe("keeping to one page", () => {
+  test("tries smaller sizes a step at a time, down to the smallest", () => {
+    expect(smallerSizes(1)).toEqual([0.975, 0.95, 0.925, 0.9, 0.875, 0.85])
+    expect(smallerSizes(1.07)).toEqual([1.045, 1.02, 0.995, 0.97, 0.945, 0.92, 0.895, 0.87, 0.85])
+    expect(smallerSizes(0.86)).toEqual([0.85])
+    expect(smallerSizes(0.85)).toEqual([])
+  })
+
+  // A resume that fits on one page at `fitsAt` or smaller, printed as its size, counting the prints.
+  const resume = (fitsAt: number) => {
+    const prints: number[] = []
+    const print = async (size: number) => {
+      prints.push(size)
+      return { pages: size <= fitsAt ? 1 : 2, printed: `printed at ${size}` }
+    }
+    return { prints, print }
+  }
+
+  test("leaves a resume that fits as it is, printed once", async () => {
+    const { prints, print } = resume(1.2)
+    expect(await fitOnePage(1.1, print)).toEqual({ fit: { size: 1.1, fits: true }, printed: "printed at 1.1" })
+    expect(prints).toEqual([1.1])
+  })
+
+  test.each([0.975, 0.95, 0.925, 0.9, 0.875, 0.85])(
+    "finds the largest size that fits (%s), in fewer prints than trying each",
+    async (fitsAt) => {
+      const { prints, print } = resume(fitsAt)
+      expect(await fitOnePage(1, print)).toEqual({ fit: { size: fitsAt, fits: true }, printed: `printed at ${fitsAt}` })
+      expect(prints.length).toBeLessThan(1 + smallerSizes(1).length)
+      // None is printed twice.
+      expect(new Set(prints).size).toBe(prints.length)
+    },
+  )
+
+  test("a resume a little over takes one print more", async () => {
+    const { prints, print } = resume(0.975)
+    await fitOnePage(1, print)
+    expect(prints).toEqual([1, 0.975])
+  })
+
+  test("prints one that doesn't fit even at the smallest size at that, and says so", async () => {
+    const { print } = resume(0.5)
+    expect(await fitOnePage(1, print)).toEqual({ fit: { size: 0.85, fits: false }, printed: "printed at 0.85" })
+    // Already as small as it goes.
+    expect(await fitOnePage(0.85, print)).toEqual({ fit: { size: 0.85, fits: false }, printed: "printed at 0.85" })
+  })
+})
+
+describe("counting a PDF's pages", () => {
+  const pdf = (text: string) => new TextEncoder().encode(text)
+
+  test("reads the page tree Typst writes first", () => {
+    expect(pageCount(pdf("%PDF-1.7\n%\x80\x80\x80\x80\n\n1 0 obj\n<<\n  /Type /Pages\n  /Count 2\n  /Kids [3 0 R 4 0 R]\n>>"))).toBe(2)
+  })
+
+  test("can't tell from anything else", () => {
+    expect(pageCount(pdf("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\n2 0 obj\n<< /Type /Pages /Count 2 >>"))).toBeNaN()
+    expect(pageCount(pdf("not a PDF"))).toBeNaN()
   })
 })
 

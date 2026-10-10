@@ -116,3 +116,75 @@ export function printedTune(saved: unknown): PrintedTune {
     onePage: tune.onePage === true,
   }
 }
+
+/** The text size multiples "Keep it to one page" tries, largest first: down from `size` a step at a time, to the smallest. */
+export function smallerSizes(size: number): number[] {
+  const { min, step } = SCALES.size
+  const sizes: number[] = []
+  for (let next = round(size - step); next > min; next = round(next - step)) sizes.push(next)
+  if (size > min) sizes.push(min)
+  return sizes
+}
+
+/** What keeping to one page did: the text size multiple it printed at, and whether that fits. */
+export interface Fit {
+  size: number
+  fits: boolean
+}
+
+/**
+ * Prints a resume that's meant to fit on one page, and says how it went.
+ * `print` prints it at a text size multiple and counts its pages. Past one
+ * page at `size`, it looks for the largest of the smaller sizes (see
+ * smallerSizes) that fits: a step down, then two more, four more, and so on,
+ * then halves the last gap. So a resume a few lines over takes a print or
+ * two more, and one far over only a few. If even the smallest doesn't fit,
+ * it's printed at that, as near to one page as it goes.
+ */
+export async function fitOnePage<Printed>(
+  size: number,
+  print: (size: number) => Promise<{ pages: number; printed: Printed }>,
+): Promise<{ fit: Fit; printed: Printed }> {
+  const first = await print(size)
+  if (first.pages <= 1) return { fit: { size, fits: true }, printed: first.printed }
+  const sizes = smallerSizes(size)
+  if (sizes.length === 0) return { fit: { size, fits: false }, printed: first.printed }
+  const tried = new Map<number, { pages: number; printed: Printed }>()
+  const at = async (index: number) => {
+    let result = tried.get(index)
+    if (!result) {
+      result = await print(sizes[index])
+      tried.set(index, result)
+    }
+    return result
+  }
+  const last = sizes.length - 1
+  // The index of the largest size known to run over (-1 for `size` itself), and of the first known to fit.
+  let over = -1
+  let fits = -1
+  for (let stride = 1; fits < 0 && over < last; stride *= 2) {
+    const index = Math.min(over + stride, last)
+    if ((await at(index)).pages <= 1) fits = index
+    else over = index
+  }
+  if (fits < 0) return { fit: { size: sizes[last], fits: false }, printed: (await at(last)).printed }
+  while (fits - over > 1) {
+    const middle = Math.floor((over + fits) / 2)
+    if ((await at(middle)).pages <= 1) fits = middle
+    else over = middle
+  }
+  return { fit: { size: sizes[fits], fits: true }, printed: (await at(fits)).printed }
+}
+
+/**
+ * How many pages a PDF from Typst has, or NaN if it can't tell. Typst writes
+ * the page tree's root as the file's first object, ahead of anything the
+ * person wrote (their name is the PDF's title, further on), and doesn't
+ * compress it.
+ */
+export function pageCount(pdf: Uint8Array): number {
+  const start = new TextDecoder("latin1").decode(pdf.subarray(0, 1024))
+  // After the version, a comment line of bytes over 127 marks the file as binary.
+  const count = /^%PDF-[\d.]+\s+(?:%[^\n]*\n\s*)?1 0 obj\s*<<\s*\/Type\s*\/Pages\s*\/Count\s+(\d+)/.exec(start)?.[1]
+  return count === undefined ? NaN : Number(count)
+}

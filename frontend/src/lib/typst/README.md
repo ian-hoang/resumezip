@@ -36,7 +36,11 @@ server to build a PDF.
   Once it all has, the preview fetches pdf.js's worker, which is otherwise
   only downloaded after the first PDF is made.
 - `typst.worker.ts` loads the WebAssembly compiler and the templates once, and
-  compiles each request. Before compiling, it downloads the fonts that resume
+  compiles each request. A resume to keep to one page that runs over is
+  printed again with smaller text, a step at a time down to the smallest
+  (`fitOnePage` in `src/lib/tune.ts`), counting the pages each time; previews
+  and downloads both do it, so they match. What it took comes back with the
+  PDF, and `previewFit` tells the Fine-tune panel about the preview's. Before compiling, it downloads the fonts that resume
   needs (see [Fonts](#fonts)), alongside the compiler the first time. Downloads also attach a copy of the resume to the PDF
   (see `src/lib/resumeFile.ts` and `src/lib/import/README.md`).
 - `fontFiles.ts` lists the fonts, says which ones a resume needs, and gives
