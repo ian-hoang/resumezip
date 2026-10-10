@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react"
 import type { DriveFailure } from "@/lib/googleDrive"
 import { failureOf, type PdfFailure } from "@/lib/typst/compile"
 
-/** A download, share or save to Google Drive that failed: why, and how many times in a row. */
+/** A download, share or save to Google Drive that failed: why, how many times in a row, and of what, when it wasn't the PDF. */
 export interface Failure {
   /**
    * Why the PDF couldn't be made; `share`: it was made, and the share sheet
@@ -13,16 +13,22 @@ export interface Failure {
    */
   reason: PdfFailure | "share" | "popup" | DriveFailure
   count: number
+  of?: "Word file"
 }
 
-/** The failure to show after `error`, following any failure before it. */
+/**
+ * The failure to show after `error`, following any failure of the same file
+ * before it. `of` is the file, when it isn't the PDF; `reason` is why, when
+ * it isn't why the PDF couldn't be made.
+ */
 export const nextFailure = (
   previous: Failure | null | undefined,
   error: unknown,
-  reason: Failure["reason"] = failureOf(error),
+  { of, reason = failureOf(error) }: { of?: Failure["of"]; reason?: Failure["reason"] } = {},
 ): Failure => ({
   reason,
-  count: (previous?.count ?? 0) + 1,
+  count: (previous?.of === of ? (previous?.count ?? 0) : 0) + 1,
+  ...(of && { of }),
 })
 
 // What couldn't be done: making the PDF, or what was done with it after.
@@ -64,8 +70,8 @@ interface DownloadFailedProps {
 }
 
 /**
- * Says a PDF download, share or save to Google Drive didn't work and what to
- * do, with a button to try again. Give it `key={failure.count}`, so a screen
+ * Says a download, share or save to Google Drive didn't work and what to do,
+ * with a button to try again. Give it `key={failure.count}`, so a screen
  * reader announces each new failure.
  */
 export default function DownloadFailed({ failure, title, doing = "download", retrying, onRetry, className = "" }: DownloadFailedProps) {
@@ -74,7 +80,8 @@ export default function DownloadFailed({ failure, title, doing = "download", ret
     <div role="alert" className={`flex flex-wrap items-baseline gap-x-6 gap-y-2 ${className}`}>
       <span className="label-mono shrink-0 text-[#b42318]">{LABEL[doing]}</span>
       <p className="min-w-0 flex-[1_1_280px] break-words text-sm leading-relaxed text-ink">
-        {failure.count > 1 ? "Still couldn't" : "Couldn't"} {step} {title ? <>the PDF of &ldquo;{title}&rdquo;</> : "your PDF"}
+        {failure.count > 1 ? "Still couldn't" : "Couldn't"} {step}{" "}
+        {title ? <>the PDF of &ldquo;{title}&rdquo;</> : `your ${failure.of ?? "PDF"}`}
         {step === "save" && " to Google Drive"}. {WHAT_TO_DO[failure.reason]}
       </p>
       <button

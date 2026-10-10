@@ -26,7 +26,7 @@ export function useSharePdf(prepare: () => PdfFile | null, onShared: () => void)
 
   const fail = (error: unknown, reason?: Failure["reason"]) => {
     console.error("Error sharing resume:", error)
-    setFailure((previous) => nextFailure(previous, error, reason))
+    setFailure((previous) => nextFailure(previous, error, { reason }))
   }
 
   const share = async () => {

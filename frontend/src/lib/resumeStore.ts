@@ -71,8 +71,8 @@ export interface ResumeState {
  */
 export interface Replaced {
   id: string
-  /** What it was replaced with: a PDF, or a JSON file. */
-  from: "pdf" | "json"
+  /** What it was replaced with: a PDF, a Word file or a JSON file. */
+  from: "pdf" | "docx" | "json"
   before: Resume
   after: Resume
   /** Whether it's been put back as it was before. */

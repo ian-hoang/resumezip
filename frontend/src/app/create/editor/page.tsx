@@ -350,13 +350,31 @@ function Editor({ id }: { id: string }) {
       const save = await makeDownload({ ...resume, sectionOrder: resolveSections(resume) })
       await filled
       save()
-      setFailure(null)
+      // Only a failed PDF is put right; a failed Word file still is one.
+      setFailure((previous) => (previous?.of ? previous : null))
       setDownloadedAt(Date.now())
     } catch (error) {
       console.error("Error downloading resume:", error)
       setFailure((previous) => nextFailure(previous, error))
     } finally {
       setDownloading(false)
+    }
+  }
+
+  // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
+  // Its code downloads the first time it's chosen.
+  const downloadWord = async () => {
+    const resume = read()
+    if (!resume) return
+    try {
+      const { toWordFile, WORD_TYPE } = await import("@/lib/word")
+      saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
+      // Only a failed Word file is put right; a failed PDF still is one.
+      setFailure((previous) => (previous?.of ? null : previous))
+      announce("Word file downloaded")
+    } catch (error) {
+      console.error("Error downloading the Word file:", error)
+      setFailure((previous) => nextFailure(previous, error, { of: "Word file" }))
     }
   }
 
@@ -450,6 +468,7 @@ function Editor({ id }: { id: string }) {
               </button>
               <DownloadMenu
                 choices={[
+                  { title: "Word", hint: "To edit in Word, Google Docs or Pages", onChoose: downloadWord },
                   { title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson },
                   ...(sharePdf.shareable ? [{ title: "Share PDF", hint: "Send it to another app", onChoose: sharePdf.share }] : []),
                   { title: "Save to Google Drive", hint: "Puts the PDF in your Drive. Google asks you first.", onChoose: drive.save },
@@ -483,7 +502,7 @@ function Editor({ id }: { id: string }) {
             key={failure.count}
             failure={failure}
             retrying={downloading}
-            onRetry={download}
+            onRetry={failure.of ? downloadWord : download}
             className="border-t border-rule px-5 py-2.5 lg:px-6"
           />
         )}

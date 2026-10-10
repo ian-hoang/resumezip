@@ -15,6 +15,15 @@ import { templateById } from "@/lib/templates"
 import { extraKey, readExtraSections, resolveSections } from "./resumeSections"
 
 export const ATTACHMENT_NAME = "resumezip.json"
+/** Where a Word file keeps its text, and its document's relationships, which have the addresses its links go to. */
+export const WORD_DOCUMENT = "word/document.xml"
+export const WORD_RELATIONSHIPS = "word/_rels/document.xml.rels"
+
+/** The CRC-32s a Word file's attachment has of its WORD_DOCUMENT and WORD_RELATIONSHIPS (see lib/word.ts). */
+export interface WordCrcs {
+  documentCrc32?: number
+  relationshipsCrc32?: number
+}
 
 const FORMAT = "resumezip"
 const VERSION = 2
@@ -42,7 +51,7 @@ export class TooLongError extends Error {}
 export class AttachmentError extends Error {}
 
 /** What a file is called in the messages about it. */
-type FileNoun = "PDF" | "file"
+type FileNoun = "PDF" | "Word file" | "file"
 
 const damaged = (noun: FileNoun) => new AttachmentError(`The resume data in this ${noun} is damaged. Try another saved ${noun}.`)
 
@@ -50,24 +59,30 @@ const damaged = (noun: FileNoun) => new AttachmentError(`The resume data in this
  * The attachment for a resume: what's printed on it and how it's laid out.
  * Not the resume's name or tag, or what the person left out of it, since
  * anyone who gets the PDF can read it. Opening the PDF again brings back
- * what was printed; what was left out stays only in this browser.
+ * what was printed; what was left out stays only in this browser. A Word
+ * file's also has the CRC-32s of its text and of where its links go.
  */
-export function toAttachment(resume: Resume): string {
+export function toAttachment(resume: Resume, crcs: WordCrcs = {}): string {
   const clean = cleanResume(printedResume(resume))
   const version = Object.keys(clean.extraSections ?? {}).length ? VERSION : 1
   if (version === 1) delete clean.extraSections
-  const text = JSON.stringify({ format: FORMAT, version, resume: clean })
+  const text = JSON.stringify({ format: FORMAT, version, resume: clean, ...crcs })
   if (text.length > MAX_LENGTH || entryCount(clean) > MAX_ENTRIES) throw new TooLongError()
   return text
 }
 
 /**
  * Reads an attachment back, or returns null if the text isn't one. Throws a
- * TooLongError if it's one too big to open (see MAX_LENGTH).
+ * TooLongError if it's one too big to open (see MAX_LENGTH). `noun` is what
+ * it was attached to, for the messages. A Word file's is read with the CRC-32s
+ * its text and relationships have now, and is null if either has changed:
+ * another app changed the text or where a link goes, and the attachment
+ * would undo that.
  */
-export function fromAttachment(text: string): ResumeContent | null {
-  const file = readFormat(text, "PDF")
-  return file && readContent(file.version, file.resume, "PDF")
+export function fromAttachment(text: string, noun: "PDF" | "Word file" = "PDF", crcs: WordCrcs = {}): ResumeContent | null {
+  const file = readFormat(text, noun)
+  if (!file || file.documentCrc32 !== crcs.documentCrc32 || file.relationshipsCrc32 !== crcs.relationshipsCrc32) return null
+  return readContent(file.version, file.resume, noun)
 }
 
 /** A resume from a JSON file, with its name and tag in the list when the file has them. */
@@ -136,7 +151,10 @@ function everything(resume: Resume): Record<string, unknown> {
 }
 
 /** The format and version of a resumezip file, or null if the text isn't one. Told apart by how it starts, so a long file isn't read in full. */
-function readFormat(text: string, noun: FileNoun): { version: 1 | 2; resume?: unknown; resumes?: unknown } | null {
+function readFormat(
+  text: string,
+  noun: FileNoun,
+): { version: 1 | 2; resume?: unknown; resumes?: unknown; documentCrc32?: unknown; relationshipsCrc32?: unknown } | null {
   if (text.length > MAX_LENGTH) {
     if (recognized(text)) throw new TooLongError()
     return null

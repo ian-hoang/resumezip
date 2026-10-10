@@ -53,7 +53,7 @@ export function useSaveToDrive(prepare: () => PdfFile | null, onSaved: () => voi
   const fail = (error: unknown, reason?: Failure["reason"]) => {
     console.error("Error saving resume to Google Drive:", error)
     setSaved(null)
-    setFailure((previous) => nextFailure(previous, error, reason))
+    setFailure((previous) => nextFailure(previous, error, { reason }))
   }
 
   /**
