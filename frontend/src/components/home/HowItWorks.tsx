@@ -21,11 +21,19 @@ const STEPS = [
 // Pinning needs room to scroll, and is skipped for people who prefer less motion.
 const STATIC_QUERY = "(prefers-reduced-motion: reduce), (max-height: 600px)"
 
-const EASE = "transition-[transform,opacity] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+const clamp = (value: number) => Math.min(1, Math.max(0, value))
+const easeOut = (value: number) => 1 - (1 - value) ** 3
+
+// Where each part is follows the scroll (--k, 0 to 1), and a short transition
+// smooths the steps between scroll events, as a mouse wheel's.
+const SCRUB =
+  "will-change-[opacity,translate] [opacity:var(--k,0)] [translate:0_calc((1-var(--k,0))*var(--rise))] transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none"
 
 /** Pins to the screen while you scroll past: the intro fades out, then the steps come in one at a time. */
 export default function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null)
+  const introRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
   const [pinned, setPinned] = useState(true)
   const [shown, setShown] = useState(0)
 
@@ -46,7 +54,16 @@ export default function HowItWorks() {
       const scrollable = section.offsetHeight - window.innerHeight
       const progress = Math.min(1, Math.max(0, -section.getBoundingClientRect().top / scrollable))
       // The intro gets the first slice of the scroll, then each step gets one.
-      setShown(Math.min(STEPS.length, Math.floor(progress * (STEPS.length + 1))))
+      const at = progress * (STEPS.length + 1)
+      // Set on the elements, not through state, so each frame doesn't re-render the section.
+      introRef.current?.style.setProperty("--k", String(easeOut(clamp((at - 0.45) / 0.5))))
+      let count = 0
+      cardRefs.current.forEach((card, index) => {
+        const k = easeOut(clamp((at - index - 0.55) / 0.6))
+        card?.style.setProperty("--k", String(k))
+        if (k >= 0.5) count++
+      })
+      setShown(count)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -77,10 +94,12 @@ export default function HowItWorks() {
 
         <div className={pinned ? "relative min-h-0 flex-1" : undefined}>
           <div
+            ref={introRef}
             className={
               pinned
-                ? `absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 px-5 text-center ${EASE} ${
-                    visible === 0 ? "opacity-100" : "pointer-events-none -translate-y-8 opacity-0"
+                ? // The intro goes as the steps come: up and out, the other way to them.
+                  `absolute inset-0 z-10 flex flex-col items-center justify-center gap-5 px-5 text-center will-change-[opacity,translate] [opacity:calc(1-var(--k,0))] [translate:0_calc(var(--k,0)*-2rem)] transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none ${
+                    visible === 0 ? "" : "pointer-events-none"
                   }`
                 : "flex flex-col items-center gap-5 px-5 pb-16 pt-8 text-center"
             }
@@ -95,9 +114,10 @@ export default function HowItWorks() {
             {STEPS.map((step, index) => (
               <div
                 key={step.word}
-                className={`flex min-h-0 gap-4 overflow-hidden rounded-panel bg-sheet/75 px-5 py-5 shadow-[0_24px_48px_-30px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/[0.06] md:flex-col md:gap-3 md:px-8 md:pb-8 md:pt-7 ${EASE} ${
-                  index < visible ? "translate-y-0 opacity-100" : "translate-y-16 opacity-0"
-                }`}
+                ref={(card) => {
+                  cardRefs.current[index] = card
+                }}
+                className={`flex min-h-0 gap-4 overflow-hidden rounded-panel bg-sheet/75 px-5 py-5 shadow-[0_24px_48px_-30px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/[0.06] md:flex-col md:gap-3 md:px-8 md:pb-8 md:pt-7 ${pinned ? `${SCRUB} [--rise:3rem]` : ""}`}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-none md:gap-3">
                   {/* On phones the number sits beside the word, leaving the step's text room to fit. */}

@@ -1,27 +1,14 @@
 /* Styles for the home page and the site-wide header (src/components/home, src/components/site),
    and the templates page (src/app/templates). */
 @layer components {
-  /* The news bar's height (NewsBar.tsx). The header's strip starts under it, and the hero starts under the
-     strip, whether or not the bar shows: only the browser knows that, and nothing should move when it finds out.
-     Every other page's strip starts as far down (SiteHeader.tsx), so the header doesn't jump between pages. */
-  :root {
-    --news-h: 2.25rem;
-  }
-  .home-chrome {
-    margin-top: var(--news-h);
-  }
+  /* The hero starts under the header's strip. */
   .home-hero {
-    margin-top: calc(-1 * var(--news-h));
-    padding-top: calc(var(--news-h) + 84px);
+    padding-top: 84px;
   }
   @media (min-width: 48rem) {
     .home-hero {
-      padding-top: calc(var(--news-h) + 104px);
+      padding-top: 104px;
     }
-  }
-
-  .news-bar {
-    animation: news-in 500ms var(--ease-glide) both;
   }
 
   /* How far down the page is (HomeChrome.tsx sets --read, from 0 to 1). */
@@ -113,34 +100,6 @@
     filter: blur(calc((1 - var(--s)) * 0.14em));
     opacity: calc(var(--faint) + (1 - var(--faint)) * var(--s));
   }
-  /* The same scroll, as a dot going down a line at the side. */
-  .focus-rail {
-    position: absolute;
-    top: 18%;
-    right: 2.5rem;
-    bottom: 18%;
-    width: 1px;
-    background: rgb(255 255 255 / 0.3);
-  }
-  .focus-rail::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: calc(var(--focus, 1) * 100%);
-    background: #fff;
-  }
-  .focus-rail::after {
-    content: "";
-    position: absolute;
-    top: calc(var(--focus, 1) * 100%);
-    left: -4px;
-    width: 9px;
-    height: 9px;
-    margin-top: -4.5px;
-    border-radius: 50%;
-    background: #fff;
-  }
-
   /* The questions' plus, which turns into a minus as its answer opens. */
   .question-sign::before,
   .question-sign::after {
@@ -237,9 +196,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .news-bar {
-      animation: none;
-    }
     .site-pill,
     .ink-fill::before,
     .question-sign::before,
@@ -271,12 +227,5 @@
     .floating-blur {
       display: none;
     }
-  }
-}
-
-@keyframes news-in {
-  from {
-    opacity: 0;
-    transform: translateY(-100%);
   }
 }

@@ -35,8 +35,7 @@ const TUCK_SCROLL_PX = 6
 
 /**
  * The home page's header, its reading line and its section ticks. The pill
- * and the line ride in a sticky strip, so they start under the news bar and
- * then stay at the top of the screen; the line is how far down the page is.
+ * and the line ride in a sticky strip at the top of the screen; the line is how far down the page is.
  */
 export default function HomeChrome() {
   const lineRef = useRef<HTMLDivElement>(null)
@@ -92,7 +91,7 @@ export default function HomeChrome() {
 
   return (
     <>
-      <div className="home-chrome sticky top-0 z-40 h-0">
+      <div className="sticky top-0 z-40 h-0">
         <div
           ref={lineRef}
           aria-hidden="true"

@@ -6,7 +6,6 @@ import HeroVideo from "@/components/home/HeroVideo"
 import HomeChrome from "@/components/home/HomeChrome"
 import HowItWorks from "@/components/home/HowItWorks"
 import Magnetic from "@/components/home/Magnetic"
-import NewsBar from "@/components/home/NewsBar"
 import PrefetchCompiler from "@/components/home/PrefetchCompiler"
 import Questions from "@/components/home/Questions"
 import SiteFooter from "@/components/site/SiteFooter"
@@ -29,9 +28,7 @@ const OUTLINE_PILL =
 // data-tick gives them a tick at the side of the page (HomeChrome.tsx).
 export default function Home() {
   return (
-    // A column, so the margins of the header's strip and the hero, which overlap by the news bar's height, don't collapse.
     <div className="home relative flex flex-col bg-sheet text-ink">
-      <NewsBar />
       <HomeChrome />
 
       <section
@@ -112,7 +109,6 @@ export default function Home() {
                   Start writing <ArrowUpRight />
                 </span>
               </StartWritingLink>
-              <span aria-hidden="true" className="focus-rail hidden md:block" />
             </FocusWords>
           </div>
         </div>

@@ -22,8 +22,8 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
   )
 })
 
-// Every page's header starts where the home page's does, so it doesn't jump from page to page:
-// under the room the home page keeps for its news bar. Scrolled, it stays at the top of the
+// Every page's header starts where the home page's does, so it doesn't jump from page to page.
+// Scrolled, it stays at the top of the
 // screen, and the page starts under it rather than behind it.
 const pillTop = async (page: Page) => (await page.getByRole("banner").boundingBox())!.y
 for (const width of [390, 1440]) {

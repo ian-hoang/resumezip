@@ -1,9 +1,7 @@
 import { expect, test, type Page } from "@playwright/test"
-import { pageErrors } from "./helpers"
 
-// The home page's parts that move with the scroll, and its news and questions.
+// The home page's parts that move with the scroll, and its questions.
 
-const news = (page: Page) => page.getByRole("complementary", { name: "News" })
 const floatingStart = (page: Page) => page.getByRole("link", { name: "Start writing. It’s free." })
 
 /** Scrolls by this much, a step at a time, as a wheel does, so the page sees which way it goes. */
@@ -14,54 +12,6 @@ async function scrollBy(page: Page, pixels: number) {
     await page.waitForTimeout(40)
   }
 }
-
-test("the news links to what's new, and once closed stays closed", async ({ page }) => {
-  const errors = pageErrors(page)
-  await page.goto("/")
-  await expect(news(page).getByRole("link", { name: /^New:/ })).toHaveAttribute("href", "/create/dashboard")
-
-  await news(page).getByRole("button", { name: "Close the news" }).click()
-  await expect(news(page)).toHaveCount(0)
-  // The keyboard carries on in the header, rather than from the top of the page.
-  await expect(page.getByRole("banner").getByRole("link", { name: "resumezip" })).toBeFocused()
-  await page.reload()
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
-  // A fixed wait: proving the news doesn't come back.
-  await page.waitForTimeout(500)
-  await expect(news(page)).toHaveCount(0)
-  expect(errors).toEqual([])
-})
-
-test("closing the news leaves the header and the heading where they were", async ({ page }) => {
-  await page.goto("/")
-  await expect(news(page)).toBeVisible()
-  await page.evaluate(() => document.fonts.ready.then(() => undefined))
-  // The bar slides in from above the screen. Part-way, its button is partly
-  // off the top, and the click scrolls the page to reach it.
-  await news(page).evaluate((bar) => Promise.all(bar.getAnimations().map((animation) => animation.finished)))
-  const heading = await page.getByRole("heading", { level: 1 }).boundingBox()
-  const header = await page.getByRole("banner").boundingBox()
-  await news(page).getByRole("button", { name: "Close the news" }).click()
-  await expect(news(page)).toHaveCount(0)
-  expect(await page.getByRole("heading", { level: 1 }).boundingBox()).toEqual(heading)
-  expect(await page.getByRole("banner").boundingBox()).toEqual(header)
-})
-
-test("without storage, the news still shows and closes for the page", async ({ page }) => {
-  const errors = pageErrors(page)
-  // As in Chrome set to "Don't allow sites to save data on your device".
-  await page.addInitScript(() => {
-    Object.defineProperty(window, "localStorage", {
-      get() {
-        throw new DOMException("Access is denied for this document.", "SecurityError")
-      },
-    })
-  })
-  await page.goto("/")
-  await news(page).getByRole("button", { name: "Close the news" }).click()
-  await expect(news(page)).toHaveCount(0)
-  expect(errors).toEqual([])
-})
 
 test("one answer is open at a time, and each question says whether it's open", async ({ page }) => {
   await page.goto("/")

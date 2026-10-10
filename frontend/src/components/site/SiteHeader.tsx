@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { Menu, Star, X } from "lucide-react"
 import Logo from "./Logo"
@@ -33,8 +34,21 @@ interface SitePillProps {
 }
 
 /**
+ * A link to the page that's already open scrolls back to its top smoothly,
+ * instead of Next's jump to the top as it loads the page again.
+ */
+function toTopIfHere(pathname: string, href: string) {
+  return (event: React.MouseEvent) => {
+    if (pathname !== href || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" })
+  }
+}
+
+/**
  * The site's header: a glass pill with the logo, the links, "Start writing"
- * and a star on GitHub. The home page places it itself, under its news bar
+ * and a star on GitHub. The home page places it itself
  * (components/home/HomeChrome.tsx); every other page has it in SiteHeader's strip.
  */
 export function SitePill({ tone = "light", tucked = false, onStartWriting }: SitePillProps) {
@@ -42,6 +56,7 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dark = tone === "dark"
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -136,6 +151,7 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
       >
         <Link
           href="/"
+          onClick={toTopIfHere(pathname, "/")}
           className="flex items-center gap-2 font-logo text-[21px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
         >
           <Logo className="h-[18px] w-auto" />
@@ -147,6 +163,7 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
             <Link
               key={link.href}
               href={link.href}
+              onClick={toTopIfHere(pathname, link.href)}
               className={`nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] ${
                 dark ? "text-white/85 hover:text-white" : "text-ink-2 hover:text-ink"
               }`}
@@ -184,7 +201,15 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
         }`}
       >
         {LINKS.map((link) => (
-          <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="py-3 text-[17px] tracking-[-0.01em]">
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={(event) => {
+              setMenuOpen(false)
+              toTopIfHere(pathname, link.href)(event)
+            }}
+            className="py-3 text-[17px] tracking-[-0.01em]"
+          >
             {link.label}
           </Link>
         ))}
@@ -201,12 +226,10 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
  * Every page's header but the home page's: the pill, in a strip that stays at
  * the top of the screen. The strip keeps room for the pill, so the page starts
  * under it; around the pill, clicks go through to the page scrolling under it.
- * It starts as far down as the home page's, under the room kept there for the
- * news bar (--news-h), so the pill is at the same height on every page.
  */
 export default function SiteHeader({ onStartWriting }: Pick<SitePillProps, "onStartWriting">) {
   return (
-    <div className="pointer-events-none sticky top-0 z-40 mt-[var(--news-h)] flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
+    <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
       <SitePill onStartWriting={onStartWriting} />
     </div>
   )
