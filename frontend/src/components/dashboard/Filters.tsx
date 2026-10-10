@@ -53,15 +53,34 @@ export default function Filters({ search, tags, tag, onTag, sort, onSort, view, 
       </div>
       <div className="dash-toolbar-controls">
         <SortMenu sort={sort} onSort={onSort} />
-        <div role="group" aria-label="View" className="inline-flex h-9 rounded-full bg-sheet/50 p-[3px] ring-1 ring-ink/15">
+        {/* Left and right switch between the two, as the editor's Write / Check / Style do. Only the
+            chosen one is in the Tab order, so focus is always on the white pill and needs no ring. */}
+        <div
+          role="group"
+          aria-label="View"
+          onKeyDown={(event) => {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return
+            event.preventDefault()
+            const next = view === "pages" ? "list" : "pages"
+            onView(next)
+            event.currentTarget.querySelector<HTMLElement>(`[data-view="${next}"]`)?.focus()
+          }}
+          className="inline-flex h-9 rounded-full bg-sheet/50 p-[3px] ring-1 ring-ink/15"
+        >
           <ViewButton
+            view="pages"
             pressed={view === "pages"}
             onClick={() => onView("pages")}
             icon={<LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />}
           >
             Pages
           </ViewButton>
-          <ViewButton pressed={view === "list"} onClick={() => onView("list")} icon={<List className="h-3.5 w-3.5" aria-hidden="true" />}>
+          <ViewButton
+            view="list"
+            pressed={view === "list"}
+            onClick={() => onView("list")}
+            icon={<List className="h-3.5 w-3.5" aria-hidden="true" />}
+          >
             List
           </ViewButton>
         </div>
@@ -124,13 +143,27 @@ function SortMenu({ sort, onSort }: { sort: Sort; onSort: (sort: Sort) => void }
   )
 }
 
-function ViewButton({ pressed, onClick, icon, children }: { pressed: boolean; onClick: () => void; icon: ReactNode; children: ReactNode }) {
+function ViewButton({
+  view,
+  pressed,
+  onClick,
+  icon,
+  children,
+}: {
+  view: View
+  pressed: boolean
+  onClick: () => void
+  icon: ReactNode
+  children: ReactNode
+}) {
   return (
     <button
       type="button"
+      data-view={view}
       aria-pressed={pressed}
+      tabIndex={pressed ? 0 : -1}
       onClick={onClick}
-      className={`inline-flex h-full items-center gap-1.5 rounded-full px-3 text-sm transition-[background-color,color,box-shadow] duration-200 motion-reduce:transition-none ${
+      className={`inline-flex h-full items-center gap-1.5 rounded-full px-3 text-sm transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none motion-reduce:transition-none ${
         pressed ? "bg-sheet text-ink shadow-[0_1px_3px_rgb(17_19_24/0.14)]" : "text-ink-2 hover:text-ink"
       }`}
     >

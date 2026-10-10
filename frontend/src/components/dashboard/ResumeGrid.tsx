@@ -5,10 +5,10 @@ import type { ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import MoreMenu from "./MoreMenu"
 import PagePicture from "./PagePicture"
-import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
+import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TagIcon, TrashIcon } from "./RowActions"
 import { tagName } from "./ResumeTable"
 import { nameOf, type ListActions } from "./useListActions"
-import { morph } from "./viewSwitch"
+import { morph, useOpenResume } from "./viewSwitch"
 
 const dayFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" })
 const yearFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" })
@@ -31,6 +31,8 @@ interface ResumeGridProps {
   resumes: ResumeWithId[]
   actions: ListActions
   onDelete: (resume: ResumeWithId) => void
+  /** Opens the dialog to change its type. */
+  onRetype: (resume: ResumeWithId) => void
   /** Resumes being deleted, which crumple up and go. */
   leaving: ReadonlySet<string>
   /** A resume just put back, which smooths out again. */
@@ -46,9 +48,10 @@ interface ResumeGridProps {
  * done with it; on touch screens that's always showing, and on phones it's
  * under the name. The last tile takes a file to open.
  */
-export default function ResumeGrid({ resumes, actions, onDelete, leaving, returning, onChooseFile, dragging }: ResumeGridProps) {
+export default function ResumeGrid({ resumes, actions, onDelete, onRetype, leaving, returning, onChooseFile, dragging }: ResumeGridProps) {
   const { downloading, downloaded, renaming, setRenaming, finishRenaming, copied, duplicate, download } = actions
   const now = new Date()
+  const open = useOpenResume()
 
   return (
     <ul aria-label="Resumes" className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6 lg:grid-cols-4 xl:grid-cols-5">
@@ -64,9 +67,9 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
               resume.id === copied ? "is-copied" : ""
             }`}
           >
-            <div className="tile-page relative aspect-[8.5/11]" style={morph("page", index)}>
+            <div data-resume-page className="tile-page relative aspect-[8.5/11]" style={morph("page", index)}>
               {/* The picture opens the resume too. The name's link is the one announced, so this one's skipped. */}
-              <Link href={href} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
+              <Link href={href} onClick={open} tabIndex={-1} aria-hidden="true" className="absolute inset-0">
                 <PagePicture
                   id={resume.id}
                   resume={resume}
@@ -102,6 +105,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
             ) : (
               <Link
                 href={href}
+                onClick={open}
                 title={name}
                 data-resume-link={resume.id}
                 style={morph("name", index)}
@@ -121,7 +125,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
 
             <div className="tile-actions">
               <div className="tile-bar glass">
-                <Link href={href} tabIndex={-1} aria-hidden="true" className="tile-open">
+                <Link href={href} onClick={open} tabIndex={-1} aria-hidden="true" className="tile-open">
                   Open
                 </Link>
                 <RowAction label="Duplicate" onClick={() => duplicate(resume)}>
@@ -144,6 +148,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, leaving, return
                       icon: <PencilIcon />,
                       onSelect: () => setRenaming({ id: resume.id, draft: resume.resumeTitle ?? "" }),
                     },
+                    { label: "Change type", icon: <TagIcon />, onSelect: () => onRetype(resume) },
                     { label: "Delete", icon: <TrashIcon />, danger: true, onSelect: () => onDelete(resume) },
                   ]}
                 />

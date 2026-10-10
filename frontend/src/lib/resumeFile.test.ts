@@ -164,11 +164,15 @@ describe("a JSON file", () => {
     expect(fromJson(toAttachment(resume))).toEqual([{ resume: fromAttachment(toAttachment(resume)) }])
   })
 
-  test("keeps only names and tags the dashboard can show, and checker state it can read", () => {
+  test("keeps only names and types the dashboard can show, and checker state it can read", () => {
     const file = (saved: Record<string, unknown>) =>
       JSON.stringify({ format: "resumezip", version: 2, resume: { extraSections: {}, ...saved } })
-    expect(fromJson(file({ resumeTitle: "   ", resumeTag: "secret" }))?.[0]).not.toHaveProperty("title")
-    expect(fromJson(file({ resumeTitle: 42, resumeTag: "secret" }))?.[0]).not.toHaveProperty("tag")
+    expect(fromJson(file({ resumeTitle: "   ", resumeTag: "   " }))?.[0]).not.toHaveProperty("title")
+    expect(fromJson(file({ resumeTitle: 42, resumeTag: 42 }))?.[0]).not.toHaveProperty("tag")
+    // A type of the person's own opens with it, cleaned as the dashboard saves it.
+    expect(fromJson(file({ resumeTag: "  Data   roles " }))?.[0].tag).toBe("Data roles")
+    expect(fromJson(file({ resumeTag: "x".repeat(100) }))?.[0].tag).toHaveLength(24)
+    expect(fromJson(file({ resumeTag: "ACADEMIC" }))?.[0].tag).toBe("academic")
     expect(fromJson(file({ check: { dismissed: [7, "kept"], words: "Lovelace", token: "x" } }))?.[0].resume.check).toEqual({
       dismissed: ["kept"],
       words: [],

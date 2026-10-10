@@ -6,9 +6,9 @@ import { useRef, type CSSProperties } from "react"
 import { RESUME_TAGS, type ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import { usePagePicture } from "./pagePictures"
-import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
+import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TagIcon, TrashIcon } from "./RowActions"
 import { nameOf, type ListActions } from "./useListActions"
-import { morph } from "./viewSwitch"
+import { morph, useOpenResume } from "./viewSwitch"
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" })
 const dateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" })
@@ -26,14 +26,17 @@ interface ResumeTableProps {
   resumes: ResumeWithId[]
   actions: ListActions
   onDelete: (resume: ResumeWithId) => void
+  /** Opens the dialog to change its type. */
+  onRetype: (resume: ResumeWithId) => void
   /** Resumes being deleted, which fold up and go. */
   leaving: ReadonlySet<string>
   /** A resume just put back, which unfolds. */
   returning: string | null
 }
 
-export default function ResumeTable({ resumes, actions, onDelete, leaving, returning }: ResumeTableProps) {
+export default function ResumeTable({ resumes, actions, onDelete, onRetype, leaving, returning }: ResumeTableProps) {
   const { downloading, downloaded, renaming, setRenaming, finishRenaming, copied, duplicate, download } = actions
+  const open = useOpenResume()
 
   const header = "label-mono border-b border-rule py-3.5 text-left font-normal text-ink-2"
   const cell = "border-b border-rule"
@@ -42,7 +45,7 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
   // The cards and the table both pair it, and the name, with the pages (viewSwitch.ts). Only the
   // one showing takes part in a view transition, so each name is still one of a kind.
   const thumbnail = (resume: ResumeWithId, index: number) => (
-    <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0">
+    <Link href={`/create/new/${resume.id}`} onClick={open} tabIndex={-1} aria-hidden="true" className="shrink-0">
       <Thumbnail resume={resume} style={morph("page", index)} />
     </Link>
   )
@@ -73,6 +76,7 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
       <div className="flex min-w-0 items-start gap-0.5">
         <Link
           href={`/create/new/${resume.id}`}
+          onClick={open}
           title={nameOf(resume)}
           data-resume-link={resume.id}
           style={morph("name", index)}
@@ -103,6 +107,9 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
         busy={downloading.includes(resume.id)}
       >
         <DownloadIcon state={downloading.includes(resume.id) ? "busy" : resume.id in downloaded ? "done" : "idle"} />
+      </RowAction>
+      <RowAction label="Change type" onClick={() => onRetype(resume)}>
+        <TagIcon />
       </RowAction>
       <RowAction label="Delete" danger tipAtEnd onClick={() => onDelete(resume)}>
         <TrashIcon />
@@ -219,6 +226,7 @@ function Thumbnail({ resume, style }: { resume: ResumeWithId; style: CSSProperti
   return (
     <span
       ref={element}
+      data-resume-page
       style={style}
       className="block h-[60px] w-[46px] bg-sheet ring-1 ring-rule transition-shadow hover:ring-rule-strong"
     >

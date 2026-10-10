@@ -204,6 +204,16 @@ export function MoreIcon() {
 }
 
 /** A pencil that writes. */
+/** A label tag, for a resume's type. */
+export function TagIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18}>
+      <path d="M3.5 12.1V4.9c0-.8.6-1.4 1.4-1.4h7.2c.4 0 .7.1 1 .4l7.4 7.4a1.4 1.4 0 0 1 0 2l-7.2 7.2a1.4 1.4 0 0 1-2 0l-7.4-7.4a1.4 1.4 0 0 1-.4-1Z" />
+      <circle cx="8" cy="8" r="1.3" />
+    </svg>
+  )
+}
+
 export function PencilIcon() {
   return (
     <svg {...iconProps} width={17} height={17}>

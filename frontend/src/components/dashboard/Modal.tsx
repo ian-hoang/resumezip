@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useId, useRef } from "react"
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react"
+import { reducedMotion } from "@/components/editor/layout"
 
 interface ModalProps {
   title: string
@@ -10,6 +11,18 @@ interface ModalProps {
   wide?: boolean
   children: React.ReactNode
 }
+
+// How long a dialog takes to fade away, in milliseconds (matches its closing classes below). It eases
+// in and out rather than gliding: a fast start would have it all but gone in the first frames.
+const CLOSE_MS = 260
+
+const CloseContext = createContext<() => void>(() => {})
+
+/**
+ * Closes the dialog it's in the way Escape does: it fades away, then the
+ * dialog's onClose is called. For a Cancel button, so it doesn't vanish at once.
+ */
+export const useModalClose = () => useContext(CloseContext)
 
 // What Tab can reach inside a dialog, before leaving out what's hidden or has tabindex="-1".
 const TABBABLE = "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]"
@@ -22,8 +35,18 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
   // Callers pass a new onClose on every render. Reading the latest one from a
   // ref keeps the effect below to the dialog opening, so a parent re-render
   // (as when another tab saves) doesn't pull focus back to the first control.
-  const close = useRef(onClose)
-  close.current = onClose
+  const latestClose = useRef(onClose)
+  latestClose.current = onClose
+  // Fading away, after which onClose is called.
+  const [closing, setClosing] = useState(false)
+  const closingRef = useRef(false)
+  const close = useRef(() => {
+    if (closingRef.current) return
+    closingRef.current = true
+    if (reducedMotion()) return latestClose.current()
+    setClosing(true)
+    setTimeout(() => latestClose.current(), CLOSE_MS)
+  })
 
   useEffect(() => {
     // Tab goes round the dialog's controls, from the last back to the first,
@@ -79,14 +102,17 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
   // the fade had finished.
   return (
     <div
-      className="dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-[240ms] ease-glide motion-reduce:transition-none starting:opacity-0"
+      inert={closing}
+      className={`dialog-backdrop fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity motion-reduce:transition-none starting:opacity-0 ${
+        closing ? "opacity-0 duration-[260ms] ease-in-out" : "duration-[240ms] ease-glide"
+      }`}
       onMouseDown={(event) => {
         if (event.target !== event.currentTarget) return
         // The browser's own handling of the press would then move focus to the
         // page, undoing where the dialog's effects just put it: back on the
         // opener, or into a dialog that opens instead.
         event.preventDefault()
-        onClose()
+        close.current()
       }}
     >
       <div
@@ -94,16 +120,16 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
         role="dialog"
         aria-modal="true"
         aria-labelledby={wide ? "modal-title" : titleId}
-        className={`glass glass-frost rounded-panel transition-[scale,translate] duration-300 ease-glide motion-reduce:transition-none starting:translate-y-2 starting:scale-[0.97] ${
-          wide ? "flex h-[min(88vh,880px)] w-full max-w-[1120px] flex-col overflow-hidden" : "w-full max-w-md p-7"
-        }`}
+        className={`glass glass-frost rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:translate-y-2 starting:scale-[0.97] ${
+          closing ? "translate-y-2 scale-[0.97] duration-[260ms] ease-in-out" : "duration-300 ease-glide"
+        } ${wide ? "flex h-[min(88vh,880px)] w-full max-w-[1120px] flex-col overflow-hidden" : "w-full max-w-md p-7"}`}
       >
         {!wide && (
           <h2 id={titleId} className="font-serif text-[30px] leading-tight tracking-[-0.02em]">
             {title}
           </h2>
         )}
-        {children}
+        <CloseContext.Provider value={close.current}>{children}</CloseContext.Provider>
       </div>
     </div>
   )

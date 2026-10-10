@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { FileDown, FileUp, Plus } from "lucide-react"
 import { openResumes, useResumeContext } from "@/context/ResumeContext"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
+import TypeModal from "@/components/dashboard/TypeModal"
 import DeletedToast from "@/components/dashboard/DeletedToast"
 import EmptyShelf from "@/components/dashboard/EmptyShelf"
 import Filters, { type Sort, type View } from "@/components/dashboard/Filters"
@@ -98,8 +99,11 @@ export default function DashboardPage() {
     replaceResume,
     duplicateResume,
     renameResume,
+    editResume,
   } = useResumeContext()
   const [creating, setCreating] = useState(false)
+  // The resume whose type is being changed, while its dialog is open.
+  const [retyping, setRetyping] = useState<ResumeWithId | null>(null)
   const [opening, setOpening] = useState<Opening | null>(null)
   // What opening a file of them all did, until another file is opened.
   const [allOpened, setAllOpened] = useState("")
@@ -400,8 +404,22 @@ export default function DashboardPage() {
   const tags = [
     { id: "all", name: "All", count: counted.length },
     ...[...new Set([...RESUME_TAGS.map((option) => option.id), ...counted.map(tagOf).filter(Boolean)])]
-      .map((id) => ({ id, name: tagName(id), count: counted.filter((resume) => tagOf(resume) === id).length }))
+      // A type of the person's own is named as they wrote it, from the first resume that has it.
+      .map((id) => ({
+        id,
+        name: tagName(counted.find((resume) => tagOf(resume) === id)?.resumeTag ?? id),
+        count: counted.filter((resume) => tagOf(resume) === id).length,
+      }))
       .filter((option) => option.count > 0 || option.id === tag),
+  ]
+  // The person's own types, as they wrote them, once each whatever the case, to pick again.
+  const ownTypes = [
+    ...new Map(
+      sorted
+        .map((resume) => resume.resumeTag ?? "")
+        .filter((tag) => tag !== "" && !RESUME_TAGS.some((option) => option.id === tag.toLowerCase()))
+        .map((tag) => [tag.toLowerCase(), tag]),
+    ).values(),
   ]
   const tagged = found.filter((resume) => tag === "all" || tagOf(resume) === tag)
   const shown =
@@ -518,13 +536,21 @@ export default function DashboardPage() {
                     resumes={shown}
                     actions={actions}
                     onDelete={remove}
+                    onRetype={setRetyping}
                     leaving={leaving}
                     returning={returning}
                     onChooseFile={chooseFile}
                     dragging={dragging}
                   />
                 ) : (
-                  <ResumeTable resumes={shown} actions={actions} onDelete={remove} leaving={leaving} returning={returning} />
+                  <ResumeTable
+                    resumes={shown}
+                    actions={actions}
+                    onDelete={remove}
+                    onRetype={setRetyping}
+                    leaving={leaving}
+                    returning={returning}
+                  />
                 )}
               </div>
             )}
@@ -533,7 +559,8 @@ export default function DashboardPage() {
 
         {loaded && showing.length === 0 && <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />}
 
-        <div className="flex max-w-[720px] flex-wrap items-baseline gap-x-8 gap-y-3">
+        {/* On glass, as it sits over the sky's brightest clouds. */}
+        <div className="glass glass-frost flex max-w-[720px] flex-wrap items-baseline gap-x-8 gap-y-3 rounded-panel px-5 py-4">
           <span className="label-mono text-accent">Stored locally</span>
           <p className="min-w-0 flex-[1_1_320px] text-sm leading-relaxed text-ink-2">
             Resumes live in this browser only. Every PDF you download carries its resume, so you can open it here again on any computer.
@@ -567,7 +594,19 @@ export default function DashboardPage() {
 
       {deleting && <DeletedToast key={deleting.key} title={nameOf(deleting.resume)} onUndo={undo} onDone={finishDeleting} />}
 
-      {creating && <CreateResumeModal onClose={() => setCreating(false)} onCreate={create} />}
+      {creating && <CreateResumeModal own={ownTypes} onClose={() => setCreating(false)} onCreate={create} />}
+      {retyping && (
+        <TypeModal
+          resume={retyping}
+          own={ownTypes}
+          onClose={() => setRetyping(null)}
+          onSave={(tag) => {
+            editResume(retyping.id, "resumeTag", tag)
+            announce(tag ? `${nameOf(retyping)} is now ${tagName(tag)}` : `${nameOf(retyping)} has no type now`)
+            setRetyping(null)
+          }}
+        />
+      )}
 
       {opening?.step === "reading" && <ReadingDialog fileName={opening.fileName} onCancel={closeOpening} />}
       {opening?.step === "error" && <OpenErrorDialog message={opening.message} onClose={closeOpening} onRetry={chooseFile} />}

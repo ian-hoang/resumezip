@@ -21,6 +21,19 @@ export const RESUME_TAGS = [
   { id: "professional", name: "Professional" },
 ]
 
+/** The longest type someone can name themselves, in characters: about what fits on a filter chip. */
+export const MAX_TAG_LENGTH = 24
+
+/**
+ * A type as it's saved: one of RESUME_TAGS by id, when it's one of their
+ * names in any case, or a type of the person's own, trimmed, with its spaces
+ * run together, and cut to MAX_TAG_LENGTH. "" when there's nothing left.
+ */
+export function cleanTag(input: string): string {
+  const tag = input.trim().replace(/\s+/g, " ").slice(0, MAX_TAG_LENGTH).trim()
+  return RESUME_TAGS.find((option) => option.name.toLowerCase() === tag.toLowerCase() || option.id === tag.toLowerCase())?.id ?? tag
+}
+
 /** One entry in a list section, like a job. Only its own section's fields are set. */
 export type Entry = { id: number; leftOut?: true } & { [Key in FieldKey]?: string }
 
@@ -34,7 +47,7 @@ export type Resume = {
   id?: string
   /** Its name in the dashboard's list; not printed. */
   resumeTitle?: string
-  /** One of RESUME_TAGS, by id: "personal", "academic" or "professional". */
+  /** One of RESUME_TAGS by id ("personal", "academic" or "professional"), or a type of the person's own (cleanTag). */
   resumeTag?: string
   /** When it last changed, as an ISO date. */
   updatedAt?: string
