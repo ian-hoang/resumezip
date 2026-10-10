@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { pageErrors, seriousAccessibilityProblems } from "./helpers"
+import { pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 const resume = (id: string, resumeTitle: string, more: { resumeTag?: string; selectedTemplate?: string; updatedAt?: string } = {}) => ({
   id,
@@ -398,6 +398,37 @@ for (const [layout, width] of [
     expect(errors).toEqual([])
   })
 }
+
+test("on a phone, a page's More menu opens on screen, in front of the page beside it", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  // Two pages to a row: Ada's on the left, with little room left of its More button.
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    for (const name of ["Ada", "Grace"]) {
+      await tile(page, name)
+        .getByRole("button", { name: `More for “${name}”` })
+        .click()
+      const menu = page.getByRole("menu", { name: `More for “${name}”` })
+      await expect(menu).toBeVisible()
+      await settled(menu)
+      const shown = (await menu.boundingBox())!
+      expect(shown.x, `${name}'s menu at ${width}px`).toBeGreaterThanOrEqual(0)
+      expect(shown.x + shown.width, `${name}'s menu at ${width}px`).toBeLessThanOrEqual(width)
+      // Each item is what's there to tap, not the page beside it drawn over it.
+      for (const item of await menu.getByRole("menuitem").all()) {
+        const tapped = await item.evaluate((element) => {
+          const box = element.getBoundingClientRect()
+          return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2))
+        })
+        expect(tapped, `${await item.textContent()} in ${name}'s menu at ${width}px`).toBe(true)
+      }
+      await page.keyboard.press("Escape")
+      await expect(menu).toBeHidden()
+    }
+  }
+  expect(errors).toEqual([])
+})
 
 test("the search finds resumes by name or template, and opens one from the keyboard", async ({ page }) => {
   const errors = pageErrors(page)

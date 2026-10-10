@@ -557,6 +557,15 @@
   .more-menu {
     transform-origin: 100% 100%;
   }
+  .more-menu.is-start {
+    transform-origin: 0 100%;
+  }
+  /* An open menu can reach over the next page, which is drawn later. Its
+     z-index only counts inside its glass bar (isolation), so its page comes
+     forward. */
+  .tile:has(.more-menu) {
+    z-index: 1;
+  }
   .sort-menu {
     transform-origin: 100% 0;
   }
