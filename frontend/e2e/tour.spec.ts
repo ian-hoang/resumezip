@@ -29,10 +29,11 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height })
     await startWriting(page)
     const tour = page.getByRole("dialog")
-    await expect(tour).toHaveAccessibleName("It saves as you type, in this browser.")
-    await expect(tour).toContainText("Welcome · 1 of 4")
+    // Its steps go across the editor as it reads, left to right.
+    await expect(tour).toHaveAccessibleName("Write, check, then style.")
+    await expect(tour).toContainText("Write, Check, Style · 1 of 4")
     // The keyboard starts on the way on.
-    await expect(tour.getByRole("button", { name: "Next: the preview" })).toBeFocused()
+    await expect(tour.getByRole("button", { name: "Next: saving" })).toBeFocused()
     const box = (await tour.boundingBox())!
     expect(box.x).toBeGreaterThanOrEqual(0)
     expect(box.x + box.width).toBeLessThanOrEqual(width)
@@ -40,12 +41,12 @@ for (const [width, height] of [
     expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
     // On with its button or the arrow, and back.
-    await tour.getByRole("button", { name: "Next: the preview" }).click()
-    await expect(tour).toHaveAccessibleName("The page is the real PDF.")
+    await tour.getByRole("button", { name: "Next: saving" }).click()
+    await expect(tour).toHaveAccessibleName("It saves as you type, in this browser.")
     await tour.getByRole("button", { name: "Next step" }).click()
-    await expect(tour).toHaveAccessibleName("Write, check, then style.")
-    await tour.getByRole("button", { name: "Previous step" }).click()
     await expect(tour).toHaveAccessibleName("The page is the real PDF.")
+    await tour.getByRole("button", { name: "Previous step" }).click()
+    await expect(tour).toHaveAccessibleName("It saves as you type, in this browser.")
     await tour.getByRole("button", { name: "Next step" }).click()
     await tour.getByRole("button", { name: "Next: your save file" }).click()
     await expect(tour).toHaveAccessibleName("The PDF is your save file.")
@@ -66,6 +67,25 @@ for (const [width, height] of [
     expect(errors).toEqual([])
   })
 }
+
+test("the tour keeps its size from step to step, however long a step's words are", async ({ page }) => {
+  const errors = pageErrors(page)
+  // Narrow, where the words wrap the most.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await startWriting(page)
+  const tour = page.getByRole("dialog")
+  await expect(tour).toBeVisible()
+  const heights: number[] = []
+  for (let step = 0; step < 4; step++) {
+    await expect(tour).toContainText(`${step + 1} of 4`)
+    // Its laid-out height, which the opening grow doesn't change.
+    heights.push(await tour.evaluate((dialog) => (dialog as HTMLElement).offsetHeight))
+    if (step < 3) await tour.getByRole("button", { name: "Next step" }).click()
+  }
+  expect(new Set(heights).size).toBe(1)
+  await previewShown(page)
+  expect(errors).toEqual([])
+})
 
 test("Escape closes the tour, and so does Close, for good", async ({ page }) => {
   const errors = pageErrors(page)
