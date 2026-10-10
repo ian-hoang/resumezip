@@ -106,24 +106,37 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ matrix.browser }}-ubuntu-24.04-${{ steps.playwright.outputs.version }}
-      # The browser, unless it was kept, and the system libraries it needs,
-      # from Ubuntu's package servers. A server can go quiet partway (on
-      # October 7, 2026, apt waited on one for 20 minutes, and the job timed
-      # out), so apt gives up on a connection after 20 seconds without data,
-      # tries it twice more, then moves on, and waits for another apt to
-      # finish rather than failing. A failed install is tried again, up to 3
-      # times. A slow download that's still going isn't cut off: stopping one
-      # from outside leaves apt running, holding its lock.
-      - name: Install the browser
+      # The site builds while the browser installs: the browser, unless it
+      # was kept, and the system libraries it needs, from Ubuntu's package
+      # servers, which take longer than the build for WebKit. The install's
+      # output is shown after the build's.
+      #
+      # A package server can go quiet partway (on October 7, 2026, apt waited
+      # on one for 20 minutes, and the job timed out), so apt gives up on a
+      # connection after 20 seconds without data, tries it twice more, then
+      # moves on, and waits for another apt to finish rather than failing. A
+      # failed install is tried again, up to 3 times. A slow download that's
+      # still going isn't cut off: stopping one from outside leaves apt
+      # running, holding its lock.
+      - name: Build, and install the browser meanwhile
         run: |
           printf 'Acquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nAcquire::Retries "2";\nDPkg::Lock::Timeout "120";\n' | sudo tee /etc/apt/apt.conf.d/99timeouts > /dev/null
-          for try in 1 2 3; do
-            npx playwright install --with-deps "$BROWSER" && exit 0
-            echo "::warning::Installing the browser failed, try $try of 3"
-          done
-          exit 1
-      - name: Build
-        run: npm run build
+          install_browser() {
+            for try in 1 2 3; do
+              npx playwright install --with-deps "$BROWSER" && return 0
+              echo "::warning::Installing the browser failed, try $try of 3"
+            done
+            return 1
+          }
+          install_browser > "$RUNNER_TEMP/install-browser.log" 2>&1 &
+          installing=$!
+          npm run build
+          installed=0
+          wait "$installing" || installed=$?
+          echo "::group::Install the browser"
+          cat "$RUNNER_TEMP/install-browser.log"
+          echo "::endgroup::"
+          exit "$installed"
       - name: Browser tests
         run: npm run test:browser -- --project="$BROWSER" --shard="$SHARD"
       # Screenshots and a replayable trace of whatever failed.
