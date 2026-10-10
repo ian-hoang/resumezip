@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { pageErrors } from "./helpers"
 
 /** A resume with a job, a bullet and an entry left out of the PDF. */
@@ -31,8 +31,8 @@ const MARA = {
   awardsSection: [],
 }
 
-test("a resume downloaded as Word from the ▾ menu opens in another browser as its PDF does", async ({ page, browser }, testInfo) => {
-  const errors = pageErrors(page)
+/** Opens Mara's resume in the editor, saved before the page opens, as an earlier visit would have. */
+async function openMara(page: Page) {
   await page.addInitScript((resume) => {
     if (localStorage.getItem("resume:mara") === null) localStorage.setItem("resume:mara", JSON.stringify(resume))
   }, MARA)
@@ -43,6 +43,11 @@ test("a resume downloaded as Word from the ▾ menu opens in another browser as 
       .getByText(/Mara Lin/i)
       .first(),
   ).toBeVisible()
+}
+
+test("a resume downloaded as Word from the ▾ menu opens in another browser as its PDF does", async ({ page, browser }, testInfo) => {
+  const errors = pageErrors(page)
+  await openMara(page)
 
   // Choosing Word saves "<name>.docx", and the keyboard goes back to the ▾.
   const more = page.getByRole("button", { name: "More formats" })
@@ -79,4 +84,25 @@ test("a resume downloaded as Word from the ▾ menu opens in another browser as 
 
   expect(errors).toEqual([])
   expect(otherErrors).toEqual([])
+})
+
+test("a Word file that can't be made says so, and trying again downloads it", async ({ page }) => {
+  const errors = pageErrors(page)
+  await openMara(page)
+
+  // Word's code downloads when it's first chosen; here, the download fails.
+  const failed = page.getByRole("alert").filter({ hasText: "Download failed" })
+  await page.route("**/_next/static/chunks/**", (route) => route.abort())
+  await page.getByRole("button", { name: "More formats" }).click()
+  await page.getByRole("menuitem", { name: /^Word/ }).click()
+  await expect(failed).toContainText("Couldn't make your Word file.")
+
+  await page.unroute("**/_next/static/chunks/**")
+  const downloading = page.waitForEvent("download")
+  await failed.getByRole("button", { name: "Try again" }).click()
+  expect((await downloading).suggestedFilename()).toBe("Mara at Stripe.docx")
+  await expect(failed).toHaveCount(0)
+
+  // Only the failure, as the editor logs it, and the download it stopped.
+  expect(errors.filter((error) => !/^Error downloading the Word file:|^Failed to load resource/.test(error))).toEqual([])
 })

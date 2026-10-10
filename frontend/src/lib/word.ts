@@ -15,6 +15,8 @@
 // attachment but changed the text would reopen as it was before the change,
 // so the attachment also has the CRC-32 of the text it was written with, and
 // is only read while the text still matches.
+//
+// The editor downloads this module when Word is first chosen.
 
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"

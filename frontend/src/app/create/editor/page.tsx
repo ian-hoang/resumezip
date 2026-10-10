@@ -27,7 +27,6 @@ import { extraKey, filledSections, resolveSections, type ExtraKind, type Section
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
 import { fileNameOf, saveFile } from "@/lib/saveFile"
-import { toWordFile, WORD_TYPE } from "@/lib/word"
 import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
@@ -356,11 +355,20 @@ function Editor({ id }: { id: string }) {
   }
 
   // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
-  const downloadWord = () => {
+  // Its code downloads the first time it's chosen.
+  const downloadWord = async () => {
     const resume = read()
     if (!resume) return
-    saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
-    sayDownloaded("Word file")
+    try {
+      const { toWordFile, WORD_TYPE } = await import("@/lib/word")
+      saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
+      // Only a failed Word file is put right; a failed PDF still is one.
+      setFailure((previous) => (previous?.of ? null : previous))
+      sayDownloaded("Word file")
+    } catch (error) {
+      console.error("Error downloading the Word file:", error)
+      setFailure((previous) => nextFailure(previous, error, "Word file"))
+    }
   }
 
   // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
@@ -473,7 +481,7 @@ function Editor({ id }: { id: string }) {
             key={failure.count}
             failure={failure}
             retrying={downloading}
-            onRetry={download}
+            onRetry={failure.of ? downloadWord : download}
             className="border-t border-rule px-5 py-2.5 lg:px-6"
           />
         )}
