@@ -195,14 +195,42 @@ describe("publications", () => {
 
 describe("a single citation", () => {
   test("that wraps onto two more lines is read as one", () => {
-    const { resume } = read("Publications", [
-      line([["[1] R. Mehta, S. Okoro, and L. Zhang, “Fast depth completion for small robots", 44]]),
-      line([["with sparse lidar,” IEEE International Conference on Robotics and Automation,", 61]]),
-      line([["Atlanta, GA, May 2025, doi: 10.5555/icra.2025.1187.", 61]]),
-    ])
+    const { resume } = read(
+      "Publications",
+      onPage([
+        line([["[1] R. Mehta, S. Okoro, and L. Zhang, “Fast depth completion for small robots", 44]]),
+        line([["with sparse lidar,” IEEE International Conference on Robotics and Automation,", 61]]),
+        line([["Atlanta, GA, May 2025, doi: 10.5555/icra.2025.1187.", 61]]),
+      ]),
+    )
     expect(resume.publicationsSection).toMatchObject([
       { publicationTitle: "Fast depth completion for small robots with sparse lidar", publicationDate: "May 2025" },
     ])
+  })
+
+  test("doesn't take in an entry laid out on lines of its own after it", () => {
+    const { resume } = read(
+      "Publications",
+      onPage([
+        line([["M. Lin and J. Park, “Robot hands that learn,” IROS, 2024.", 54]], { bullet: true }),
+        line(
+          [
+            ["Sparse lidar for small robots", 66],
+            ["May 2025", 480],
+          ],
+          { bold: true },
+        ),
+        line([["M. Lin, S. Okoro and L. Zhang", 66]]),
+        line([["IEEE International Conference on Robotics and Automation", 66]]),
+      ]),
+    )
+    expect(resume.publicationsSection).toHaveLength(2)
+    expect(resume.publicationsSection[1]).toMatchObject({
+      publicationTitle: "Sparse lidar for small robots",
+      publicationAuthors: "M. Lin, S. Okoro and L. Zhang",
+      publicationVenue: "IEEE International Conference on Robotics and Automation",
+      publicationDate: "May 2025",
+    })
   })
 })
 
