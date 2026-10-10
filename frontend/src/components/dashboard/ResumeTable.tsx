@@ -2,12 +2,13 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useRef } from "react"
+import { useRef, type CSSProperties } from "react"
 import { RESUME_TAGS, type ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import { usePagePicture } from "./pagePictures"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TrashIcon } from "./RowActions"
 import { nameOf, type ListActions } from "./useListActions"
+import { morph } from "./viewSwitch"
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" })
 const dateFormat = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" })
@@ -38,16 +39,18 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
   const cell = "border-b border-rule"
 
   // The picture opens the resume too. The name's link is the one announced, so this one's skipped.
-  const thumbnail = (resume: ResumeWithId) => (
+  // The cards and the table both pair it, and the name, with the pages (viewSwitch.ts). Only the
+  // one showing takes part in a view transition, so each name is still one of a kind.
+  const thumbnail = (resume: ResumeWithId, index: number) => (
     <Link href={`/create/new/${resume.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0">
-      <Thumbnail resume={resume} />
+      <Thumbnail resume={resume} style={morph("page", index)} />
     </Link>
   )
 
   // The name, which opens the resume, and a pencil to rename it; or, while
   // renaming, a box to type the name in. On wide screens the pencil shows
   // when the row is pointed at, or it's focused.
-  const name = (resume: ResumeWithId, className: string) =>
+  const name = (resume: ResumeWithId, index: number, className: string) =>
     renaming?.id === resume.id ? (
       <input
         aria-label="Resume name"
@@ -68,7 +71,13 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
       />
     ) : (
       <div className="flex min-w-0 items-start gap-0.5">
-        <Link href={`/create/new/${resume.id}`} title={nameOf(resume)} data-resume-link={resume.id} className={className}>
+        <Link
+          href={`/create/new/${resume.id}`}
+          title={nameOf(resume)}
+          data-resume-link={resume.id}
+          style={morph("name", index)}
+          className={className}
+        >
           {nameOf(resume)}
         </Link>
         <RowAction
@@ -108,7 +117,7 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
     <>
       {/* Phones: one card per resume, with its actions underneath. */}
       <ul className="md:hidden">
-        {resumes.map((resume) => (
+        {resumes.map((resume, index) => (
           <li
             key={resume.id}
             inert={leaving.has(resume.id)}
@@ -116,9 +125,9 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
           >
             <div className="fold-cell">
               <div className="flex gap-4 pb-3 pt-5">
-                {thumbnail(resume)}
+                {thumbnail(resume, index)}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  {name(resume, "line-clamp-2 font-serif text-[21px] leading-tight wrap-anywhere")}
+                  {name(resume, index, "line-clamp-2 font-serif text-[21px] leading-tight wrap-anywhere")}
                   <span className="text-[13px] text-ink-2">
                     {[resume.resumeTag && tagName(resume.resumeTag), templateById(resume.selectedTemplate).name]
                       .filter(Boolean)
@@ -153,7 +162,7 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
             </tr>
           </thead>
           <tbody>
-            {resumes.map((resume) => (
+            {resumes.map((resume, index) => (
               <tr
                 key={resume.id}
                 inert={leaving.has(resume.id)}
@@ -166,10 +175,11 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
                 <td className={`${cell} pr-8`}>
                   <div className="fold-cell">
                     <div className="flex items-center gap-[18px] py-[18px]">
-                      {thumbnail(resume)}
+                      {thumbnail(resume, index)}
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         {name(
                           resume,
+                          index,
                           "line-clamp-2 font-serif text-[21px] leading-tight wrap-anywhere hover:underline hover:underline-offset-4",
                         )}
                         {resume.resumeTag && <span className="text-[13px] text-ink-2">{tagName(resume.resumeTag)}</span>}
@@ -203,11 +213,15 @@ export default function ResumeTable({ resumes, actions, onDelete, leaving, retur
 }
 
 // A small picture of the resume's first page, once it's drawn (pagePictures.ts), or its template's.
-function Thumbnail({ resume }: { resume: ResumeWithId }) {
+function Thumbnail({ resume, style }: { resume: ResumeWithId; style: CSSProperties }) {
   const element = useRef<HTMLSpanElement>(null)
   const url = usePagePicture(resume.id, resume, element)
   return (
-    <span ref={element} className="block h-[60px] w-[46px] bg-sheet ring-1 ring-rule transition-shadow hover:ring-rule-strong">
+    <span
+      ref={element}
+      style={style}
+      className="block h-[60px] w-[46px] bg-sheet ring-1 ring-rule transition-shadow hover:ring-rule-strong"
+    >
       {url ? (
         // An object URL, which next/image can't optimise.
         // eslint-disable-next-line @next/next/no-img-element

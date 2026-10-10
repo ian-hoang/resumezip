@@ -391,6 +391,15 @@
     animation: ball-land 560ms cubic-bezier(0.3, 1.4, 0.5, 1) 120ms both;
   }
 
+  /* Switching between the pages and the list, in a browser without view
+     transitions (viewSwitch.ts): the new view fades in. */
+  .view-fade {
+    transition: opacity 240ms var(--ease-glide);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
   /* A page's picture fades in over its template's once it's drawn. */
   .page-arrived {
     animation: page-in 400ms ease-out both;
@@ -427,9 +436,33 @@
   }
 }
 
+/* Switching between the pages and the list (viewSwitch.ts): each resume's page
+   and name glide from where they were to where they go, and the rest of the
+   page crossfades. Only for that switch, by its view transition type; with
+   less motion, the page doesn't start one. */
+:root:active-view-transition-type(resume-view)::view-transition-group(*),
+:root:active-view-transition-type(resume-view)::view-transition-old(*),
+:root:active-view-transition-type(resume-view)::view-transition-new(*) {
+  animation-duration: 300ms;
+  animation-timing-function: var(--ease-glide);
+}
+/* A click goes through the moving pictures to the page under them, so the
+   switch can be pressed again straight away. */
+:root:active-view-transition-type(resume-view)::view-transition {
+  pointer-events: none;
+}
+/* A name is as wide as its page in one view, and as its words in the other.
+   Each picture of it keeps its own size, from its top left, rather than being
+   stretched to the width in between. */
+:root:active-view-transition-type(resume-view)::view-transition-old(*.resume-name),
+:root:active-view-transition-type(resume-view)::view-transition-new(*.resume-name) {
+  inline-size: auto;
+}
+
 /* With less motion, everything is where it ends up at once: a deleted resume is
    simply gone (the page skips the wait too), and nothing grows, lands or hops. */
 @media (prefers-reduced-motion: reduce) {
+  .view-fade,
   .tile-page,
   .tile-tag,
   .tile-actions,

@@ -44,6 +44,41 @@ const saved = (page: Page, id: string) => page.evaluate((id) => localStorage.get
 const cutShort = (element: Locator) =>
   element.evaluate((element) => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
 
+/** What `watchTransitions` keeps on the page's window. */
+interface Watched {
+  started: number
+  /** Each animation of the first view transition, by the part of it that moves, once it's under way. */
+  running: Promise<{ part: string; ms: number }[]>
+}
+
+/** Counts the view transitions the page starts from here on, and keeps the first's animations. */
+async function watchTransitions(page: Page) {
+  await page.evaluate(() => {
+    const watched = window as unknown as Watched
+    const start = document.startViewTransition.bind(document)
+    watched.started = 0
+    watched.running = new Promise((resolve, reject) => {
+      document.startViewTransition = (update) => {
+        watched.started++
+        const transition = start(update)
+        // Ready once the browser has pictured both views and is animating between them; it fails if
+        // the transition can't run, as when two parts of the page have the same name.
+        transition.ready.then(
+          () =>
+            resolve(
+              document.getAnimations().map((animation) => ({
+                part: (animation.effect as KeyframeEffect).pseudoElement ?? "",
+                ms: Number(animation.effect!.getComputedTiming().duration),
+              })),
+            ),
+          reject,
+        )
+        return transition
+      }
+    })
+  })
+}
+
 test("a long resume name wraps in the table, and every resume's buttons stay on screen", async ({ page }) => {
   const errors = pageErrors(page)
   // Names far too long for the table, with and without spaces.
@@ -278,6 +313,34 @@ test("resumes show as their pages, and the list is a click away, remembered afte
   expect(errors).toEqual([])
 })
 
+test("switching to the list moves each resume's page and name to its row, with focus kept on the switch", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  await expect(pages(page).getByRole("link")).toHaveText(["Ada", "Grace"])
+  await watchTransitions(page)
+
+  const list = page.getByRole("group", { name: "View" }).getByRole("button", { name: "List" })
+  await list.press("Enter")
+  await expect.poll(() => page.evaluate(() => (window as unknown as Watched).started)).toBe(1)
+  const moving = (await page.evaluate(() => (window as unknown as Watched).running)).filter(({ part }) =>
+    part.startsWith("::view-transition"),
+  )
+  // The rest of the page crossfades, and the two resumes' pages and names each move on their own,
+  // all in about a third of a second.
+  const parts = moving.map(({ part }) => part)
+  expect(parts).toEqual(expect.arrayContaining(["::view-transition-old(root)", "::view-transition-new(root)"]))
+  expect(new Set(parts.filter((part) => /^::view-transition-group\((?!root\))/.test(part))).size).toBe(4)
+  for (const { ms } of moving) {
+    expect(ms).toBeGreaterThanOrEqual(250)
+    expect(ms).toBeLessThanOrEqual(350)
+  }
+
+  await expect(page.getByRole("table").getByRole("link", { name: "Ada", exact: true })).toBeVisible()
+  await expect(list).toHaveAttribute("aria-pressed", "true")
+  await expect(list).toBeFocused()
+  expect(errors).toEqual([])
+})
+
 for (const [layout, width] of [
   ["phone", 390],
   ["wide screen", 1280],
@@ -442,6 +505,19 @@ test.describe("with less motion", () => {
     expect(await pages(page).getByRole("link", { name: "Ada", exact: true }).count()).toBe(0)
     await page.getByRole("button", { name: "Undo" }).click()
     expect(await pages(page).getByRole("link", { name: "Ada", exact: true }).count()).toBe(1)
+    expect(errors).toEqual([])
+  })
+
+  test("switching to the list shows it at once, with nothing moving", async ({ page }) => {
+    const errors = pageErrors(page)
+    await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+    await expect(pages(page).getByRole("link")).toHaveText(["Ada", "Grace"])
+    await watchTransitions(page)
+    const list = page.getByRole("group", { name: "View" }).getByRole("button", { name: "List" })
+    await list.press("Enter")
+    expect(await page.getByRole("table").getByRole("link", { name: "Ada", exact: true }).count()).toBe(1)
+    expect(await page.evaluate(() => (window as unknown as Watched).started)).toBe(0)
+    await expect(list).toBeFocused()
     expect(errors).toEqual([])
   })
 })

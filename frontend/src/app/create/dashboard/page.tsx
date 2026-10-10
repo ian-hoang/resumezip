@@ -16,6 +16,7 @@ import ResumeTable, { tagName } from "@/components/dashboard/ResumeTable"
 import SearchBar, { matches } from "@/components/dashboard/SearchBar"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import { focusShown, nameOf, useListActions } from "@/components/dashboard/useListActions"
+import { switchView } from "@/components/dashboard/viewSwitch"
 import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 import DownloadFailed from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
@@ -106,6 +107,8 @@ export default function DashboardPage() {
   const [announcement, setAnnouncement] = useState("")
   const [dragging, setDragging] = useState(false)
   const [view, setView] = useState<View>("pages")
+  // Set once a switch has had to fade the new view in, without view transitions.
+  const [fadeIn, setFadeIn] = useState(false)
   const [sort, setSort] = useState<Sort>("edited")
   const [tag, setTag] = useState("all")
   const [query, setQuery] = useState("")
@@ -135,7 +138,8 @@ export default function DashboardPage() {
   // Before the first paint, so someone who chose the list doesn't see pages first.
   useLayoutEffect(() => setView(savedView()), [])
   const chooseView = (next: View) => {
-    setView(next)
+    if (next === view) return
+    if (switchView(() => setView(next)) === "fade") setFadeIn(true)
     try {
       window.localStorage.setItem(VIEW_KEY, next)
     } catch {
@@ -506,18 +510,23 @@ export default function DashboardPage() {
                   Show all
                 </button>
               </div>
-            ) : view === "pages" ? (
-              <ResumeGrid
-                resumes={shown}
-                actions={actions}
-                onDelete={remove}
-                leaving={leaving}
-                returning={returning}
-                onChooseFile={chooseFile}
-                dragging={dragging}
-              />
             ) : (
-              <ResumeTable resumes={shown} actions={actions} onDelete={remove} leaving={leaving} returning={returning} />
+              // A new one for each view, so the fade starts from nothing.
+              <div key={view} className={fadeIn ? "view-fade" : undefined}>
+                {view === "pages" ? (
+                  <ResumeGrid
+                    resumes={shown}
+                    actions={actions}
+                    onDelete={remove}
+                    leaving={leaving}
+                    returning={returning}
+                    onChooseFile={chooseFile}
+                    dragging={dragging}
+                  />
+                ) : (
+                  <ResumeTable resumes={shown} actions={actions} onDelete={remove} leaving={leaving} returning={returning} />
+                )}
+              </div>
             )}
           </div>
         )}
