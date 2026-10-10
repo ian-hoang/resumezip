@@ -199,10 +199,12 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
  * Every page's header but the home page's: the pill, in a strip that stays at
  * the top of the screen. The strip keeps room for the pill, so the page starts
  * under it; around the pill, clicks go through to the page scrolling under it.
+ * It starts as far down as the home page's, under the room kept there for the
+ * news bar (--news-h), so the pill is at the same height on every page.
  */
 export default function SiteHeader({ onStartWriting }: Pick<SitePillProps, "onStartWriting">) {
   return (
-    <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
+    <div className="pointer-events-none sticky top-0 z-40 mt-[var(--news-h)] flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
       <SitePill onStartWriting={onStartWriting} />
     </div>
   )

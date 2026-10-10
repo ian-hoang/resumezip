@@ -22,18 +22,30 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
   )
 })
 
-// Every other page's header stays at the top of the screen, and the page starts under it rather than behind it.
+// Every page's header starts where the home page's does, so it doesn't jump from page to page:
+// under the room the home page keeps for its news bar. Scrolled, it stays at the top of the
+// screen, and the page starts under it rather than behind it.
+const pillTop = async (page: Page) => (await page.getByRole("banner").boundingBox())!.y
 for (const width of [390, 1440]) {
-  test(`at ${width}px the header keeps clear of the page, and stays in sight as it scrolls`, async ({ page }) => {
+  test(`at ${width}px the header starts at the home page's height on every page, and keeps clear of the page as it scrolls`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height: 800 })
-    for (const path of ["/templates", "/about"]) {
+    await page.goto("/")
+    const top = await pillTop(page)
+
+    for (const path of ["/templates", "/about", "/create/dashboard"]) {
       await page.goto(path)
+      expect(await pillTop(page), path).toBe(top)
       const header = (await page.getByRole("banner").boundingBox())!
       expect((await page.getByRole("main").boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height)
+      // An empty Your resumes is too short to scroll.
+      if (path === "/create/dashboard") continue
 
       await page.mouse.wheel(0, 600)
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
-      expect(await page.getByRole("banner").boundingBox()).toEqual(header)
+      await expect.poll(() => pillTop(page), path).toBeLessThan(top)
+      expect(await pillTop(page), path).toBeGreaterThanOrEqual(0)
     }
   })
 }

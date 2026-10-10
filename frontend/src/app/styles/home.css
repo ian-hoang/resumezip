@@ -2,8 +2,9 @@
    and the templates page (src/app/templates). */
 @layer components {
   /* The news bar's height (NewsBar.tsx). The header's strip starts under it, and the hero starts under the
-     strip, whether or not the bar shows: only the browser knows that, and nothing should move when it finds out. */
-  .home {
+     strip, whether or not the bar shows: only the browser knows that, and nothing should move when it finds out.
+     Every other page's strip starts as far down (SiteHeader.tsx), so the header doesn't jump between pages. */
+  :root {
     --news-h: 2.25rem;
   }
   .home-chrome {
