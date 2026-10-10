@@ -14,7 +14,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   // One retry in CI, recording a trace of the retry, so a failure can be
-  // replayed from the run's "browser-test-report-<browser>" artifact.
+  // replayed from the run's "browser-test-report-<browser>-<part>" artifact.
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
@@ -23,8 +23,8 @@ export default defineConfig({
     // The trace is of the retry, which passes when a test is flaky. A picture of the failed try shows what went wrong.
     screenshot: "only-on-failure",
   },
-  // Chrome, and WebKit for Safari, which most iPhone visitors use. CI tests
-  // each in a job of its own (--project), at the same time.
+  // Chrome, and WebKit for Safari, which most iPhone visitors use. CI splits
+  // each one's tests across jobs (--project, --shard) that run at the same time.
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
