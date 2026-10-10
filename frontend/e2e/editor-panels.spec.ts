@@ -141,6 +141,60 @@ test("the Style tab holds Fine-tune beside the form, and the header's Template b
   expect(errors).toEqual([])
 })
 
+test("each Fine-tune slider has a mark for the template's own setting, which puts back only that slider", async ({ page }) => {
+  const errors = pageErrors(page)
+  await startWriting(page, 1440, 900)
+  await styleTab(page).click()
+  const margins = page.getByRole("slider", { name: "Margins" })
+  const gap = page.getByRole("slider", { name: "Space between sections" })
+  const resetMargins = page.getByRole("button", { name: /^Reset margins/ })
+  const resetGap = page.getByRole("button", { name: /^Reset space between sections/ })
+  // Nothing to put back yet.
+  await expect(resetMargins).toBeDisabled()
+  await expect(resetGap).toBeDisabled()
+
+  await margins.focus()
+  await page.keyboard.press("ArrowRight")
+  await gap.focus()
+  await page.keyboard.press("ArrowLeft")
+  await expect(resetMargins).toBeEnabled()
+  await expect(resetGap).toBeEnabled()
+
+  await resetMargins.click()
+  await expect(resetMargins).toBeDisabled()
+  await expect(margins).toHaveJSProperty("value", "1")
+  // The other one is as it was set.
+  await expect(resetGap).toBeEnabled()
+  await expect(gap).toHaveJSProperty("value", "0.95")
+
+  expect(errors).toEqual([])
+})
+
+test("Keep it to one page moves the sliders it tightens, and says which", async ({ page }) => {
+  const errors = pageErrors(page)
+  const preview = await startWriting(page, 1440, 900)
+  const words = "Built and shipped distributed systems that moved millions of events a day while mentoring four engineers. "
+  await page.getByLabel("Summary").fill(words.repeat(60))
+  await expect(preview.locator(".react-pdf__Page")).toHaveCount(2)
+
+  await styleTab(page).click()
+  const size = page.getByRole("slider", { name: "Text size" })
+  const switchOn = page.getByRole("switch", { name: "Keep it to one page" })
+  await expect(size).toHaveJSProperty("value", "1")
+  await switchOn.click()
+  await expect(preview.locator(".react-pdf__Page")).toHaveCount(1)
+  await expect(page.getByRole("status").filter({ hasText: /^Tightened / })).toBeVisible()
+  // What it tightened shows on the sliders, and the saved settings aren't changed.
+  await expect(page.getByRole("slider", { name: "Space between sections" })).not.toHaveJSProperty("value", "1")
+  await expect(page.getByRole("button", { name: /^Reset space between sections/ })).toBeDisabled()
+
+  await switchOn.click()
+  await expect(page.getByRole("slider", { name: "Space between sections" })).toHaveJSProperty("value", "1")
+  await expect(size).toHaveJSProperty("value", "1")
+
+  expect(errors).toEqual([])
+})
+
 test("A4, chosen in the Style tab, prints the page on A4, and Download PDF still says only what it does", async ({ page }) => {
   const errors = pageErrors(page)
   const preview = await startWriting(page, 1440, 900)
