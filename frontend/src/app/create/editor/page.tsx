@@ -416,18 +416,21 @@ function Editor({ id }: { id: string }) {
   // Resumes only exist in the browser that created them.
   if (!found) {
     return (
-      <div className="desk flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-        <span className="label-mono text-ink-2">Not in this browser</span>
-        <h1 className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Resume not found</h1>
-        <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-          Resumes are saved in the browser you made them in. Open this link on that device, or start a new one.
-        </p>
-        <Link
-          href="/create/dashboard"
-          className="ink-button lift-button mt-2 inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
-        >
-          Go to your resumes
-        </Link>
+      <div className="desk flex min-h-screen items-center justify-center px-4">
+        {/* On a pane of glass over the sky, as the site's pages are. */}
+        <div className="glass glass-frost flex w-full max-w-[520px] flex-col items-center gap-4 rounded-panel px-6 py-12 text-center sm:px-12">
+          <span className="label-mono text-ink-2">Not in this browser</span>
+          <h1 className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Resume not found</h1>
+          <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
+            Resumes are saved in the browser you made them in. Open this link on that device, or start a new one.
+          </p>
+          <Link
+            href="/create/dashboard"
+            className="ink-button lift-button mt-2 inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
+          >
+            Go to your resumes
+          </Link>
+        </div>
       </div>
     )
   }
