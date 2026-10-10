@@ -2,15 +2,15 @@ import { expect, test, type Page } from "@playwright/test"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
-test("the home page's header asks for a star on GitHub, and other pages' headers start a resume", async ({ page }) => {
-  await page.goto("/")
-  await expect(page.getByRole("link", { name: "Star on GitHub" })).toHaveAttribute("href", REPO_URL)
-
-  await page.goto("/templates")
-  const banner = page.getByRole("banner")
-  await expect(banner.getByRole("link", { name: "Start writing" })).toBeVisible()
-  await expect(banner.getByRole("link", { name: "Star on GitHub" })).toHaveCount(0)
-})
+// One header on every page: the home page's is the same pill as the others', over its video.
+for (const path of ["/", "/templates"]) {
+  test(`the header on ${path} starts a resume, and asks for a star on GitHub beside it`, async ({ page }) => {
+    await page.goto(path)
+    const banner = page.getByRole("banner")
+    await expect(banner.getByRole("link", { name: "Start writing", exact: true })).toBeVisible()
+    await expect(banner.getByRole("link", { name: "Star on GitHub" })).toHaveAttribute("href", REPO_URL)
+  })
+}
 
 test("on a phone, the home page's menu asks for the star", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -21,6 +21,22 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
     REPO_URL,
   )
 })
+
+// Every other page's header stays at the top of the screen, and the page starts under it rather than behind it.
+for (const width of [390, 1440]) {
+  test(`at ${width}px the header keeps clear of the page, and stays in sight as it scrolls`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    for (const path of ["/templates", "/about"]) {
+      await page.goto(path)
+      const header = (await page.getByRole("banner").boundingBox())!
+      expect((await page.getByRole("main").boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height)
+
+      await page.mouse.wheel(0, 600)
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+      expect(await page.getByRole("banner").boundingBox()).toEqual(header)
+    }
+  })
+}
 
 const headerLinks = (page: Page) => page.getByRole("navigation", { name: "Main" }).getByRole("link")
 const boxes = async (page: Page) => Promise.all((await headerLinks(page).all()).map((link) => link.boundingBox()))

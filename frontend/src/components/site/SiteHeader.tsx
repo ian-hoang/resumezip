@@ -15,22 +15,16 @@ const LINKS = [
 // Tailwind's `md`, where the header's links replace the menu; in rem like Tailwind's, so the two agree.
 const WIDE_HEADER = "(min-width: 48rem)"
 
-const CTA = "label-caps items-center whitespace-nowrap bg-accent px-[18px] text-white transition-colors hover:bg-[#2550d4]"
-
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
-interface SiteHeaderProps {
-  /**
-   * "glass" is the home page's: a pill that floats over the page (components/home/HomeChrome.tsx
-   * places it). "light" is every other page's, a bar across the top.
-   */
-  variant?: "glass" | "light"
-  /** The glass pill's tint: dark over the video and the footer, light over the page's paper and blue. */
+// No display of its own: beside the logo these show from sm up, and in the menu below that.
+const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em] transition-colors"
+
+interface SitePillProps {
+  /** Dark glass over the home page's video and footer; light glass everywhere else. */
   tone?: "dark" | "light"
-  /** Slides the glass pill up out of the way, as the page scrolls down. Keyboard focus brings it back. */
+  /** Slides the pill up out of the way, as the page scrolls down. Keyboard focus brings it back. */
   tucked?: boolean
-  /** Asks for a star on GitHub where "Start writing" goes, for the home page, which has its own "Start writing" links. */
-  starOnGitHub?: boolean
   /**
    * What "Start writing" does on a page with its own way to start a resume,
    * instead of going to the dashboard: the dashboard opens its New resume dialog.
@@ -38,18 +32,16 @@ interface SiteHeaderProps {
   onStartWriting?: () => void
 }
 
-export default function SiteHeader({
-  variant = "light",
-  tone = "dark",
-  tucked = false,
-  starOnGitHub = false,
-  onStartWriting,
-}: SiteHeaderProps) {
+/**
+ * The site's header: a glass pill with the logo, the links, "Start writing"
+ * and a star on GitHub. The home page places it itself, under its news bar
+ * (components/home/HomeChrome.tsx); every other page has it in SiteHeader's strip.
+ */
+export function SitePill({ tone = "light", tucked = false, onStartWriting }: SitePillProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const glass = variant === "glass"
-  const dark = glass && tone === "dark"
+  const dark = tone === "dark"
 
   useEffect(() => {
     if (!menuOpen) return
@@ -78,28 +70,17 @@ export default function SiteHeader({
     }
   }, [menuOpen])
 
-  // The header's one button. "Start writing" is a button where it opens a
-  // dialog, as it doesn't go anywhere. In the menu it shuts the menu first, as
-  // the menu's links do, and leaves focus on the menu's button for the dialog
-  // to put it back on.
-  const action = (className: string, inMenu = false) =>
-    starOnGitHub ? (
-      <a
-        href={REPO_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${className} gap-2`}
-        onClick={() => {
-          if (inMenu) setMenuOpen(false)
-        }}
-      >
-        <Star className="h-4 w-4 fill-[#facc15] text-[#facc15]" aria-hidden="true" />
-        {/* Beside the links, below lg, there's only room for "Star". */}
-        <span>
-          Star<span className="md:max-lg:sr-only"> on GitHub</span>
-        </span>
-      </a>
-    ) : onStartWriting ? (
+  // An ink pill on light glass; over the video's dark glass, a white one.
+  const primary = `${PILL} px-[18px] ${dark ? "bg-white text-ink hover:bg-white/85" : "bg-ink text-white hover:bg-black"}`
+  const secondary = `${PILL} ring-1 ring-inset ${
+    dark ? "text-white ring-white/30 hover:ring-white/70" : "bg-sheet/40 text-ink ring-ink/15 hover:ring-ink/40"
+  }`
+
+  // "Start writing" is a button where it opens a dialog, as it doesn't go
+  // anywhere. In the menu it shuts the menu first, as the menu's links do, and
+  // leaves focus on the menu's button for the dialog to put it back on.
+  const startWriting = (className: string, inMenu = false) =>
+    onStartWriting ? (
       <button
         type="button"
         className={className}
@@ -119,123 +100,110 @@ export default function SiteHeader({
       </StartWritingLink>
     )
 
-  const menuButton = (className: string) => (
-    <button
-      ref={buttonRef}
-      type="button"
-      className={`inline-flex h-10 w-10 items-center justify-center md:hidden ${className}`}
-      aria-label={menuOpen ? "Close menu" : "Open menu"}
-      aria-expanded={menuOpen}
-      onClick={() => setMenuOpen((open) => !open)}
+  // Beside the links, below lg, there's only room for the star itself; the menu has room to say it all.
+  const star = (className: string, inMenu = false) => (
+    <a
+      href={REPO_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={inMenu ? undefined : "Star on GitHub"}
+      className={`group gap-2 ${className}`}
+      onClick={() => {
+        if (inMenu) setMenuOpen(false)
+      }}
     >
-      {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-    </button>
+      <Star
+        className="h-4 w-4 transition-colors group-hover:fill-[#facc15] group-hover:text-[#facc15] motion-reduce:transition-none"
+        aria-hidden="true"
+      />
+      <span>
+        <span className={inMenu ? undefined : "max-lg:sr-only"}>Star</span>
+        <span className={inMenu ? undefined : "sr-only"}> on GitHub</span>
+      </span>
+    </a>
   )
-
-  // Drops over the page instead of pushing it down. Once it starts to close,
-  // inert keeps the keyboard out of it; once closed, visibility (which changes
-  // at the end of its transition) hides it too.
-  const menu = (className: string, linkClassName: string, actionClassName: string) => (
-    <nav
-      aria-label="Main"
-      inert={!menuOpen}
-      className={`absolute inset-x-0 top-full flex flex-col transition-[opacity,transform,visibility] duration-200 ease-out motion-reduce:transition-none md:hidden ${className} ${
-        menuOpen ? "" : "invisible -translate-y-2 opacity-0"
-      }`}
-    >
-      {LINKS.map((link) => (
-        <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className={linkClassName}>
-          {link.label}
-        </Link>
-      ))}
-      {action(actionClassName, true)}
-    </nav>
-  )
-
-  if (glass) {
-    const pill = `items-center whitespace-nowrap rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-colors ${
-      dark ? "bg-white text-ink hover:bg-white/85" : "bg-ink text-white hover:bg-black"
-    }`
-    return (
-      <header
-        ref={headerRef}
-        data-tucked={tucked && !menuOpen ? "" : undefined}
-        className={`site-pill relative w-full font-system md:w-auto ${dark ? "site-pill-dark text-white" : "text-ink"}`}
-      >
-        <div
-          className={`glass ${dark ? "glass-smoke" : "glass-frost"} flex h-[52px] items-center justify-between gap-4 rounded-full pl-5 pr-1.5 md:gap-7 lg:gap-10`}
-        >
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-logo text-[21px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
-          >
-            <Logo className="h-[18px] w-auto" />
-            resumezip
-          </Link>
-
-          <nav aria-label="Main" className="hidden items-center gap-6 md:flex lg:gap-8">
-            {LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] ${
-                  dark ? "text-white/85 hover:text-white" : "text-ink-2 hover:text-ink"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-1">
-            {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
-            {action(`${pill} hidden h-10 sm:inline-flex`)}
-            {menuButton("rounded-full")}
-          </div>
-        </div>
-
-        {menu(
-          `glass ${dark ? "glass-smoke" : "glass-frost"} mt-2 rounded-[22px] px-5 pb-4 pt-2`,
-          "py-3 text-[17px] tracking-[-0.01em]",
-          `${pill} mt-2 inline-flex h-11 justify-center sm:hidden`,
-        )}
-      </header>
-    )
-  }
 
   return (
-    <header ref={headerRef} className="relative z-30 border-b border-rule bg-paper font-system text-ink">
-      {/* With links, the outer columns are equal, so the links stay put whatever the button says.
-          Below lg the gaps are tighter: at 768px, in wider system fonts, the links only just fit on one line. */}
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr] md:px-10 md:max-lg:gap-4">
+    <header
+      ref={headerRef}
+      data-tucked={tucked && !menuOpen ? "" : undefined}
+      className={`site-pill relative w-full md:w-auto ${dark ? "site-pill-dark text-white" : "text-ink"}`}
+    >
+      <div
+        className={`glass ${dark ? "glass-smoke" : "glass-frost"} flex h-[52px] items-center justify-between gap-4 rounded-full pl-5 pr-1.5 md:gap-7 lg:gap-10`}
+      >
         <Link
           href="/"
-          className="flex items-center gap-2.5 justify-self-start font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 font-logo text-[21px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
         >
-          <Logo className="h-5 w-auto" />
+          <Logo className="h-[18px] w-auto" />
           resumezip
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-5 md:flex lg:gap-8">
+        <nav aria-label="Main" className="hidden items-center gap-6 md:flex lg:gap-8">
           {LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="nav-underline label-caps text-ink-2 hover:text-ink">
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] ${
+                dark ? "text-white/85 hover:text-white" : "text-ink-2 hover:text-ink"
+              }`}
+            >
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 justify-self-end">
-          {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
-          {action(`${CTA} hidden h-10 sm:inline-flex`)}
-          {menuButton("")}
+        <div className="flex items-center gap-1.5">
+          {/* Phones don't have room for these next to the logo, so they move into the menu. */}
+          {star(`${secondary} hidden h-10 w-10 sm:inline-flex lg:w-auto lg:px-4`)}
+          {startWriting(`${primary} hidden h-10 sm:inline-flex`)}
+          <button
+            ref={buttonRef}
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full md:hidden"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 
-      {menu(
-        "border-y border-rule bg-paper px-5 pb-4 shadow-[0_18px_40px_-16px_rgba(17,19,24,0.3)]",
-        "label-caps py-3 text-ink",
-        `${CTA} mt-2 inline-flex h-11 justify-center sm:hidden`,
-      )}
+      {/* Drops over the page instead of pushing it down. Once it starts to close,
+          inert keeps the keyboard out of it; once closed, visibility (which changes
+          at the end of its transition) hides it too. */}
+      <nav
+        aria-label="Main"
+        inert={!menuOpen}
+        className={`glass ${dark ? "glass-smoke" : "glass-frost"} absolute inset-x-0 top-full mt-2 flex flex-col rounded-panel px-5 pb-4 pt-2 transition-[opacity,transform,visibility] duration-200 ease-glide motion-reduce:transition-none md:hidden ${
+          menuOpen ? "" : "invisible -translate-y-2 opacity-0"
+        }`}
+      >
+        {LINKS.map((link) => (
+          <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="py-3 text-[17px] tracking-[-0.01em]">
+            {link.label}
+          </Link>
+        ))}
+        <div className="mt-2 flex flex-col gap-2 sm:hidden">
+          {startWriting(`${primary} flex h-11`, true)}
+          {star(`${secondary} flex h-11`, true)}
+        </div>
+      </nav>
     </header>
+  )
+}
+
+/**
+ * Every page's header but the home page's: the pill, in a strip that stays at
+ * the top of the screen. The strip keeps room for the pill, so the page starts
+ * under it; around the pill, clicks go through to the page scrolling under it.
+ */
+export default function SiteHeader({ onStartWriting }: Pick<SitePillProps, "onStartWriting">) {
+  return (
+    <div className="pointer-events-none sticky top-0 z-40 flex h-[76px] justify-center px-3 pt-3 md:h-[84px] md:px-5 md:pt-4 [&>*]:pointer-events-auto">
+      <SitePill onStartWriting={onStartWriting} />
+    </div>
   )
 }

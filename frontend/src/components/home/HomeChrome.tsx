@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import SiteHeader from "@/components/site/SiteHeader"
+import { SitePill } from "@/components/site/SiteHeader"
 
 /**
  * What the home page's sections are drawn on, from their data-tone: "dark"
@@ -99,7 +99,7 @@ export default function HomeChrome() {
           className={`reading-line absolute inset-x-0 top-0 h-[2px] ${lineTone === "blue" ? "bg-white" : "bg-accent"}`}
         />
         <div className="pointer-events-none absolute inset-x-3 top-3 flex justify-center md:inset-x-0 md:top-4 [&>*]:pointer-events-auto">
-          <SiteHeader variant="glass" tone={pillTone === "dark" ? "dark" : "light"} tucked={tucked} starOnGitHub />
+          <SitePill tone={pillTone === "dark" ? "dark" : "light"} tucked={tucked} />
         </div>
       </div>
 

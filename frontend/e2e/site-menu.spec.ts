@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test"
 
 const PHONE = { width: 390, height: 844 }
 
-// The home page's header sits on its video; every other page has the light one.
+// The home page's header sits on its video; every other page's, at the top of the page.
 for (const path of ["/", "/about"]) {
   test(`the menu on ${path} opens over the page without moving it`, async ({ page }) => {
     await page.setViewportSize(PHONE)
