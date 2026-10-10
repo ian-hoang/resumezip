@@ -175,7 +175,7 @@ export default function TermsAndPrivacy() {
           <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
           <div className="md:col-span-2">
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">Ask us anything about these terms or your privacy.</p>
-            <Link href="/contact" className={`${INK_PILL} mt-6`}>
+            <Link href="/about#contact" className={`${INK_PILL} mt-6`}>
               Contact us
             </Link>
           </div>
