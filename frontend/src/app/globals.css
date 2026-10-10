@@ -291,6 +291,10 @@ main > * {
   :focus-visible:not(input, textarea, select, [contenteditable]) {
     background-image: linear-gradient(rgb(17 19 24 / 0.08), rgb(17 19 24 / 0.08));
   }
+  /* A text link's underline thickens too, so focus shows on it whatever it's over. */
+  a:focus-visible {
+    text-decoration-thickness: 2px;
+  }
 
   /* Buttons show the hand, as links do: Tailwind's base styles give them the
      arrow. One that can't be used right now (disabled or aria-disabled) keeps it. */

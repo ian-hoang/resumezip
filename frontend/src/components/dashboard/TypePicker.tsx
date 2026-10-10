@@ -14,7 +14,10 @@ interface TypePickerProps {
 
 const chip = (chosen: boolean) =>
   `inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-sm transition-[background-color,box-shadow] duration-200 has-[:focus-visible]:[background-image:linear-gradient(rgb(17_19_24/0.08),rgb(17_19_24/0.08))] motion-reduce:transition-none ${
-    chosen ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-ink/15 hover:bg-sheet hover:ring-ink/40"
+    // Chosen, it's ink, where the focus tint wouldn't show: it lightens instead, as an ink button does.
+    chosen
+      ? "bg-ink text-white has-[:focus-visible]:bg-[#3a3f4b]"
+      : "bg-sheet/70 text-ink ring-1 ring-ink/15 hover:bg-sheet hover:ring-ink/40"
   }`
 
 /**
