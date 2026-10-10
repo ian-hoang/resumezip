@@ -312,9 +312,11 @@ for (const [layout, width] of [
     await expect(pages(page).getByRole("link", { name: "Ada", exact: true })).toBeFocused()
     expect(await saved(page, "a")).toBe(before)
 
-    // Once its time is up, it's deleted from the browser.
+    // Once its time is up, it's deleted from the browser. (Pointed at, the
+    // Undo waits; the pointer leaves it, as it may land on it after Delete.)
     await tile(page, "Ada").getByRole("button", { name: "More for “Ada”" }).click()
     await page.getByRole("menuitem", { name: "Delete" }).click()
+    await page.mouse.move(0, 0)
     await expect(page.getByRole("button", { name: "Undo" })).toBeHidden({ timeout: 15_000 })
     expect(await saved(page, "a")).toBeNull()
 
