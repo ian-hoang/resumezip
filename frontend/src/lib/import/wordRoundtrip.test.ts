@@ -20,13 +20,18 @@ const second = "22222222-2222-4222-8222-222222222222"
  * here; anything that starts differing and isn't listed fails the test.
  */
 const KNOWN_GAPS: Record<string, string[]> = {
+  accent: [],
+  deedy: [],
   ian: [],
   jake: [],
   levelsfyi: [],
+  margin: [],
   modernjack: [],
+  mono: [],
   // A dash inside an award's name reads as the start of the organization.
   referme: ["awards[0].name", "awards[0].organization"],
   resumeworded: [],
+  swiss: [],
 }
 
 // What a resume prints, minus differences that print the same or are

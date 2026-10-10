@@ -1,0 +1,147 @@
+{
+  "id": "preview-margin",
+  "resumeTitle": "Priya Raman",
+  "resumeTag": "professional",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "margin",
+  "sectionOrder": [
+    "Work",
+    "Education",
+    "Projects",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Priya Raman",
+    "email": "priya.raman@example.com",
+    "phoneNumber": "(555) 017-4482",
+    "location": "San Francisco, CA",
+    "linkedin": "linkedin.com/in/priyaraman",
+    "profileGithub": "",
+    "personalWebsite": "priyaraman.com",
+    "summary": "Product manager with seven years in travel marketplaces and sales software. I like hard ranking and pricing problems, and teams that ship a small experiment every week and learn from each one."
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Northwestern University",
+      "schoolLocation": "Evanston, IL",
+      "degree": "B.A. in Economics and Computer Science",
+      "gpa": "3.8 / 4.0",
+      "schoolStartDate": "Sep 2014",
+      "schoolEndDate": "Jun 2018",
+      "coursework": "Microeconomics, Statistics, Human-Computer Interaction, Algorithms, Databases",
+      "involvement": "Northwestern Debate Society, Product Club (co-founder), Undergraduate Board"
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Senior Product Manager",
+      "companyName": "Airbnb",
+      "workLocation": "San Francisco, CA",
+      "workStartDate": "Mar 2022",
+      "workEndDate": "Present",
+      "workDescription": "• Lead the search ranking team of 14 engineers, designers and data scientists, setting its quarterly goals with the guest experience group and reviewing every experiment before it ships\n• Launched flexible date search, which now handles one in four searches on the site and raised bookings from first-time guests by 6% in the two quarters after launch\n• Reworked the listing quality score with the trust team so new hosts with good reviews show up sooner, lifting their bookings in the first month by 11% while guest ratings held steady\n• Worked with the pricing team on price tips for hosts, and tested them with 4,000 hosts in Lisbon and Mexico City before the tips launched in every market the next spring\n• Write the monthly product review for leadership and run weekly office hours for engineers who are new to product work, covering specs, metrics and launch reviews"
+    },
+    {
+      "id": 2,
+      "workRole": "Product Manager",
+      "companyName": "Salesforce",
+      "workLocation": "San Francisco, CA",
+      "workStartDate": "Jul 2019",
+      "workEndDate": "Feb 2022",
+      "workDescription": "• Owned the Sales Cloud forecasting page used by 40,000 sales managers, from interviews to launch\n• Shipped forecast categories that managers can rename and reorder, the most requested change on the feedback board that year, which 3,200 companies turned on in the first quarter after launch\n• Ran 45 interviews with sales leaders at customers of every size, and turned them into the forecasting roadmap the team followed for the next two years of releases\n• Added a weekly email summary of forecast changes with the data team, opened by 62% of managers\n• Set up the team's first monthly review of forecast accuracy with sales operations, which showed the three settings that matter most for accurate forecasts at large customers"
+    },
+    {
+      "id": 3,
+      "workRole": "Business Technology Analyst",
+      "companyName": "Deloitte",
+      "workLocation": "Chicago, IL",
+      "workStartDate": "Aug 2018",
+      "workEndDate": "Jun 2019",
+      "workDescription": "• Mapped the order-to-cash process for a national grocery chain in 30 interviews and turned it into the plan for moving its 1,200 stores onto a single billing system over two years\n• Built the test tracker in Power BI that 25 consultants used to follow 900 test cases to sign-off\n• Presented the weekly status of the new billing project to the client's finance leadership team"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Tabsplit",
+      "projectDate": "2023",
+      "techStack": "React, Firebase",
+      "projectGithub": "",
+      "additionalLink": "priyaraman.com/tables",
+      "projectDescription": "• A web app that splits a restaurant bill by what each person ordered, built on weekends with React\n• Used by about 3,000 people a month, most of them from a single post in a local food newsletter, which two larger newsletters about the city's restaurants then shared"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Product",
+      "skillDetails": "Roadmaps, A/B testing, user research, pricing, product specs"
+    },
+    {
+      "id": 2,
+      "skillName": "Data",
+      "skillDetails": "SQL, Amplitude, Looker, Excel, Python (pandas)"
+    },
+    {
+      "id": 3,
+      "skillName": "Tools",
+      "skillDetails": "Figma, Jira, Confluence, Airtable"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "Mentorship Lead",
+      "leadershipOrg": "Women in Product, Bay Area",
+      "leadershipLocation": "San Francisco, CA",
+      "leadershipStartDate": "Jan 2021",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Pair 60 early-career product managers with mentors each year, and run the program's quarterly workshops on writing specs, running experiments and presenting to leadership\n• Started the chapter's yearly salary survey, now answered by 900 product managers in the Bay Area"
+    }
+  ],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Volunteer Instructor",
+      "volunteerOrg": "Code Tenderloin",
+      "volunteerLocation": "San Francisco, CA",
+      "volunteerStartDate": "Sep 2019",
+      "volunteerEndDate": "Mar 2021",
+      "volunteerDescription": "• Taught a weekly evening class on spreadsheets and job search tools for adults returning to work, and 18 of them found jobs within six months of finishing the course\n• Wrote the course's lesson plans, which two other volunteers now teach from in the same class"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Product Excellence Award",
+      "awardOrg": "Salesforce",
+      "awardDate": "2021"
+    },
+    {
+      "id": 2,
+      "awardName": "Certified Scrum Product Owner",
+      "awardOrg": "Scrum Alliance",
+      "awardDate": "2020"
+    },
+    {
+      "id": 3,
+      "awardName": "Phi Beta Kappa",
+      "awardOrg": "Northwestern University",
+      "awardDate": "2018"
+    },
+    {
+      "id": 4,
+      "awardName": "Case Competition Winner",
+      "awardOrg": "Northwestern University",
+      "awardDate": "2017"
+    }
+  ]
+}
