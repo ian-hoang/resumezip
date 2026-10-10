@@ -11,6 +11,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css"
 import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 import { scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
+import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 
 type ReactPdf = typeof import("./reactPdf")
 
@@ -392,17 +393,16 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
 
   return (
     <div className="relative flex h-full min-h-0 flex-col">
-      {/* On wide screens the zoom is in a pill of its own under the page, below. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8 xl:justify-center xl:px-2 xl:pb-2 xl:pt-1">
-        <span className="label-mono text-ink-2">{updating ? "Preview · updating…" : "Preview · updates as you type"}</span>
-        <div className="flex items-center font-mono text-xs text-ink-2 xl:hidden">
+      {/* On wide screens the zoom is in a pill of its own under the page, below, and the page has this room. */}
+      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
+        <div className="flex items-center font-mono text-xs text-ink-2">
           {zoomControls}
           {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
         </div>
       </div>
 
       {/* Focusable, so the preview can be scrolled from the keyboard. On wide
-          screens the pages scroll in the space between the label and the zoom
+          screens the pages scroll in the space above the zoom
           pill, under soft edges (.preview-canvas in styles/editor.css). */}
       <div
         ref={scrollerRef}
@@ -416,10 +416,12 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
           </div>
         ) : (
           // The out-of-date page fades a little, after a moment, so a quick switch doesn't flicker.
+          // A resume's page on the dashboard grows into this one as it's opened (viewSwitch.ts).
           <div
             ref={pagesRef}
+            data-open-target=""
             className={`relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
-            style={{ width: pageWidth, minHeight: numPages * pageWidth * ratio + (numPages - 1) * PAGE_GAP }}
+            style={{ viewTransitionName: OPEN_NAME, width: pageWidth, minHeight: numPages * pageWidth * ratio + (numPages - 1) * PAGE_GAP }}
           >
             {!faded && <PrintingPage width={pageWidth} leaving={!waiting} />}
             {/* A <Document> loads and parses its file, so the drawings of a PDF share one.

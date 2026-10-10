@@ -63,7 +63,7 @@ export function FlagNote({ id, finding }: { id?: string; finding: Finding }) {
   return (
     <div
       id={id}
-      className="flex flex-col gap-2 rounded-panel bg-sheet px-4 py-3 text-[13px] leading-normal text-balance ring-1 ring-ink/[0.08]"
+      className="flex flex-col gap-2 rounded-[4px] bg-sheet px-4 py-3 text-[13px] leading-normal text-balance ring-1 ring-ink/[0.08]"
     >
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink">
         <span className={levelPill(finding.level)}>{LEVELS[finding.level].name}</span>
@@ -439,7 +439,7 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
           onCopy={rememberCopied}
           onCut={rememberCopied}
           // A soft blue halo while it has focus, as a field's glow: a shadow, so nothing moves.
-          className={`w-full resize-none overflow-hidden rounded-panel border bg-sheet px-4 py-3.5 text-[15px] leading-[1.7] text-ink outline-none transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-ink-2/50 focus:shadow-[0_0_0_4px_rgb(46_91_230/0.1),0_10px_28px_-12px_rgb(46_91_230/0.5)] focus-visible:outline-none motion-reduce:transition-none ${
+          className={`w-full resize-none overflow-hidden rounded-[4px] border bg-sheet px-4 py-3.5 text-[15px] leading-[1.7] text-ink outline-none transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-ink-2/50 focus:shadow-[0_0_0_4px_rgb(46_91_230/0.1),0_10px_28px_-12px_rgb(46_91_230/0.5)] focus-visible:outline-none motion-reduce:transition-none ${
             !flag ? "border-rule focus:border-accent" : "border-accent ring-1 ring-accent"
           }`}
         />
@@ -484,7 +484,7 @@ function ArrangedBullets({ labelId, text, onChange }: { labelId: string; text: s
 
   return (
     <div className="flex flex-col gap-2">
-      <ul aria-labelledby={labelId} className="flex flex-col overflow-hidden rounded-panel border border-rule bg-sheet">
+      <ul aria-labelledby={labelId} className="flex flex-col overflow-hidden rounded-[4px] border border-rule bg-sheet">
         {keyed.map((bullet, index) => (
           <li key={bullet.key} className="flex items-start gap-3 border-b border-rule px-4 py-2 last:border-b-0">
             <input

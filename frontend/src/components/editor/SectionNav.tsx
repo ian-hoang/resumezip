@@ -164,9 +164,11 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     return () => observer.disconnect()
   }, [active, sections, allTitles, wide, dnd, dragging])
 
+  // Keyboard focus shows as a soft shade and dark text rather than the site's blue ring, which boxed the row in.
+  // The chosen section has the white tab behind it already, so a shade there would draw a second pill inside it.
   const item = (isActive: boolean) =>
-    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-full py-[9px] pl-2 pr-3.5 text-left text-sm transition-colors xl:w-full xl:min-w-0 xl:shrink xl:py-[8px] ${
-      isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink"
+    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-full py-[9px] pl-2 pr-3.5 text-left text-sm transition-colors focus-visible:outline-none xl:w-full xl:min-w-0 xl:shrink xl:py-[8px] ${
+      isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink focus-visible:bg-ink/[0.06] focus-visible:text-ink"
     }`
   // A row's own background: the white tab is drawn behind the chosen one,
   // except while a section is dragged, when the rows move under it and the
@@ -192,7 +194,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         <span
           {...drag?.dragHandleProps}
           aria-label={drag && `Reorder ${labelOf(name, index)}`}
-          className="flex h-9 w-6 shrink-0 items-center justify-center text-ink-2 hover:text-ink"
+          className="flex h-9 w-6 shrink-0 items-center justify-center rounded-full text-ink-2 hover:text-ink focus-visible:bg-ink/[0.06] focus-visible:text-ink focus-visible:outline-none"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </span>
@@ -221,9 +223,34 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     )
   }
 
+  // Arrows move from section to section, opening each as they go, as the
+  // Write / Check / Style tabs do: up and down in the list on wide screens, and
+  // either way along the row on narrow ones. Only from a section's button, so
+  // a drag handle's own keys (Space to lift, then arrows to move) still work.
+  const onArrowKey = (event: React.KeyboardEvent) => {
+    const target = event.target as HTMLElement
+    if (!target.matches("button[data-section-ref]")) return
+    const buttons = [...(navRef.current?.querySelectorAll<HTMLButtonElement>("button[data-section-ref]") ?? [])]
+    const index = buttons.indexOf(target as HTMLButtonElement)
+    const moves: Record<string, number> = {
+      ArrowDown: index + 1,
+      ArrowRight: index + 1,
+      ArrowUp: index - 1,
+      ArrowLeft: index - 1,
+      Home: 0,
+      End: buttons.length - 1,
+    }
+    const next = buttons[moves[event.key]]
+    if (moves[event.key] === undefined || !next) return
+    event.preventDefault()
+    next.focus()
+    next.click()
+  }
+
   return (
     <nav
       ref={navRef}
+      onKeyDown={onArrowKey}
       aria-label="Sections"
       className="relative isolate flex gap-1 overflow-x-auto px-2 py-2 [scrollbar-width:none] xl:flex-col xl:gap-0.5 xl:overflow-visible xl:p-0 [&::-webkit-scrollbar]:hidden"
     >

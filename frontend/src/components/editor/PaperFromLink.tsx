@@ -227,7 +227,7 @@ export default function PaperFromLink({ entries, owner, onAdd, children }: Paper
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
-              className="w-full resize-y rounded-panel border border-rule bg-sheet px-4 py-3.5 font-mono text-[13px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
+              className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-4 py-3.5 font-mono text-[13px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
             />
           </label>
           <p id={noteId} className="text-[13px] leading-normal text-ink-2">

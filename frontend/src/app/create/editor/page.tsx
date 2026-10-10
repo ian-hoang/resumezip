@@ -7,11 +7,11 @@ import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
-import DownloadedCard from "@/components/editor/DownloadedCard"
 import { DriveIcon, JsonIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
 import DownloadMenu from "@/components/editor/DownloadMenu"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
+import Loader from "@/components/site/Loader"
 import ProfileForm from "@/components/editor/ProfileForm"
 import Replaced from "@/components/editor/Replaced"
 import SectionForm from "@/components/editor/SectionForm"
@@ -119,8 +119,6 @@ function Editor({ id }: { id: string }) {
   const [downloadedAt, setDownloadedAt] = useState(0)
   const downloaded = downloadedAt > 0
   const [failure, setFailure] = useState<Failure | null>(null)
-  // The PDF just downloaded, while the card about it shows.
-  const [savedPdf, setSavedPdf] = useState<{ file: string; at: number } | null>(null)
   // Said to screen readers once another format is downloaded, or the PDF is shared or saved to Google Drive.
   const [savedAs, setSavedAs] = useState("")
   // Said again, even when it's the same as last time.
@@ -336,7 +334,7 @@ function Editor({ id }: { id: string }) {
     ),
     [sections, headings, extraSections, selected, select, reorder, add],
   )
-  const style = useMemo(() => <StylePanel value={selectedTemplate} onChange={chooseTemplate} />, [selectedTemplate, chooseTemplate])
+  const style = useMemo(() => <StylePanel />, [])
 
   // Coming back to the form returns to where you were in it.
   const show = (next: "edit" | "preview") => {
@@ -352,7 +350,6 @@ function Editor({ id }: { id: string }) {
     // Each try takes back the last one's "Downloaded", so it never shows
     // beside a failure, and a second download in a row is said aloud again.
     setDownloadedAt(0)
-    setSavedPdf(null)
     setDownloading(true)
     // The PDF is often made in a moment, too quick to see the button working.
     // So the line along it fills in the same time however quick that is, and
@@ -365,9 +362,7 @@ function Editor({ id }: { id: string }) {
       save()
       // Only a failed PDF is put right; a failed Word file still is one.
       setFailure((previous) => (previous?.of ? previous : null))
-      const at = Date.now()
-      setDownloadedAt(at)
-      setSavedPdf({ file: fileNameOf(resume, "pdf"), at })
+      setDownloadedAt(Date.now())
     } catch (error) {
       console.error("Error downloading resume:", error)
       setFailure((previous) => nextFailure(previous, error))
@@ -375,9 +370,6 @@ function Editor({ id }: { id: string }) {
       setDownloading(false)
     }
   }
-
-  // The note after a download, once it has gone by itself.
-  const closeSavedPdf = useCallback(() => setSavedPdf(null), [])
 
   // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
   // Its code downloads the first time it's chosen.
@@ -407,7 +399,7 @@ function Editor({ id }: { id: string }) {
   if (!loaded) {
     return (
       <div className="desk flex min-h-screen items-center justify-center">
-        <span className="label-mono text-ink-2">Loading…</span>
+        <Loader />
       </div>
     )
   }
@@ -439,11 +431,11 @@ function Editor({ id }: { id: string }) {
     // three panels: the sections (or what Check found, or Style) on the left, the form in the
     // middle, and the page on the right. Narrower, the same parts stack: the top bar, the left bar's
     // tabs, the form, and an Edit / Preview switch for the page.
-    <div className="desk flex min-h-screen flex-col pb-24 xl:h-screen xl:gap-4 xl:overflow-hidden xl:p-4">
+    <div className="desk desk-quiet flex min-h-screen flex-col pb-24 xl:h-screen xl:gap-4 xl:overflow-hidden xl:p-4">
       {/* All of it shares what the checker found: the left bar lists it and the forms point at it. */}
       <CheckProvider onSelect={select} preview={preview} unbuilt={unbuilt}>
         {/* The glass makes the top bar a stacking context, so it's raised (z-40) over the panels
-            and the Edit / Preview switch: the menus, the gallery and the note after a download that open
+            and the Edit / Preview switch: the menus and the gallery that open
             from it go over them. */}
         <header ref={headerRef} className="glass glass-frost relative z-40 mx-3 mt-3 rounded-panel xl:m-0 xl:shrink-0">
           <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2.5 pl-4 pr-2.5 sm:pl-5">
@@ -461,12 +453,8 @@ function Editor({ id }: { id: string }) {
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               {/* Here rather than after the name, so it stays put while the name is typed. */}
               <SavedNote />
-              {/* On wide screens the Style tab lists the templates instead. */}
-              <div className="xl:hidden">
-                <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
-              </div>
-              {/* Download PDF is the main way out; the ▾ beside it has the others. The note
-                  after a download drops in under it on wide screens. */}
+              <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+              {/* Download PDF is the main way out; the ▾ beside it has the others. */}
               <div className="relative flex">
                 <button
                   type="button"
@@ -488,36 +476,37 @@ function Editor({ id }: { id: string }) {
                           : "scale-x-0"
                     }`}
                   />
-                  {/* Just "PDF" on phones, so it fits beside the template picker. */}
-                  {downloaded ? (
-                    <span>
+                  {/* Just "PDF" on phones, so it fits beside the template picker. Both labels share one
+                      grid cell, the hidden one invisible, so the button keeps the wider one's width. */}
+                  <span className="grid">
+                    <span className={`col-start-1 row-start-1 ${downloaded ? "" : "invisible"}`}>
                       <span className="max-sm:sr-only">Downloaded</span>
                       <span className="sm:hidden">PDF</span>
                     </span>
-                  ) : (
-                    <span>
+                    <span className={`col-start-1 row-start-1 ${downloaded ? "invisible" : ""}`}>
                       <span className="max-sm:sr-only">Download </span>PDF
                     </span>
-                  )}
+                  </span>
                 </button>
                 <DownloadMenu
                   choices={[
                     { title: "Word", hint: "To edit in Word, Google Docs or Pages", icon: <WordIcon />, onChoose: downloadWord },
-                    {
-                      title: "JSON",
-                      hint: "A backup with everything, even what the PDF leaves out",
-                      icon: <JsonIcon />,
-                      onChoose: downloadJson,
-                    },
-                    ...(sharePdf.shareable
-                      ? [{ title: "Share PDF", hint: "Send it to another app", icon: <ShareIcon />, onChoose: sharePdf.share }]
-                      : []),
                     {
                       title: "Save to Google Drive",
                       hint: "Puts the PDF in your Drive. Google asks you first.",
                       icon: <DriveIcon />,
                       onChoose: drive.save,
                     },
+                    {
+                      title: "JSON",
+                      hint: "A backup with everything, even what the PDF leaves out",
+                      icon: <JsonIcon />,
+                      onChoose: downloadJson,
+                    },
+                    // It opens the device's share sheet, so it's apart from the formats.
+                    ...(sharePdf.shareable
+                      ? [{ title: "Share PDF…", hint: "", icon: <ShareIcon />, apart: true, onChoose: sharePdf.share }]
+                      : []),
                   ]}
                   busy={sharePdf.making}
                   onOpen={sharePdf.shareable ? preparePdf : undefined}
@@ -533,7 +522,6 @@ function Editor({ id }: { id: string }) {
                   }
                   onNoticeClose={drive.dismiss}
                 />
-                {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} />}
               </div>
               <span role="status" className="sr-only">
                 {downloaded ? "PDF downloaded. This PDF carries your resume. Open it here on any computer to keep editing." : ""}

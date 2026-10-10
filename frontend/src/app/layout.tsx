@@ -42,14 +42,24 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 }
 
+// Which sky the app pages show (styles/glass.css), by the visitor's own
+// clock: set before the first paint, so the page doesn't change under them.
+const SKY_BY_HOUR = `(function(){var h=new Date().getHours();document.documentElement.dataset.sky=h>=5&&h<11?"morning":h>=11&&h<17?"afternoon":h>=17&&h<20?"sunset":"night"})()`
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`scroll-smooth ${newsreader.variable} ${geist.variable} ${geistMono.variable} ${outfit.variable}`}>
+    // The sky's set by the clock before React runs, so React leaves it be.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`scroll-smooth ${newsreader.variable} ${geist.variable} ${geistMono.variable} ${outfit.variable}`}
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: SKY_BY_HOUR }} />
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         <link rel="alternate icon" href="/favicon.ico" type="image/x-icon" />
       </head>

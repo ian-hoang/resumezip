@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-import { memo, useId, useRef, useState } from "react"
-import { hasEnoughToCheck } from "@/lib/check/labels"
+import { memo, useId, useRef } from "react"
 import { useCheck, useCheckActions, type Mode } from "./CheckContext"
 import CheckPanel from "./CheckPanel"
 import { WIDE_SCREEN } from "./layout"
@@ -30,19 +29,11 @@ interface LeftBarProps {
  * at hand; in Style mode it takes the form's place (styles/editor.css).
  */
 function LeftBar({ hidden, children, style }: LeftBarProps) {
-  const { report, mode, pdf } = useCheck()
+  const { mode } = useCheck()
   const { chooseMode } = useCheckActions()
   const id = useId()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const bar = useRef<HTMLElement>(null)
-  // Until there's a name and an entry, the panel asks for those instead of listing what's missing.
-  const found = hasEnoughToCheck(report.view) ? report.findings.length : 0
-  // While a new preview is read for the PDF rules, as after switching
-  // templates, only the form's rules have run, and the count would jump to
-  // theirs and back. It stays at the last full count until the reading is in.
-  const [settled, setSettled] = useState<number | null>(null)
-  if (pdf !== "reading" && settled !== found) setSettled(found)
-  const open = pdf === "reading" && settled !== null ? settled : found
   const chosen = MODES.findIndex((option) => option.id === mode)
 
   const choose = (next: Mode) => {
@@ -100,8 +91,6 @@ function LeftBar({ hidden, children, style }: LeftBarProps) {
         />
         {MODES.map((option, index) => {
           const selected = option.id === mode
-          // "Check · 3": how much the checker found that isn't dismissed.
-          const count = option.id === "check" && open > 0 ? open : null
           return (
             <button
               key={option.id}
@@ -113,16 +102,15 @@ function LeftBar({ hidden, children, style }: LeftBarProps) {
               id={`${id}-${option.id}`}
               aria-selected={selected}
               aria-controls={`${id}-panel`}
-              aria-label={count === null ? undefined : `${option.label}, ${count} to look at`}
               tabIndex={selected ? 0 : -1}
               onClick={() => choose(option.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`inline-flex h-8 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full text-sm font-medium transition-colors ${
+              // No ring on keyboard focus: arrows choose the tab as they move, so the white pill shows where focus is.
+              className={`inline-flex h-8 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full text-sm font-medium transition-colors focus-visible:outline-none ${
                 selected ? "text-ink" : "text-ink-2 hover:text-ink"
               }`}
             >
               {option.label}
-              {count !== null && <span className="tabular-nums">· {count}</span>}
             </button>
           )
         })}

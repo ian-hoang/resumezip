@@ -22,7 +22,6 @@ import type { ResumeView } from "@/lib/check/resume"
 import {
   bandOf,
   checkingCategories,
-  colorOf,
   keepFixes,
   keepScores,
   scoreOf,
@@ -33,7 +32,7 @@ import {
   type KeptFixes,
   type KeptScores,
 } from "@/lib/check/score"
-import { CATEGORIES, MUST_FIX_MAX, type CategoryId } from "@/lib/check/settings"
+import { CATEGORIES, MUST_FIX_MAX, SCORE_BANDS, type CategoryId } from "@/lib/check/settings"
 import { hasLeftOut } from "@/lib/leftOut"
 import { useCheck, useCheckActions } from "./CheckContext"
 import { levelPill } from "./fields"
@@ -53,10 +52,6 @@ const ICONS: Record<CategoryId, LucideIcon> = {
   spelling: SpellCheck,
   polish: Sparkles,
 }
-
-// The score ring's circle, in the SVG's 36-unit box.
-const RING_RADIUS = 15.5
-const RING_LENGTH = 2 * Math.PI * RING_RADIUS
 
 // A small grey pill for a finding's actions: Dismiss, Add word, Bring back.
 const action = "inline-flex h-6 items-center rounded-full bg-ink/[0.05] px-2.5 text-[12px] text-ink transition-colors hover:bg-ink/[0.1]"
@@ -200,9 +195,10 @@ function useShownCategories(findings: readonly Finding[], checking: ReadonlyMap<
 }
 
 /**
- * The resume score on a ring, a word for how it reads, in a line what it
- * measures, and whether a must-fix is holding it down. The ring, the number
- * and the word take the score's color (`colorOf`) once there's a score.
+ * The resume score as a big number, a word for how it reads, a scale with
+ * where each word starts, in a line what it measures, and whether a must-fix
+ * is holding it down. A perfect score's number glows (`.score-perfect` in
+ * styles/editor.css).
  */
 function ScoreHeader({
   total,
@@ -217,25 +213,56 @@ function ScoreHeader({
   updating?: boolean
 }) {
   const id = useId()
-  const band = typeof total === "number" ? bandOf(total) : null
+  const scored = typeof total === "number"
+  const band = scored ? bandOf(total) : null
   return (
-    <section
-      aria-labelledby={id}
-      data-color={typeof total === "number" ? colorOf(total) : undefined}
-      className="score-colors flex flex-col gap-3 px-2"
-    >
-      <div className="flex items-center gap-4">
-        <ScoreRing total={total} updating={updating} />
-        <div className="flex min-w-0 flex-col gap-1">
-          <h2 id={id} className="label-mono text-ink-2">
-            Resume score
-          </h2>
-          {band && <p className="score-color text-[17px] font-medium leading-tight">{band.name}</p>}
-        </div>
+    <section aria-labelledby={id} data-perfect={total === 100 || undefined} className="flex flex-col px-2">
+      <h2 id={id} className="label-mono text-ink-2">
+        Resume score
+      </h2>
+      <div className="mt-1.5 flex items-baseline gap-2.5">
+        {/* Said aloud when it changes, once the checks under way are done. */}
+        <p className="flex items-baseline gap-2.5" aria-live="polite" aria-atomic="true" aria-busy={total === "checking" || undefined}>
+          {scored ? (
+            <>
+              <span
+                className={`score-number relative font-serif text-[72px] leading-[0.9] tracking-[-0.045em] tabular-nums text-ink ${
+                  updating ? "animate-pulse motion-reduce:animate-none" : ""
+                }`}
+              >
+                {/* Unseen under the rolling digits, unless there's less motion, when it shows as it is. */}
+                <span className="opacity-0 motion-reduce:opacity-100">{total}</span>
+                <Odometer value={total} />
+              </span>
+              <span className="label-mono tracking-[0.04em] text-ink-2" aria-hidden="true">
+                / 100
+              </span>
+              <span className="sr-only">out of 100</span>
+            </>
+          ) : (
+            <>
+              {total === "checking" ? (
+                // Three dots in the number's place, each rising in turn (`.score-dots` in styles/editor.css).
+                <span className="score-dots font-serif text-[72px] leading-[0.9] text-ink" aria-hidden="true">
+                  <i>.</i>
+                  <i>.</i>
+                  <i>.</i>
+                </span>
+              ) : (
+                <span className="font-serif text-[72px] leading-[0.9] tracking-[-0.045em] text-ink-2/50" aria-hidden="true">
+                  –
+                </span>
+              )}
+              <span className="sr-only">{total === "checking" ? "Checking" : "Not scored yet"}</span>
+            </>
+          )}
+        </p>
+        {band && <p className="ml-auto font-serif text-2xl italic leading-none tracking-[-0.01em] text-accent">{band.name}</p>}
       </div>
-      <p className="text-[13px] leading-relaxed text-ink-2">How well this resume follows the checks below.</p>
+      <ScoreScale total={total} />
+      <p className="mt-3 text-[13px] leading-relaxed text-ink-2">How well this resume follows the checks below.</p>
       {mustFix && (
-        <p className="bg-hatch flex items-start gap-2 rounded-panel border border-rule bg-sheet px-4 py-3 text-[13px] leading-snug text-ink">
+        <p className="bg-hatch mt-3 flex items-start gap-2 rounded-panel border border-rule bg-sheet px-4 py-3 text-[13px] leading-snug text-ink">
           <Lock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {/* The count follows the cap (`shownFixes`); the wording without one is only a fallback. */}
           {fixes > 0
@@ -247,79 +274,42 @@ function ScoreHeader({
   )
 }
 
+// Where each word but the lowest starts, marked on the scale: "Good" at 70, "Strong" at 90.
+const SCALE_MARKS = SCORE_BANDS.filter((band) => band.least > 0 && band.least < 100).map((band) => band.least)
+
 /**
- * The score in a ring that fills up to it, from empty when it first shows.
- * Until there's a score an arc runs round the ring, and while the score is
- * checked again after a change, the ring pulses. A perfect score's ring is
- * drawn over it (`.score-perfect`).
+ * A hairline that fills to the score, from empty when it first shows, with a
+ * tick where each word starts. Until there's a score, a short run sweeps
+ * along it.
  */
-function ScoreRing({ total, updating }: { total: number | "checking" | null; updating: boolean }) {
+function ScoreScale({ total }: { total: number | "checking" | null }) {
   const scored = typeof total === "number"
-  const perfect = scored && colorOf(total) === "perfect"
   return (
-    <div className="relative h-[68px] w-[68px] shrink-0">
-      <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" aria-hidden="true">
-        <circle cx="18" cy="18" r={RING_RADIUS} fill="none" strokeWidth="3" className="stroke-rule" />
-        {scored && total > 0 && (
-          <circle
-            cx="18"
-            cy="18"
-            r={RING_RADIUS}
-            fill="none"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={RING_LENGTH}
-            // Variables rather than an inline stroke-dashoffset, which would
-            // outrank `starting:` (@starting-style) and keep a new ring from
-            // starting empty.
-            style={{ "--ring-empty": RING_LENGTH, "--ring-offset": RING_LENGTH * (1 - total / 100) } as React.CSSProperties}
-            className={`stroke-(--score-color) transition-[stroke-dashoffset,stroke] duration-1000 ease-out [stroke-dashoffset:var(--ring-offset)] motion-reduce:transition-none starting:[stroke-dashoffset:var(--ring-empty)] ${
-              updating ? "animate-pulse motion-reduce:animate-none" : ""
-            }`}
+    <div aria-hidden="true" className="mt-4">
+      <div className="relative h-[3px] rounded-full bg-rule">
+        {scored && (
+          <div
+            style={{ scale: `${total / 100} 1` }}
+            className="score-fill absolute inset-0 origin-left rounded-full bg-ink transition-[scale] duration-1000 ease-glide motion-reduce:transition-none starting:[scale:0_1]"
           />
         )}
         {total === "checking" && (
-          <circle
-            cx="18"
-            cy="18"
-            r={RING_RADIUS}
-            fill="none"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={`${RING_LENGTH / 4} ${RING_LENGTH}`}
-            className="origin-center animate-spin stroke-accent motion-reduce:hidden"
-          />
+          <div className="absolute inset-0 overflow-hidden rounded-full motion-reduce:hidden">
+            <div className="h-full w-1/4 animate-[score-sweep-bar_1.2s_ease-in-out_infinite] rounded-full bg-accent" />
+          </div>
         )}
-      </svg>
-      <span aria-hidden="true" className={`score-perfect ${perfect && updating ? "animate-pulse motion-reduce:animate-none" : ""}`} />
-      {/* Said aloud when it changes, once the checks under way are done. */}
-      <p
-        className="score-color absolute inset-0 flex flex-col items-center justify-center"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-busy={total === "checking" || undefined}
-      >
-        {scored ? (
-          <>
-            <span className="score-number relative text-[22px] font-medium leading-none tabular-nums">
-              {/* Unseen under the rolling digits, unless there's less motion, when it shows as it is. */}
-              <span className="opacity-0 motion-reduce:opacity-100">{total}</span>
-              <Odometer value={total} />
-            </span>
-            <span className="mt-0.5 font-mono text-[10px] leading-none text-ink-2" aria-hidden="true">
-              / 100
-            </span>
-            <span className="sr-only">out of 100</span>
-          </>
-        ) : (
-          <>
-            <span className="text-[22px] font-medium leading-none text-ink-2" aria-hidden="true">
-              {total === "checking" ? "…" : "–"}
-            </span>
-            <span className="sr-only">{total === "checking" ? "Checking" : "Not scored yet"}</span>
-          </>
-        )}
-      </p>
+        {SCALE_MARKS.map((mark) => (
+          <span key={mark} style={{ left: `${mark}%` }} className="absolute -top-1 h-[11px] w-px bg-ink-2" />
+        ))}
+      </div>
+      <div className="relative mt-1.5 h-3 font-mono text-[10px] leading-none text-ink-2">
+        <span className="absolute left-0">0</span>
+        {SCALE_MARKS.map((mark) => (
+          <span key={mark} style={{ left: `${mark}%` }} className="absolute -translate-x-1/2 tabular-nums">
+            {mark}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

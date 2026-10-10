@@ -7,12 +7,18 @@ import { reducedMotion } from "./layout"
 
 /** A way to take the resume out of resumezip other than Download PDF. */
 export interface DownloadChoice {
-  /** What it is, as "JSON" or "Share PDF". */
+  /** What it is, as "JSON" or "Share PDF…". */
   title: string
   /** What it's for, in a few words. */
   hint: string
   /** Its mark, as Word's W (FormatIcons.tsx). */
   icon?: React.ReactNode
+  /**
+   * Set apart from the formats, as a pill under a line at the foot of the
+   * menu with its title and icon only: Share PDF, which is something to do
+   * with the PDF rather than another kind of file.
+   */
+  apart?: boolean
   onChoose: () => void
 }
 
@@ -238,22 +244,42 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
             closing ? "-translate-y-1 scale-[0.97] opacity-0 duration-150" : "duration-200"
           }`}
         >
-          {choices.map(({ title, hint, icon, onChoose }) => (
-            <button
-              key={title}
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                close(true)
-                onChoose()
-              }}
-              className={item}
-            >
-              <span className="col-start-1 row-span-2 row-start-1 mt-0.5 size-6 [&>svg]:size-6">{icon}</span>
-              <span className="col-start-2 text-sm font-medium text-ink">{title}</span>
-              <span className="col-start-2 text-[13px] leading-snug text-ink-2">{hint}</span>
-            </button>
-          ))}
+          {choices
+            .filter((choice) => !choice.apart)
+            .map(({ title, hint, icon, onChoose }) => (
+              <button
+                key={title}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  close(true)
+                  onChoose()
+                }}
+                className={item}
+              >
+                <span className="col-start-1 row-span-2 row-start-1 mt-0.5 size-6 [&>svg]:size-6">{icon}</span>
+                <span className="col-start-2 text-sm font-medium text-ink">{title}</span>
+                <span className="col-start-2 text-[13px] leading-snug text-ink-2">{hint}</span>
+              </button>
+            ))}
+          {choices.some((choice) => choice.apart) && <div role="separator" className="mx-2.5 my-1.5 h-px bg-ink/[0.08]" />}
+          {choices
+            .filter((choice) => choice.apart)
+            .map(({ title, icon, onChoose }) => (
+              <button
+                key={title}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  close(true)
+                  onChoose()
+                }}
+                className="m-1.5 flex h-10 w-[calc(100%-0.75rem)] items-center justify-center gap-2 rounded-full text-sm font-medium text-ink outline-none ring-1 ring-inset ring-ink/15 transition-[background-color,box-shadow] duration-150 hover:bg-ink/[0.04] hover:ring-ink/40 focus-visible:bg-ink/[0.04] focus-visible:ring-ink/40 [&_svg]:size-4"
+              >
+                {icon}
+                {title}
+              </button>
+            ))}
         </div>
       )}
 
