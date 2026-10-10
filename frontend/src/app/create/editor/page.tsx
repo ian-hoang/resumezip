@@ -131,7 +131,6 @@ function Editor({ id }: { id: string }) {
   const compileMs = useRef(MIN_WAIT_MS)
   const headerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
-  const downloadRef = useRef<HTMLButtonElement>(null)
   const pdfDetailsId = useId()
 
   // Resizing across the wide-screen width keeps the form where it was scrolled to.
@@ -371,12 +370,8 @@ function Editor({ id }: { id: string }) {
     }
   }
 
-  // The download card's Got it, or its time running out. If it had the
-  // keyboard, the keyboard goes back to Download PDF rather than the page.
-  const closeSavedPdf = useCallback((refocus: boolean) => {
-    setSavedPdf(null)
-    if (refocus) downloadRef.current?.focus()
-  }, [])
+  // The note after a download, once it has gone by itself.
+  const closeSavedPdf = useCallback(() => setSavedPdf(null), [])
 
   // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
   const downloadJson = () => {
@@ -426,11 +421,10 @@ function Editor({ id }: { id: string }) {
     // middle, and the page on the right. Narrower, the same parts stack: the top bar, the left bar's
     // tabs, the form, and an Edit / Preview switch for the page.
     <div className="desk flex min-h-screen flex-col pb-24 xl:h-screen xl:gap-4 xl:overflow-hidden xl:p-4">
-      {/* All of it shares what the checker found: the left bar lists it, the forms point at it, and
-          the download card opens Check. */}
+      {/* All of it shares what the checker found: the left bar lists it and the forms point at it. */}
       <CheckProvider onSelect={select} preview={preview} unbuilt={unbuilt}>
         {/* The glass makes the top bar a stacking context, so it's raised (z-40) over the panels
-            and the Edit / Preview switch: the menus, the gallery and the download card that open
+            and the Edit / Preview switch: the menus, the gallery and the note after a download that open
             from it go over them. */}
         <header ref={headerRef} className="glass glass-frost relative z-40 mx-3 mt-3 rounded-panel xl:m-0 xl:shrink-0">
           <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-6 gap-y-2 py-2.5 pl-4 pr-2.5 sm:pl-5">
@@ -457,7 +451,6 @@ function Editor({ id }: { id: string }) {
                   after a download drops in under it. */}
               <div className="relative flex">
                 <button
-                  ref={downloadRef}
                   type="button"
                   onClick={download}
                   disabled={downloading}
@@ -499,7 +492,7 @@ function Editor({ id }: { id: string }) {
                 <DownloadMenu
                   choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
                 />
-                {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} onCheck={() => show("edit")} />}
+                {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} />}
               </div>
               <span id={pdfDetailsId} className="sr-only">
                 {paper === "A4" ? "A4" : "US Letter"}

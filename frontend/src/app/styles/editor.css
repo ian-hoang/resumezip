@@ -41,7 +41,7 @@
     transition: transform 600ms var(--ease-glide);
   }
 
-  /* The zipper along the top of the card that follows a download
+  /* The zipper along the top of the note that follows a download
      (components/editor/DownloadedCard.tsx): the logo's ring pulls across from
      the right and the teeth close behind it, ending as the logo has it, with
      the ring at the left. --zip is how far it has closed, from 0 to 1. */

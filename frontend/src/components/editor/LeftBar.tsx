@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { memo, useId, useRef } from "react"
+import { memo, useId, useRef, useState } from "react"
 import { hasEnoughToCheck } from "@/lib/check/labels"
 import { useCheck, useCheckActions, type Mode } from "./CheckContext"
 import CheckPanel from "./CheckPanel"
@@ -115,8 +115,6 @@ function LeftBar({ hidden, children, style }: LeftBarProps) {
               aria-controls={`${id}-panel`}
               aria-label={count === null ? undefined : `${option.label}, ${count} to look at`}
               tabIndex={selected ? 0 : -1}
-              // The download card's Check it first puts the keyboard here.
-              data-mode-tab={option.id}
               onClick={() => choose(option.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
               className={`inline-flex h-8 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-full text-sm font-medium transition-colors ${
