@@ -11,6 +11,7 @@
 
 import { CORE_SECTIONS, SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume, ResumeContent, ResumeField } from "./resume"
+import type { FileResume } from "./resumeFile"
 import {
   changedPaths,
   deleteKeptAside,
@@ -70,6 +71,8 @@ export interface ResumeState {
  */
 export interface Replaced {
   id: string
+  /** What it was replaced with: a PDF, or a JSON file. */
+  from: "pdf" | "json"
   before: Resume
   after: Resume
   /** Whether it's been put back as it was before. */
@@ -120,6 +123,43 @@ const migrated = (resume: Resume): [Partial<Resume>, string[]] =>
   resume.sectionsChosen === true
     ? [{}, []]
     : [{ sectionOrder: resolveSections(resume), sectionsChosen: true }, ["sectionOrder", "sectionsChosen"]]
+
+/** A resume from a file, as it's added: a blank one with the file's content in it. */
+const imported = (content: ResumeContent, tag: string): Resume => ({
+  ...blankResume(content.selectedTemplate ?? DEFAULT_TEMPLATE),
+  ...content,
+  resumeTag: tag,
+  updatedAt: content.updatedAt ?? new Date().toISOString(),
+})
+
+/**
+ * A resume with a file's content in place of its own, keeping its name and
+ * tag. It keeps the file's last-edited time too, not now: opening the same
+ * file again then finds nothing different, and a newer file still looks newer.
+ * A file without sections a person added replaces the ones here too.
+ */
+const replacedBy = (before: Resume, content: ResumeContent, id: string): Resume => ({
+  ...before,
+  ...content,
+  extraSections: content.extraSections ?? {},
+  id,
+  updatedAt: content.updatedAt ?? new Date().toISOString(),
+})
+
+/**
+ * This browser's copy of a resume from a file, the one with its id, and
+ * whether it's unchanged: last edited at the same time as the file's, so
+ * opening the file changes nothing.
+ */
+export function copyHere(
+  resumes: Record<string, Resume> | ReadonlyMap<string, Resume>,
+  content: ResumeContent,
+): { resume: Resume; unchanged: boolean } | undefined {
+  const { id } = content
+  if (typeof id !== "string" || !id) return undefined
+  const resume = resumes instanceof Map ? resumes.get(id) : Object.hasOwn(resumes, id) ? (resumes as Record<string, Resume>)[id] : undefined
+  return resume && { resume, unchanged: resume.updatedAt === content.updatedAt }
+}
 
 const without = (resumes: Record<string, Resume>, id: string) => Object.fromEntries(Object.entries(resumes).filter(([key]) => key !== id))
 
@@ -281,20 +321,53 @@ export function createResumeStore(delay = SAVE_DELAY) {
   }
 
   /**
-   * Adds a resume opened from a file, named after the file, and returns its
-   * id. A resumezip PDF keeps its resume's id, so opening it again later is
+   * Adds a resume opened from a file, named `title` (after the file, unless
+   * a JSON file has its name) and tagged `tag`, and returns its id. A resume
+   * from resumezip keeps its id, so opening its file again later is
    * recognised as the same resume.
    */
-  function importResume(content: ResumeContent, title: string, { keepId = true } = {}): string {
+  function importResume(content: ResumeContent, title: string, { keepId = true, tag = "personal" } = {}): string {
     const id = keepId && typeof content.id === "string" && content.id && !has(content.id) ? content.id : crypto.randomUUID()
-    add(id, title, {
-      ...blankResume(content.selectedTemplate ?? DEFAULT_TEMPLATE),
-      ...content,
-      id,
-      resumeTag: "personal",
-      updatedAt: content.updatedAt ?? new Date().toISOString(),
-    })
+    add(id, title, { ...imported(content, tag), id })
     return id
+  }
+
+  /**
+   * Adds the resumes from a JSON file of them all, saved at once, and says
+   * how many it added and replaced. One this browser has unchanged (see
+   * copyHere) is left as it is. One it has that's different is added beside
+   * it, as a copy, or with `replace`, takes its place, as replace does
+   * (without an undo). Each keeps its name and tag, or is "Untitled resume".
+   */
+  function importAll(files: readonly FileResume[], { replace = false } = {}): { added: number; replaced: number } {
+    // A Map, so an id like "__proto__" stays an ordinary key.
+    const resumes = new Map(Object.entries(state.resumes))
+    const titles: unknown[] = [...resumes.values()].map((resume) => resume?.resumeTitle)
+    let added = 0
+    let replaced = 0
+    for (const { resume: content, title = "", tag = "personal" } of files) {
+      const here = copyHere(resumes, content)
+      if (here?.unchanged) continue
+      if (here && replace) {
+        const id = content.id!
+        resumes.set(id, replacedBy(here.resume, content, id))
+        markChanged(id, EVERY_FIELD)
+        replaced++
+        continue
+      }
+      const id = !here && typeof content.id === "string" && content.id ? content.id : crypto.randomUUID()
+      const resumeTitle = uniqueTitle(title, titles)
+      titles.push(resumeTitle)
+      resumes.set(id, { ...imported(content, tag), id, resumeTitle })
+      deleted.delete(id)
+      markChanged(id, EVERY_FIELD)
+      added++
+    }
+    if (added + replaced > 0) {
+      setState({ resumes: Object.fromEntries(resumes) })
+      flush()
+    }
+    return { added, replaced }
   }
 
   /**
@@ -337,24 +410,15 @@ export function createResumeStore(delay = SAVE_DELAY) {
   }
 
   /**
-   * Replaces a resume's content with a file's, keeping its name and tag. It
-   * keeps the file's last-edited time too, not now: opening the same file
-   * again then finds nothing different, and a newer file still looks newer.
-   * Until the resume changes again, undoReplace puts back the copy it replaced.
+   * Replaces a resume's content with a file's (see replacedBy). Until the
+   * resume changes again, undoReplace puts back the copy it replaced.
    */
-  function replace(id: string, content: ResumeContent) {
+  function replace(id: string, content: ResumeContent, from: Replaced["from"] = "pdf") {
     if (!has(id)) return
     const before = state.resumes[id]
     markChanged(id, EVERY_FIELD)
-    // A file without sections a person added replaces the ones here too.
-    const after = {
-      ...before,
-      ...content,
-      extraSections: content.extraSections ?? {},
-      id,
-      updatedAt: content.updatedAt ?? new Date().toISOString(),
-    }
-    setState({ resumes: { ...state.resumes, [id]: after }, replaced: { id, before, after, undone: false } })
+    const after = replacedBy(before, content, id)
+    setState({ resumes: { ...state.resumes, [id]: after }, replaced: { id, from, before, after, undone: false } })
     flush()
   }
 
@@ -553,6 +617,7 @@ export function createResumeStore(delay = SAVE_DELAY) {
     reorderSections,
     create,
     importResume,
+    importAll,
     duplicate,
     rename,
     replace,

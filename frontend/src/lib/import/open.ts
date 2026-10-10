@@ -1,19 +1,40 @@
 // Opens a resume file someone picked or dropped, entirely in the browser. A
 // PDF that resumezip made carries its resume (see lib/resumeFile.ts) and is
-// restored exactly; anything else is read and sorted into fields by parse.ts,
-// in a worker (read.ts). Reading stops at the limits in limits.ts, when it's
-// cancelled or when it runs out of time, and shuts down whatever it started.
+// restored exactly, as is a JSON file it saved; anything else is read and
+// sorted into fields by parse.ts, in a worker (read.ts). Reading stops at the
+// limits in limits.ts, when it's cancelled or when it runs out of time, and
+// shuts down whatever it started.
 
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { ResumeContent } from "@/lib/resume"
-import { ATTACHMENT_NAME, AttachmentError, fromAttachment, MAX_ENTRIES, MAX_LENGTH, TooLongError } from "@/lib/resumeFile"
+import {
+  ATTACHMENT_NAME,
+  AttachmentError,
+  fromAttachment,
+  fromJson,
+  MAX_ENTRIES,
+  MAX_LENGTH,
+  MAX_RESUMES,
+  TooLongError,
+  type FileResume,
+} from "@/lib/resumeFile"
 import { MAX_BYTES, MAX_PAGES, TIME_LIMIT_MS, TooMuchTextError } from "./limits"
 import { readPdf, type Line, type PageSize, type PdfPage } from "./lines"
 import type { ParsedResume } from "./parse"
 import type { ReadRequest, ReadResult } from "./read"
 
 export type OpenedFile =
-  | { kind: "resumezip"; resume: ResumeContent; title: string }
+  | {
+      kind: "resumezip"
+      resume: ResumeContent
+      title: string
+      /** Its tag in the list, from a JSON file that has one. */
+      tag?: string
+      /** A JSON file has everything; a PDF has only what it prints. */
+      from: "pdf" | "json"
+    }
+  /** A JSON file of several resumes, from "Download all". */
+  | { kind: "all"; resumes: FileResume[] }
   | {
       kind: "parsed"
       parsed: ParsedResume
@@ -46,9 +67,10 @@ export function loadPdfjs() {
   return pdfjs
 }
 
-function kindOf(file: File): "pdf" | "docx" | null {
+function kindOf(file: File): "pdf" | "docx" | "json" | null {
   if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") return "pdf"
   if (/\.docx$/i.test(file.name) || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "docx"
+  if (/\.json$/i.test(file.name) || file.type === "application/json") return "json"
   return null
 }
 
@@ -110,6 +132,23 @@ function found(result: ReadResult, noText: string): ParsedResume {
   )
 }
 
+const most = (count: number) => count.toLocaleString("en-US")
+
+/** Reads a resumezip file's text with `read`, with any problem worded for the person who picked the file. */
+function readSaved<T>(read: () => T, kind: "pdf" | "json"): T {
+  try {
+    return read()
+  } catch (error) {
+    if (error instanceof AttachmentError) throw new OpenFileError(error.message)
+    if (!(error instanceof TooLongError)) throw error
+    throw new OpenFileError(
+      kind === "pdf"
+        ? `This resume is longer than resumezip can open (more than ${most(MAX_ENTRIES)} entries or ${most(MAX_LENGTH)} characters).`
+        : `This file is longer than resumezip can open (more than ${most(MAX_RESUMES)} resumes, ${most(MAX_ENTRIES)} entries in one, or ${most(MAX_LENGTH)} characters).`,
+    )
+  }
+}
+
 /** The resume a resumezip PDF carries, or null for a PDF from anywhere else. */
 async function attachedResume(doc: PDFDocumentProxy, signal: AbortSignal): Promise<ResumeContent | null> {
   const attachments = (await until(
@@ -117,16 +156,7 @@ async function attachedResume(doc: PDFDocumentProxy, signal: AbortSignal): Promi
     signal,
   )) as Record<string, { content: Uint8Array }> | null
   const attached = attachments?.[ATTACHMENT_NAME]
-  try {
-    return attached ? fromAttachment(new TextDecoder().decode(attached.content)) : null
-  } catch (error) {
-    if (error instanceof AttachmentError) throw new OpenFileError(error.message)
-    if (!(error instanceof TooLongError)) throw error
-    const most = (count: number) => count.toLocaleString("en-US")
-    throw new OpenFileError(
-      `This resume is longer than resumezip can open (more than ${most(MAX_ENTRIES)} entries or ${most(MAX_LENGTH)} characters).`,
-    )
-  }
+  return attached ? readSaved(() => fromAttachment(new TextDecoder().decode(attached.content)), "pdf") : null
 }
 
 async function openPdf(data: ArrayBuffer, title: string, fileName: string, signal: AbortSignal): Promise<OpenedFile> {
@@ -150,7 +180,7 @@ async function openPdf(data: ArrayBuffer, title: string, fileName: string, signa
     }
 
     const resume = await attachedResume(doc, signal)
-    if (resume) return { kind: "resumezip", resume, title }
+    if (resume) return { kind: "resumezip", resume, title, from: "pdf" }
 
     if (doc.numPages > MAX_PAGES) {
       throw new OpenFileError(`This PDF has ${doc.numPages} pages, too many for a resume. Open one with ${MAX_PAGES} pages or fewer.`)
@@ -179,6 +209,16 @@ async function openPdf(data: ArrayBuffer, title: string, fileName: string, signa
   }
 }
 
+/** A JSON file resumezip saved: one resume, named as it was if the file says, or all of them. */
+function openJson(data: ArrayBuffer, title: string): OpenedFile {
+  const resumes = readSaved(() => fromJson(new TextDecoder().decode(data)), "json")
+  if (!resumes) throw new OpenFileError("This JSON file isn't from resumezip. Open one you downloaded here, or a PDF or Word file.")
+  if (resumes.length === 0) throw new OpenFileError("There are no resumes in this file.")
+  if (resumes.length > 1) return { kind: "all", resumes }
+  const [{ resume, title: saved, tag }] = resumes
+  return { kind: "resumezip", resume, title: saved ?? title, ...(tag && { tag }), from: "json" }
+}
+
 async function openWordFile(data: ArrayBuffer, title: string, fileName: string, signal: AbortSignal): Promise<OpenedFile> {
   const parsed = found(await readInWorker({ kind: "docx", data }, signal), "This Word file has no text in it.")
   return { kind: "parsed", parsed, lines: parsed.lines, title, fileName }
@@ -194,11 +234,11 @@ export async function openResumeFile(file: File, { signal }: { signal?: AbortSig
     throw new OpenFileError(
       /\.doc$/i.test(file.name)
         ? "That's an older Word file. Save it as .docx or PDF, then open it here."
-        : "Open a PDF or a Word (.docx) file.",
+        : "Open a PDF, a Word (.docx) file, or a JSON file from resumezip.",
     )
   }
   if (file.size > MAX_BYTES) throw new OpenFileError("That file is too big to be a resume.")
-  const title = file.name.replace(/\.(pdf|docx)$/i, "").trim() || "Imported resume"
+  const title = file.name.replace(/\.(pdf|docx|json)$/i, "").trim() || "Imported resume"
 
   // Stops on Cancel, or once time runs out.
   const reading = new AbortController()
@@ -211,6 +251,7 @@ export async function openResumeFile(file: File, { signal }: { signal?: AbortSig
   )
   try {
     const data = await until(file.arrayBuffer(), reading.signal)
+    if (kind === "json") return openJson(data, title)
     return kind === "docx"
       ? await openWordFile(data, title, file.name, reading.signal)
       : await openPdf(data, title, file.name, reading.signal)

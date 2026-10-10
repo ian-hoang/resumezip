@@ -49,6 +49,10 @@ npm run test:browser   # after a build; see below
   including explicitly created empty sections. Both versions can be opened;
   damaged or future-version save files produce an error instead of guessed
   content. Older deployed applications may lose new sections when exporting.
+  A JSON download (the ▾ beside Download PDF) is the same format with
+  everything the PDF leaves out: the name and tag, what's left out, and what
+  the checker was told. Download all, on the dashboard, holds every resume as
+  a list under `resumes`. "Open a file" opens both.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's
   fields. Its README explains how.
 - `src/lib/check/` is the resume checker: fixed rules that say what to fix on

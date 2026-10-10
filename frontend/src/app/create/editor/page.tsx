@@ -7,6 +7,7 @@ import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
+import DownloadMenu from "@/components/editor/DownloadMenu"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
 import ProfileForm from "@/components/editor/ProfileForm"
@@ -21,9 +22,11 @@ import DownloadFailed, { nextFailure, type Failure } from "@/components/site/Dow
 import NotSaved from "@/components/site/NotSaved"
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"
+import { toJson } from "@/lib/resumeFile"
 import { extraKey, filledSections, resolveSections, type ExtraKind, type SectionRef } from "@/lib/resumeSections"
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
+import { fileNameOf, saveFile } from "@/lib/saveFile"
 import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
@@ -105,6 +108,8 @@ function Editor({ id }: { id: string }) {
   const [downloadedAt, setDownloadedAt] = useState(0)
   const downloaded = downloadedAt > 0
   const [failure, setFailure] = useState<Failure | null>(null)
+  // Said to screen readers once another format is downloaded.
+  const [savedAs, setSavedAs] = useState("")
   // Small screens show the form or the preview, not both.
   const [view, setView] = useState<"edit" | "preview">("edit")
   const [typing, setTyping] = useState(false)
@@ -343,6 +348,16 @@ function Editor({ id }: { id: string }) {
     }
   }
 
+  // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
+  const downloadJson = () => {
+    const resume = read()
+    if (!resume) return
+    saveFile(toJson(resume), fileNameOf(resume, "json"), "application/json")
+    // Said again, even when it's the same as last time.
+    setSavedAs("")
+    requestAnimationFrame(() => setSavedAs("JSON downloaded"))
+  }
+
   if (!loaded) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
@@ -389,40 +404,49 @@ function Editor({ id }: { id: string }) {
             {/* Here rather than after the name, so it stays put while the name is typed. */}
             <SavedNote />
             <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
-            <button
-              type="button"
-              onClick={download}
-              disabled={downloading}
-              className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4"
-            >
-              <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
-              {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
-              <span
-                aria-hidden="true"
-                // The fill's time, and the wait after it, from DOWNLOAD_FILL_MS, as the save is.
-                style={{ animationDuration: `${DOWNLOAD_FILL_MS}ms, 20s`, animationDelay: `0s, ${DOWNLOAD_FILL_MS}ms` }}
-                className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
-                  downloading
-                    ? "scale-x-0 motion-safe:animate-download-progress"
-                    : downloaded
-                      ? "scale-x-100 opacity-0 [transition:scale_180ms_ease-out,opacity_450ms_ease-out_200ms] motion-reduce:transition-none"
-                      : "scale-x-0"
-                }`}
+            {/* Download PDF is the main way out; the ▾ beside it has the others. */}
+            <div className="flex">
+              <button
+                type="button"
+                onClick={download}
+                disabled={downloading}
+                className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] [&_svg]:size-4"
+              >
+                <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
+                {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
+                <span
+                  aria-hidden="true"
+                  // The fill's time, and the wait after it, from DOWNLOAD_FILL_MS, as the save is.
+                  style={{ animationDuration: `${DOWNLOAD_FILL_MS}ms, 20s`, animationDelay: `0s, ${DOWNLOAD_FILL_MS}ms` }}
+                  className={`absolute inset-x-0 bottom-0 h-0.5 origin-left bg-accent ${
+                    downloading
+                      ? "scale-x-0 motion-safe:animate-download-progress"
+                      : downloaded
+                        ? "scale-x-100 opacity-0 [transition:scale_180ms_ease-out,opacity_450ms_ease-out_200ms] motion-reduce:transition-none"
+                        : "scale-x-0"
+                  }`}
+                />
+                {/* Just "PDF" on phones, so it fits beside the template picker. */}
+                {downloaded ? (
+                  <span>
+                    <span className="max-sm:sr-only">Downloaded</span>
+                    <span className="sm:hidden">PDF</span>
+                  </span>
+                ) : (
+                  <span>
+                    <span className="max-sm:sr-only">Download </span>PDF
+                  </span>
+                )}
+              </button>
+              <DownloadMenu
+                choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
               />
-              {/* Just "PDF" on phones, so it fits beside the template picker. */}
-              {downloaded ? (
-                <span>
-                  <span className="max-sm:sr-only">Downloaded</span>
-                  <span className="sm:hidden">PDF</span>
-                </span>
-              ) : (
-                <span>
-                  <span className="max-sm:sr-only">Download </span>PDF
-                </span>
-              )}
-            </button>
+            </div>
             <span role="status" className="sr-only">
               {downloaded ? "PDF downloaded" : ""}
+            </span>
+            <span role="status" className="sr-only">
+              {savedAs}
             </span>
           </div>
         </div>

@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { FileUp, Plus } from "lucide-react"
+import { FileDown, FileUp, Plus } from "lucide-react"
 import { useResumeContext } from "@/context/ResumeContext"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
 import DeleteResumeModal from "@/components/dashboard/DeleteResumeModal"
-import { ConflictDialog, OpenErrorDialog, ReadingDialog } from "@/components/dashboard/OpenFileDialogs"
+import { AllConflictDialog, ConflictDialog, OpenErrorDialog, ReadingDialog, type Differing } from "@/components/dashboard/OpenFileDialogs"
 import ResumeTable from "@/components/dashboard/ResumeTable"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import NotSaved from "@/components/site/NotSaved"
@@ -17,27 +17,67 @@ import SiteHeader from "@/components/site/SiteHeader"
 import type { OpenedFile } from "@/lib/import/open"
 import { hasLeftOut } from "@/lib/leftOut"
 import type { ResumeWithId } from "@/lib/resume"
+import { toJsonOfAll, type FileResume } from "@/lib/resumeFile"
+import { copyHere } from "@/lib/resumeStore"
+import { saveFile } from "@/lib/saveFile"
 import { loadCompiler, savingData } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 
 // Only loaded when someone opens a file that isn't a resumezip PDF.
 const ImportReview = dynamic(() => import("@/components/dashboard/ImportReview"))
 
-const ACCEPTED_FILES = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+const ACCEPTED_FILES =
+  ".pdf,.docx,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/json"
 
 type Opening =
   | { step: "reading"; fileName: string }
   | { step: "error"; message: string }
   | { step: "conflict"; file: Extract<OpenedFile, { kind: "resumezip" }>; existing: ResumeWithId }
+  | { step: "all"; resumes: FileResume[]; differing: Differing[] }
   | { step: "review"; file: Extract<OpenedFile, { kind: "parsed" }> }
+
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+
+/** What opening a file of them all did, said once it's done. */
+function openedAll(total: number, { added, replaced }: { added: number; replaced: number }) {
+  if (added + replaced === 0) return "Every resume in the file is already here."
+  const done =
+    added > 0 && replaced > 0
+      ? `Added ${count(added, "resume")} and replaced ${replaced}.`
+      : added > 0
+        ? `Added ${count(added, "resume")}.`
+        : `Replaced ${count(replaced, "resume")}.`
+  const same = total - added - replaced
+  return same > 0 ? `${done} ${same} ${same === 1 ? "was" : "were"} already here.` : done
+}
+
+/** Today, as "2026-10-09", for the name of a file of every resume. */
+function today() {
+  const now = new Date()
+  return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, "0")).join("-")
+}
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { resumes, loaded, saveStatus, deleteResume, createNewResume, importResume, replaceResume, duplicateResume, renameResume } =
-    useResumeContext()
+  const {
+    resumes,
+    loaded,
+    saveStatus,
+    deleteResume,
+    createNewResume,
+    importResume,
+    importAll,
+    replaceResume,
+    duplicateResume,
+    renameResume,
+  } = useResumeContext()
   const [creating, setCreating] = useState(false)
   const [resumeToDelete, setResumeToDelete] = useState<ResumeWithId | null>(null)
   const [opening, setOpening] = useState<Opening | null>(null)
+  // What opening a file of them all did, until another file is opened.
+  const [allOpened, setAllOpened] = useState("")
+  // What's said aloud about the last file opened or downloaded.
+  const [announcement, setAnnouncement] = useState("")
   const [dragging, setDragging] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
   // The file being read. Cancelling (or opening another file) stops it, and
@@ -77,10 +117,24 @@ export default function DashboardPage() {
     setOpening(null)
   }
 
+  const announce = (text: string) => {
+    // Cleared first, so the same words twice in a row are said aloud again.
+    setAnnouncement("")
+    requestAnimationFrame(() => setAnnouncement(text))
+  }
+
+  const addAll = (files: FileResume[], options?: { replace?: boolean }) => {
+    setOpening(null)
+    const done = openedAll(files.length, importAll(files, options))
+    setAllOpened(done)
+    announce(done)
+  }
+
   const openFile = async (file: File) => {
     reading.current?.abort()
     const current = new AbortController()
     reading.current = current
+    setAllOpened("")
     setOpening({ step: "reading", fileName: file.name })
     // Kept once the code that reads files has loaded, so a failure can say
     // what's wrong without waiting on anything (or loading it again).
@@ -98,12 +152,23 @@ export default function DashboardPage() {
         setOpening({ step: "review", file: opened })
         return
       }
-      // A resumezip PDF: it restores exactly, unless this browser already has that resume.
-      const id = opened.resume.id
-      const existing = id && Object.hasOwn(resumes, id) ? { ...resumes[id], id } : undefined
-      if (!existing) edit(importResume(opened.resume, opened.title))
-      else if (existing.updatedAt === opened.resume.updatedAt) edit(existing.id)
-      else setOpening({ step: "conflict", file: opened, existing })
+      // Each resume in a file of them all that's here, but different, which takes a question.
+      if (opened.kind === "all") {
+        const differing = opened.resumes.flatMap(({ resume }): Differing[] => {
+          const here = copyHere(resumes, resume)
+          return here && !here.unchanged
+            ? [{ existingTitle: here.resume.resumeTitle, existingEdited: here.resume.updatedAt, fileEdited: resume.updatedAt }]
+            : []
+        })
+        if (differing.length > 0) setOpening({ step: "all", resumes: opened.resumes, differing })
+        else addAll(opened.resumes)
+        return
+      }
+      // A resumezip PDF or JSON file: it restores exactly, unless this browser already has that resume.
+      const here = copyHere(resumes, opened.resume)
+      if (!here) edit(importResume(opened.resume, opened.title, { tag: opened.tag }))
+      else if (here.unchanged) edit(opened.resume.id!)
+      else setOpening({ step: "conflict", file: opened, existing: { ...here.resume, id: opened.resume.id! } })
     } catch (error) {
       if (current !== reading.current) return
       reading.current = null
@@ -178,7 +243,13 @@ export default function DashboardPage() {
     fileInput.current?.click()
   }
 
-  const count = sorted.length
+  // Every resume in one JSON file, newest first, as the list shows them.
+  const downloadAll = () => {
+    saveFile(toJsonOfAll(sorted), `resumezip-resumes-${today()}.json`, "application/json")
+    announce(`Downloaded ${count(sorted.length, "resume")} in one file`)
+  }
+
+  const total = sorted.length
   const newResumeButton = (
     <button
       type="button"
@@ -199,6 +270,16 @@ export default function DashboardPage() {
       Open a file
     </button>
   )
+  const downloadAllButton = (
+    <button
+      type="button"
+      onClick={downloadAll}
+      className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
+    >
+      <FileDown className="h-4 w-4" aria-hidden="true" />
+      Download all
+    </button>
+  )
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -208,13 +289,14 @@ export default function DashboardPage() {
         <PageIntro
           label={
             loaded
-              ? `${count} ${count === 1 ? "resume" : "resumes"} · ${saveStatus === "saved" ? "stored in this browser" : "not saved"}`
+              ? `${count(total, "resume")} · ${saveStatus === "saved" ? "stored in this browser" : "not saved"}`
               : "Stored in this browser"
           }
           title="Your resumes"
           actions={
-            count > 0 ? (
+            total > 0 ? (
               <div className="flex flex-wrap gap-2">
+                {downloadAllButton}
                 {openFileButton}
                 {newResumeButton}
               </div>
@@ -224,8 +306,17 @@ export default function DashboardPage() {
 
         <NotSaved className="max-w-[720px]" />
         <UnreadableData />
+        {allOpened && (
+          <div className="flex max-w-[720px] flex-wrap items-baseline gap-x-6 gap-y-2">
+            <span className="label-mono shrink-0 text-ink-2">Opened</span>
+            <p className="min-w-0 flex-[1_1_280px] text-sm leading-relaxed text-ink">{allOpened}</p>
+          </div>
+        )}
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
 
-        {loaded && count > 0 && (
+        {loaded && total > 0 && (
           <ResumeTable
             resumes={sorted}
             onDuplicate={(resume) => duplicateResume(resume.id)}
@@ -234,11 +325,11 @@ export default function DashboardPage() {
           />
         )}
 
-        {loaded && count === 0 && (
+        {loaded && total === 0 && (
           <div className="flex flex-col items-start gap-5 border-t border-ink pt-8">
             <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
             <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-              Start one, or open a resume you already have as a PDF or Word file.
+              Start one, or open a resume you already have: a PDF, a Word file, or a JSON file from resumezip.
             </p>
             <div className="flex flex-wrap gap-2">
               {newResumeButton}
@@ -251,6 +342,7 @@ export default function DashboardPage() {
           <span className="label-mono text-accent">Stored locally</span>
           <p className="min-w-0 flex-[1_1_320px] text-sm leading-relaxed text-ink-2">
             Resumes live in this browser only. Every PDF you download carries its resume, so you can open it here again on any computer.
+            Download all puts every resume in one file, to move them all at once.
           </p>
         </div>
       </main>
@@ -273,7 +365,7 @@ export default function DashboardPage() {
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-paper/95 p-4 backdrop-blur-sm">
           <div className="flex h-full flex-col items-center justify-center gap-2 rounded-[4px] border-2 border-dashed border-accent">
             <p className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Drop to open</p>
-            <p className="label-mono text-ink-2">PDF or Word file</p>
+            <p className="label-mono text-ink-2">PDF, Word or JSON file</p>
           </div>
         </div>
       )}
@@ -297,13 +389,22 @@ export default function DashboardPage() {
           existingTitle={opening.existing.resumeTitle}
           existingEdited={opening.existing.updatedAt}
           fileEdited={opening.file.resume.updatedAt}
+          from={opening.file.from}
           existingLeftOut={hasLeftOut(opening.existing)}
           onCancel={closeOpening}
-          onKeepBoth={() => edit(importResume(opening.file.resume, opening.file.title, { keepId: false }))}
+          onKeepBoth={() => edit(importResume(opening.file.resume, opening.file.title, { keepId: false, tag: opening.file.tag }))}
           onReplace={() => {
-            replaceResume(opening.existing.id, opening.file.resume)
+            replaceResume(opening.existing.id, opening.file.resume, opening.file.from)
             edit(opening.existing.id)
           }}
+        />
+      )}
+      {opening?.step === "all" && (
+        <AllConflictDialog
+          differing={opening.differing}
+          onCancel={closeOpening}
+          onKeepBoth={() => addAll(opening.resumes)}
+          onReplace={() => addAll(opening.resumes, { replace: true })}
         />
       )}
       {opening?.step === "review" && (

@@ -1,13 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { RESUME_TAGS } from "@/lib/resume"
 import Modal from "./Modal"
-
-export const RESUME_TAGS = [
-  { id: "personal", name: "Personal" },
-  { id: "academic", name: "Academic" },
-  { id: "professional", name: "Professional" },
-]
 
 interface CreateResumeModalProps {
   onClose: () => void

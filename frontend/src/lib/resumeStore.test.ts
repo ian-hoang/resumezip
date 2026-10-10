@@ -450,6 +450,64 @@ describe("adding resumes", () => {
     expect(tab.importResume({ id: "other" }, "Grace.pdf", { keepId: false })).not.toBe("other")
   })
 
+  test("a resume from a JSON file keeps its tag", () => {
+    const storage = memoryStorage()
+    const tab = openTab(storage)
+    expect(stored(storage, tab.importResume({ id: "j" }, "Ada", { tag: "academic" }))?.resumeTag).toBe("academic")
+    expect(stored(storage, tab.importResume({}, "Ada.pdf"))?.resumeTag).toBe("personal")
+  })
+
+  describe("from a JSON file of them all", () => {
+    // Ada as she is in this browser, and as she was before her last edit.
+    const older = { id: "a", profileSection: { fullName: "Ada Byron" }, updatedAt: "2026-10-05T09:00:00.000Z" }
+    const file = [
+      { resume: { id: "n", profileSection: { fullName: "Mary Somerville" } }, title: "Mary", tag: "academic" },
+      { resume: { ...grace }, title: "Grace" },
+      { resume: older, title: "Ada" },
+      { resume: { id: "__proto__", updatedAt: "2026-10-01T09:00:00.000Z" } },
+    ]
+
+    test("adds those that aren't here, with their ids, names and tags, and leaves those that are here unchanged", () => {
+      const storage = memoryStorage(saved(ada, grace))
+      const tab = openTab(storage)
+      const setItem = vi.spyOn(storage, "setItem")
+      expect(tab.importAll(file)).toEqual({ added: 3, replaced: 0 })
+      expect(stored(storage, "n")).toMatchObject({
+        resumeTitle: "Mary",
+        resumeTag: "academic",
+        profileSection: { fullName: "Mary Somerville" },
+      })
+      expect(stored(storage, "__proto__")).toMatchObject({ resumeTitle: "Untitled resume", resumeTag: "personal" })
+      expect(Object.hasOwn(tab.getState().resumes, "__proto__")).toBe(true)
+      // Grace is here as she is in the file. Ada is here, edited since: her copy is added beside her, numbered.
+      expect(stored(storage, "g")).toEqual(grace)
+      expect(stored(storage, "a")).toEqual(ada)
+      const copy = Object.entries(tab.getState().resumes).find(([, resume]) => resume.resumeTitle === "Ada 2")
+      expect(copy?.[1].profileSection).toEqual(older.profileSection)
+      expect(stored(storage, copy![0])?.updatedAt).toBe(older.updatedAt)
+      // Saved at once, each new resume once.
+      expect(setItem.mock.calls.map(([key]) => key).sort()).toEqual([keyOf("__proto__"), keyOf(copy![0]), keyOf("n")].sort())
+    })
+
+    test("can replace those that are here and different, keeping their names and tags", () => {
+      const storage = memoryStorage(saved({ ...ada, resumeTag: "professional" }, grace))
+      const tab = openTab(storage)
+      expect(tab.importAll(file, { replace: true })).toEqual({ added: 2, replaced: 1 })
+      expect(stored(storage, "a")).toMatchObject({ resumeTitle: "Ada", resumeTag: "professional", ...older })
+      expect(Object.values(tab.getState().resumes).map((resume) => resume.resumeTitle)).not.toContain("Ada 2")
+      // There's no undo for replacing several at once.
+      expect(tab.getState().replaced).toBeNull()
+    })
+
+    test("with nothing new in it changes nothing", () => {
+      const storage = memoryStorage(saved(ada, grace))
+      const tab = openTab(storage)
+      const before = tab.getState()
+      expect(tab.importAll([{ resume: ada }, { resume: grace }])).toEqual({ added: 0, replaced: 0 })
+      expect(tab.getState()).toBe(before)
+    })
+  })
+
   test("resumes saved with the same name are numbered when the page opens, and that's saved", () => {
     const storage = memoryStorage(saved(ada, { ...grace, resumeTitle: "Ada" }))
     const tab = openTab(storage)
