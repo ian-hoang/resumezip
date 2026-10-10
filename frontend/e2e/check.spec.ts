@@ -525,8 +525,13 @@ test("the note under a field doesn't leave a word or two on a line of their own,
   const widths = await lineWidths(why)
   expect(widths).toHaveLength(2)
   expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2)
-  const [whyBox, suggestionBox] = [await why.boundingBox(), await suggestion.boundingBox()]
-  expect(suggestionBox!.y - (whyBox!.y + whyBox!.height)).toBeGreaterThanOrEqual(8)
+  // Both measured at once: the form is still scrolling smoothly to the field, so two
+  // measurements a moment apart could each be taken at a different place.
+  const gap = await why.evaluate(
+    (element, other) => other!.getBoundingClientRect().top - element.getBoundingClientRect().bottom,
+    await suggestion.elementHandle(),
+  )
+  expect(gap).toBeGreaterThanOrEqual(8)
 
   expect(errors).toEqual([])
 })
