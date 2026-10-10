@@ -53,9 +53,22 @@ export const MUST_FIX_MAX = 89
  * never called strong.
  */
 export const SCORE_BANDS = [
+  { least: 100, name: "Perfect" },
   { least: 90, name: "Strong" },
   { least: 70, name: "Good" },
   { least: 0, name: "Needs work" },
+] as const
+
+/**
+ * The color the score is shown in, on its ring, its number and its word
+ * (styles/editor.css): each band's lowest score, highest first. They don't
+ * split where the words do, so a 75 is "Good" in amber.
+ */
+export const SCORE_COLORS = [
+  { least: 100, color: "perfect" },
+  { least: 80, color: "green" },
+  { least: 60, color: "amber" },
+  { least: 0, color: "red" },
 ] as const
 
 /** How many dismissed findings, and how many added words, a resume keeps. The oldest go first. */

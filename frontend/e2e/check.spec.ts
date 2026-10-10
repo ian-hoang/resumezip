@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
 import { chooseTemplate, holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
@@ -22,6 +23,53 @@ async function resumeToCheck(page: Page) {
   await page.getByLabel("Company").fill("Analytical Engines")
   await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
 }
+
+/** The Jake template's sample resume, which passes every check, saved with these changes to its profile, and opened. */
+async function openSample(page: Page, id: string, profile: Record<string, string> = {}) {
+  const sample = JSON.parse(readFileSync("src/lib/typst/preview-samples/jake.json", "utf8"))
+  const resume = { ...sample, id, resumeTitle: "Marcus", profileSection: { ...sample.profileSection, ...profile } }
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, value)
+    },
+    { key: `resume:${id}`, value: JSON.stringify(resume) },
+  )
+  await page.goto(`/create/new/${id}`)
+}
+
+// The score's colors (SCORE_COLORS, styles/editor.css), as computed.
+const RED = "rgb(180, 35, 24)"
+const GREEN = "rgb(6, 118, 71)"
+const VIOLET = "rgb(89, 37, 220)"
+
+/** Waits for the score's number, its word and its ring's arc to be drawn in a color, once any fade is done. */
+async function scoreIn(score: Locator, word: string, color: string) {
+  await expect(score.getByText(/^\d+$/)).toHaveCSS("color", color)
+  await expect(score.getByText(word, { exact: true })).toHaveCSS("color", color)
+  // The ring's track, then its arc.
+  await expect(score.locator("circle").nth(1)).toHaveCSS("stroke", color)
+}
+
+/** Whether the ring a perfect score has, in a gradient over the arc, shows. */
+const perfectRingShown = (score: Locator) =>
+  score.evaluate((element) =>
+    [...element.querySelectorAll("span")].some((span) => {
+      const style = getComputedStyle(span)
+      return style.backgroundImage.startsWith("conic-gradient") && style.opacity === "1"
+    }),
+  )
+
+/** The names of the CSS animations in an element, running or done. */
+const animationNamesIn = (locator: Locator) =>
+  locator.evaluate((element) =>
+    document
+      .getAnimations()
+      .filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target
+        return "animationName" in animation && !!target && element.contains(target)
+      })
+      .map((animation) => (animation as CSSAnimation).animationName),
+  )
 
 /** How many CSS animations, as a spinner's, are running in an element. Transitions don't count. */
 const animationsIn = (locator: Locator) =>
@@ -323,6 +371,37 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   expect(errors).toEqual([])
 })
 
+test("the score's color says how it reads: red when it needs work, green when it's good, and a perfect score shines once", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  await resumeToCheck(page)
+  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const score = panel.getByRole("region", { name: "Resume score" })
+  await page.getByRole("tab", { name: /^Check/ }).click()
+  await expect(panel.getByRole("status")).toBeHidden()
+  await scoreIn(score, "Needs work", RED)
+  expect(await perfectRingShown(score)).toBe(false)
+
+  // A good resume, held at 89 by a missing email (Check stays open for the visit).
+  await openSample(page, "no-email", { email: "" })
+  await expect(panel.getByRole("status")).toBeHidden()
+  await scoreIn(score, "Good", GREEN)
+
+  // With the email added, every check passes: the ring turns to a gradient
+  // that a light sweeps round once, and the number glows.
+  await panel.getByRole("button", { name: /Add your email address/ }).click()
+  await page.getByLabel("Email").fill("marcus.bell@example.com")
+  await expect(score.getByText(/^\d+$/)).toHaveText("100")
+  await scoreIn(score, "Perfect", VIOLET)
+  await expect.poll(() => perfectRingShown(score)).toBe(true)
+  await expect.poll(() => animationNamesIn(score)).toContain("score-sweep")
+  await expect.poll(() => animationsIn(score)).toBe(0)
+  expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+
+  expect(errors).toEqual([])
+})
+
 test("the Check tab's count stays put while a new template's PDF is read, rather than counting the form's rules alone", async ({
   page,
 }) => {
@@ -541,6 +620,21 @@ test.describe("with less motion", () => {
     await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
     expect(await animationsIn(score)).toBe(0)
     await holdPreviews(page, false)
+    await expect(panel.getByRole("status")).toBeHidden()
+
+    expect(errors).toEqual([])
+  })
+
+  test("a perfect score's ring shows its gradient at once, with no light sweeping round it", async ({ page }) => {
+    const errors = pageErrors(page)
+    await openSample(page, "perfect")
+    await page.getByRole("tab", { name: /^Check/ }).click()
+    const panel = page.getByRole("tabpanel", { name: /^Check/ })
+    const score = panel.getByRole("region", { name: "Resume score" })
+    await expect(score.getByText(/^\d+$/)).toHaveText("100")
+    await expect(score).toContainText("Perfect")
+    expect(await perfectRingShown(score)).toBe(true)
+    expect(await animationNamesIn(score)).toEqual([])
     await expect(panel.getByRole("status")).toBeHidden()
 
     expect(errors).toEqual([])

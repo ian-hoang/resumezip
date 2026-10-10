@@ -13,7 +13,7 @@
 
 import type { Finding, Report, Rule, RuleResult } from "./engine"
 import { hasEnoughToCheck } from "./labels"
-import { CATEGORIES, LEAST_PENALTY, LEVELS, MUST_FIX_MAX, SCORE_BANDS, type CategoryId } from "./settings"
+import { CATEGORIES, LEAST_PENALTY, LEVELS, MUST_FIX_MAX, SCORE_BANDS, SCORE_COLORS, type CategoryId } from "./settings"
 
 /** How a category did. */
 export interface CategoryScore {
@@ -109,6 +109,12 @@ export function totalOf(categories: readonly CategoryScore[]): number | null {
 
 /** The word for a score out of 100 (SCORE_BANDS). */
 export const bandOf = (total: number) => SCORE_BANDS.find((band) => total >= band.least) ?? SCORE_BANDS[SCORE_BANDS.length - 1]
+
+export type ScoreColor = (typeof SCORE_COLORS)[number]["color"]
+
+/** The color a score out of 100 is shown in (SCORE_COLORS). */
+export const colorOf = (total: number): ScoreColor =>
+  (SCORE_COLORS.find((band) => total >= band.least) ?? SCORE_COLORS[SCORE_COLORS.length - 1]).color
 
 /** The resume's score, from what the checker found (`runChecks`). */
 export function scoreOf(report: Report): Score {

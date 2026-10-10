@@ -22,6 +22,7 @@ import type { ResumeView } from "@/lib/check/resume"
 import {
   bandOf,
   checkingCategories,
+  colorOf,
   keepFixes,
   keepScores,
   scoreOf,
@@ -200,7 +201,8 @@ function useShownCategories(findings: readonly Finding[], checking: ReadonlyMap<
 
 /**
  * The resume score on a ring, a word for how it reads, in a line what it
- * measures, and whether a must-fix is holding it down.
+ * measures, and whether a must-fix is holding it down. The ring, the number
+ * and the word take the score's color (`colorOf`) once there's a score.
  */
 function ScoreHeader({
   total,
@@ -217,14 +219,18 @@ function ScoreHeader({
   const id = useId()
   const band = typeof total === "number" ? bandOf(total) : null
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3 px-2">
+    <section
+      aria-labelledby={id}
+      data-color={typeof total === "number" ? colorOf(total) : undefined}
+      className="score-colors flex flex-col gap-3 px-2"
+    >
       <div className="flex items-center gap-4">
         <ScoreRing total={total} updating={updating} />
         <div className="flex min-w-0 flex-col gap-1">
           <h2 id={id} className="label-mono text-ink-2">
             Resume score
           </h2>
-          {band && <p className="text-[17px] font-medium leading-tight text-ink">{band.name}</p>}
+          {band && <p className="score-color text-[17px] font-medium leading-tight">{band.name}</p>}
         </div>
       </div>
       <p className="text-[13px] leading-relaxed text-ink-2">How well this resume follows the checks below.</p>
@@ -244,10 +250,12 @@ function ScoreHeader({
 /**
  * The score in a ring that fills up to it, from empty when it first shows.
  * Until there's a score an arc runs round the ring, and while the score is
- * checked again after a change, the ring pulses.
+ * checked again after a change, the ring pulses. A perfect score's ring is
+ * drawn over it (`.score-perfect`).
  */
 function ScoreRing({ total, updating }: { total: number | "checking" | null; updating: boolean }) {
   const scored = typeof total === "number"
+  const perfect = scored && colorOf(total) === "perfect"
   return (
     <div className="relative h-[68px] w-[68px] shrink-0">
       <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" aria-hidden="true">
@@ -265,7 +273,7 @@ function ScoreRing({ total, updating }: { total: number | "checking" | null; upd
             // outrank `starting:` (@starting-style) and keep a new ring from
             // starting empty.
             style={{ "--ring-empty": RING_LENGTH, "--ring-offset": RING_LENGTH * (1 - total / 100) } as React.CSSProperties}
-            className={`stroke-accent transition-[stroke-dashoffset] duration-1000 ease-out [stroke-dashoffset:var(--ring-offset)] motion-reduce:transition-none starting:[stroke-dashoffset:var(--ring-empty)] ${
+            className={`stroke-(--score-color) transition-[stroke-dashoffset,stroke] duration-1000 ease-out [stroke-dashoffset:var(--ring-offset)] motion-reduce:transition-none starting:[stroke-dashoffset:var(--ring-empty)] ${
               updating ? "animate-pulse motion-reduce:animate-none" : ""
             }`}
           />
@@ -283,16 +291,17 @@ function ScoreRing({ total, updating }: { total: number | "checking" | null; upd
           />
         )}
       </svg>
+      <span aria-hidden="true" className={`score-perfect ${perfect && updating ? "animate-pulse motion-reduce:animate-none" : ""}`} />
       {/* Said aloud when it changes, once the checks under way are done. */}
       <p
-        className="absolute inset-0 flex flex-col items-center justify-center text-ink"
+        className="score-color absolute inset-0 flex flex-col items-center justify-center"
         aria-live="polite"
         aria-atomic="true"
         aria-busy={total === "checking" || undefined}
       >
         {scored ? (
           <>
-            <span className="relative text-[22px] font-medium leading-none tabular-nums">
+            <span className="score-number relative text-[22px] font-medium leading-none tabular-nums">
               {/* Unseen under the rolling digits, unless there's less motion, when it shows as it is. */}
               <span className="opacity-0 motion-reduce:opacity-100">{total}</span>
               <Odometer value={total} />
