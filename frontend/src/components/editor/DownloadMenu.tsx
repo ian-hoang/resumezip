@@ -2,12 +2,12 @@
 
 import type React from "react"
 import { useEffect, useId, useRef, useState } from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Loader2 } from "lucide-react"
 import { reducedMotion } from "./layout"
 
-/** A way to take the resume out of resumezip other than the PDF. */
+/** A way to take the resume out of resumezip other than Download PDF. */
 export interface DownloadChoice {
-  /** What it is, as "JSON". */
+  /** What it is, as "JSON" or "Share PDF". */
   title: string
   /** What it's for, in a few words. */
   hint: string
@@ -36,12 +36,20 @@ function placeBy(button: HTMLElement): { left: number; width: number } {
 const item =
   "flex w-full flex-col gap-0.5 rounded-[3px] px-2.5 py-2 text-left outline-none transition-colors duration-150 hover:bg-paper focus-visible:bg-paper"
 
+interface DownloadMenuProps {
+  choices: DownloadChoice[]
+  /** A choice is getting its file ready, as Share PDF may after it's pressed: the ▾ spins. */
+  busy?: boolean
+  /** Called as the menu opens, so a choice can get its file ready before it's pressed. */
+  onOpen?: () => void
+}
+
 /**
- * The ▾ beside Download PDF, and the menu of the other ways to download it
- * (WAI-ARIA menu button). Arrows move through the menu, Escape and Tab close
- * it, and either way the keyboard goes back to the ▾.
+ * The ▾ beside Download PDF, and the menu of the other ways to take the
+ * resume out (WAI-ARIA menu button). Arrows move through the menu, Escape and
+ * Tab close it, and either way the keyboard goes back to the ▾.
  */
-export default function DownloadMenu({ choices }: { choices: DownloadChoice[] }) {
+export default function DownloadMenu({ choices, busy = false, onOpen }: DownloadMenuProps) {
   const menuId = useId()
   const button = useRef<HTMLButtonElement>(null)
   const menu = useRef<HTMLDivElement>(null)
@@ -59,6 +67,7 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
     fromEnd.current = last
     setClosing(false)
     setPlace(placeBy(button.current))
+    onOpen?.()
   }
 
   // It fades away, then goes. `refocus` puts the keyboard back on the ▾.
@@ -140,14 +149,19 @@ export default function DownloadMenu({ choices }: { choices: DownloadChoice[] })
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
+        aria-busy={busy || undefined}
         onClick={() => (open ? close() : show())}
         onKeyDown={onButtonKeyDown}
         className="inline-flex h-10 w-9 items-center justify-center rounded-r-[4px] border-l border-white/20 bg-ink text-white transition-colors hover:bg-black aria-expanded:bg-black"
       >
-        <ChevronDown
-          className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        ) : (
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        )}
       </button>
 
       {place && (

@@ -302,6 +302,12 @@ export async function makeDownload(resume: Resume): Promise<() => void> {
   }
 }
 
+/** Compiles a resume to hand to another app, as "<title>.pdf" with the resume attached. */
+export async function makePdfFile(resume: Resume): Promise<File> {
+  const pdf = await compileResume(resume, { attach: true })
+  return new File([pdf as BlobPart], fileNameOf(resume, "pdf"), { type: "application/pdf" })
+}
+
 /** Compiles a resume and saves it as "<title>.pdf", with the resume attached. */
 export async function downloadResume(resume: Resume): Promise<void> {
   const save = await makeDownload(resume)
