@@ -423,7 +423,7 @@ test("with no resumes, the empty pages start one or open a file", async ({ page 
   await expect(page.getByRole("combobox", { name: "Search your resumes" })).toHaveCount(0)
 
   const choosing = page.waitForEvent("filechooser")
-  await page.getByRole("button", { name: /^Drop a PDF or Word file/ }).click()
+  await page.getByRole("button", { name: "Drop a PDF or Docx file Choose a file" }).click()
   await choosing
   await page.getByRole("button", { name: "New resume" }).click()
   await expect(page.getByRole("dialog", { name: "New resume" })).toBeVisible()
