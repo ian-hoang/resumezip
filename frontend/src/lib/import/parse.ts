@@ -1761,13 +1761,17 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
     words(line.parts[0].text).length <= 4 &&
     line.parts[1].x - line.parts[0].x >= 40
   const sides = lines.filter(candidate)
-  if (sides.length < 2) return lines
+  if (sides.length === 0) return lines
   // The text beside every heading starts at the same place.
   const column = sides[0].parts[1].x
   if (sides.some((line) => Math.abs(line.parts[1].x - column) >= 3)) return lines
-  const margin = Math.min(...sides.map((line) => line.parts[0].x))
-  const inMargin = (line: Line) => !line.bullet && line.parts[0].x >= margin - 3 && line.parts[0].x < column - 3
   const beside = (line: Line) => line.parts.length > 1 && Math.abs(line.parts[1].x - column) < 3
+  // The margin starts with the furthest left of the text beside the column,
+  // which can be a heading that wraps rather than one of those found so far.
+  const margin = Math.min(
+    ...lines.filter((line) => !line.bullet && beside(line) && line.parts[0].x < column - 3).map((line) => line.parts[0].x),
+  )
+  const inMargin = (line: Line) => !line.bullet && line.parts[0].x >= margin - 3 && line.parts[0].x < column - 3
   // The rest of a wrapped heading: in the margin on the next line down, with
   // the section's text beside it or nothing.
   const baseline = (line: Line) => line.box![3] - 0.3 * line.size
@@ -1798,6 +1802,8 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
     headings.set(i, found)
     i += found.count - 1
   }
+  // Two headings at least, counting those that wrap: one alone can be chance.
+  if (headings.size < 2) return lines
 
   const split: SourceLine[] = []
   for (let i = 0; i < lines.length; i++) {
