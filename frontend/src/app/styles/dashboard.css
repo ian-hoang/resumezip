@@ -509,11 +509,13 @@
     min-height: 56px;
     padding: 8px 8px 8px 12px;
     border-radius: var(--radius-panel);
-    background: var(--color-ink);
-    color: white;
-    box-shadow: 0 18px 40px -16px rgb(17 19 24 / 0.55);
+    color: var(--color-ink);
     pointer-events: auto;
     animation: toast-in 360ms var(--ease-glide) both;
+  }
+  /* What's in it fades in as it rises; the glass itself only moves, as see-through glass stops blurring. */
+  .deleted-toast > * {
+    animation: panel-contents 260ms ease-out;
   }
   .paper-ball {
     flex-shrink: 0;
@@ -626,6 +628,7 @@
   .fold-row.is-unfolding .fold-cell,
   .drop-tile:hover .drop-arrow,
   .deleted-toast,
+  .deleted-toast > *,
   .paper-ball,
   .page-arrived,
   .menu-panel,
@@ -712,10 +715,10 @@
     transform: translateY(-2px);
   }
 }
+/* Up from under the foot of the screen, solid all the way (it's glass). */
 @keyframes toast-in {
   from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.96);
+    transform: translateY(calc(100% + 32px));
   }
 }
 @keyframes ball-land {

@@ -643,11 +643,12 @@ function Editor({ id }: { id: string }) {
 
       <div
         data-covers="bottom"
-        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-[opacity,transform] duration-200 xl:hidden ${
-          typing ? "pointer-events-none translate-y-3 opacity-0" : ""
+        // Out of the way while typing, below the foot of the screen: it slides rather than fades, as see-through glass stops blurring.
+        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-transform duration-200 xl:hidden ${
+          typing ? "pointer-events-none translate-y-24" : ""
         }`}
       >
-        <div role="group" aria-label="View" className="flex gap-1 rounded-full bg-ink p-1 shadow-[0_12px_32px_-12px_rgba(17,19,24,0.5)]">
+        <div role="group" aria-label="View" className="glass glass-clear flex gap-1 rounded-full p-1">
           {(["edit", "preview"] as const).map((option) => {
             const Icon = option === "edit" ? PencilLine : Eye
             return (
@@ -657,7 +658,7 @@ function Editor({ id }: { id: string }) {
                 aria-pressed={view === option}
                 onClick={() => show(option)}
                 className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors ${
-                  view === option ? "bg-sheet text-ink" : "text-white/70 hover:text-white"
+                  view === option ? "bg-ink text-white" : "text-ink-2 hover:text-ink"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" aria-hidden="true" />
