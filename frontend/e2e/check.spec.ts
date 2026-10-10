@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
+import { chooseTemplate, holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // The editor's left bar switches between the sections (Write) and what the
 // checker found (Check), and remembers which for the visit.
@@ -320,6 +320,31 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   await expect(panel.getByRole("status")).toBeHidden()
   await expect.poll(() => animationsIn(score)).toBe(0)
 
+  expect(errors).toEqual([])
+})
+
+test("the Check tab's count stays put while a new template's PDF is read, rather than counting the form's rules alone", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  await holdablePreviews(page)
+  await resumeToCheck(page)
+  const checkTab = page.getByRole("tab", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  await checkTab.click()
+  await expect(panel.getByRole("region", { name: "Resume score" }).getByText(/^\d+$/)).toBeVisible()
+  await expect(panel.getByRole("status")).toBeHidden()
+  const before = await checkTab.textContent()
+
+  // The new template's preview waits on its way to the compiler, so its PDF can't be read yet.
+  await holdPreviews(page, true)
+  await chooseTemplate(page, "Harvard")
+  await checkTab.click()
+  await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
+  await expect(checkTab).toHaveText(before!)
+
+  await holdPreviews(page, false)
+  await expect(panel.getByRole("status")).toBeHidden()
   expect(errors).toEqual([])
 })
 
