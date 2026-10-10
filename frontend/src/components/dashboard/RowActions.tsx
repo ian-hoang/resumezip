@@ -73,9 +73,7 @@ export function RowAction({
       onClick={onClick}
       disabled={disabled}
       {...data}
-      className={`${ROUND} focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:cursor-wait ${
-        danger ? "hover:text-alert" : "hover:text-ink"
-      } ${className}`}
+      className={`${ROUND} disabled:cursor-wait ${danger ? "hover:text-alert" : "hover:text-ink"} ${className}`}
     >
       {children}
       <Tip tipAtEnd={tipAtEnd} tipBelow={tipBelow}>
@@ -105,7 +103,7 @@ export function RowToggle({ label, tip, checked, onChange, children, tipAtEnd, t
         aria-label={label}
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-full focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+        className="absolute inset-0 m-0 cursor-pointer appearance-none rounded-full"
       />
       {children}
       <Tip tipAtEnd={tipAtEnd} tipBelow={tipBelow}>

@@ -600,7 +600,7 @@ function SectionChoice({ choice }: { choice: ChoiceDef<ChoiceKey> }) {
           {choice.options.map((option) => (
             <label
               key={option.value}
-              className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+              className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-sm transition-colors has-[:focus-visible]:[background-image:linear-gradient(rgb(17_19_24/0.08),rgb(17_19_24/0.08))] ${
                 option === selected ? "border-ink bg-ink text-white" : "border-rule-strong text-ink hover:border-ink"
               }`}
             >

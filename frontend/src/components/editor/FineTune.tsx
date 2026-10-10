@@ -153,7 +153,7 @@ function PaperChoice({ value, onChange }: { value: Paper; onChange: (paper: Pape
       {(Object.keys(PAPER_NAMES) as Paper[]).map((paper) => (
         <label
           key={paper}
-          className={`cursor-pointer rounded-full py-1.5 text-center text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+          className={`cursor-pointer rounded-full py-1.5 text-center text-sm transition-colors has-[:focus-visible]:[background-image:linear-gradient(rgb(17_19_24/0.08),rgb(17_19_24/0.08))] ${
             paper === value ? "bg-white text-ink shadow-[0_1px_3px_rgb(17_19_24/0.12)]" : "text-ink-2 hover:text-ink"
           }`}
         >

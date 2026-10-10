@@ -13,7 +13,7 @@ interface TypePickerProps {
 }
 
 const chip = (chosen: boolean) =>
-  `inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-sm transition-[background-color,box-shadow] duration-200 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent motion-reduce:transition-none ${
+  `inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-sm transition-[background-color,box-shadow] duration-200 has-[:focus-visible]:[background-image:linear-gradient(rgb(17_19_24/0.08),rgb(17_19_24/0.08))] motion-reduce:transition-none ${
     chosen ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-ink/15 hover:bg-sheet hover:ring-ink/40"
   }`
 
