@@ -17,6 +17,7 @@ const KNOWN_GAPS: Record<string, string[]> = {
   // A comma inside an award's name reads as the start of the organization.
   jake: ["awards[0].name", "awards[0].organization"],
   levelsfyi: [],
+  margin: [],
   modernjack: [],
   // "Organization, City, ST" on one line all reads as the location, and a
   // comma or dash inside an award's name reads as the start of the organization.

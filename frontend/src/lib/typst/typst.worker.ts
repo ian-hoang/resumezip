@@ -9,6 +9,7 @@ import common from "./templates/common.typ"
 import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
+import margin from "./templates/margin.typ"
 import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
@@ -21,6 +22,7 @@ const SOURCES: Record<string, string> = {
   "/ian.typ": ian,
   "/jake.typ": jake,
   "/levelsfyi.typ": levelsfyi,
+  "/margin.typ": margin,
   "/modernjack.typ": modernjack,
   "/referme.typ": referme,
   "/resumeworded.typ": resumeworded,

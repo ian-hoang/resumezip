@@ -13,6 +13,7 @@ export const TEMPLATES = [
   { id: "referme", name: "Compact", image: "/previews/referme.webp", font: "TeX Gyre Heros" },
   { id: "ian", name: "Ian's", image: "/previews/ian.webp", font: "Lato", weights: [400, 700] },
   { id: "resumeworded", name: "Harvard", image: "/previews/resumeworded.webp", font: "EB Garamond" },
+  { id: "margin", name: "Margin", image: "/previews/margin.webp", font: "Charis SIL" },
 ] as const
 
 export type Template = (typeof TEMPLATES)[number]
