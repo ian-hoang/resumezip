@@ -41,6 +41,86 @@
     transition: transform 600ms var(--ease-glide);
   }
 
+  /* The score's color (SCORE_COLORS in lib/check/settings.ts), from its
+     header's data-color, on the ring's arc, the number and the word beside
+     it. The number and the word are small text, so each color is at least
+     4.5:1 against the Check panel. Without a score, as while it's worked out,
+     it's ink. A new color fades in; the arc's takes as long as its fill. */
+  .score-colors {
+    --score-color: var(--color-ink);
+  }
+  .score-colors[data-color="red"] {
+    --score-color: var(--color-alert);
+  }
+  .score-colors[data-color="amber"] {
+    --score-color: #b54708;
+  }
+  .score-colors[data-color="green"] {
+    --score-color: #067647;
+  }
+  .score-colors[data-color="perfect"] {
+    --score-color: #5925dc;
+  }
+  .score-color {
+    color: var(--score-color);
+    transition: color 500ms var(--ease-glide);
+  }
+  .score-number {
+    transition: filter 600ms var(--ease-glide);
+  }
+  .score-colors[data-color="perfect"] .score-number {
+    filter: drop-shadow(0 0 6px rgb(122 90 248 / 0.55));
+  }
+
+  /* A perfect score's ring, over the arc: blue through violet to green, with
+     a light that sweeps round it once. It fades in as the arc finishes
+     filling (its transition is 1s), and out at once if the score drops. */
+  .score-perfect {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    background: conic-gradient(var(--color-accent), #7a5af8, #079455, var(--color-accent));
+    /* The arc's band: a radius of 15.5 and 3 wide, in the SVG's box of 36,
+       so from 14 to 17 of the box's half. */
+    mask: radial-gradient(
+      closest-side,
+      transparent calc(100% * 14 / 18 - 0.5px),
+      #000 calc(100% * 14 / 18 + 0.5px),
+      #000 calc(100% * 17 / 18 - 0.5px),
+      transparent calc(100% * 17 / 18 + 0.5px)
+    );
+    opacity: 0;
+    transition: opacity 300ms var(--ease-glide);
+  }
+  .score-colors[data-color="perfect"] .score-perfect {
+    opacity: 1;
+    transition: opacity 600ms var(--ease-glide) 700ms;
+  }
+  .score-perfect::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(transparent 0 70%, rgb(255 255 255 / 0.95) 97%, transparent);
+    opacity: 0;
+  }
+  .score-colors[data-color="perfect"] .score-perfect::after {
+    animation: score-sweep 1.4s cubic-bezier(0.65, 0, 0.35, 1) 1s both;
+  }
+  /* With less motion: the colors change at once, and the perfect ring is still. */
+  @media (prefers-reduced-motion: reduce) {
+    .score-color,
+    .score-number,
+    .score-perfect,
+    .score-colors[data-color="perfect"] .score-perfect {
+      transition: none;
+    }
+    .score-colors[data-color="perfect"] .score-perfect::after {
+      animation: none;
+    }
+  }
+
   /* The zipper along the top of the note that follows a download
      (components/editor/DownloadedCard.tsx): the logo's ring pulls across from
      the right and the teeth close behind it, ending as the logo has it, with
@@ -120,5 +200,19 @@
   }
   to {
     --zip: 1;
+  }
+}
+@keyframes score-sweep {
+  from {
+    transform: rotate(0);
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: rotate(1turn);
+    opacity: 0;
   }
 }
