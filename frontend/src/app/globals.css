@@ -29,9 +29,12 @@
 @layer components {
   /* --u is the logo's unit: its key is 56 across and its ring 26. From the ring
      at the page's margin to the right edge, it's the logo. */
+  /* The footer: soft charcoal deepening to black, which the sky above fades
+     into. The zipper's ring is filled with the charcoal it sits on. */
   .zip-footer {
     --u: 1px;
-    --zipper-bg: #171717;
+    --zipper-bg: #25262b;
+    background: linear-gradient(180deg, #2b2c31, #0c0c0e 70%);
   }
   @media (min-width: 48rem) {
     .zip-footer {
@@ -234,6 +237,19 @@ main {
   font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* A home page section's title, as HOW IT WORKS: label-mono, at a size that
+   reads as a heading across a wide section. */
+@utility label-section {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  @media (min-width: 48rem) {
+    font-size: 15px;
+  }
 }
 
 @layer utilities {
@@ -538,5 +554,31 @@ main {
   .loader-dots i {
     animation: none;
     opacity: 1;
+  }
+}
+
+/* Start writing (StartWriting.tsx): the page lifts away and the next one
+   rises up from below, as into the sky. Everything moves together, the
+   resumes' own named pictures included. */
+:root:active-view-transition-type(rise)::view-transition-old(*) {
+  animation: rise-out 420ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+:root:active-view-transition-type(rise)::view-transition-new(*) {
+  animation: rise-in 640ms var(--ease-glide) 120ms both;
+}
+:root:active-view-transition-type(rise)::view-transition {
+  pointer-events: none;
+}
+@keyframes rise-out {
+  to {
+    opacity: 0;
+    translate: 0 -6vh;
+    filter: blur(6px);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 8vh;
   }
 }

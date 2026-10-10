@@ -100,6 +100,32 @@
     filter: blur(calc((1 - var(--s)) * 0.14em));
     opacity: calc(var(--faint) + (1 - var(--faint)) * var(--s));
   }
+  /* The foot of a blue section: the blue thins out into the sky of the
+     section after it. The band is that same sky, fixed in place as the desk's
+     is (styles/glass.css), so the two meet without a line between them. */
+  .cloud-seam::after {
+    content: "";
+    display: block;
+    height: 140px;
+    background:
+      linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+      linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+      url("/backgrounds/sky-wide.webp") center bottom / cover fixed;
+  }
+  @media (min-width: 48rem) {
+    .cloud-seam::after {
+      height: 220px;
+    }
+  }
+  @media (max-aspect-ratio: 4/5) {
+    .cloud-seam::after {
+      background:
+        linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+        linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+        url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
+    }
+  }
+
   /* The questions' plus, which turns into a minus as its answer opens. */
   .question-sign::before,
   .question-sign::after {

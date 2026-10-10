@@ -84,10 +84,10 @@ export default function HowItWorks() {
     <section ref={sectionRef} aria-labelledby="how" data-tone="light" data-tick className={`desk ${pinned ? "h-[300svh]" : ""}`}>
       <div className={pinned ? "sticky top-0 flex h-svh flex-col overflow-hidden" : undefined}>
         <div className="flex items-center justify-between px-5 py-7 md:px-10">
-          <h2 id="how" className="label-mono text-accent">
+          <h2 id="how" className="label-section text-accent">
             How it works
           </h2>
-          <span aria-hidden="true" className="label-mono tabular-nums text-ink-2">
+          <span aria-hidden="true" className="label-section tabular-nums text-ink-2">
             {visible} / {STEPS.length}
           </span>
         </div>
@@ -117,7 +117,7 @@ export default function HowItWorks() {
                 ref={(card) => {
                   cardRefs.current[index] = card
                 }}
-                className={`flex min-h-0 gap-4 overflow-hidden rounded-panel bg-sheet/75 px-5 py-5 shadow-[0_24px_48px_-30px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/[0.06] md:flex-col md:gap-3 md:px-8 md:pb-8 md:pt-7 ${pinned ? `${SCRUB} [--rise:3rem]` : ""}`}
+                className={`pane-etched flex min-h-0 gap-4 overflow-hidden px-5 py-5 md:flex-col md:gap-3 md:px-8 md:pb-8 md:pt-7 ${pinned ? `${SCRUB} [--rise:3rem]` : ""}`}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1 md:flex-none md:gap-3">
                   {/* On phones the number sits beside the word, leaving the step's text room to fit. */}

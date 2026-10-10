@@ -76,12 +76,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section data-tone="blue" data-tick className="relative bg-accent text-white">
+      <section data-tone="blue" data-tick className="cloud-seam relative bg-accent text-white">
         <div className="flex flex-col gap-24 px-5 pb-24 pt-8 md:gap-[200px] md:px-10 md:pb-[120px]">
-          <span className="label-mono">
-            {/* The name stays in lower case, as everywhere. */}
-            Why <span className="normal-case">resumezip</span>
-          </span>
+          {/* In capitals, as every section's title is here. */}
+          <span className="label-section">Why resumezip</span>
           <div className="max-w-[760px]">
             <FocusWords
               lines={[
@@ -116,10 +114,10 @@ export default function Home() {
 
       <HowItWorks />
 
-      <section aria-labelledby="templates" data-tone="blue" data-tick className="bg-accent text-white">
+      <section aria-labelledby="templates" data-tone="blue" data-tick className="cloud-seam bg-accent text-white">
         <div className="border-b border-white/25">
           <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-7 md:px-10">
-            <h2 id="templates" className="label-mono">
+            <h2 id="templates" className="label-section">
               Templates
             </h2>
             <Link href="/templates" className={`${OUTLINE_PILL} border-white`}>
@@ -154,9 +152,7 @@ export default function Home() {
 
       <Questions />
 
-      <div data-tone="dark">
-        <SiteFooter />
-      </div>
+      <SiteFooter />
       <FloatingStart />
       <PrefetchCompiler />
     </div>

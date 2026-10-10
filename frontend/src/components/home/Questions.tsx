@@ -71,7 +71,7 @@ export default function Questions() {
     <section aria-labelledby="questions" data-tone="light" data-tick className="desk">
       <div className="grid gap-10 px-5 pb-24 pt-8 md:grid-cols-[minmax(0,5fr)_minmax(0,9fr)] md:gap-10 md:px-10 md:pb-[120px] md:pt-[72px]">
         <div className="flex flex-col gap-4">
-          <h2 id="questions" className="label-mono text-accent">
+          <h2 id="questions" className="label-section text-accent">
             Questions
           </h2>
           <p className="max-w-[420px] font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[64px]">Asked before you start.</p>
