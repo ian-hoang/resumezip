@@ -27,7 +27,7 @@
     columns: (margin, 1fr),
     column-gutter: gutter,
     align: (right + top, left + top),
-    text(font: "Linux Biolinum O", size: sized(10.2pt), tracking: 0.03em, fill: luma(55), smallcaps(title)),
+    text(font: "Linux Biolinum O", size: sized(10.8pt), tracking: 0.03em, fill: black, stroke: sized(0.15pt) + black, smallcaps(title)),
     body,
   )
 }
