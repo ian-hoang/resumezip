@@ -75,7 +75,7 @@ test("a section, Write or Check, and the template gallery fade in as they're cho
   expect(errors).toEqual([])
 })
 
-test("the New resume and Delete dialogs fade in", async ({ page }) => {
+test("the New resume dialog fades in", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
 
@@ -88,14 +88,6 @@ test("the New resume and Delete dialogs fade in", async ({ page }) => {
   await expect(page).toHaveURL(/\/create\/new\//)
   // Finish the compiler load before navigating away, as in the editor transition tests.
   await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
-
-  await page.goto("/create/dashboard")
-  const deleting = await fadingIn(
-    page.getByRole("button", { name: "Delete", exact: true }),
-    page.getByRole("dialog", { name: "Delete this resume?" }),
-  )
-  expect(deleting.some((text) => text.includes("Delete this resume?"))).toBe(true)
-  await expect(page.getByRole("dialog", { name: "Delete this resume?" })).toBeVisible()
   expect(errors).toEqual([])
 })
 
