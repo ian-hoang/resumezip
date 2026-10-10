@@ -256,6 +256,8 @@ for (const [layout, width] of [
     await page.setViewportSize({ width, height: 900 })
     await dashboardWith(page, [{ ...resume("a", "Ada"), headings: { skillsSection: "Toolbox" } }, resume("b", "Grace")])
     await page.getByRole("button", { name: "List" }).click()
+    // The switch comes a frame later, as a view transition does, and the pages are a list too.
+    await expect(page.getByRole("button", { name: "List" })).toHaveAttribute("aria-pressed", "true")
     // The cards or the table, whichever shows at this width.
     const list = width < 768 ? page.getByRole("list").filter({ has: page.getByRole("link", { name: "Ada" }) }) : page.getByRole("table")
     const row = (name: string) => list.locator("li, tr").filter({ has: page.getByRole("link", { name, exact: true }) })
