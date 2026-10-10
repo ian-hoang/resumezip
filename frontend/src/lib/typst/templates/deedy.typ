@@ -40,7 +40,7 @@
 
 // A section title in light capitals. The first in each column has no space above it.
 #let section(title, body, first: false) = {
-  if not first { v(sized(13pt)) }
+  if not first { v(gapped(13pt)) }
   block(sticky: true, {
     text(size: sized(16.5pt), weight: 300, fill: headings, upper(title))
     v(sized(7pt))

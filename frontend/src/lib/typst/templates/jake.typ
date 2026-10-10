@@ -37,7 +37,7 @@
 
 // Sticky so a heading is never left alone at the bottom of a page.
 #let section(title, body) = {
-  v(sized(17.5pt))
+  v(gapped(17.5pt))
   block(sticky: true, {
     text(size: sized(12pt), smallcaps(title))
     v(sized(5pt))

@@ -14,12 +14,14 @@ export interface Tune {
   margin?: number
   /** Space between lines, as a multiple of the template's: 0.8 to 1.3. */
   leading?: number
+  /** Space above each section's heading, as a multiple of the template's: 0.3 to 1.7. */
+  gap?: number
   paper?: Paper
-  /** Shrink the text a little at a time until the resume fits on one page. */
+  /** Tighten the spacing, then the text, a little at a time until the resume fits on one page. */
   onePage?: boolean
 }
 
-export type TuneScale = "size" | "margin" | "leading"
+export type TuneScale = "size" | "margin" | "leading" | "gap"
 
 /** The lowest and highest multiple of each, and the step the panel's sliders move in. */
 // prettier-ignore
@@ -27,6 +29,7 @@ export const SCALES: Record<TuneScale, { min: number; max: number; step: number 
   size:    { min: 0.85, max: 1.15, step: 0.025 },
   margin:  { min: 0.6,  max: 1.4,  step: 0.05 },
   leading: { min: 0.8,  max: 1.3,  step: 0.05 },
+  gap:     { min: 0.3,  max: 1.7,  step: 0.05 },
 }
 
 export const PAPERS: readonly Paper[] = ["us-letter", "a4"]
@@ -57,6 +60,7 @@ export interface PrintedTune {
   size: number
   margin: number
   leading: number
+  gap: number
   paper: Paper | ""
   onePage: boolean
 }
@@ -80,7 +84,7 @@ export function readTune(value: unknown): { tune: Tune | null; complete: boolean
   const tune: Tune = {}
   let complete = true
   for (const [key, field] of Object.entries(value)) {
-    if (key === "size" || key === "margin" || key === "leading") {
+    if (key === "size" || key === "margin" || key === "leading" || key === "gap") {
       if (typeof field !== "number" || !Number.isFinite(field)) {
         complete = false
         continue
@@ -117,54 +121,80 @@ export function printedTune(saved: unknown): PrintedTune {
     size: tune.size ?? 1,
     margin: tune.margin ?? 1,
     leading: tune.leading ?? 1,
+    gap: tune.gap ?? 1,
     paper: tune.paper ?? "",
     onePage: tune.onePage === true,
   }
 }
 
-/** The text size multiples "Keep it to one page" tries, largest first: down from `size` a step at a time, to the smallest. */
-export function smallerSizes(size: number): number[] {
-  const { min, step } = SCALES.size
-  const sizes: number[] = []
-  for (let next = round(size - step); next > min; next = round(next - step)) sizes.push(next)
-  if (size > min) sizes.push(min)
-  return sizes
-}
+/** The multiples that decide how much a resume takes up, which keeping it to one page changes. */
+export type Fitted = Pick<PrintedTune, "size" | "margin" | "leading" | "gap">
 
-/** What keeping to one page did: the text size multiple it printed at, and whether that fits. */
-export interface Fit {
-  size: number
+/** What keeping to one page did: the multiples it printed at, and whether that fits. */
+export interface Fit extends Fitted {
   fits: boolean
 }
 
 /**
+ * The order keeping to one page tightens a resume in, and how far each goes
+ * in its turn: the space between sections, the margins and the line spacing
+ * first, down to what still looks like the template; then the text, as small
+ * as Fine-tune lets it go; and only then the rest of the way down the others.
+ */
+// prettier-ignore
+const TIGHTENING: ReadonlyArray<readonly [key: keyof Fitted, floor: number]> = [
+  ["gap", 0.5], ["margin", 0.75], ["leading", 0.9],
+  ["size", SCALES.size.min],
+  ["gap", SCALES.gap.min], ["margin", SCALES.margin.min], ["leading", SCALES.leading.min],
+]
+
+/**
+ * Every setting keeping to one page tries below `start`, loosest first: each
+ * a step tighter than the one before, going through TIGHTENING in order.
+ * A setting already past a floor is left where it is until its turn comes
+ * round again.
+ */
+export function tighterSteps(start: Fitted): Fitted[] {
+  const steps: Fitted[] = []
+  const now = { ...start }
+  for (const [key, floor] of TIGHTENING) {
+    const { step } = SCALES[key]
+    while (now[key] > floor) {
+      now[key] = Math.max(floor, round(now[key] - step))
+      steps.push({ ...now })
+    }
+  }
+  return steps
+}
+
+/**
  * Prints a resume that's meant to fit on one page, and says how it went.
- * `print` prints it at a text size multiple and counts its pages. Past one
- * page at `size`, it looks for the largest of the smaller sizes (see
- * smallerSizes) that fits: a step down, then two more, four more, and so on,
- * then halves the last gap. So a resume a few lines over takes a print or
- * two more, and one far over only a few. If even the smallest doesn't fit,
- * it's printed at that, as near to one page as it goes.
+ * `print` prints it at a set of multiples and counts its pages. Past one page
+ * at `start`, it looks for the loosest of the tighter ones (see tighterSteps)
+ * that fits: a step down, then two more, four more, and so on, then halves
+ * the last gap. So a resume a few lines over takes a print or two more, and
+ * one far over only a few. If even the tightest doesn't fit, it's printed at
+ * that, as near to one page as it goes.
  */
 export async function fitOnePage<Printed>(
-  size: number,
-  print: (size: number) => Promise<{ pages: number; printed: Printed }>,
+  start: Fitted,
+  print: (fitted: Fitted) => Promise<{ pages: number; printed: Printed }>,
 ): Promise<{ fit: Fit; printed: Printed }> {
-  const first = await print(size)
-  if (first.pages <= 1) return { fit: { size, fits: true }, printed: first.printed }
-  const sizes = smallerSizes(size)
-  if (sizes.length === 0) return { fit: { size, fits: false }, printed: first.printed }
+  const first = await print(start)
+  if (first.pages <= 1) return { fit: { ...start, fits: true }, printed: first.printed }
+  const steps = tighterSteps(start)
+  if (steps.length === 0) return { fit: { ...start, fits: false }, printed: first.printed }
   const tried = new Map<number, { pages: number; printed: Printed }>()
   const at = async (index: number) => {
     let result = tried.get(index)
     if (!result) {
-      result = await print(sizes[index])
+      result = await print(steps[index])
       tried.set(index, result)
     }
     return result
   }
-  const last = sizes.length - 1
-  // The index of the largest size known to run over (-1 for `size` itself), and of the first known to fit.
+  const last = steps.length - 1
+  // The index of the loosest step known to run over (-1 for `start` itself), and of the first known to fit.
   let over = -1
   let fits = -1
   for (let stride = 1; fits < 0 && over < last; stride *= 2) {
@@ -172,13 +202,13 @@ export async function fitOnePage<Printed>(
     if ((await at(index)).pages <= 1) fits = index
     else over = index
   }
-  if (fits < 0) return { fit: { size: sizes[last], fits: false }, printed: (await at(last)).printed }
+  if (fits < 0) return { fit: { ...steps[last], fits: false }, printed: (await at(last)).printed }
   while (fits - over > 1) {
     const middle = Math.floor((over + fits) / 2)
     if ((await at(middle)).pages <= 1) fits = middle
     else over = middle
   }
-  return { fit: { size: sizes[fits], fits: true }, printed: (await at(fits)).printed }
+  return { fit: { ...steps[fits], fits: true }, printed: (await at(fits)).printed }
 }
 
 /**

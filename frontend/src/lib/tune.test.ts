@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, test } from "vitest"
 import { TEMPLATES } from "@/lib/templates"
-import { fitOnePage, pageCount, printedTune, readTune, smallerSizes, TEMPLATE_SETTINGS, withSetting } from "./tune"
+import { fitOnePage, pageCount, printedTune, readTune, tighterSteps, TEMPLATE_SETTINGS, withSetting, type Fitted } from "./tune"
 
 describe("a saved tune", () => {
   test("is nothing when there's none, as in resumes from before Fine-tune", () => {
@@ -11,7 +11,7 @@ describe("a saved tune", () => {
   })
 
   test("keeps every setting Fine-tune makes", () => {
-    const tune = { size: 0.925, margin: 1.4, leading: 0.8, paper: "a4", onePage: true }
+    const tune = { size: 0.925, margin: 1.4, leading: 0.8, gap: 0.45, paper: "a4", onePage: true }
     expect(readTune(tune)).toEqual({ tune, complete: true })
   })
 
@@ -24,31 +24,35 @@ describe("a saved tune", () => {
   })
 
   test("drops settings it doesn't know and values of the wrong type", () => {
-    expect(readTune({ size: "1.1", margin: NaN, leading: null, paper: "legal", onePage: "yes", font: "Comic Sans", margin2: 1.2 })).toEqual(
-      {
-        tune: null,
-        complete: false,
-      },
-    )
+    expect(
+      readTune({ size: "1.1", margin: NaN, leading: null, gap: "tight", paper: "legal", onePage: "yes", font: "Comic Sans", margin2: 1.2 }),
+    ).toEqual({
+      tune: null,
+      complete: false,
+    })
     expect(readTune({ size: 0.9, columns: 2 })).toEqual({ tune: { size: 0.9 }, complete: false })
   })
 
   test("brings multiples out of range to the nearest end of it", () => {
-    expect(readTune({ size: 2, margin: 0, leading: -1 })).toEqual({ tune: { size: 1.15, margin: 0.6, leading: 0.8 }, complete: false })
+    expect(readTune({ size: 2, margin: 0, leading: -1, gap: 9 })).toEqual({
+      tune: { size: 1.15, margin: 0.6, leading: 0.8, gap: 1.7 },
+      complete: false,
+    })
     expect(readTune({ size: Infinity })).toEqual({ tune: null, complete: false })
   })
 
   test("leaves out the template's own settings", () => {
-    expect(readTune({ size: 1, margin: 1, leading: 1, onePage: false })).toEqual({ tune: null, complete: true })
+    expect(readTune({ size: 1, margin: 1, leading: 1, gap: 1, onePage: false })).toEqual({ tune: null, complete: true })
     expect(readTune({ size: 1, paper: "us-letter" })).toEqual({ tune: { paper: "us-letter" }, complete: true })
   })
 
   test("prints with every setting there, and the template's own for those not set", () => {
-    expect(printedTune(undefined)).toEqual({ size: 1, margin: 1, leading: 1, paper: "", onePage: false })
+    expect(printedTune(undefined)).toEqual({ size: 1, margin: 1, leading: 1, gap: 1, paper: "", onePage: false })
     expect(printedTune({ size: 1.1, paper: "a4", font: "Comic Sans" })).toEqual({
       size: 1.1,
       margin: 1,
       leading: 1,
+      gap: 1,
       paper: "a4",
       onePage: false,
     })
@@ -72,51 +76,85 @@ describe("changing one setting", () => {
 })
 
 describe("keeping to one page", () => {
-  test("tries smaller sizes a step at a time, down to the smallest", () => {
-    expect(smallerSizes(1)).toEqual([0.975, 0.95, 0.925, 0.9, 0.875, 0.85])
-    expect(smallerSizes(1.07)).toEqual([1.045, 1.02, 0.995, 0.97, 0.945, 0.92, 0.895, 0.87, 0.85])
-    expect(smallerSizes(0.86)).toEqual([0.85])
-    expect(smallerSizes(0.85)).toEqual([])
+  const own: Fitted = { size: 1, margin: 1, leading: 1, gap: 1 }
+
+  test("tightens the space between sections first, then margins, line spacing and the text", () => {
+    const steps = tighterSteps(own)
+    expect(steps[0]).toEqual({ ...own, gap: 0.95 })
+    // Each step is tighter than the one before, in one setting.
+    for (const [index, step] of steps.entries()) {
+      const before = steps[index - 1] ?? own
+      const lower = (Object.keys(own) as (keyof Fitted)[]).filter((key) => step[key] < before[key])
+      expect(lower, `step ${index}`).toHaveLength(1)
+      expect((Object.keys(own) as (keyof Fitted)[]).filter((key) => step[key] > before[key])).toEqual([])
+    }
+    // The text isn't touched until the spacing and margins are at their floors, and margins no further than 0.75 before it.
+    const firstSmaller = steps.findIndex((step) => step.size < 1)
+    expect(steps[firstSmaller - 1]).toEqual({ size: 1, margin: 0.75, leading: 0.9, gap: 0.5 })
+    expect(steps.at(-1)).toEqual({ size: 0.85, margin: 0.6, leading: 0.8, gap: 0.3 })
   })
 
-  // A resume that fits on one page at `fitsAt` or smaller, printed as its size, counting the prints.
-  const resume = (fitsAt: number) => {
-    const prints: number[] = []
-    const print = async (size: number) => {
-      prints.push(size)
-      return { pages: size <= fitsAt ? 1 : 2, printed: `printed at ${size}` }
+  test("goes down in the sliders' own steps, to their floors", () => {
+    expect(tighterSteps({ size: 0.85, margin: 0.6, leading: 0.8, gap: 0.55 })).toEqual([
+      { size: 0.85, margin: 0.6, leading: 0.8, gap: 0.5 },
+      ...[0.45, 0.4, 0.35, 0.3].map((gap) => ({ size: 0.85, margin: 0.6, leading: 0.8, gap })),
+    ])
+    expect(tighterSteps({ size: 0.85, margin: 0.6, leading: 0.8, gap: 0.3 })).toEqual([])
+  })
+
+  test("leaves what's already tighter than a floor as it is, until the last stage", () => {
+    const steps = tighterSteps({ ...own, margin: 0.7 })
+    expect(steps.every((step) => step.margin === 0.7 || step.size === 0.85)).toBe(true)
+    expect(steps.some((step) => step.margin < 0.7)).toBe(true)
+  })
+
+  // A resume that fits on one page once `fits` says so of what it's printed at, counting the prints.
+  const resume = (fits: (fitted: Fitted) => boolean) => {
+    const prints: Fitted[] = []
+    const print = async (fitted: Fitted) => {
+      prints.push(fitted)
+      return { pages: fits(fitted) ? 1 : 2, printed: JSON.stringify(fitted) }
     }
     return { prints, print }
   }
 
   test("leaves a resume that fits as it is, printed once", async () => {
-    const { prints, print } = resume(1.2)
-    expect(await fitOnePage(1.1, print)).toEqual({ fit: { size: 1.1, fits: true }, printed: "printed at 1.1" })
-    expect(prints).toEqual([1.1])
+    const { prints, print } = resume(() => true)
+    const start = { ...own, size: 1.1 }
+    expect(await fitOnePage(start, print)).toEqual({ fit: { ...start, fits: true }, printed: JSON.stringify(start) })
+    expect(prints).toEqual([start])
   })
 
-  test.each([0.975, 0.95, 0.925, 0.9, 0.875, 0.85])(
-    "finds the largest size that fits (%s), in fewer prints than trying each",
-    async (fitsAt) => {
-      const { prints, print } = resume(fitsAt)
-      expect(await fitOnePage(1, print)).toEqual({ fit: { size: fitsAt, fits: true }, printed: `printed at ${fitsAt}` })
-      expect(prints.length).toBeLessThan(1 + smallerSizes(1).length)
-      // None is printed twice.
-      expect(new Set(prints).size).toBe(prints.length)
-    },
-  )
-
-  test("a resume a little over takes one print more", async () => {
-    const { prints, print } = resume(0.975)
-    await fitOnePage(1, print)
-    expect(prints).toEqual([1, 0.975])
+  test.each([0, 4, 9, 10, 14, 20, 30])("finds the loosest step that fits (%s), in fewer prints than trying each", async (index) => {
+    const steps = tighterSteps(own)
+    const target = steps[index]
+    // Fits from the target on, down the list of steps.
+    const { prints, print } = resume((fitted) => steps.findIndex((step) => JSON.stringify(step) === JSON.stringify(fitted)) >= index)
+    expect(await fitOnePage(own, print)).toEqual({ fit: { ...target, fits: true }, printed: JSON.stringify(target) })
+    expect(prints.length).toBeLessThan(1 + steps.length)
+    // None is printed twice.
+    expect(new Set(prints.map((fitted) => JSON.stringify(fitted))).size).toBe(prints.length)
   })
 
-  test("prints one that doesn't fit even at the smallest size at that, and says so", async () => {
-    const { print } = resume(0.5)
-    expect(await fitOnePage(1, print)).toEqual({ fit: { size: 0.85, fits: false }, printed: "printed at 0.85" })
-    // Already as small as it goes.
-    expect(await fitOnePage(0.85, print)).toEqual({ fit: { size: 0.85, fits: false }, printed: "printed at 0.85" })
+  test("a resume a little over takes one print more, and only the spacing changes", async () => {
+    const { prints, print } = resume((fitted) => fitted.gap <= 0.95)
+    const { fit } = await fitOnePage(own, print)
+    expect(prints).toEqual([own, { ...own, gap: 0.95 }])
+    expect(fit).toEqual({ ...own, gap: 0.95, fits: true })
+  })
+
+  test("keeps the text as it was when tighter spacing and margins are enough", async () => {
+    const { print } = resume((fitted) => fitted.gap <= 0.5 && fitted.margin <= 0.9)
+    const { fit } = await fitOnePage({ ...own, size: 1.1 }, print)
+    expect(fit).toEqual({ size: 1.1, margin: 0.9, leading: 1, gap: 0.5, fits: true })
+  })
+
+  test("prints one that doesn't fit even at the tightest at that, and says so", async () => {
+    const { print } = resume(() => false)
+    const tightest = { size: 0.85, margin: 0.6, leading: 0.8, gap: 0.3 }
+    expect(await fitOnePage(own, print)).toEqual({ fit: { ...tightest, fits: false }, printed: JSON.stringify(tightest) })
+    // Already as tight as it goes.
+    expect(await fitOnePage(tightest, print)).toEqual({ fit: { ...tightest, fits: false }, printed: JSON.stringify(tightest) })
   })
 })
 

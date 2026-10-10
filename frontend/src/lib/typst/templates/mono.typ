@@ -20,7 +20,7 @@
 }
 
 #let section(title, body) = {
-  v(sized(13pt))
+  v(gapped(13pt))
   block(sticky: true, {
     text(weight: 600, tracking: 0.04em, upper(title))
     v(sized(4pt))

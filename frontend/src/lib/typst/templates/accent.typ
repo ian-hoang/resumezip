@@ -24,7 +24,7 @@
 
 // The title's first three letters in the accent colour, then a hairline to the margin.
 #let section(title, body) = {
-  v(sized(13pt))
+  v(gapped(13pt))
   block(sticky: true, {
     let letters = title.clusters()
     let split = calc.min(3, letters.len())

@@ -22,7 +22,7 @@
 
 // A section title big enough to find from across the room.
 #let section(title, body) = {
-  v(sized(13pt))
+  v(gapped(13pt))
   block(sticky: true, {
     text(size: sized(15pt), weight: "bold", tracking: -0.015em, title)
     v(sized(7pt))

@@ -50,7 +50,7 @@
 // which differs with what comes next. Sticky so a heading is never left
 // alone at the bottom of a page.
 #let section(title, body, after: 5.58pt) = {
-  v(sized(13.73pt))
+  v(gapped(13.73pt))
   block(sticky: true, {
     text(size: sized(11.96pt), weight: "bold", fill: blue, title)
     v(sized(4.4pt))

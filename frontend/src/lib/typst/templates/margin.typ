@@ -22,7 +22,7 @@
 // A heading in the margin, level with the first line of its section. Spaced
 // any wider, its letters read as separate words in the PDF's text.
 #let section(title, body) = {
-  v(sized(12.5pt))
+  v(gapped(12.5pt))
   grid(
     columns: (margin, 1fr),
     column-gutter: gutter,

@@ -57,7 +57,7 @@
 // A capitalized heading over a dark rule. Sticky so a heading is never left
 // alone at the bottom of a page.
 #let section(title, body) = {
-  v(sized(17.85pt))
+  v(gapped(17.85pt))
   block(sticky: true, {
     text(size: sized(12pt), weight: "bold", fill: dark, upper(title))
     v(sized(4pt))
