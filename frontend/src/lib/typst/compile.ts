@@ -5,6 +5,7 @@
 import type { Resume } from "@/lib/resume"
 import { toAttachment } from "@/lib/resumeFile"
 import { fileNameOf } from "@/lib/saveFile"
+import type { Fit, PrintedTune } from "@/lib/tune"
 import { COMPILER_CDN_URL } from "./compilerSource"
 import { templateIdOf, toTemplateData, type TemplateData, type TemplateId } from "./resumeData"
 
@@ -54,7 +55,16 @@ export class Superseded extends Error {
 /** Why making a PDF failed, from what compileResume threw. */
 export const failureOf = (error: unknown): PdfFailure => (error instanceof PdfError ? error.failure : "crash")
 
-export type CompileResponse = { id: number; pdf: Uint8Array } | { id: number; error: string; failure: PdfFailure }
+/**
+ * A PDF, and, for a resume that asks to be kept to one page, what that took
+ * (see fitOnePage in lib/tune.ts).
+ */
+interface Compiled {
+  pdf: Uint8Array
+  fit?: Fit
+}
+
+export type CompileResponse = ({ id: number } & Compiled) | { id: number; error: string; failure: PdfFailure }
 
 /**
  * What the page sends the worker: a resume to compile; word to start
@@ -88,7 +98,7 @@ let status: CompilerStatus = { loaded: false, downloaded: 0 }
 const statusListeners = new Set<() => void>()
 let watchdog: ReturnType<typeof setTimeout> | undefined
 let nextId = 0
-const pending = new Map<number, { resolve: (pdf: Uint8Array) => void; reject: (error: Error) => void }>()
+const pending = new Map<number, { resolve: (compiled: Compiled) => void; reject: (error: Error) => void }>()
 
 function setStatus(next: CompilerStatus) {
   if (next.loaded === status.loaded && next.downloaded === status.downloaded) return
@@ -142,7 +152,7 @@ function getWorker(): Worker {
       pending.delete(data.id)
       if ("pdf" in data) {
         setStatus({ loaded: true, downloaded: 1 })
-        request?.resolve(data.pdf)
+        request?.resolve({ pdf: data.pdf, fit: data.fit })
       } else {
         if (data.failure === "resume") setStatus({ loaded: true, downloaded: 1 })
         request?.reject(new PdfError(data.error, data.failure))
@@ -223,12 +233,12 @@ interface CompileOptions {
   attach?: boolean
 }
 
-/** Compiles a resume, in the editor's format, to PDF bytes. */
-export function compileResume(resume: Resume, { attach = false }: CompileOptions = {}): Promise<Uint8Array> {
-  return send(printedOf(resume), attach ? toAttachment(resume) : undefined)
+/** Compiles a resume, in the editor's format, to PDF bytes, kept to one page if it asks to be. */
+export async function compileResume(resume: Resume, { attach = false }: CompileOptions = {}): Promise<Uint8Array> {
+  return (await send(printedOf(resume), attach ? toAttachment(resume) : undefined)).pdf
 }
 
-function send(printed: Printed, attachment?: string): Promise<Uint8Array> {
+function send(printed: Printed, attachment?: string): Promise<Compiled> {
   const request: CompileRequest = { id: nextId++, ...printed, attachment }
   return new Promise((resolve, reject) => {
     getWorker().postMessage(request satisfies WorkerRequest)
@@ -245,7 +255,42 @@ const toUrl = (pdf: Uint8Array) => URL.createObjectURL(new Blob([pdf as BlobPart
 // older one waiting is settled at once, as its result would be thrown away.
 // Downloads don't wait here, so they're never replaced.
 let previewRunning = false
-let previewWaiting: { printed: Printed; resolve: (url: string) => void; reject: (error: Error) => void } | null = null
+let previewWaiting: {
+  printed: Printed
+  signal?: AbortSignal
+  resolve: (url: string) => void
+  reject: (error: Error) => void
+} | null = null
+
+/**
+ * What keeping the preview to one page did, for Fine-tune to say: the
+ * template and tune it was printed with, so the panel can tell it's about
+ * what it shows, and the size it took.
+ */
+export interface PreviewFit {
+  template: TemplateId
+  tune: PrintedTune
+  fit: Fit
+}
+
+let shownFit: PreviewFit | null = null
+const fitListeners = new Set<() => void>()
+
+/** What keeping the latest preview to one page did (see PreviewFit); null if it wasn't asked to. */
+export const previewFit = (): PreviewFit | null => shownFit
+
+/** Calls `listener` whenever previewFit changes, until the returned function is called. */
+export function onPreviewFit(listener: () => void): () => void {
+  fitListeners.add(listener)
+  return () => fitListeners.delete(listener)
+}
+
+function showFit(printed: Printed, fit: Fit | undefined) {
+  const next = fit ? { template: printed.template, tune: printed.data.tune, fit } : null
+  if (JSON.stringify(next) === JSON.stringify(shownFit)) return
+  shownFit = next
+  for (const listener of fitListeners) listener()
+}
 
 /**
  * Compiles a preview and returns an object URL for the PDF. Revoke it when
@@ -256,7 +301,7 @@ export function compilePreview(printed: Printed, signal?: AbortSignal): Promise<
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new Superseded())
     previewWaiting?.reject(new Superseded())
-    const entry = { printed, resolve, reject }
+    const entry = { printed, signal, resolve, reject }
     previewWaiting = entry
     signal?.addEventListener(
       "abort",
@@ -277,7 +322,11 @@ function startNextPreview() {
   if (!next) return
   previewRunning = true
   send(next.printed)
-    .then(toUrl)
+    .then(({ pdf, fit }) => {
+      // A preview withdrawn while it compiled isn't shown, so what it did isn't either.
+      if (!next.signal?.aborted) showFit(next.printed, fit)
+      return toUrl(pdf)
+    })
     .then(next.resolve, next.reject)
     .finally(() => {
       previewRunning = false

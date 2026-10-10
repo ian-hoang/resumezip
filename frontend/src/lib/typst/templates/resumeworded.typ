@@ -10,25 +10,26 @@
 #let light = rgb("#737373")
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.6in, top: 0.58in, bottom: 0.5in))
-#set text(font: "EB Garamond", size: 10.8pt, lang: "en", fill: rgb("#1a1a1a"))
-// All vertical spacing below is explicit, measured against the original.
-// Gaps are from one line's baseline to the top of the next line's capitals.
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.6in, top: 0.58in, bottom: 0.5in)))
+#set text(font: "EB Garamond", size: sized(10.8pt), lang: "en", fill: rgb("#1a1a1a"))
+// All vertical spacing below is explicit, measured against the original, and
+// scaled by Fine-tune (see common.typ). Gaps are from one line's baseline to
+// the top of the next line's capitals.
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 5.78pt, spacing: 0pt)
+#set par(justify: false, leading: spaced(5.78pt), spacing: 0pt)
 
 // Round bullets at the margin, with the text indented.
 #let bullets(items) = if items.len() > 0 {
-  v(5.78pt)
+  v(spaced(5.78pt))
   list(
     // Drawn rather than typed: EB Garamond has no large round bullet.
-    marker: move(dy: 2.2pt, circle(radius: 1.8pt, fill: rgb("#1a1a1a"))),
+    marker: move(dy: sized(2.2pt), circle(radius: sized(1.8pt), fill: rgb("#1a1a1a"))),
     indent: 0pt,
     body-indent: 10.7pt,
-    spacing: 5.78pt,
+    spacing: spaced(5.78pt),
     ..items.map(rich),
   )
-  v(3.3pt)
+  v(sized(3.3pt))
 }
 
 // The organization in gray capitals and its place, then a second line, then
@@ -37,18 +38,18 @@
   block(sticky: true, {
     row(text(weight: "bold", fill: gray, upper(top-left)), top-right)
     if has(bottom-left) or has(bottom-right) {
-      v(5.78pt)
+      v(spaced(5.78pt))
       row(bottom-left, bottom-right)
     }
   })
   for line in details {
-    v(5.78pt)
+    v(spaced(5.78pt))
     line
   }
   bullets(items)
 }
 
-#let entries(items) = items.join(v(13.58pt))
+#let entries(items) = items.join(v(sized(13.58pt)))
 
 // "Start – End" with an en dash, or whichever of the two is present.
 #let dates(start, end) = if has(start) and has(end) { start + " – " + end } else { start + end }
@@ -56,20 +57,20 @@
 // A capitalized heading over a dark rule. Sticky so a heading is never left
 // alone at the bottom of a page.
 #let section(title, body) = {
-  v(17.85pt)
+  v(sized(17.85pt))
   block(sticky: true, {
-    text(size: 12pt, weight: "bold", fill: dark, upper(title))
-    v(4pt)
+    text(size: sized(12pt), weight: "bold", fill: dark, upper(title))
+    v(sized(4pt))
     line(length: 100%, stroke: 0.8pt + rgb("#262626"))
   })
-  v(10.38pt)
+  v(sized(10.38pt))
   body
 }
 
 // ---------- Heading ----------
 
 #align(center, {
-  text(size: 20pt, weight: "bold", fill: dark, upper(p.name))
+  text(size: sized(20pt), weight: "bold", fill: dark, upper(p.name))
   let items = ()
   if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push("P: " + p.phone) }
@@ -78,13 +79,13 @@
   if has(p.github) { items.push(web-link(p.github, p.github)) }
   if has(p.website) { items.push(web-link(p.website, p.website)) }
   if items.len() > 0 {
-    v(6.38pt)
+    v(sized(6.38pt))
     // A long line wraps between items, never inside a link.
     items.map(box).join([ | ])
   }
 })
 // The first heading sits a little closer to the contact line than later ones to each other.
-#v(-3.5pt)
+#v(sized(-3.5pt))
 
 // ---------- Sections ----------
 
@@ -144,6 +145,6 @@
         },
         a.date,
       )
-    }).join(v(5.78pt)))
+    }).join(v(spaced(5.78pt))))
   }
 }

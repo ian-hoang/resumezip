@@ -136,12 +136,14 @@ const imported = (content: ResumeContent, tag: string): Resume => ({
  * A resume with a file's content in place of its own, keeping its name and
  * tag. It keeps the file's last-edited time too, not now: opening the same
  * file again then finds nothing different, and a newer file still looks newer.
- * A file without sections a person added replaces the ones here too.
+ * A file without sections a person added, or without Fine-tune's settings,
+ * replaces the ones here too.
  */
 const replacedBy = (before: Resume, content: ResumeContent, id: string): Resume => ({
   ...before,
   ...content,
   extraSections: content.extraSections ?? {},
+  tune: content.tune ?? null,
   id,
   updatedAt: content.updatedAt ?? new Date().toISOString(),
 })
