@@ -1384,14 +1384,15 @@ function readPublications(section: ParseLine[]): SectionResult {
     !/[.,;:]$/.test(line.text)
   const lines = section.filter((line, i) => !label(line, i))
   // Citations that wrap are set in under the line they start on, so every
-  // other line sits right of the bullet or number above it.
+  // other line sits right of the bullet or number above it, even when a
+  // single citation wraps onto two lines or more.
   let start: ParseLine | undefined
   const hanging = lines.every((line) => {
     if (startsCitation(line)) start = line
     else if (!start || line.left <= start.left + 3) return false
     return true
   })
-  const citations = lines.filter(startsCitation).length >= lines.length / 2 || (hanging && lines.filter(startsCitation).length >= 2)
+  const citations = lines.filter(startsCitation).length >= lines.length / 2 || hanging
   if (citations) {
     // The sub-headings label groups, which a citation has no field for.
     for (const line of section) {

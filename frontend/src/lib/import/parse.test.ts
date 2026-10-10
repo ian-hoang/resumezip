@@ -193,6 +193,19 @@ describe("publications", () => {
   })
 })
 
+describe("a single citation", () => {
+  test("that wraps onto two more lines is read as one", () => {
+    const { resume } = read("Publications", [
+      line([["[1] R. Mehta, S. Okoro, and L. Zhang, “Fast depth completion for small robots", 44]]),
+      line([["with sparse lidar,” IEEE International Conference on Robotics and Automation,", 61]]),
+      line([["Atlanta, GA, May 2025, doi: 10.5555/icra.2025.1187.", 61]]),
+    ])
+    expect(resume.publicationsSection).toMatchObject([
+      { publicationTitle: "Fast depth completion for small robots with sparse lidar", publicationDate: "May 2025" },
+    ])
+  })
+})
+
 describe("headings in a margin column", () => {
   const text = (value: string, x: number, baseline: number, { size = 10, bold = false, italic = false } = {}) => ({
     text: value,
