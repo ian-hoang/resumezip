@@ -158,6 +158,28 @@ test("closing a dialog puts focus back on what opened it, however it's closed", 
   expect(errors).toEqual([])
 })
 
+test("Tab stays inside an open dialog, going round from its last control to its first", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Short one")])
+  await page.getByRole("main").getByRole("button", { name: "New resume" }).click()
+  const dialog = page.getByRole("dialog", { name: "New resume" })
+  const name = dialog.getByLabel("Name")
+  await expect(name).toBeFocused()
+
+  await page.keyboard.press("Shift+Tab")
+  await expect(dialog.getByRole("button", { name: "Create" })).toBeFocused()
+  await page.keyboard.press("Tab")
+  await expect(name).toBeFocused()
+  // Through the type's choices and Cancel, and round again.
+  await page.keyboard.press("Tab")
+  await expect(dialog.getByRole("radio", { name: "Personal" })).toBeFocused()
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Tab")
+  await page.keyboard.press("Tab")
+  await expect(name).toBeFocused()
+  expect(errors).toEqual([])
+})
+
 test("the Sort menu puts the resumes in order by name, from the keyboard", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [

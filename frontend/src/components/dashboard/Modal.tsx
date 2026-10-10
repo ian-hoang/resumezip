@@ -11,7 +11,10 @@ interface ModalProps {
   children: React.ReactNode
 }
 
-/** A centred dialog of glass that closes on Escape or a click outside it. */
+// What Tab can reach inside a dialog, before leaving out what's hidden or has tabindex="-1".
+const TABBABLE = "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]"
+
+/** A centred dialog of glass that closes on Escape or a click outside it, and keeps Tab inside it while it's open. */
 export default function Modal({ title, onClose, wide = false, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   // Its own, as another dialog can be open alongside it.
@@ -23,8 +26,42 @@ export default function Modal({ title, onClose, wide = false, children }: ModalP
   close.current = onClose
 
   useEffect(() => {
+    // Tab goes round the dialog's controls, from the last back to the first,
+    // and Shift+Tab the other way. It's moved here rather than left to the
+    // browser, as Safari's own Tab skips buttons unless set not to, and would
+    // leave the dialog. Only the dialog on top does this: the import review
+    // stays open under the question it asks before closing.
+    const keepTabInside = (event: KeyboardEvent) => {
+      const panel = panelRef.current
+      const open = document.querySelectorAll('[role="dialog"][aria-modal="true"]')
+      if (!panel || open[open.length - 1] !== panel) return
+      // A group of radio buttons is one stop, at the one that's chosen.
+      const tabbable = [...panel.querySelectorAll<HTMLElement>(TABBABLE)].filter(
+        (element) =>
+          element.tabIndex >= 0 &&
+          element.getClientRects().length > 0 &&
+          !(element instanceof HTMLInputElement && element.type === "radio" && !element.checked),
+      )
+      if (tabbable.length === 0) return
+      event.preventDefault()
+      const active = document.activeElement
+      const at = tabbable.findIndex((element) => element === active)
+      if (at >= 0) {
+        tabbable[(at + (event.shiftKey ? -1 : 1) + tabbable.length) % tabbable.length].focus()
+        return
+      }
+      // From something Tab doesn't stop at, as a section scrolled to, it carries on from there.
+      // Outside the dialog altogether, Tab goes to its first control and Shift+Tab to its last.
+      const after =
+        active && panel.contains(active)
+          ? tabbable.findIndex((element) => active.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
+          : -1
+      const before = after < 0 ? tabbable.length - 1 : after - 1
+      tabbable[event.shiftKey ? (before + tabbable.length) % tabbable.length : Math.max(after, 0)].focus()
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close.current()
+      else if (event.key === "Tab") keepTabInside(event)
     }
     document.addEventListener("keydown", onKeyDown)
     // Start keyboard users inside the dialog, and put them back where they were once it closes.
