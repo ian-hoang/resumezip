@@ -1,0 +1,155 @@
+{
+  "id": "preview-mono",
+  "resumeTitle": "Tomás Rivera",
+  "resumeTag": "professional",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "mono",
+  "sectionOrder": [
+    "Work",
+    "Projects",
+    "Education",
+    "Publications",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Tomás Rivera",
+    "email": "tomas.rivera@example.com",
+    "phoneNumber": "(555) 015-6610",
+    "location": "Toronto, ON",
+    "linkedin": "linkedin.com/in/tomasrivera",
+    "profileGithub": "github.com/trivera",
+    "personalWebsite": "",
+    "summary": "Production engineer who keeps busy storefronts and DNS fast and boring. Most at home in Go and Rust, in a profiler, and in the review after an incident."
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "University of Waterloo",
+      "schoolLocation": "Waterloo, ON",
+      "degree": "Bachelor of Mathematics in Computer Science",
+      "gpa": "",
+      "schoolStartDate": "Sep 2014",
+      "schoolEndDate": "Apr 2019",
+      "coursework": "Operating Systems, Distributed Systems, Compilers, Computer Networks",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Senior Production Engineer",
+      "companyName": "Shopify",
+      "workLocation": "Toronto, ON",
+      "workStartDate": "Jun 2022",
+      "workEndDate": "Present",
+      "workDescription": "• Run the storefront cache that serves 80% of page views during flash sales, built on Nginx, Lua and Redis in three regions and kept to a two-millisecond budget per request\n• Moved deploys for 400 services onto a Kubernetes rollout controller with automatic canary checks, which brought the median deploy down from 40 minutes to 9 minutes\n• Wrote the load-testing harness that replays Black Friday traffic against staging every week, now required before any change to the checkout path is allowed to merge\n• Cut the platform's yearly cloud bill by 18% by moving batch jobs to spot instances with safe retries\n• Lead incident reviews for the platform group and track each fix through to an owner and a date"
+    },
+    {
+      "id": 2,
+      "workRole": "Systems Engineer",
+      "companyName": "Cloudflare",
+      "workLocation": "Remote",
+      "workStartDate": "Jul 2019",
+      "workEndDate": "May 2022",
+      "workDescription": "• Built a Rust service that checks DNS zone files as they're uploaded, catching about 2,000 broken zones a day before any of them reach the edge network and its 300 cities\n• Added per-customer rate limits to the DNS API with token buckets in Redis, so the heaviest users can't slow the API down for everyone else on the busiest days of the year\n• Profiled zone transfers with eBPF and removed two copies of every record, halving the memory they need\n• Wrote the DNS on-call guide and trained 12 engineers on it, running a drill every quarter"
+    },
+    {
+      "id": 3,
+      "workRole": "Software Engineering Intern",
+      "companyName": "GitHub",
+      "workLocation": "Remote",
+      "workStartDate": "May 2018",
+      "workEndDate": "Aug 2018",
+      "workDescription": "• Built a Go job that finds repositories whose webhooks keep failing and emails their owners, which cut failed webhook deliveries by 30% across the whole site"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "tracecat",
+      "projectDate": "2023",
+      "techStack": "Go, eBPF",
+      "projectGithub": "github.com/trivera/tracecat",
+      "additionalLink": "",
+      "projectDescription": "• A command-line tool that draws a live flame graph of any Linux process from eBPF stack samples\n• Packaged for Homebrew, apt and Nix, with its man page and shell completions written from a single spec"
+    },
+    {
+      "id": 2,
+      "projectName": "zonelint",
+      "projectDate": "2021",
+      "techStack": "Rust",
+      "projectGithub": "github.com/trivera/zonelint",
+      "additionalLink": "",
+      "projectDescription": "• A linter for DNS zone files that catches 40 kinds of mistakes, run in CI by three hosting companies"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Go, Rust, Python, C, Bash, SQL"
+    },
+    {
+      "id": 2,
+      "skillName": "Infrastructure",
+      "skillDetails": "Kubernetes, Terraform, Nginx, Redis, Kafka"
+    },
+    {
+      "id": 3,
+      "skillName": "Databases",
+      "skillDetails": "PostgreSQL, ClickHouse, SQLite"
+    },
+    {
+      "id": 4,
+      "skillName": "Observability",
+      "skillDetails": "Prometheus, Grafana, OpenTelemetry, eBPF"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "Organizer",
+      "leadershipOrg": "Toronto Go Meetup",
+      "leadershipLocation": "Toronto, ON",
+      "leadershipStartDate": "Jan 2021",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Run a monthly meetup of about 120 Go developers, finding speakers, hosts and sponsors, and record every talk for the group's video channel and its mailing list"
+    }
+  ],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Volunteer Mentor",
+      "volunteerOrg": "Kids Code Jeunesse",
+      "volunteerLocation": "Toronto, ON",
+      "volunteerStartDate": "Sep 2020",
+      "volunteerEndDate": "Present",
+      "volunteerDescription": "• Teach a monthly Saturday workshop on making small games in Scratch and Python for children aged 9 to 13\n• Wrote the workshop's Python lessons, now used by volunteers at four other community centers"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Certified Kubernetes Administrator",
+      "awardOrg": "Cloud Native Computing Foundation",
+      "awardDate": "2022"
+    },
+    {
+      "id": 2,
+      "awardName": "Dean's Honours List",
+      "awardOrg": "University of Waterloo",
+      "awardDate": "2019"
+    },
+    {
+      "id": 3,
+      "awardName": "Google Summer of Code, student developer",
+      "awardOrg": "Google",
+      "awardDate": "2017"
+    }
+  ]
+}

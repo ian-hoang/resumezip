@@ -25,6 +25,7 @@ const KNOWN_GAPS: Record<string, string[]> = {
   levelsfyi: [],
   margin: [],
   modernjack: [],
+  mono: [],
   // A dash inside an award's name reads as the start of the organization.
   referme: ["awards[0].name", "awards[0].organization"],
   resumeworded: [],

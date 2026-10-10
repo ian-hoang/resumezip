@@ -11,6 +11,7 @@ import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
 import margin from "./templates/margin.typ"
 import modernjack from "./templates/modernjack.typ"
+import mono from "./templates/mono.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
 import swiss from "./templates/swiss.typ"
@@ -25,6 +26,7 @@ const SOURCES: Record<string, string> = {
   "/levelsfyi.typ": levelsfyi,
   "/margin.typ": margin,
   "/modernjack.typ": modernjack,
+  "/mono.typ": mono,
   "/referme.typ": referme,
   "/resumeworded.typ": resumeworded,
   "/swiss.typ": swiss,
