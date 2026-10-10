@@ -302,12 +302,16 @@ function ScoreScale({ total }: { total: number | "checking" | null }) {
           <span key={mark} style={{ left: `${mark}%` }} className="absolute -top-1 h-[11px] w-px bg-ink-2" />
         ))}
       </div>
+      {/* Drawn as CSS content, not text: they're only marks, and the page's one number is the score. */}
       <div className="relative mt-1.5 h-3 font-mono text-[10px] leading-none text-ink-2">
-        <span className="absolute left-0">0</span>
+        <span data-mark="0" className="absolute left-0 before:content-[attr(data-mark)]" />
         {SCALE_MARKS.map((mark) => (
-          <span key={mark} style={{ left: `${mark}%` }} className="absolute -translate-x-1/2 tabular-nums">
-            {mark}
-          </span>
+          <span
+            key={mark}
+            data-mark={mark}
+            style={{ left: `${mark}%` }}
+            className="absolute -translate-x-1/2 tabular-nums before:content-[attr(data-mark)]"
+          />
         ))}
       </div>
     </div>

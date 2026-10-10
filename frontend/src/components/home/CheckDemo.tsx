@@ -87,7 +87,8 @@ export default function CheckDemo() {
       // at the section's head (::before) and before the clouds at its foot (::after).
       const head = parseFloat(getComputedStyle(section, "::before").height) || 0
       const foot = parseFloat(getComputedStyle(section, "::after").height) || 0
-      const scrollable = section.offsetHeight - head - foot - window.innerHeight
+      // At least 1, so a section no taller than the screen doesn't divide by 0.
+      const scrollable = Math.max(1, section.offsetHeight - head - foot - window.innerHeight)
       const progress = clamp((-section.getBoundingClientRect().top - head) / scrollable)
       // Each stage gets a third of the scroll, with a little still time at the end of each.
       const at = progress * STAGES.length
@@ -126,7 +127,7 @@ export default function CheckDemo() {
           <h2 id="check-demo" className="label-section">
             Checked as you write
           </h2>
-          <span aria-hidden="true" className="label-section tabular-nums text-white/70">
+          <span aria-hidden="true" className="label-section tabular-nums text-white">
             {stage + 1} / {STAGES.length}
           </span>
         </div>
@@ -153,7 +154,7 @@ export default function CheckDemo() {
                 </p>
                 {/* While it's read, what's read flies off the page into a list, beside the words on wide screens. */}
                 <p
-                  className={`max-w-[440px] text-base leading-[1.4] text-white/85 md:text-xl md:leading-[1.35] ${index === 1 ? "md:hidden" : ""}`}
+                  className={`max-w-[440px] text-base leading-[1.4] text-white md:text-xl md:leading-[1.35] ${index === 1 ? "md:hidden" : ""}`}
                 >
                   {item.text}
                 </p>

@@ -454,13 +454,14 @@ function Editor({ id }: { id: string }) {
               {/* Here rather than after the name, so it stays put while the name is typed. */}
               <SavedNote />
               <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
-              {/* Download PDF is the main way out; the ▾ beside it has the others. */}
+              {/* Download PDF is the main way out; the ▾ beside it has the others. The button's
+                  least width fits "Download PDF", so it doesn't shrink when it says Downloaded. */}
               <div className="relative flex">
                 <button
                   type="button"
                   onClick={download}
                   disabled={downloading}
-                  className="download-button ink-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-[18px] pr-4 text-sm font-medium disabled:cursor-wait sm:min-w-[9.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
+                  className="download-button ink-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-[18px] pr-4 text-sm font-medium disabled:cursor-wait sm:min-w-[10.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
                 >
                   <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
                   {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
@@ -476,17 +477,17 @@ function Editor({ id }: { id: string }) {
                           : "scale-x-0"
                     }`}
                   />
-                  {/* Just "PDF" on phones, so it fits beside the template picker. Both labels share one
-                      grid cell, the hidden one invisible, so the button keeps the wider one's width. */}
-                  <span className="grid">
-                    <span className={`col-start-1 row-start-1 ${downloaded ? "" : "invisible"}`}>
+                  {/* Just "PDF" on phones, so it fits beside the template picker. */}
+                  {downloaded ? (
+                    <span>
                       <span className="max-sm:sr-only">Downloaded</span>
                       <span className="sm:hidden">PDF</span>
                     </span>
-                    <span className={`col-start-1 row-start-1 ${downloaded ? "invisible" : ""}`}>
+                  ) : (
+                    <span>
                       <span className="max-sm:sr-only">Download </span>PDF
                     </span>
-                  </span>
+                  )}
                 </button>
                 <DownloadMenu
                   choices={[
