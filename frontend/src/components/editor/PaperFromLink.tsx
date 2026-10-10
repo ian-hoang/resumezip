@@ -267,7 +267,7 @@ export default function PaperFromLink({ entries, owner, onAdd, children }: Paper
                 else void run()
               }}
               disabled={!progress && !text.trim()}
-              className="h-10 rounded-full bg-ink px-[18px] text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="ink-button lift-button h-10 rounded-full px-[18px] text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {progress ? "Stop" : "Add papers"}
             </button>

@@ -212,7 +212,7 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
         aria-busy={busy || undefined}
         onClick={() => (open ? close() : show())}
         onKeyDown={onButtonKeyDown}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-r-full border-l border-white/15 bg-ink pr-1 text-white transition-colors hover:bg-black aria-expanded:bg-black xl:h-11 xl:w-11"
+        className="inline-flex h-10 w-10 items-center justify-center ink-button rounded-r-full border-l border-white/15 pr-1 aria-expanded:bg-black xl:h-11 xl:w-11"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

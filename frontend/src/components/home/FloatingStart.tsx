@@ -52,7 +52,7 @@ export default function FloatingStart() {
       >
         <StartWritingLink
           preloadOnHover
-          className="group flex items-center gap-4 rounded-full bg-ink py-1.5 pl-6 pr-1.5 text-white shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)] transition-colors hover:bg-black"
+          className="group flex items-center gap-4 rounded-full bg-ink py-1.5 pl-6 pr-1.5 text-white shadow-[0_18px_40px_-14px_rgba(17,19,24,0.55)] transition-[background-color,scale] duration-150 hover:bg-[#2b2f3a] active:scale-[0.98] active:bg-black motion-reduce:active:scale-100"
         >
           <span className="whitespace-nowrap text-[16px] tracking-[-0.015em]">Start writing. It’s free.</span>
           <span

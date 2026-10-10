@@ -170,7 +170,7 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
               ref={nextRef}
               type="button"
               onClick={forward}
-              className="inline-flex h-11 items-center rounded-full bg-ink px-[18px] text-[15px] font-medium text-white transition-colors hover:bg-black"
+              className="ink-button lift-button inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
             >
               {next}
             </button>

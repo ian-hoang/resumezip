@@ -57,7 +57,7 @@ export default function Home() {
             </p>
             <Magnetic>
               <StartWritingLink
-                className="group flex h-12 items-center justify-between gap-4 rounded-full bg-ink pl-6 pr-1.5 text-white transition-colors hover:bg-black"
+                className="ink-button lift-button group flex h-12 items-center justify-between gap-4 rounded-full pl-6 pr-1.5"
                 preloadOnHover
               >
                 <span className="magnet-pull magnet-pull-soft text-[15px] font-medium tracking-[-0.01em]">Start writing</span>

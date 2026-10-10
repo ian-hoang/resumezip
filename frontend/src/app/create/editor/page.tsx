@@ -423,7 +423,7 @@ function Editor({ id }: { id: string }) {
         </p>
         <Link
           href="/create/dashboard"
-          className="mt-2 inline-flex h-11 items-center rounded-full bg-ink px-[18px] text-[15px] font-medium text-white transition-colors hover:bg-black"
+          className="ink-button lift-button mt-2 inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
         >
           Go to your resumes
         </Link>
@@ -472,7 +472,7 @@ function Editor({ id }: { id: string }) {
                   type="button"
                   onClick={download}
                   disabled={downloading}
-                  className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full bg-ink pl-[18px] pr-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
+                  className="download-button ink-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-[18px] pr-4 text-sm font-medium disabled:cursor-wait sm:min-w-[9.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
                 >
                   <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
                   {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}

@@ -18,7 +18,7 @@ const WIDE_HEADER = "(min-width: 48rem)"
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
 // No display of its own: beside the logo these show from sm up, and in the menu below that.
-const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em] transition-colors"
+const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em]"
 
 interface SitePillProps {
   /** Dark glass over the home page's video and footer; light glass everywhere else. */
@@ -71,8 +71,10 @@ export function SitePill({ tone = "light", tucked = false, onStartWriting }: Sit
   }, [menuOpen])
 
   // An ink pill on light glass; over the video's dark glass, a white one.
-  const primary = `${PILL} px-[18px] ${dark ? "bg-white text-ink hover:bg-white/85" : "bg-ink text-white hover:bg-black"}`
-  const secondary = `${PILL} ring-1 ring-inset ${
+  const primary = `${PILL} px-[18px] ${
+    dark ? "bg-white text-ink transition-colors hover:bg-white/85 active:bg-white/75" : "ink-button lift-button"
+  }`
+  const secondary = `${PILL} ring-1 ring-inset transition-colors ${
     dark ? "text-white ring-white/30 hover:ring-white/70" : "bg-sheet/40 text-ink ring-ink/15 hover:ring-ink/40"
   }`
 

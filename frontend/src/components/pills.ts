@@ -1,10 +1,12 @@
 // The site's buttons, on every page: the main action is an ink pill, and
 // everything else an outline pill, on the desk or a dialog's glass.
 
-const PILL =
-  "inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-[18px] text-[15px] font-medium tracking-[-0.01em] transition-[background-color,box-shadow] duration-200 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50"
+const SHAPE =
+  "inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-[18px] text-[15px] font-medium tracking-[-0.01em] disabled:cursor-not-allowed disabled:opacity-50"
+const PILL = `${SHAPE} transition-[background-color,box-shadow] duration-200 motion-reduce:transition-none`
 
-export const INK_PILL = `${PILL} bg-ink text-white hover:bg-black`
+/** The main action: it lifts under the pointer and sinks as it's pressed (ink-button, lift-button in globals.css). */
+export const INK_PILL = `${SHAPE} ink-button lift-button`
 
 export const OUTLINE_PILL = `${PILL} bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:bg-sheet hover:ring-ink/40`
 
