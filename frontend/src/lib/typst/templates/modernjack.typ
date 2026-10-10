@@ -7,50 +7,51 @@
 #let hd = data.headings
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.4in, y: 0.5in))
-#set text(font: "Lato", size: 11pt, lang: "en")
-// All vertical spacing below is explicit, measured against the LaTeX output.
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.4in, y: 0.5in)))
+#set text(font: "Lato", size: sized(11pt), lang: "en")
+// All vertical spacing below is explicit, measured against the LaTeX output,
+// and scaled by Fine-tune (see common.typ).
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.48em, spacing: 0pt)
+#set par(justify: false, leading: 0.48em * tune.leading, spacing: 0pt)
 
-#let ul(body) = underline(offset: 2.6pt, stroke: 0.4pt, evade: false, body)
+#let ul(body) = underline(offset: sized(2.6pt), stroke: 0.4pt, evade: false, body)
 
 // \resumeItemListStart ... \resumeItemListEnd
 #let bullets(items) = if items.len() > 0 {
-  v(7.5pt)
-  set text(size: 10pt)
-  list(marker: [•], indent: 17pt, body-indent: 5pt, spacing: 6.6pt, ..items.map(rich))
+  v(spaced(7.5pt))
+  set text(size: sized(10pt))
+  list(marker: [•], indent: 17pt, body-indent: 5pt, spacing: spaced(6.6pt), ..items.map(rich))
 }
 
 // \resumeSubheading: two rows of left/right aligned text, then bullets.
 #let subheading(top-left, top-right, bottom-left, bottom-right, items: ()) = {
   block(sticky: true, {
     row(strong(top-left), top-right)
-    v(6.5pt)
-    text(size: 10pt, row(emph(bottom-left), emph(bottom-right)))
+    v(spaced(6.5pt))
+    text(size: sized(10pt), row(emph(bottom-left), emph(bottom-right)))
   })
   bullets(items)
 }
 
 // Entries are indented 0.15in and separated by a fixed gap.
-#let entries(gap: 11pt, items) = pad(left: 0.15in, right: 0.075in, items.join(v(gap)))
+#let entries(gap: 11pt, items) = pad(left: 0.15in, right: 0.075in, items.join(v(sized(gap))))
 
 // Sticky so a heading is never left alone at the bottom of a page.
 #let section(title, body) = {
-  v(15pt)
+  v(sized(15pt))
   block(sticky: true, {
-    text(size: 12pt, weight: "bold", title)
-    v(5pt)
+    text(size: sized(12pt), weight: "bold", title)
+    v(sized(5pt))
     line(length: 100%, stroke: 0.4pt)
   })
-  v(5.5pt)
+  v(sized(5.5pt))
   body
 }
 
 // ---------- Heading ----------
 
 #align(center, {
-  text(size: 24.88pt, weight: "bold", p.name)
+  text(size: sized(24.88pt), weight: "bold", p.name)
   let items = ()
   if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push(p.phone) }
@@ -59,12 +60,12 @@
   if has(p.website) { items.push(web-link(p.website, ul(p.website))) }
   if has(p.github) { items.push(web-link(p.github, ul(p.github))) }
   if items.len() > 0 {
-    v(6.5pt)
+    v(sized(6.5pt))
     // A long line wraps between items, never inside a link.
-    text(size: 10pt, items.map(box).join([ | ]))
+    text(size: sized(10pt), items.map(box).join([ | ]))
   }
 })
-#v(2pt)
+#v(sized(2pt))
 
 // ---------- Sections ----------
 
@@ -93,18 +94,18 @@
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
       block(sticky: true, row(
-        text(size: 10pt, project-header(pr, [ | ], url => web-link(url, ul(url)))),
+        text(size: sized(10pt), project-header(pr, [ | ], url => web-link(url, ul(url)))),
         pr.date,
       ))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
     section(heading-or(hd.publications, "Publications"), entries((
-      text(size: 10pt, citations(data.publications, (url, body) => web-link(url, ul(body)))),
+      text(size: sized(10pt), citations(data.publications, (url, body) => web-link(url, ul(body)))),
     )))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), entries((
-      text(size: 10pt, data.skills.map(s => {
+      text(size: sized(10pt), data.skills.map(s => {
         if has(s.name) { strong(s.name + ":") + [ ] }
         s.details
       }).join(linebreak())),

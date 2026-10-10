@@ -10,6 +10,24 @@
 
 #let has(value) = value != none and value != ""
 
+// Fine-tune's settings (lib/tune.ts): multiples of the template's own text
+// size, margins and line spacing, each 1 when unset, and a paper, "" for the
+// template's own. A template sets its text sizes, and the spaces around
+// headings and between entries, through `sized`; the spaces between lines
+// through `spaced`, which follows the line spacing too; and its page through
+// `page-paper` and `page-margin`. A leading in em already follows the text
+// size, so it's only multiplied by tune.leading. At 1, each gives back the
+// length it's given, so a resume without a tune prints as it always has.
+#let tune = data.tune
+#let sized(length) = length * tune.size
+#let spaced(length) = length * tune.size * tune.leading
+#let page-paper(own) = if has(tune.paper) { tune.paper } else { own }
+#let page-margin(margin) = if type(margin) == dictionary {
+  margin.pairs().map(((side, length)) => (side, length * tune.margin)).to-dict()
+} else {
+  margin * tune.margin
+}
+
 // A bullet: its runs from resumeData.ts, with the words the user marked
 // **bold** or *italic* set that way. Bullets a template builds itself (like
 // "Relevant Coursework: ...") are content already and pass through.
@@ -78,11 +96,11 @@
 }
 
 // Publications as a numbered list of citations, [1], [2], ..., each with a
-// hanging indent.
+// hanging indent, `gap` apart at the template's line spacing.
 #let citations(list, show-link, gap: 6pt) = grid(
   columns: (auto, 1fr),
   column-gutter: 0.7em,
-  row-gutter: gap,
+  row-gutter: spaced(gap),
   ..list.enumerate().map(((i, pb)) => ("[" + str(i + 1) + "]", citation(pb, show-link))).flatten(),
 )
 

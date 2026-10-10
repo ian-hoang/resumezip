@@ -10,6 +10,10 @@ server to build a PDF.
   sections. Text and list sections a person adds are mapped into `extras`,
   keyed by their `extra:<id>` ordering reference. Empty bodies have no printable descriptor.
   Prose stays literal; custom lists use the existing bold/italic bullet runs.
+  `tune` is the editor's Fine-tune settings (`src/lib/tune.ts`), every one
+  there: the text size, margins and line spacing as multiples of the
+  template's own (1 when unset), the paper ("" for the template's own), and
+  whether to keep the resume to one page.
 - `compile.ts` is what the UI calls. It runs the compiler in a Web Worker, and
   replaces the worker if it goes quiet with work to do: 30 s while the compiler
   and fonts download (each bit that arrives counts, so slow connections finish),
@@ -48,6 +52,10 @@ server to build a PDF.
 ## Adding a template
 
 1. Add `templates/<id>.typ`, importing `common.typ` for the data and helpers.
+   Set its page through `page-paper` and `page-margin`, its text sizes and the
+   spaces around headings and entries through `sized`, and the spaces between
+   lines through `spaced`, so Fine-tune can change them; add its own text
+   size, side margins and paper to `TEMPLATE_SETTINGS` in `src/lib/tune.ts`.
 2. Import it in `typst.worker.ts` and add it to `SOURCES`.
 3. Add it to `TEMPLATES` in `src/lib/templates.ts` with a picture of its first
    page in `public/previews/<id>.webp` (1280 px wide, from the editor's
