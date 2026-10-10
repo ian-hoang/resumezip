@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
-import { pageErrors } from "./helpers"
+import { chooseTemplate, pageErrors } from "./helpers"
 
 declare global {
   interface Window {
@@ -128,8 +128,7 @@ test("what a change prints lights up on the preview for a moment", async ({ page
     .locator(".textLayer")
     .first()
     .evaluate((layer) => (layer.dataset.replaced = ""))
-  await page.getByRole("button", { name: /^Template/ }).click()
-  await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name: "Harvard" }).click()
+  await chooseTemplate(page, "Harvard")
   // Its text, drawn in full: react-pdf ends a text layer with .endOfContent.
   await expect(preview.locator(".textLayer:not([data-replaced]) > .endOfContent")).toBeAttached()
   await expect(preview.getByText("ADA LOVELACE", { exact: true })).toBeAttached()

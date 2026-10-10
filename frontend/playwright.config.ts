@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test"
+import { TOUR_SEEN_KEY } from "./src/components/editor/tourSeen"
 
 // Browser tests (e2e/) use the production build, as visitors get it:
 // `npm run build`, then `npm run test:browser`.
@@ -20,6 +21,12 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    // Each test's browser has seen the editor's first-visit tour already, so
+    // it doesn't stand in front of the editor. e2e/tour.spec.ts starts without.
+    storageState: {
+      cookies: [],
+      origins: [{ origin: `http://localhost:${PORT}`, localStorage: [{ name: TOUR_SEEN_KEY, value: "seen" }] }],
+    },
   },
   // Chrome, and WebKit for Safari, which most iPhone visitors use. CI tests
   // each in a job of its own (--project), at the same time.

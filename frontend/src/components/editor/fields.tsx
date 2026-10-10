@@ -97,7 +97,7 @@ export function Field({
     placeholder,
     "aria-describedby": flag ? noteId : undefined,
     "aria-invalid": flag?.level === "fix" || undefined,
-    className: `w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
+    className: `relative w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
       !flag ? "border-b border-rule-strong" : "border-b-2 border-accent"
     }`,
   }
@@ -105,6 +105,12 @@ export function Field({
     <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
       <label className="group/field relative flex min-w-0 flex-col gap-1.5">
         <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">{label}</span>
+        {/* A soft blue light rises from the line while the field has focus. It's under the box (which
+            is `relative`, and later), so the text stays crisp, and nothing moves. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 rounded-t-[6px] bg-linear-to-t from-accent/[0.09] to-accent/0 opacity-0 transition-opacity duration-200 ease-out group-focus-within/field:opacity-100 motion-reduce:transition-none"
+        />
         {multiline ? (
           <textarea
             ref={textareaRef}
@@ -124,10 +130,10 @@ export function Field({
             {...shared}
           />
         )}
-        {/* The field being typed in is underlined in blue, drawn out from the left. */}
+        {/* The field being typed in is underlined in blue, drawn out from the left, with a glow. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent shadow-[0_0_10px_rgb(46_91_230/0.55)] transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
         />
       </label>
       {flag && <FlagNote id={noteId} finding={flag} />}
@@ -432,7 +438,8 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
           onKeyDown={onKeyDown}
           onCopy={rememberCopied}
           onCut={rememberCopied}
-          className={`w-full resize-none overflow-hidden rounded-[4px] border bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
+          // A soft blue halo while it has focus, as a field's glow: a shadow, so nothing moves.
+          className={`w-full resize-none overflow-hidden rounded-[4px] border bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-ink-2/50 focus:shadow-[0_0_0_4px_rgb(46_91_230/0.1),0_10px_28px_-12px_rgb(46_91_230/0.5)] focus-visible:outline-none motion-reduce:transition-none ${
             !flag ? "border-rule focus:border-accent" : "border-accent ring-1 ring-accent"
           }`}
         />
@@ -553,7 +560,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
       <span className="label-mono text-ink-2">{position}</span>
       {draft === null ? (
         <div className="flex flex-wrap items-center gap-2">
-          <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em]">
+          <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em] xl:text-[32px]">
             {title}
           </h1>
           {onRename && (
@@ -586,7 +593,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
             if (event.key === "Enter") save()
             else setDraft(null)
           }}
-          className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[40px] leading-[1.1] tracking-[-0.02em] outline-none focus-visible:outline-none"
+          className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[40px] leading-[1.1] tracking-[-0.02em] outline-none focus-visible:outline-none xl:text-[32px]"
         />
       )}
       {flag && <FlagNote finding={flag} />}
