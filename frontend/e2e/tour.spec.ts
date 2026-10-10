@@ -90,6 +90,22 @@ test("Escape closes the tour, and so does Close, for good", async ({ page }) => 
   expect(errors).toEqual([])
 })
 
+test("Take the tour, in the editor's header, opens it again after it's been seen", async ({ page }) => {
+  const errors = pageErrors(page)
+  await startWriting(page)
+  const tour = page.getByRole("dialog")
+  await page.keyboard.press("Escape")
+  await expect(tour).toBeHidden()
+
+  await page.getByRole("button", { name: "Take the tour" }).click()
+  await expect(tour).toBeVisible()
+  await expect(tour.getByRole("button", { name: "Close the tour" })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(tour).toBeHidden()
+  await previewShown(page)
+  expect(errors).toEqual([])
+})
+
 test("a tour left open, by a reload or a step away, doesn't show again on the next visit", async ({ page }) => {
   const errors = pageErrors(page)
   await startWriting(page)

@@ -114,6 +114,8 @@ function Editor({ id }: { id: string }) {
   const [pdfResume, setPdfResume] = useState<Resume | undefined>(undefined)
   const [unbuilt, setUnbuilt] = useState<string | null>(null)
   const [compileError, setCompileError] = useState<string | null>(null)
+  // How many times Take the tour was pressed: each one opens the tour again.
+  const [tourAsked, setTourAsked] = useState(0)
   const [downloading, setDownloading] = useState(false)
   // When the last download finished, while the button says so; 0 otherwise.
   const [downloadedAt, setDownloadedAt] = useState(0)
@@ -460,6 +462,16 @@ function Editor({ id }: { id: string }) {
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               {/* Here rather than after the name, so it stays put while the name is typed. */}
               <SavedNote />
+              {/* The first-visit tour, again, whenever it's wanted. */}
+              <button
+                type="button"
+                aria-label="Take the tour"
+                title="Take the tour"
+                onClick={() => setTourAsked((count) => count + 1)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sheet/70 text-[15px] font-medium text-ink ring-1 ring-ink/15 transition-shadow hover:ring-ink/40"
+              >
+                ?
+              </button>
               <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
               {/* Download PDF is the main way out; the ▾ beside it has the others. The button's
                   least width fits "Download PDF", so it doesn't shrink when it says Downloaded. */}
@@ -653,7 +665,7 @@ function Editor({ id }: { id: string }) {
         </div>
       </div>
 
-      <Tour />
+      <Tour asked={tourAsked} />
     </div>
   )
 }

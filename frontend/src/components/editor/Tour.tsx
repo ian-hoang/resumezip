@@ -68,8 +68,11 @@ function rememberSeen() {
   }
 }
 
-/** A short tour of the editor, in four steps, on the first visit. */
-export default function Tour() {
+/**
+ * A short tour of the editor, in four steps, on the first visit, and again
+ * each time `asked` goes up (the header's Take the tour button).
+ */
+export default function Tour({ asked = 0 }: { asked?: number }) {
   const [shown, setShown] = useState(false)
   useEffect(() => {
     if (!firstVisit()) return
@@ -79,6 +82,9 @@ export default function Tour() {
     rememberSeen()
     setShown(true)
   }, [])
+  useEffect(() => {
+    if (asked > 0) setShown(true)
+  }, [asked])
   return shown ? <TourDialog onClosed={() => setShown(false)} /> : null
 }
 
