@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { pageErrors } from "./helpers"
+import { chooseTemplate, pageErrors } from "./helpers"
 
 // The first preview waits for the PDF compiler to download. A stand-in page
 // shows meanwhile (components/editor/PrintingPage.tsx), and the dashboard
@@ -80,11 +80,7 @@ test("a resume downloads only its template's fonts, and another template's once 
   const jakes = await drawn()
 
   // Harvard is set in EB Garamond.
-  await page.getByRole("button", { name: /^Template/ }).click()
-  await page
-    .getByRole("dialog", { name: "Choose a template" })
-    .getByRole("button", { name: /Harvard/ })
-    .click()
+  await chooseTemplate(page, "Harvard")
   await expect.poll(() => fonts.filter((font) => font.startsWith("EBGaramond")).length).toBe(4)
   await expect.poll(drawn).not.toBe(jakes)
   await expect(preview.getByText(/Ada Lovelace/i).first()).toBeVisible()

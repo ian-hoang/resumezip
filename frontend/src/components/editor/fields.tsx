@@ -560,7 +560,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
       <span className="label-mono text-ink-2">{position}</span>
       {draft === null ? (
         <div className="flex flex-wrap items-center gap-2">
-          <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em]">
+          <h1 tabIndex={-1} className="font-serif text-[40px] leading-[1.1] tracking-[-0.02em] xl:text-[32px]">
             {title}
           </h1>
           {onRename && (
@@ -593,7 +593,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
             if (event.key === "Enter") save()
             else setDraft(null)
           }}
-          className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[40px] leading-[1.1] tracking-[-0.02em] outline-none focus-visible:outline-none"
+          className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[40px] leading-[1.1] tracking-[-0.02em] outline-none focus-visible:outline-none xl:text-[32px]"
         />
       )}
       {flag && <FlagNote finding={flag} />}

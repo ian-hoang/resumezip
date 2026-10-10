@@ -217,7 +217,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => (open ? close() : show())}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[4px] border border-dashed border-rule-strong px-3 text-sm text-ink-2 transition-[color,border-color,scale] duration-150 hover:border-ink hover:text-ink active:scale-[0.98] aria-expanded:border-ink aria-expanded:text-ink motion-reduce:transition-none xl:mt-3 xl:h-10 xl:w-full"
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[4px] border border-dashed border-rule-strong px-3 text-sm text-ink-2 transition-[color,border-color,scale] duration-150 hover:border-ink hover:text-ink active:scale-[0.98] aria-expanded:border-ink aria-expanded:text-ink motion-reduce:transition-none xl:mt-3 xl:h-10 xl:w-full xl:rounded-[10px] xl:border-ink/20"
       >
         {/* It turns into a cross while the menu is open. */}
         <Plus

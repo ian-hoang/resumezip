@@ -165,7 +165,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
   }, [active, sections, allTitles, wide, dnd, dragging])
 
   const item = (isActive: boolean) =>
-    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:min-w-0 xl:shrink ${
+    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:min-w-0 xl:shrink xl:py-[7px] ${
       isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink"
     }`
   // A row's own background: the white tab is drawn behind the chosen one,
@@ -185,14 +185,14 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         ref={drag?.innerRef}
         {...drag?.draggableProps}
         data-section-row
-        className={`flex shrink-0 items-center rounded-[4px] transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none ${
+        className={`flex shrink-0 items-center rounded-[4px] transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none xl:rounded-[10px] ${
           added.has(name) ? "starting:-translate-x-2 starting:opacity-0" : ""
         } ${isDragged ? "bg-sheet shadow-sm ring-1 ring-rule" : rowBackground(isActive)}`}
       >
         <span
           {...drag?.dragHandleProps}
           aria-label={drag && `Reorder ${labelOf(name, index)}`}
-          className="flex h-9 w-6 shrink-0 items-center justify-center text-ink-2 hover:text-ink"
+          className="flex h-9 w-6 shrink-0 items-center justify-center text-ink-2 hover:text-ink xl:h-[34px]"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </span>
@@ -230,7 +230,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
       <span
         ref={tabRef}
         aria-hidden="true"
-        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-inset ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
+        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-inset ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none xl:rounded-[10px] xl:shadow-[0_1px_3px_rgb(17_19_24/0.08)] xl:ring-ink/[0.05] ${
           dragging ? "invisible" : ""
         }`}
       />
@@ -238,8 +238,11 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
 
       {/* Laid out as the other sections are, with an empty space where they have their
           handle, so the numbers and titles line up in the list. */}
-      <div data-section-row className={`flex shrink-0 items-center rounded-[4px] transition-colors ${rowBackground(active === "Profile")}`}>
-        <span className="hidden h-9 w-6 shrink-0 xl:block" aria-hidden="true" />
+      <div
+        data-section-row
+        className={`flex shrink-0 items-center rounded-[4px] transition-colors xl:rounded-[10px] ${rowBackground(active === "Profile")}`}
+      >
+        <span className="hidden h-[34px] w-6 shrink-0 xl:block" aria-hidden="true" />
         <button
           type="button"
           data-section-ref="Profile"
@@ -273,7 +276,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
 
       {onAdd && <AddSectionMenu sections={addable} onAdd={onAdd} />}
 
-      <p className="mt-3 hidden border-t border-rule px-2 pt-5 text-[13px] leading-normal text-ink-2 xl:block">
+      <p className="mt-3 hidden border-t border-ink/[0.08] px-2 pt-4 text-[13px] leading-normal text-ink-2 xl:block">
         Drag a section to change its place on the page.
       </p>
     </nav>

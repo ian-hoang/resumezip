@@ -141,3 +141,34 @@ export const holdPreviews = (page: Page, hold: boolean): Promise<void> => page.e
 
 /** How many PDFs the compiler's worker has sent back, with holdablePreviews. */
 export const previewsBuilt = (page: Page): Promise<number> => page.evaluate(() => (window as any).previewsBuilt)
+
+/**
+ * Chooses a template: from the Style panel on the editor's stage, opening it
+ * from its button below 1440px, or from the gallery behind the Template
+ * button on narrower screens.
+ */
+export async function chooseTemplate(page: Page, name: string): Promise<void> {
+  const style = page.getByRole("region", { name: "Style" })
+  const fold = page.getByRole("button", { name: /^Style/ })
+  const picker = page.getByRole("button", { name: /^Template/ })
+  await expect(style.or(fold).or(picker).first()).toBeVisible()
+  if ((await fold.isVisible()) && (await fold.getAttribute("aria-expanded")) === "false") await fold.click()
+  if (await style.isVisible()) {
+    await style.getByRole("button", { name, exact: true }).click()
+    return
+  }
+  await picker.click()
+  await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name, exact: true }).click()
+}
+
+/**
+ * What names the resume's template on screen: the chosen one in the Style
+ * panel, the Style button that folds it away below 1440px, or the Template
+ * button on narrower screens. Only one of them shows at a time.
+ */
+export const templateShown = (page: Page): Locator =>
+  page
+    .getByRole("region", { name: "Style" })
+    .getByRole("button", { pressed: true })
+    .or(page.getByRole("button", { name: /^Style/ }))
+    .or(page.getByRole("button", { name: /^Template/ }))
