@@ -119,7 +119,9 @@ jobs:
         run: npm run test:browser -- --project="$BROWSER"
       # Screenshots and a replayable trace of whatever failed.
       - name: Keep the report
-        if: failure()
+        # Also when a test failed and then passed when tried again, so a flaky
+        # test can be looked into: each failed try leaves an error-context.md.
+        if: failure() || hashFiles('frontend/test-results/**/error-context.md') != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-test-report-${{ matrix.browser }}

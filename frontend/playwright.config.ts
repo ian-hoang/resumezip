@@ -20,6 +20,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    // The trace is of the retry, which passes when a test is flaky. A picture of the failed try shows what went wrong.
+    screenshot: "only-on-failure",
   },
   // Chrome, and WebKit for Safari, which most iPhone visitors use. CI tests
   // each in a job of its own (--project), at the same time.
