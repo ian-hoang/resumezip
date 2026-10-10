@@ -211,3 +211,35 @@ describe("bullets", () => {
     ])
   })
 })
+
+describe("columns", () => {
+  // A narrow column on the left and a wider one on the right, their lines
+  // level with each other, under a name across both.
+  const name = item("Dana Cole", 150, 740, 24)
+  const left = ["Education", "State University", "B.S. in Cell Biology, 2022", "Skills", "Python, R, SQL, ImageJ", "Lab safety, PCR"]
+  const right = [
+    "Experience",
+    "Acme Labs | Research Assistant",
+    "Jun 2022 - Present | Boston, MA",
+    "Ran 300 assays a week for the drug screening team and kept",
+    "the lab's sample records up to date in its tracking system",
+    "Wrote the scripts that turned plate readings into reports",
+    "Trained six new assistants on the plate readers and robots",
+    "Ordered the lab's supplies and kept its budget each quarter",
+    "Kept the freezer inventory and logged where each sample was",
+    "Presented results at the team's weekly meeting with the leads",
+  ]
+  const leftItems = left.map((text, i) => item(text, 36, 700 - 12 * i))
+  const rightItems = right.map((text, i) => item(text, 230, 700 - 12 * i))
+
+  test("one written whole before the other is read as a column, however narrow", () => {
+    const texts = linesFromPages([page([name, ...leftItems, ...rightItems])]).map((line) => line.text)
+    expect(texts).toEqual(["Dana Cole", ...left, ...right])
+  })
+
+  test("text written line by line across both, like dates beside entries, isn't", () => {
+    const written = rightItems.flatMap((rightItem, i) => (leftItems[i] ? [leftItems[i], rightItem] : [rightItem]))
+    const texts = linesFromPages([page([name, ...written])]).map((line) => line.text)
+    expect(texts).toEqual(["Dana Cole", ...right.map((text, i) => (left[i] ? `${left[i]} ${text}` : text))])
+  })
+})

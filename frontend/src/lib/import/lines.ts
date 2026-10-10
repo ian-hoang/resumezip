@@ -198,27 +198,53 @@ function leftAligned(items: Item[]): boolean {
   return Math.max(...counts.values()) / starts.size >= 0.5
 }
 
+/** How many times text switches between the two sides of `x`, in the order it's written. */
+function switches(items: Item[], x: number): number {
+  let count = 0
+  let side = 0
+  for (const item of items) {
+    const next = item.right <= x + 1 ? 1 : item.x >= x - 1 ? 2 : 0
+    if (next === 0) continue
+    if (side !== 0 && next !== side) count++
+    side = next
+  }
+  return count
+}
+
 /**
- * Finds the gap between two columns of text, if the page has them. Text may
- * only cross it above where the columns start, like a name across the top.
+ * Finds the gap between two columns of text, if the page has them, and where
+ * the columns start. Text may only cross it above that, like a name across the top.
  */
-function findGutter(items: Item[], width: number): number | null {
+function findGutter(items: Item[], width: number): { x: number; top: number } | null {
   const chars = (list: Item[]) => list.reduce((sum, item) => sum + item.text.length, 0)
   const total = chars(items)
   if (total < 150) return null
-  let best: { x: number; crossing: number } | null = null
+  let best: { x: number; top: number; crossing: number; apart: boolean } | null = null
   for (let x = width * 0.2; x <= width * 0.8; x += 2) {
     const left = items.filter((item) => item.right <= x + 1)
     const right = items.filter((item) => item.x >= x - 1)
-    if (chars(left) / total < 0.2 || chars(right) / total < 0.2) continue
+    const share = Math.min(chars(left), chars(right)) / total
+    if (share < 0.05) continue
     const top = Math.min(Math.max(...left.map((item) => item.baseline)), Math.max(...right.map((item) => item.baseline)))
-    const crossing = chars(items.filter((item) => item.x < x - 1 && item.right > x + 1 && item.baseline <= top + 1))
-    if (crossing / total <= 0.01 && (!best || crossing < best.crossing)) best = { x, crossing }
+    const below = items.filter((item) => item.baseline <= top + 1)
+    const crossing = chars(below.filter((item) => item.x < x - 1 && item.right > x + 1))
+    if (crossing / total > 0.01) continue
+    // A column written whole, before or after the other, is a column however
+    // little it holds, as long as it has lines of its own and the columns
+    // hold most of the page. Dates in a margin are written with their entries.
+    const lines = (list: Item[]) => new Set(list.map((item) => Math.round(item.baseline))).size
+    const apart =
+      switches(below, x) <= 3 &&
+      chars(below) / total >= 0.5 &&
+      lines(below.filter((item) => item.right <= x + 1)) >= 5 &&
+      lines(below.filter((item) => item.x >= x - 1)) >= 5
+    if (share < 0.2 && !apart) continue
+    if (!best || crossing < best.crossing) best = { x, top, crossing, apart }
   }
   if (!best) return null
-  const gutter = best.x
-  const ok = leftAligned(items.filter((item) => item.x >= gutter - 1)) && leftAligned(items.filter((item) => item.right <= gutter + 1))
-  return ok ? gutter : null
+  const { x, top, apart } = best
+  const ok = apart || (leftAligned(items.filter((item) => item.x >= x - 1)) && leftAligned(items.filter((item) => item.right <= x + 1)))
+  return ok ? { x, top } : null
 }
 
 /**
@@ -336,7 +362,13 @@ export function linesFromPages(pages: PdfPage[]): Line[] {
     const items = page.items.map((item) => ({ ...item, column: 0 }))
     const gutter = findGutter(items, width)
     if (gutter !== null) {
-      for (const item of items) item.column = item.right <= gutter + 1 ? 1 : item.x >= gutter - 1 ? 2 : 0
+      const { x, top } = gutter
+      // Above the columns, a line that crosses the gap spans them, even the parts of it on one side.
+      const spanning = new Set(items.filter((item) => item.x < x - 1 && item.right > x + 1).map((item) => Math.round(item.baseline)))
+      for (const item of items) {
+        const spans = item.baseline > top + 1 && spanning.has(Math.round(item.baseline))
+        item.column = spans ? 0 : item.right <= x + 1 ? 1 : item.x >= x - 1 ? 2 : 0
+      }
     }
 
     // Top to bottom (text spanning the columns first, then each column),
