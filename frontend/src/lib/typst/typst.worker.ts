@@ -4,7 +4,7 @@
 import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler"
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
-import { templateById } from "@/lib/templates"
+import { fontsOf, templateById } from "@/lib/templates"
 import common from "./templates/common.typ"
 import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
@@ -161,7 +161,7 @@ function fontBytes(file: string): Uint8Array {
 }
 
 // Downloads the fonts a template's PDFs need, before the first is compiled.
-const fetchFontsOf = (template: string | undefined, text = "") => fetchFonts(fontsFor(templateById(template).font, text))
+const fetchFontsOf = (template: string | undefined, text = "") => fetchFonts(fontsFor(fontsOf(templateById(template)), text))
 
 async function createCompiler(): Promise<TypstCompiler> {
   const instance = createTypstCompiler()
