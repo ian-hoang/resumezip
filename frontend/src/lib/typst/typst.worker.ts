@@ -13,6 +13,7 @@ import margin from "./templates/margin.typ"
 import modernjack from "./templates/modernjack.typ"
 import referme from "./templates/referme.typ"
 import resumeworded from "./templates/resumeworded.typ"
+import swiss from "./templates/swiss.typ"
 import type { CompileRequest, CompileResponse, WorkerMessage, WorkerRequest } from "./compile"
 import { COMPILER_CDN_URL, COMPILER_INTEGRITY, COMPILER_SIZE, compileChecked, downloadChecked } from "./compilerSource"
 import { FONT_URLS, fontsFor, lazyFonts } from "./fontFiles"
@@ -26,6 +27,7 @@ const SOURCES: Record<string, string> = {
   "/modernjack.typ": modernjack,
   "/referme.typ": referme,
   "/resumeworded.typ": resumeworded,
+  "/swiss.typ": swiss,
 }
 
 // Downloads wrap the template in a file that also attaches a copy of the

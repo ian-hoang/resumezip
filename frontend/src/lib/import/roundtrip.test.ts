@@ -47,6 +47,7 @@ const KNOWN_GAPS: Record<string, string[]> = {
     "work[1].company",
     "work[2].company",
   ],
+  swiss: [],
 }
 
 // What a resume prints, minus differences that print the same or are
