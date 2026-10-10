@@ -72,6 +72,9 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
   await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   await expect(more).toHaveAttribute("aria-expanded", "true")
+  // Its row is rounded to sit inside the menu's corners, not a pill bulging out of two lines.
+  const corner = (element: Element) => parseFloat(getComputedStyle(element).borderTopLeftRadius)
+  expect(await json.evaluate(corner)).toBeLessThan(await page.getByRole("menu").evaluate(corner))
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
   await page.keyboard.press("Escape")
   await expect(page.getByRole("menu")).toHaveCount(0)

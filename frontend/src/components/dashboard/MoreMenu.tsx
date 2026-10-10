@@ -10,10 +10,10 @@ export interface MenuItem {
   danger?: boolean
 }
 
-/** A menu's panel: glass, grown out of its button (dashboard.css). Its items are pills, as MENU_ITEM. */
+/** A menu's panel: glass, grown out of its button (dashboard.css). Its items are rounded to fit inside it, as MENU_ITEM. */
 export const MENU_PANEL = "menu-panel glass glass-frost absolute z-30 flex min-w-[168px] flex-col gap-0.5 rounded-panel p-1.5"
 export const MENU_ITEM =
-  "row-action flex h-10 items-center gap-2.5 rounded-full px-3.5 text-left text-sm transition-colors hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none"
+  "row-action flex h-10 items-center gap-2.5 rounded-row px-3.5 text-left text-sm transition-colors hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none"
 
 const itemsIn = (menu: HTMLElement | null) => [...(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])]
 

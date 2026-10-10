@@ -34,7 +34,7 @@ function placeBy(button: HTMLElement): { left: number; width: number } {
 }
 
 const item =
-  "flex w-full flex-col gap-0.5 rounded-full px-4 py-2 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
+  "flex w-full flex-col gap-0.5 rounded-row px-4 py-2 text-left outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 
 /**
  * The ▾ beside Download PDF, and the menu of the other ways to download it

@@ -101,6 +101,10 @@
    floats over the desk (panels, menus, dialogs, cards) is rounded-panel. */
 @theme {
   --radius-panel: 20px;
+  /* A row inside a panel, as a menu's items: the panel's corner less its
+     6px padding, so the two corners run side by side. A pill would bulge
+     out of a row of two lines. */
+  --radius-row: 14px;
 }
 
 /* The line along the bottom of the editor's Download PDF button while the PDF

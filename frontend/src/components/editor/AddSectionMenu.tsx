@@ -78,7 +78,7 @@ function placeBy(button: HTMLElement): Placement {
 }
 
 const item =
-  "group flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-left text-sm leading-snug text-ink outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
+  "group flex w-full items-center gap-2.5 rounded-row px-3 py-2 text-left text-sm leading-snug text-ink outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 const icon = "h-4 w-4 shrink-0 text-ink-2 transition-colors duration-150 group-hover:text-ink group-focus-visible:text-ink"
 
 interface AddSectionMenuProps {
