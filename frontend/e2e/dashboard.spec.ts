@@ -124,6 +124,38 @@ test("a long resume name wraps in the table, and every resume's buttons stay on 
   expect(errors).toEqual([])
 })
 
+test("in the list, each resume's small page has its edge on all four sides", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await dashboardWith(page, [resume("a", "Ada")])
+  await page.getByRole("button", { name: "List" }).click()
+  const row = page
+    .getByRole("table")
+    .getByRole("row")
+    .filter({ has: page.getByRole("link", { name: "Ada", exact: true }) })
+  // The page is hidden from screen readers (its name's link opens the same resume), so it's found by
+  // the attribute the view switch moves it by. It sits right at the left edge of the table's scroll box.
+  const picture = row.locator("[data-resume-page]")
+  await expect(picture).toBeVisible()
+  const box = (await picture.boundingBox())!
+
+  // Its left-most column of pixels, halfway down, as drawn: the grey edge, not the white page inside.
+  const shot = await page.screenshot({ clip: { x: Math.round(box.x), y: Math.round(box.y + box.height / 2) - 4, width: 1, height: 8 } })
+  const pixels = await page.evaluate(async (png) => {
+    const image = new Image()
+    image.src = `data:image/png;base64,${png}`
+    await image.decode()
+    const canvas = document.createElement("canvas")
+    canvas.width = image.width
+    canvas.height = image.height
+    const context = canvas.getContext("2d")!
+    context.drawImage(image, 0, 0)
+    return Array.from(context.getImageData(0, 0, image.width, image.height).data)
+  }, shot.toString("base64"))
+  // Red, green and blue of each pixel; white would be the page, with its edge cut off.
+  const reds = pixels.filter((_, index) => index % 4 === 0)
+  expect(Math.max(...reds)).toBeLessThan(240)
+})
+
 test("on a tablet, two resumes whose names differ only by a number both show it", async ({ page }) => {
   const errors = pageErrors(page)
   // Giving a resume a name that's taken adds a number, as "… 2", which only tells them apart if it shows.
