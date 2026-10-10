@@ -27,6 +27,7 @@ import { extraKey, filledSections, resolveSections, type ExtraKind, type Section
 import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
 import { fileNameOf, saveFile } from "@/lib/saveFile"
+import { toWordFile, WORD_TYPE } from "@/lib/word"
 import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
@@ -348,14 +349,26 @@ function Editor({ id }: { id: string }) {
     }
   }
 
+  // Says aloud that another format was downloaded, even when it's the same as last time.
+  const sayDownloaded = (what: string) => {
+    setSavedAs("")
+    requestAnimationFrame(() => setSavedAs(`${what} downloaded`))
+  }
+
+  // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
+  const downloadWord = () => {
+    const resume = read()
+    if (!resume) return
+    saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
+    sayDownloaded("Word file")
+  }
+
   // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
   const downloadJson = () => {
     const resume = read()
     if (!resume) return
     saveFile(toJson(resume), fileNameOf(resume, "json"), "application/json")
-    // Said again, even when it's the same as last time.
-    setSavedAs("")
-    requestAnimationFrame(() => setSavedAs("JSON downloaded"))
+    sayDownloaded("JSON")
   }
 
   if (!loaded) {
@@ -439,7 +452,10 @@ function Editor({ id }: { id: string }) {
                 )}
               </button>
               <DownloadMenu
-                choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
+                choices={[
+                  { title: "Word", hint: "To edit in Word, Google Docs or Pages", onChoose: downloadWord },
+                  { title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson },
+                ]}
               />
             </div>
             <span role="status" className="sr-only">
