@@ -2,9 +2,6 @@ import { expect, test, type Page } from "@playwright/test"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
-// The home page's header is inside its first section, so it isn't a banner
-// landmark there: these look it up by the header's own links instead.
-
 test("the home page's header asks for a star on GitHub, and other pages' headers start a resume", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByRole("link", { name: "Star on GitHub" })).toHaveAttribute("href", REPO_URL)
@@ -38,16 +35,27 @@ for (const path of ["/", "/about"]) {
   })
 }
 
-// The home page's button is wider than the others', which mustn't move the links. Below lg,
-// wider system fonts can leave the header no room to spare, and they may move a pixel there.
+// The home page's header is a glass pill floating over the video, in the middle whatever its button says.
 for (const width of [1024, 1440]) {
-  test(`at ${width}px the header's links are where they are on every page`, async ({ page }) => {
+  test(`at ${width}px the home page's header is in the middle of the page`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
-    await page.goto("/about")
-    await expect(headerLinks(page)).toHaveCount(3)
-    const elsewhere = await boxes(page)
     await page.goto("/")
     await expect(headerLinks(page)).toHaveCount(3)
-    expect(await boxes(page)).toEqual(elsewhere)
+    const pill = (await page.getByRole("banner").boundingBox())!
+    expect(Math.abs(pill.x + pill.width / 2 - width / 2)).toBeLessThanOrEqual(1)
+    expect(new Set((await boxes(page)).map((box) => box!.y)).size).toBe(1)
   })
 }
+
+// Over the video the pill is dark glass; over the page's paper it turns light, to stay readable.
+test("the home page's header turns light once it's over the page rather than the video", async ({ page }) => {
+  await page.goto("/")
+  const logo = page.getByRole("banner").getByRole("link", { name: "resumezip" })
+  const color = () => logo.evaluate((element) => getComputedStyle(element).color)
+  await expect.poll(color).toBe("rgb(255, 255, 255)")
+  await page.getByRole("heading", { name: "How it works" }).scrollIntoViewIfNeeded()
+  // Scrolled up a little, which brings the header back.
+  await page.mouse.wheel(0, -200)
+  await expect(page.getByRole("banner")).toBeInViewport()
+  await expect.poll(color).not.toBe("rgb(255, 255, 255)")
+})

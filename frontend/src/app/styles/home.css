@@ -1,1 +1,270 @@
-/* Styles for the home page and the site-wide header (src/components/home, src/components/site). */
+/* Styles for the home page and the site-wide header (src/components/home, src/components/site),
+   and the templates page (src/app/templates). */
+@layer components {
+  /* The news bar's height (NewsBar.tsx). The header's strip starts under it, and the hero starts under the
+     strip, whether or not the bar shows: only the browser knows that, and nothing should move when it finds out. */
+  .home {
+    --news-h: 2.25rem;
+  }
+  .home-chrome {
+    margin-top: var(--news-h);
+  }
+  .home-hero {
+    margin-top: calc(-1 * var(--news-h));
+    padding-top: calc(var(--news-h) + 84px);
+  }
+  @media (min-width: 48rem) {
+    .home-hero {
+      padding-top: calc(var(--news-h) + 104px);
+    }
+  }
+
+  .news-bar {
+    animation: news-in 500ms var(--ease-glide) both;
+  }
+
+  /* How far down the page is (HomeChrome.tsx sets --read, from 0 to 1). */
+  .reading-line {
+    transform-origin: left;
+    transform: scaleX(var(--read, 0));
+  }
+
+  /* The home page's glass header, tucked away above the top of the screen as
+     the page scrolls down. With the keyboard in it, it's always in sight. */
+  .site-pill {
+    transition: transform 360ms var(--ease-glide);
+  }
+  .site-pill[data-tucked]:not(:focus-within) {
+    transform: translateY(calc(-100% - 3rem));
+  }
+
+  /* An underline that draws itself from the left, under the header's links. */
+  .nav-underline {
+    --underline: var(--color-accent);
+    background: linear-gradient(var(--underline), var(--underline)) no-repeat left bottom / 0% 1.5px;
+    transition:
+      background-size 420ms var(--ease-glide),
+      color 150ms;
+  }
+  .site-pill-dark .nav-underline {
+    --underline: var(--color-accent-soft);
+  }
+  .nav-underline:hover,
+  .nav-underline:focus-visible {
+    background-size: 100% 1.5px;
+  }
+
+  /* An outline button that fills with ink from the bottom. The label is drawn
+     in difference with what's under it, inside the button only (isolation),
+     so the part the ink has reached turns dark as the ink passes it. */
+  .ink-fill {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .ink-fill::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -15%;
+    right: -15%;
+    height: 150%;
+    z-index: -1;
+    background: #fff;
+    border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+    transform: translateY(70%);
+    transition:
+      transform 360ms var(--ease-glide),
+      border-radius 360ms var(--ease-glide);
+  }
+  .ink-fill:hover::before,
+  .ink-fill:focus-visible::before {
+    transform: translateY(-15%);
+    border-radius: 0;
+  }
+  .ink-fill-label {
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  /* Magnetic.tsx leans these toward the cursor (--mx, --my); the soft ones half as far. */
+  .magnet-pull {
+    translate: var(--mx, 0px) var(--my, 0px);
+    transition:
+      translate 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      background-color 200ms;
+  }
+  .magnet-pull-soft {
+    translate: calc(var(--mx, 0px) / 2) calc(var(--my, 0px) / 2);
+  }
+
+  /* Words that sharpen from a blur as the page scrolls (FocusWords.tsx). --focus
+     is how far the scroll has got, from 0 to 1. Each line takes its share of
+     that, from --from to --to, as --t, and each of its --n words in turn
+     (--i) takes its share of --t, as --s: 0 blurred and --faint, 1 sharp. */
+  .focus-line {
+    --t: clamp(0, (var(--focus, 1) - var(--from)) / (var(--to) - var(--from)), 1);
+  }
+  .focus-word {
+    --s: clamp(0, var(--t) * (var(--n) + 1) - var(--i), 1);
+    /* Filters don't apply to inline boxes in every browser. */
+    display: inline-block;
+    filter: blur(calc((1 - var(--s)) * 0.14em));
+    opacity: calc(var(--faint) + (1 - var(--faint)) * var(--s));
+  }
+  /* The same scroll, as a dot going down a line at the side. */
+  .focus-rail {
+    position: absolute;
+    top: 18%;
+    right: 2.5rem;
+    bottom: 18%;
+    width: 1px;
+    background: rgb(255 255 255 / 0.3);
+  }
+  .focus-rail::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--focus, 1) * 100%);
+    background: #fff;
+  }
+  .focus-rail::after {
+    content: "";
+    position: absolute;
+    top: calc(var(--focus, 1) * 100%);
+    left: -4px;
+    width: 9px;
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  /* The questions' plus, which turns into a minus as its answer opens. */
+  .question-sign::before,
+  .question-sign::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 1.5px;
+    margin-top: -0.75px;
+    background: currentColor;
+    transition: transform 300ms var(--ease-glide);
+  }
+  .question-sign::after {
+    transform: rotate(90deg);
+  }
+  .question-sign[data-open]::after {
+    transform: rotate(0deg);
+  }
+
+  /* Under the floating "Start writing": a blur that thickens toward the bottom
+     of the screen, in three bands that each fade in and out. */
+  .floating-blur {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    height: 7.5rem;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 300ms,
+      visibility 300ms;
+  }
+  .floating-blur[data-shown] {
+    opacity: 1;
+    visibility: visible;
+  }
+  .floating-blur > span {
+    position: absolute;
+    inset: 0;
+  }
+  .floating-blur > span:nth-child(1) {
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
+    mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 50%, transparent 75%);
+  }
+  .floating-blur > span:nth-child(2) {
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    mask-image: linear-gradient(to bottom, transparent 25%, #000 50%, #000 75%, transparent);
+  }
+  .floating-blur > span:nth-child(3) {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    mask-image: linear-gradient(to bottom, transparent 50%, #000 75%);
+  }
+
+  /* The templates page's cards: a hover or focus lifts the page and slides up "Use template". */
+  .template-card .template-page {
+    transition:
+      transform 300ms var(--ease-glide),
+      box-shadow 300ms var(--ease-glide);
+  }
+  .template-card .template-use {
+    transform: translateY(100%);
+    transition: transform 300ms var(--ease-glide);
+  }
+  .template-card:hover .template-page,
+  .template-card:focus-visible .template-page {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 40px -20px rgb(17 19 24 / 0.45);
+  }
+  .template-card:hover .template-use,
+  .template-card:focus-visible .template-use {
+    transform: none;
+  }
+  /* Without a pointer to hover with, it's always there to say what a tap does. */
+  @media (hover: none) {
+    .template-card .template-use {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .news-bar {
+      animation: none;
+    }
+    .site-pill,
+    .ink-fill::before,
+    .question-sign::before,
+    .question-sign::after,
+    .template-card .template-page,
+    .template-card .template-use {
+      transition: none;
+    }
+    .nav-underline {
+      transition: color 150ms;
+    }
+    .magnet-pull,
+    .magnet-pull-soft {
+      translate: none;
+      transition: background-color 200ms;
+    }
+    .focus-word {
+      filter: none;
+      opacity: 1;
+    }
+    .template-card:hover .template-page,
+    .template-card:focus-visible .template-page {
+      transform: none;
+    }
+  }
+
+  /* Some people ask for less see-through UI. */
+  @media (prefers-reduced-transparency: reduce) {
+    .floating-blur {
+      display: none;
+    }
+  }
+}
+
+@keyframes news-in {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
