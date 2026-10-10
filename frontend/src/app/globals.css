@@ -96,6 +96,12 @@
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Three shapes: paper is square, controls are pills (rounded-full), and what
+   floats over the desk (panels, menus, dialogs, cards) is rounded-panel. */
+@theme {
+  --radius-panel: 20px;
+}
+
 /* The line along the bottom of the editor's Download PDF button while the PDF
    is made. It fills most of the way in the same time however quick that is:
    DOWNLOAD_FILL_MS in the editor, which saves the file as it ends, and sets
