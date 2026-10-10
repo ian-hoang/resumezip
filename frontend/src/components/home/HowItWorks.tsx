@@ -3,19 +3,25 @@
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 
+// Each step's picture: the real screen it's about, cropped from the editor at
+// 2x and saved at most 960px wide. Retake them when that part of the editor changes.
 const STEPS = [
   {
     word: "Pick",
     // No count: it changes as templates are added.
     text: "Choose a template. Switch any time; your words stay put.",
-    art: "/how-it-works/pick.svg",
+    art: { src: "/how-it-works/pick-screen.webp", width: 960, height: 960 },
   },
   {
     word: "Write",
     text: "Type beside a live page. Start from scratch, or open the PDF or Word resume you already have.",
-    art: "/how-it-works/write.svg",
+    art: { src: "/how-it-works/write-screen.webp", width: 960, height: 601 },
   },
-  { word: "Send", text: "Download an ATS-friendly PDF so hiring software can read every word.", art: "/how-it-works/send.svg" },
+  {
+    word: "Send",
+    text: "Download an ATS-friendly PDF so hiring software can read every word.",
+    art: { src: "/how-it-works/send-screen.webp", width: 688, height: 760 },
+  },
 ]
 
 // Pinning needs room to scroll, and is skipped for people who prefer less motion.
@@ -129,14 +135,24 @@ export default function HowItWorks() {
                     {step.text}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center justify-center md:flex-1 md:items-end">
-                  <Image
-                    src={step.art}
-                    alt=""
-                    width={240}
-                    height={240}
-                    className="h-[clamp(88px,16svh,140px)] w-auto md:h-[clamp(140px,28svh,260px)]"
-                  />
+                <div className="flex w-[46%] shrink-0 items-center justify-center md:w-full md:flex-1 md:items-end">
+                  {/* In a small browser window, to say it's the site itself: no install. */}
+                  <div className="w-full overflow-hidden rounded-[8px] bg-white shadow-[0_30px_60px_-28px_rgb(10_20_70/0.55),0_0_0_1px_rgb(17_19_24/0.08)]">
+                    <div aria-hidden="true" className="flex h-[22px] items-center gap-1.5 border-b border-[#dfe2e8] bg-[#eef0f4] px-2.5">
+                      <i className="size-[9px] rounded-full bg-[#ff5f57]" />
+                      <i className="size-[9px] rounded-full bg-[#febc2e]" />
+                      <i className="size-[9px] rounded-full bg-[#28c840]" />
+                      <span className="ml-2.5 truncate font-mono text-[10px] text-[#6b6e75]">tryresumezip.com</span>
+                    </div>
+                    <Image
+                      src={step.art.src}
+                      alt=""
+                      width={step.art.width}
+                      height={step.art.height}
+                      sizes="(min-width: 768px) 400px, 45vw"
+                      className="block max-h-[clamp(110px,22svh,190px)] w-full object-cover object-top md:max-h-[clamp(160px,34svh,330px)]"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
