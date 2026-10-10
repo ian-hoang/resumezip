@@ -11,7 +11,7 @@ import DeletedToast from "@/components/dashboard/DeletedToast"
 import EmptyShelf from "@/components/dashboard/EmptyShelf"
 import Filters, { type Sort, type View } from "@/components/dashboard/Filters"
 import { AllConflictDialog, ConflictDialog, OpenErrorDialog, ReadingDialog, type Differing } from "@/components/dashboard/OpenFileDialogs"
-import { startPictures } from "@/components/dashboard/pagePictures"
+import { keepPictures, startPictures } from "@/components/dashboard/pagePictures"
 import ResumeGrid from "@/components/dashboard/ResumeGrid"
 import ResumeTable, { tagName } from "@/components/dashboard/ResumeTable"
 import SearchBar, { matches } from "@/components/dashboard/SearchBar"
@@ -347,6 +347,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (settledWithResumes && !savingData()) startPictures()
   }, [settledWithResumes])
+  // A deleted resume's picture is let go of, rather than kept for the rest of the visit.
+  useEffect(() => {
+    if (loaded) keepPictures(Object.keys(resumes))
+  }, [loaded, resumes])
 
   // Dropping a file anywhere on the page opens it.
   const openFileRef = useRef(openFile)

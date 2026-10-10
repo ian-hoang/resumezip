@@ -17,7 +17,7 @@ import { compileResume, failureOf, printedOf } from "@/lib/typst/compile"
 /** How wide the page is drawn, in pixels: twice the widest tile, so it's sharp on high-density screens. */
 const DRAWN_WIDTH = 560
 
-interface Picture {
+export interface Picture {
   /** What the resume printed when it was drawn (printedKey). */
   printed: string
   url: string
@@ -65,6 +65,31 @@ function setPicture(id: string, picture: Picture) {
   pictures.set(id, picture)
   // A copy of a resume shares its picture, so an old one is only freed once nothing shows it.
   if (old && old.url !== picture.url && ![...pictures.values()].some(({ url }) => url === old.url)) URL.revokeObjectURL(old.url)
+  for (const listener of listeners) listener()
+}
+
+/**
+ * Which pictures to let go of, keeping only those of `kept` resumes: their
+ * ids, and the object URLs no kept picture shares (a copy of a resume shares
+ * its picture until either changes).
+ */
+export function picturesToForget(all: ReadonlyMap<string, Picture>, kept: ReadonlySet<string>): { ids: string[]; urls: string[] } {
+  const ids = [...all.keys()].filter((id) => !kept.has(id))
+  const stillShown = new Set([...all].filter(([id]) => kept.has(id)).map(([, { url }]) => url))
+  const urls = [...new Set(ids.map((id) => all.get(id)!.url))].filter((url) => !stillShown.has(url))
+  return { ids, urls }
+}
+
+/**
+ * Lets go of the pictures of resumes that are gone, as once deleted: without
+ * this they'd stay in memory, image and all, until the tab closes. The
+ * dashboard calls it with every resume it has, as they change.
+ */
+export function keepPictures(ids: Iterable<string>) {
+  const { ids: gone, urls } = picturesToForget(pictures, new Set(ids))
+  if (gone.length === 0) return
+  for (const id of gone) pictures.delete(id)
+  for (const url of urls) URL.revokeObjectURL(url)
   for (const listener of listeners) listener()
 }
 
