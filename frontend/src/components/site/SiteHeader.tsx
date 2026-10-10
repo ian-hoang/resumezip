@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, Star, X } from "lucide-react"
 import Logo from "./Logo"
 import { StartWritingLink } from "./StartWriting"
 
@@ -17,12 +17,16 @@ const WIDE_HEADER = "(min-width: 48rem)"
 
 const CTA = "label-caps items-center whitespace-nowrap bg-accent px-[18px] text-white transition-colors hover:bg-[#2550d4]"
 
+const REPO_URL = "https://github.com/ian-hoang/resumezip"
+
 interface SiteHeaderProps {
   /**
    * "overlay" sits on top of the home page's video; "light" is for every other page.
    * Only the colors differ, so nothing moves when you go from one page to another.
    */
   variant?: "overlay" | "light"
+  /** Asks for a star on GitHub where "Start writing" goes, for the home page, which has its own "Start writing" links. */
+  starOnGitHub?: boolean
   /**
    * What "Start writing" does on a page with its own way to start a resume,
    * instead of going to the dashboard: the dashboard opens its New resume dialog.
@@ -30,7 +34,7 @@ interface SiteHeaderProps {
   onStartWriting?: () => void
 }
 
-export default function SiteHeader({ variant = "light", onStartWriting }: SiteHeaderProps) {
+export default function SiteHeader({ variant = "light", starOnGitHub = false, onStartWriting }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -63,11 +67,25 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
     }
   }, [menuOpen])
 
-  // A button where it opens a dialog, as it doesn't go anywhere. In the menu it
-  // shuts the menu first, as the menu's links do, and leaves focus on the menu's
-  // button for the dialog to put it back on.
-  const startWriting = (className: string, inMenu = false) =>
-    onStartWriting ? (
+  // The header's one button. "Start writing" is a button where it opens a
+  // dialog, as it doesn't go anywhere. In the menu it shuts the menu first, as
+  // the menu's links do, and leaves focus on the menu's button for the dialog
+  // to put it back on.
+  const action = (className: string, inMenu = false) =>
+    starOnGitHub ? (
+      <a
+        href={REPO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${className} gap-2`}
+        onClick={() => {
+          if (inMenu) setMenuOpen(false)
+        }}
+      >
+        <Star className="h-4 w-4 fill-[#facc15] text-[#facc15]" aria-hidden="true" />
+        Star on GitHub
+      </a>
+    ) : onStartWriting ? (
       <button
         type="button"
         className={className}
@@ -115,7 +133,7 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
 
         <div className="flex items-center gap-2">
           {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
-          {startWriting(`${CTA} hidden h-10 sm:inline-flex`)}
+          {action(`${CTA} hidden h-10 sm:inline-flex`)}
           <button
             ref={buttonRef}
             type="button"
@@ -149,7 +167,7 @@ export default function SiteHeader({ variant = "light", onStartWriting }: SiteHe
             {link.label}
           </Link>
         ))}
-        {startWriting(`${CTA} mt-2 inline-flex h-11 justify-center sm:hidden`, true)}
+        {action(`${CTA} mt-2 inline-flex h-11 justify-center sm:hidden`, true)}
       </nav>
     </header>
   )

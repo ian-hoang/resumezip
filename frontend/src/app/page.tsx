@@ -53,7 +53,7 @@ export default function Home() {
         <HeroVideo />
         <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
 
-        <SiteHeader variant="overlay" />
+        <SiteHeader variant="overlay" starOnGitHub />
 
         <div className="relative mx-auto w-full max-w-[1440px] px-5 pt-6 md:px-10">
           <h1 className="max-w-[1000px] text-balance font-serif text-[56px] leading-[0.92] tracking-[-0.045em] max-[359px]:text-[52px] sm:text-[80px] lg:text-[116px] lg:leading-[0.88]">
