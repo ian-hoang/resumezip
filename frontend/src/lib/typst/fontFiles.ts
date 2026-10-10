@@ -44,6 +44,7 @@ export const FONT_URLS: Record<string, string> = {
   "Lato-LightItalic.ttf": new URL("./fonts/Lato-LightItalic.ttf", import.meta.url).href,
   "Lato-Regular.ttf": new URL("./fonts/Lato-Regular.ttf", import.meta.url).href,
   "Lato-Thin.ttf": new URL("./fonts/Lato-Thin.ttf", import.meta.url).href,
+  "LinBiolinum_R.otf": new URL("./fonts/LinBiolinum_R.otf", import.meta.url).href,
   "NewCM10-Bold.otf": new URL("./fonts/NewCM10-Bold.otf", import.meta.url).href,
   "NewCM10-BoldItalic.otf": new URL("./fonts/NewCM10-BoldItalic.otf", import.meta.url).href,
   "NewCM10-Italic.otf": new URL("./fonts/NewCM10-Italic.otf", import.meta.url).href,

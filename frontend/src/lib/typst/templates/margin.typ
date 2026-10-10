@@ -1,6 +1,6 @@
-// "Margin": section headings hang in the left margin in spaced capitals, as
-// in a well-set book, and the text runs in one column beside them. Charis SIL.
-// No rules at all.
+// "Margin": section headings hang in the left margin in small capitals, as in
+// a well-set book, and the text runs in one column beside them. Charis SIL, with
+// Linux Biolinum for the headings. No rules at all.
 #import "common.typ": *
 
 #let p = data.profile
@@ -27,7 +27,7 @@
     columns: (margin, 1fr),
     column-gutter: gutter,
     align: (right + top, left + top),
-    pad(top: sized(1.2pt), text(size: sized(7.9pt), tracking: 0.08em, fill: luma(55), upper(title))),
+    text(font: "Linux Biolinum O", size: sized(10.2pt), tracking: 0.03em, fill: luma(55), smallcaps(title)),
     body,
   )
 }

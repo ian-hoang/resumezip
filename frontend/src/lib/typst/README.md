@@ -85,6 +85,7 @@ is served under a name with its content's hash, which changes when the font does
 | `texgyreheros-*.otf` | TeX Gyre Heros | [CTAN](https://ctan.org/pkg/tex-gyre) | GUST Font License |
 | `EBGaramond-*.ttf` | EB Garamond | [EBGaramond12](https://github.com/octaviopardo/EBGaramond12) | SIL Open Font License 1.1 |
 | `CharisSIL-*.ttf` | Charis SIL | [Google Fonts](https://fonts.google.com/specimen/Charis+SIL) | SIL Open Font License 1.1 |
+| `LinBiolinum_R.otf` | Linux Biolinum, as "Linux Biolinum O" | [CTAN](https://ctan.org/pkg/libertine) | SIL Open Font License 1.1, or GPL with the font exception |
 | `IBMPlexMono-*.ttf` | IBM Plex Mono | [Google Fonts](https://fonts.google.com/specimen/IBM+Plex+Mono) | SIL Open Font License 1.1 |
 | `SourceSans3-*.ttf` | Source Sans 3 | [Google Fonts](https://fonts.google.com/specimen/Source+Sans+3) | SIL Open Font License 1.1 |
 | `Raleway-v4020-*.otf` | Raleway, as "Raleway-v4020" | [Raleway v4.020](https://github.com/impallari/Raleway) | SIL Open Font License 1.1 |
@@ -107,7 +108,7 @@ New Computer Modern, TeX Gyre Heros and EB Garamond are trimmed copies: Latin
 keeping kerning, ligatures, accents and small caps, without hinting. That halves
 their size. Each trimmed font says so in its description (name ID 10), as the
 GUST Font License asks. The rest are left as they were, because their licenses
-reserve their names ("Lato", "Charis" and "SIL", "Plex", "Source", "Raleway")
+reserve their names ("Lato", "Charis" and "SIL", "Plex", "Source", "Raleway", "Biolinum")
 for unmodified copies. Raleway comes from its own project rather than Google
 Fonts, as the copies Google Fonts serves have no small capitals.
 
