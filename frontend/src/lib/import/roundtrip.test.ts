@@ -13,6 +13,16 @@ import { differences, readBack, render, samples } from "./testRender"
  * starts differing and isn't listed fails the test.
  */
 const KNOWN_GAPS: Record<string, string[]> = {
+  // Roles and degrees are printed in capitals, so their original case can't be read back.
+  accent: [
+    "education[0].degree",
+    "education[1].degree",
+    "leadership[0].role",
+    "volunteer[0].role",
+    "work[0].role",
+    "work[1].role",
+    "work[2].role",
+  ],
   ian: [],
   // A comma inside an award's name reads as the start of the organization.
   jake: ["awards[0].name", "awards[0].organization"],

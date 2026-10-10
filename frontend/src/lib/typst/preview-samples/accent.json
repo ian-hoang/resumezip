@@ -1,0 +1,155 @@
+{
+  "id": "preview-accent",
+  "resumeTitle": "Grace Liu",
+  "resumeTag": "professional",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "accent",
+  "sectionOrder": [
+    "Work",
+    "Education",
+    "Publications",
+    "Projects",
+    "Skills",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "Grace Liu",
+    "email": "grace.liu@example.com",
+    "phoneNumber": "(555) 014-9083",
+    "location": "Los Angeles, CA",
+    "linkedin": "linkedin.com/in/graceliu",
+    "profileGithub": "github.com/graceliu",
+    "personalWebsite": ""
+  },
+  "educationSection": [
+    {
+      "id": 1,
+      "schoolName": "Columbia University",
+      "schoolLocation": "New York, NY",
+      "degree": "M.S. in Statistics",
+      "gpa": "3.9 / 4.0",
+      "schoolStartDate": "Sep 2018",
+      "schoolEndDate": "May 2020",
+      "coursework": "Causal Inference, Bayesian Statistics, Statistical Machine Learning, Time Series",
+      "involvement": ""
+    },
+    {
+      "id": 2,
+      "schoolName": "University of California, Berkeley",
+      "schoolLocation": "Berkeley, CA",
+      "degree": "B.A. in Applied Mathematics",
+      "gpa": "",
+      "schoolStartDate": "Aug 2014",
+      "schoolEndDate": "May 2018",
+      "coursework": "",
+      "involvement": ""
+    }
+  ],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Senior Data Scientist",
+      "companyName": "Netflix",
+      "workLocation": "Los Gatos, CA",
+      "workStartDate": "Aug 2022",
+      "workEndDate": "Present",
+      "workDescription": "• Design and read out the experiments behind the artwork on the home page, about 60 tests a year in 190 countries\n• Built a variance reduction method that uses each member's viewing before a test, so tests reach a decision with 30% fewer members and finish about two weeks sooner on average across the year\n• Review the analysis plan of every test the personalization team runs and lead its experimentation reading group\n• Write the quarterly summary of what the team's tests found, shared with the product and content leads"
+    },
+    {
+      "id": 2,
+      "workRole": "Data Scientist",
+      "companyName": "Uber",
+      "workLocation": "San Francisco, CA",
+      "workStartDate": "Jul 2020",
+      "workEndDate": "Jul 2022",
+      "workDescription": "• Forecast rider wait times at airports and fed them into driver incentives, cutting pickup times at the 20 busiest airports by two minutes during the evening peak, when most flights land\n• Built dashboards and alerts for marketplace health, checked every day by 300 operations staff in 40 cities\n• Ran the pricing experiments for the Uber Reserve launch and wrote the analysis that set its booking fees\n• Taught a six-week course on experiment design to 80 analysts and product managers in the rides and delivery teams, with every exercise built on one of the company's own past tests"
+    },
+    {
+      "id": 3,
+      "workRole": "Data Science Intern",
+      "companyName": "Walmart Global Tech",
+      "workLocation": "Sunnyvale, CA",
+      "workStartDate": "Jun 2019",
+      "workEndDate": "Aug 2019",
+      "workDescription": "• Forecast weekly demand for 2,000 grocery items in 300 stores with gradient-boosted trees, beating the existing forecast's error by 12% across the stores in the trial and the whole holiday season"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "lift",
+      "projectDate": "2024",
+      "techStack": "Python, NumPy",
+      "projectGithub": "github.com/graceliu/lift",
+      "additionalLink": "",
+      "projectDescription": "• An open-source Python library for planning and reading A/B tests, with sample size, CUPED and sequential checks\n• Used by data teams at four startups, with documentation that walks through each method on a real public dataset"
+    }
+  ],
+  "publicationsSection": [
+    {
+      "id": 1,
+      "publicationTitle": "Variance reduction for streaming experiments with pre-period viewing",
+      "publicationAuthors": "G. Liu and M. Chen",
+      "publicationVenue": "Conference on Digital Experimentation",
+      "publicationDetails": "Cambridge, MA",
+      "publicationDate": "Nov. 2023",
+      "publicationLink": "10.5555/code.2023.022"
+    }
+  ],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Python, R, SQL, Scala"
+    },
+    {
+      "id": 2,
+      "skillName": "Statistics",
+      "skillDetails": "Causal inference, Bayesian modeling, experiment design, forecasting"
+    },
+    {
+      "id": 3,
+      "skillName": "Tools",
+      "skillDetails": "Spark, Airflow, dbt, Tableau, Git"
+    }
+  ],
+  "leadershipExperienceSection": [
+    {
+      "id": 1,
+      "leadershipRole": "Co-organizer",
+      "leadershipOrg": "R-Ladies Los Angeles",
+      "leadershipLocation": "Los Angeles, CA",
+      "leadershipStartDate": "Mar 2023",
+      "leadershipEndDate": "Present",
+      "leadershipDescription": "• Plan monthly talks and beginner workshops on R and statistics for a group of 1,500 members, find a host for each event, and keep the group's teaching materials up to date and free on GitHub"
+    }
+  ],
+  "volunteerExperienceSection": [
+    {
+      "id": 1,
+      "volunteerRole": "Data Volunteer",
+      "volunteerOrg": "DataKind",
+      "volunteerLocation": "Remote",
+      "volunteerStartDate": "Jan 2021",
+      "volunteerEndDate": "Dec 2021",
+      "volunteerDescription": "• Helped a food bank network forecast how many families each pantry would serve, so its volunteers could plan deliveries a month ahead instead of a week, and wrote a guide for the next volunteer team"
+    }
+  ],
+  "awardsSection": [
+    {
+      "id": 1,
+      "awardName": "Department Fellowship",
+      "awardOrg": "Columbia University",
+      "awardDate": "2019"
+    },
+    {
+      "id": 2,
+      "awardName": "Phi Beta Kappa",
+      "awardOrg": "University of California, Berkeley",
+      "awardDate": "2018"
+    }
+  ]
+}

@@ -20,6 +20,7 @@ const second = "22222222-2222-4222-8222-222222222222"
  * here; anything that starts differing and isn't listed fails the test.
  */
 const KNOWN_GAPS: Record<string, string[]> = {
+  accent: [],
   ian: [],
   jake: [],
   levelsfyi: [],

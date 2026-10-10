@@ -5,6 +5,7 @@ import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myr
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import { fontsOf, templateById } from "@/lib/templates"
+import accent from "./templates/accent.typ"
 import common from "./templates/common.typ"
 import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
@@ -20,6 +21,7 @@ import { COMPILER_CDN_URL, COMPILER_INTEGRITY, COMPILER_SIZE, compileChecked, do
 import { FONT_URLS, fontsFor, lazyFonts } from "./fontFiles"
 
 const SOURCES: Record<string, string> = {
+  "/accent.typ": accent,
   "/common.typ": common,
   "/ian.typ": ian,
   "/jake.typ": jake,
