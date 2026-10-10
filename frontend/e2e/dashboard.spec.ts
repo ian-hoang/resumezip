@@ -425,6 +425,26 @@ test("the tags show their resumes, with how many each has", async ({ page }) => 
   expect(errors).toEqual([])
 })
 
+test("a type of your own named all is a tag of its own, apart from All", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Ada", { resumeTag: "all" }), resume("b", "Grace")])
+  const tags = page.getByRole("group", { name: "Show" }).getByRole("button")
+  await expect(tags).toHaveText(["All 2", "Professional 1", "all 1"])
+  await tags.filter({ hasText: /^all/ }).click()
+  await expect(pages(page).getByRole("link")).toHaveText(["Ada"])
+  expect(errors).toEqual([])
+})
+
+test("typing a type of your own that runs on past one already in use keeps every letter", async ({ page }) => {
+  const errors = pageErrors(page)
+  await dashboardWith(page, [resume("a", "Ada", { resumeTag: "Data roles" })])
+  await page.getByRole("main").getByRole("button", { name: "New resume" }).click()
+  const own = page.getByRole("dialog", { name: "New resume" }).getByLabel("Or your own")
+  await own.pressSequentially("Data roles 2")
+  await expect(own).toHaveValue("Data roles 2")
+  expect(errors).toEqual([])
+})
+
 test("a deleted resume leaves the tags' counts at once, while its page crumples away", async ({ page }) => {
   const errors = pageErrors(page)
   await page.clock.install()

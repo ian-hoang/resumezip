@@ -10,9 +10,10 @@ interface ModalProps {
   /** A large dialog that lays out its own content, title included (give the title id="modal-title"). */
   wide?: boolean
   /**
-   * Fades away before onClose is called (the default). Off for a dialog whose
-   * onClose may keep it open, as the import review asking "Discard your
-   * changes?" first: a fade would leave it half gone behind the question.
+   * Fades away before onClose is called. Only for a dialog whose onClose just
+   * closes it, as New resume's Cancel: not one whose onClose cancels work
+   * (opening a file, which mustn't finish while it fades) or may keep it open
+   * (the import review asking "Discard your changes?" first).
    */
   fade?: boolean
   children: React.ReactNode
@@ -25,8 +26,8 @@ const CLOSE_MS = 260
 const CloseContext = createContext<() => void>(() => {})
 
 /**
- * Closes the dialog it's in the way Escape does: it fades away, then the
- * dialog's onClose is called. For a Cancel button, so it doesn't vanish at once.
+ * Closes the dialog it's in the way Escape does: with `fade`, it fades away,
+ * then the dialog's onClose is called. For a Cancel button, so it doesn't vanish at once.
  */
 export const useModalClose = () => useContext(CloseContext)
 
@@ -34,7 +35,7 @@ export const useModalClose = () => useContext(CloseContext)
 const TABBABLE = "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]"
 
 /** A centred dialog of glass that closes on Escape or a click outside it, and keeps Tab inside it while it's open. */
-export default function Modal({ title, onClose, wide = false, fade = true, children }: ModalProps) {
+export default function Modal({ title, onClose, wide = false, fade = false, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   // Its own, as another dialog can be open alongside it.
   const titleId = useId()
@@ -48,6 +49,7 @@ export default function Modal({ title, onClose, wide = false, fade = true, child
   // Fading away, after which onClose is called.
   const [closing, setClosing] = useState(false)
   const closingRef = useRef(false)
+  const closeTimer = useRef(0)
   // What had the focus when it opened, to give it back.
   const opener = useRef<Element | null>(null)
   const close = useRef(() => {
@@ -58,7 +60,7 @@ export default function Modal({ title, onClose, wide = false, fade = true, child
     // inert with the focus in it, Safari would drop the focus on the page instead.
     if (opener.current instanceof HTMLElement) opener.current.focus()
     setClosing(true)
-    setTimeout(() => latestClose.current(), CLOSE_MS)
+    closeTimer.current = window.setTimeout(() => latestClose.current(), CLOSE_MS)
   })
 
   useEffect(() => {
@@ -115,6 +117,8 @@ export default function Modal({ title, onClose, wide = false, fade = true, child
     panelRef.current?.querySelector<HTMLElement>("input, button")?.focus()
     return () => {
       document.removeEventListener("keydown", onKeyDown)
+      // Gone some other way while it faded: its own close doesn't follow.
+      window.clearTimeout(closeTimer.current)
       if (openedFrom instanceof HTMLElement) openedFrom.focus()
     }
   }, [])

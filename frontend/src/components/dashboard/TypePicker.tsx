@@ -1,6 +1,6 @@
 "use client"
 
-import { useId } from "react"
+import { useId, useState } from "react"
 import { MAX_TAG_LENGTH, RESUME_TAGS } from "@/lib/resume"
 import { tagName } from "./ResumeTable"
 
@@ -20,20 +20,32 @@ const chip = (chosen: boolean) =>
 /**
  * A resume's type: a chip for each of RESUME_TAGS and each type of the
  * person's own in use, and a box to name a new one. Typing in the box
- * chooses what's typed; choosing a chip empties it.
+ * chooses what's typed; choosing a chip empties it. What's typed is kept
+ * apart from what's chosen, so text that happens to match a chip, as
+ * "Data roles" on the way to "Data roles 2", stays in the box.
  */
 export default function TypePicker({ value, onChange, own = [] }: TypePickerProps) {
   const name = useId()
   const choices = [...RESUME_TAGS.map((option) => option.id), ...own.filter((tag) => !RESUME_TAGS.some((option) => option.id === tag))]
-  const typed = choices.includes(value) ? "" : value
+  const [typed, setTyped] = useState(() => (choices.includes(value) ? "" : value))
 
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="label-mono mb-2 text-ink-2">Type</legend>
       <div className="flex flex-wrap gap-2">
         {choices.map((tag) => (
-          <label key={tag} className={chip(value === tag)}>
-            <input type="radio" name={name} value={tag} checked={value === tag} onChange={() => onChange(tag)} className="sr-only" />
+          <label key={tag} className={chip(typed === "" && value === tag)}>
+            <input
+              type="radio"
+              name={name}
+              value={tag}
+              checked={typed === "" && value === tag}
+              onChange={() => {
+                setTyped("")
+                onChange(tag)
+              }}
+              className="sr-only"
+            />
             {tagName(tag)}
           </label>
         ))}
@@ -44,7 +56,10 @@ export default function TypePicker({ value, onChange, own = [] }: TypePickerProp
           type="text"
           value={typed}
           maxLength={MAX_TAG_LENGTH}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            setTyped(event.target.value)
+            onChange(event.target.value)
+          }}
           placeholder="Data roles"
           className="border-0 border-b border-ink/25 bg-transparent py-2 text-base text-ink outline-none placeholder:text-ink-2/70 focus:border-accent"
         />

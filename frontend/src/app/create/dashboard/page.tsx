@@ -87,6 +87,10 @@ function today() {
   return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, "0")).join("-")
 }
 
+// The "All" chip's value: empty, which no type can be (cleanTag drops a blank
+// one), so a type of the person's own named "all" is a chip of its own.
+const EVERY_TYPE = ""
+
 export default function DashboardPage() {
   const router = useRouter()
   const {
@@ -115,7 +119,7 @@ export default function DashboardPage() {
   // Set once a switch has had to fade the new view in, without view transitions.
   const [fadeIn, setFadeIn] = useState(false)
   const [sort, setSort] = useState<Sort>("edited")
-  const [tag, setTag] = useState("all")
+  const [tag, setTag] = useState(EVERY_TYPE)
   const [query, setQuery] = useState("")
   // The resume deleted last, while it can still be put back. It's only
   // hidden until then, so Undo puts back exactly what was there; it's
@@ -403,7 +407,7 @@ export default function DashboardPage() {
   // Counted without the one crumpling away, so the tabs agree with the count above them at once.
   const counted = found.filter((resume) => resume.id !== deletedId)
   const tags = [
-    { id: "all", name: "All", count: counted.length },
+    { id: EVERY_TYPE, name: "All", count: counted.length },
     ...[...new Set([...RESUME_TAGS.map((option) => option.id), ...counted.map(tagOf).filter(Boolean)])]
       // A type of the person's own is named as they wrote it, from the first resume that has it.
       .map((id) => ({
@@ -422,7 +426,7 @@ export default function DashboardPage() {
         .map((tag) => [tag.toLowerCase(), tag]),
     ).values(),
   ]
-  const tagged = found.filter((resume) => tag === "all" || tagOf(resume) === tag)
+  const tagged = found.filter((resume) => tag === EVERY_TYPE || tagOf(resume) === tag)
   const shown =
     sort === "name"
       ? [...tagged].sort((a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" }))
@@ -515,7 +519,7 @@ export default function DashboardPage() {
                 <p className="font-serif text-[24px] leading-tight tracking-[-0.02em]">
                   {query.trim() ? (
                     <>
-                      No resumes match &ldquo;{query.trim()}&rdquo;{tag !== "all" && ` in ${tagName(tag)}`}.
+                      No resumes match &ldquo;{query.trim()}&rdquo;{tag !== EVERY_TYPE && ` in ${tagName(tag)}`}.
                     </>
                   ) : (
                     "None here."
@@ -525,7 +529,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => {
                     setQuery("")
-                    setTag("all")
+                    setTag(EVERY_TYPE)
                   }}
                   className={OUTLINE_PILL}
                 >

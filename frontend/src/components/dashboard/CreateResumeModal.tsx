@@ -18,7 +18,7 @@ export default function CreateResumeModal({ own, onClose, onCreate }: CreateResu
   const [tag, setTag] = useState(RESUME_TAGS[0].id)
 
   return (
-    <Modal title="New resume" onClose={onClose}>
+    <Modal title="New resume" onClose={onClose} fade>
       <form
         className="mt-6 flex flex-col gap-7"
         onSubmit={(event) => {

@@ -16,7 +16,7 @@ const SORTS: { id: Sort; name: string }[] = [
 interface FiltersProps {
   /** The search box, first in the row. */
   search: ReactNode
-  /** Each tag in use, with its name and how many resumes have it; "all" first. */
+  /** Each tag in use, with its name and how many resumes have it; "All" first, as "". */
   tags: { id: string; name: string; count: number }[]
   tag: string
   onTag: (tag: string) => void

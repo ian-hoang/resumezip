@@ -20,7 +20,7 @@ export default function TypeModal({ resume, own, onClose, onSave }: TypeModalPro
   const [tag, setTag] = useState(cleanTag(resume.resumeTag ?? ""))
 
   return (
-    <Modal title="Change type" onClose={onClose}>
+    <Modal title="Change type" onClose={onClose} fade>
       <form
         className="mt-6 flex flex-col gap-7"
         onSubmit={(event) => {
