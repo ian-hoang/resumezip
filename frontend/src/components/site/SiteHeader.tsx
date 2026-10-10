@@ -83,7 +83,10 @@ export default function SiteHeader({ variant = "light", starOnGitHub = false, on
         }}
       >
         <Star className="h-4 w-4 fill-[#facc15] text-[#facc15]" aria-hidden="true" />
-        Star on GitHub
+        {/* Beside the links, below lg, there's only room for "Star". */}
+        <span>
+          Star<span className="md:max-lg:sr-only"> on GitHub</span>
+        </span>
       </a>
     ) : onStartWriting ? (
       <button
@@ -110,10 +113,11 @@ export default function SiteHeader({ variant = "light", starOnGitHub = false, on
       ref={headerRef}
       className={`relative font-system ${overlay ? "z-10 text-white" : "z-30 border-b border-rule bg-paper text-ink"}`}
     >
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:h-[72px] md:px-10">
+      {/* With links, the outer columns are equal, so the links stay put whatever the button says. */}
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr] md:px-10">
         <Link
           href="/"
-          className="flex items-center gap-2.5 font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
+          className="flex items-center gap-2.5 justify-self-start font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
         >
           <Logo className="h-5 w-auto" />
           resumezip
@@ -131,7 +135,7 @@ export default function SiteHeader({ variant = "light", starOnGitHub = false, on
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-self-end">
           {/* Phones don't have room for it next to the logo, so it moves into the menu. */}
           {action(`${CTA} hidden h-10 sm:inline-flex`)}
           <button

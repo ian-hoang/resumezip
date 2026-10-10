@@ -24,3 +24,21 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
     REPO_URL,
   )
 })
+
+// The home page's button is wider than the others', which mustn't push the links aside or onto two lines.
+for (const width of [768, 1440]) {
+  test(`at ${width}px the header's links are on one line, where they are on every page`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    const links = page.getByRole("navigation", { name: "Main" }).getByRole("link")
+    const boxes = async () => Promise.all((await links.all()).map((link) => link.boundingBox()))
+
+    await page.goto("/about")
+    await expect(links).toHaveCount(3)
+    const elsewhere = await boxes()
+    await page.goto("/")
+    await expect(links).toHaveCount(3)
+    const home = await boxes()
+    expect(home).toEqual(elsewhere)
+    expect(new Set(home.map((box) => box!.height)).size).toBe(1)
+  })
+}
