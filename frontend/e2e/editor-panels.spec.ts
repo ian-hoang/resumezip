@@ -150,18 +150,22 @@ test("the Style tab lists the templates and Fine-tune, beside the form", async (
   expect(errors).toEqual([])
 })
 
-test("Download PDF reads back the paper and how many pages the PDF has", async ({ page }) => {
+test("A4, chosen in the Style tab, prints the page on A4, and Download PDF still says only what it does", async ({ page }) => {
   const errors = pageErrors(page)
-  await startWriting(page, 1440, 900)
+  const preview = await startWriting(page, 1440, 900)
   const button = download(page)
-  await expect(button).toContainText(/Letter · 1 page/i)
-  await expect(button).toHaveAccessibleDescription("US Letter, 1 page")
+  // The first page's height over its width: 11 / 8.5 on Letter, 297 / 210 on A4.
+  const shape = async () => {
+    const box = await boxOf(preview.locator(".react-pdf__Page__canvas").first())
+    return box.height / box.width
+  }
+  expect(await shape()).toBeCloseTo(11 / 8.5, 1)
+  await expect(button).toHaveText("Download PDF")
 
-  // A4, from Fine-tune.
   await styleTab(page).click()
   await page.getByRole("region", { name: "Style" }).getByText("A4", { exact: true }).click()
-  await expect(button).toContainText(/A4 · 1 page/i)
-  await expect(button).toHaveAccessibleDescription("A4, 1 page")
+  await expect.poll(shape).toBeCloseTo(297 / 210, 1)
+  await expect(button).toHaveText("Download PDF")
 
   expect(errors).toEqual([])
 })
