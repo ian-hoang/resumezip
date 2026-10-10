@@ -91,6 +91,29 @@ test("the words come into focus as they scroll up the page, and screen readers g
   await expect.poll(() => lastWordBlur(page)).toBe(0)
 })
 
+test("each stage of Checked as you write lasts more than a screen of scrolling, so a flick doesn't skip it", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto("/")
+  const check = page.getByRole("region", { name: "Checked as you write" })
+  await expect(check).toBeVisible()
+
+  // Scrolls down through the section a little at a time, noting where the stage counter turns to 2 / 3 and to 3 / 3.
+  const turns = await check.evaluate(async (section) => {
+    const counter = Array.from(section.querySelectorAll("span")).find((span) => /^\d \/ 3$/.test(span.textContent ?? ""))!
+    const frames = () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+    const top = section.getBoundingClientRect().top + window.scrollY
+    const found: Record<string, number> = {}
+    for (let y = top; y < top + section.getBoundingClientRect().height; y += 40) {
+      // At once: the page scrolls smoothly otherwise (scroll-smooth), and would still be on its way.
+      window.scrollTo({ top: y, behavior: "instant" })
+      await frames()
+      found[counter.textContent!] ??= y
+    }
+    return { second: found["2 / 3"], third: found["3 / 3"], screen: window.innerHeight }
+  })
+  expect(turns.third - turns.second).toBeGreaterThan(turns.screen)
+})
+
 test.describe("with less motion", () => {
   test.use({ reducedMotion: "reduce" })
 

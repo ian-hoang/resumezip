@@ -224,11 +224,13 @@ function Thumbnail({ resume, style }: { resume: ResumeWithId; style: CSSProperti
   const element = useRef<HTMLSpanElement>(null)
   const url = usePagePicture(resume.id, resume, element)
   return (
+    // Its edge is drawn inside it: the table's scroll box clips anything outside, and the
+    // picture sits right at the box's left edge.
     <span
       ref={element}
       data-resume-page
       style={style}
-      className="block h-[60px] w-[46px] bg-sheet ring-1 ring-rule transition-shadow hover:ring-rule-strong"
+      className="block h-[60px] w-[46px] bg-sheet outline outline-1 -outline-offset-1 outline-rule transition-[outline-color] hover:outline-rule-strong"
     >
       {url ? (
         // An object URL, which next/image can't optimise.

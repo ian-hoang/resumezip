@@ -492,7 +492,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
       </div>
 
       {/* On wide screens, the zoom in a glass pill under the page. */}
-      <div className="glass glass-frost mt-2 hidden h-11 shrink-0 items-center gap-1 self-center rounded-full px-2 font-mono text-xs text-ink-2 xl:flex">
+      <div className="glass glass-float mt-2 hidden h-11 shrink-0 items-center gap-1 self-center rounded-full px-2 font-mono text-xs text-ink-2 xl:flex">
         {zoomControls}
         <span aria-hidden="true" className="mx-1.5 h-5 w-px bg-ink/10" />
         <button

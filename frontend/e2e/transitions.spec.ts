@@ -92,6 +92,35 @@ test("a section, Write, Check or Style, and the template gallery fade in as they
   expect(errors).toEqual([])
 })
 
+test("the template gallery fades away as it closes, rather than vanishing", async ({ page }) => {
+  const errors = pageErrors(page)
+  await newResume(page)
+  // Let the preview finish first, so the compiler's download isn't cut off as the page closes.
+  // (Narrower, below, the preview is behind the Edit / Preview switch.)
+  await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
+  await page.setViewportSize({ width: 1024, height: 768 })
+  await page.getByRole("button", { name: /^Template/ }).click()
+  const gallery = page.getByRole("dialog", { name: "Choose a template" })
+  await expect(gallery).toBeVisible()
+  await settled(gallery)
+  await transitionsDone(page)
+
+  // Whether an opacity transition starts on the gallery, or what holds it, as it closes.
+  await page.evaluate(() => {
+    const flags = window as unknown as { galleryFaded: boolean }
+    flags.galleryFaded = false
+    document.addEventListener("transitionrun", (event) => {
+      if (event.propertyName !== "opacity" || !(event.target instanceof Element)) return
+      if (event.target.querySelector('[role="dialog"][aria-label="Choose a template"]')) flags.galleryFaded = true
+    })
+  })
+  await gallery.getByRole("button", { name: "Close" }).click()
+  await expect(page.getByRole("button", { name: /^Template/ })).toBeFocused()
+  await expect(gallery).toBeHidden()
+  expect(await page.evaluate(() => (window as unknown as { galleryFaded: boolean }).galleryFaded)).toBe(true)
+  expect(errors).toEqual([])
+})
+
 test("the New resume dialog fades in", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")

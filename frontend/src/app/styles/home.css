@@ -22,7 +22,9 @@
   .site-pill {
     transition: transform 360ms var(--ease-glide);
   }
-  .site-pill[data-tucked]:not(:focus-within) {
+  .site-pill[data-tucked]:not(:focus-within),
+  /* And on every page, while the dashboard's search is lifted into the middle of the screen (SearchBar.tsx). */
+  [data-spotlight="up"] .site-pill:not(:focus-within) {
     transform: translateY(calc(-100% - 3rem));
   }
 
@@ -125,6 +127,53 @@
         linear-gradient(0deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
         linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
         url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
+    }
+  }
+
+  /* The phone menu (SiteHeader.tsx): a card that drops in below the pill with
+     a small spring, solid from its first frame (neither faded nor clipped, as
+     either stops glass blurring what's behind it), and its links fade and drop in a
+     beat apart, close behind it, so the last (Star on GitHub) isn't left waiting.
+     Closing, it all goes quickly. */
+  .menu-card {
+    visibility: hidden;
+    transform: translateY(-14px) scale(0.94);
+    transform-origin: top center;
+    transition:
+      transform 160ms ease-in,
+      visibility 0s 160ms;
+  }
+  .menu-card[data-open] {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform 460ms cubic-bezier(0.34, 1.4, 0.64, 1),
+      visibility 0s;
+  }
+  .menu-item {
+    opacity: 0;
+    translate: 0 -6px;
+    transition:
+      opacity 100ms ease-out,
+      translate 100ms ease-out;
+  }
+  [data-open] .menu-item {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+      opacity 260ms var(--ease-glide) calc(40ms + var(--i) * 30ms),
+      translate 260ms var(--ease-glide) calc(40ms + var(--i) * 30ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-card,
+    .menu-card[data-open] {
+      transform: none;
+      transition: visibility 0s;
+    }
+    .menu-item,
+    [data-open] .menu-item {
+      translate: none;
+      transition: none;
     }
   }
 
@@ -287,7 +336,8 @@
   }
 
   /* The templates page's cards: paper on the desk. A hover or focus lifts the
-     page and brings up "Use this template" over its foot. */
+     page, and a glass plate with Use slides up over its foot. The plate only
+     moves, never fades: glass that's see-through stops blurring (glass.css). */
   .template-card .template-page {
     box-shadow:
       0 1px 2px rgb(17 19 24 / 0.08),
@@ -297,11 +347,8 @@
       box-shadow 300ms var(--ease-glide);
   }
   .template-card .template-use {
-    opacity: 0;
-    transform: translateY(8px);
-    transition:
-      opacity 200ms var(--ease-glide),
-      transform 300ms var(--ease-glide);
+    transform: translateY(calc(100% + 16px));
+    transition: transform 380ms var(--ease-glide);
   }
   .template-card:hover .template-page,
   .template-card:focus-visible .template-page {
@@ -312,13 +359,11 @@
   }
   .template-card:hover .template-use,
   .template-card:focus-visible .template-use {
-    opacity: 1;
     transform: none;
   }
   /* Without a pointer to hover with, it's always there to say what a tap does. */
   @media (hover: none) {
     .template-card .template-use {
-      opacity: 1;
       transform: none;
     }
   }

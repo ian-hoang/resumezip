@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, X } from "lucide-react"
+import { ASCII_SKY } from "./asciiSky"
 import { TOUR_SEEN_KEY } from "./tourSeen"
 
 /** A part of the editor that a step of the tour points at, in its picture. */
@@ -17,9 +18,17 @@ interface Step {
   parts: readonly Part[]
 }
 
+// In the order the editor reads, left to right: the tabs, the form, the page, then Download at the top right.
 const STEPS: Step[] = [
   {
-    label: "Welcome",
+    label: "Write, Check, Style",
+    title: "Write, check, then style.",
+    body: "Write lists the sections; drag one to move it. Check scores your resume and says what to fix. Style picks the template.",
+    next: "Next: saving",
+    parts: ["tabs"],
+  },
+  {
+    label: "Saving",
     title: "It saves as you type, in this browser.",
     body: "There's no account. Your resume is saved in this browser, on this computer, and resumezip keeps no copy.",
     next: "Next: the preview",
@@ -29,15 +38,8 @@ const STEPS: Step[] = [
     label: "The preview",
     title: "The page is the real PDF.",
     body: "It's built in your browser as you type, and what you just changed lights up for a moment.",
-    next: "Next: Write, Check, Style",
-    parts: ["page"],
-  },
-  {
-    label: "Write, Check, Style",
-    title: "Write, check, then style.",
-    body: "Write lists the sections: drag one to move it on the page. Check gives a score and what to fix, like a missing date or a typo. Style picks the template and fine-tunes it.",
     next: "Next: your save file",
-    parts: ["tabs"],
+    parts: ["page"],
   },
   {
     label: "Your save file",
@@ -68,8 +70,11 @@ function rememberSeen() {
   }
 }
 
-/** A short tour of the editor, in four steps, on the first visit. */
-export default function Tour() {
+/**
+ * A short tour of the editor, in four steps, on the first visit, and again
+ * each time `asked` goes up (the header's Take the tour button).
+ */
+export default function Tour({ asked = 0 }: { asked?: number }) {
   const [shown, setShown] = useState(false)
   useEffect(() => {
     if (!firstVisit()) return
@@ -79,6 +84,9 @@ export default function Tour() {
     rememberSeen()
     setShown(true)
   }, [])
+  useEffect(() => {
+    if (asked > 0) setShown(true)
+  }, [asked])
   return shown ? <TourDialog onClosed={() => setShown(false)} /> : null
 }
 
@@ -97,7 +105,7 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
   // The latest one, so the effect below is about opening the dialog, not each render.
   const closed = useRef(onClosed)
   closed.current = onClosed
-  const { label, title, body, next, parts } = STEPS[step]
+  const { next, parts } = STEPS[step]
   const last = step === STEPS.length - 1
 
   useEffect(() => {
@@ -153,24 +161,27 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
-          {/* Said again as each step comes in. */}
-          <div aria-live="polite">
-            <p className="label-mono pr-12 text-ink-2">
-              {label} · {step + 1} of {STEPS.length}
-            </p>
-            <h2 id={titleId} className="mt-3 font-serif text-[27px] leading-[1.15] tracking-[-0.01em] sm:text-[32px]">
-              {title}
-            </h2>
-            <p id={bodyId} className="mt-3 max-w-[540px] text-[15px] leading-relaxed text-ink-2">
-              {body}
-            </p>
+          {/* This step's words, said again as each step comes in, stacked with every other
+              step's, unseen, so the dialog is as tall as the longest and keeps its size. */}
+          <div className="grid">
+            <div aria-live="polite" className="col-start-1 row-start-1">
+              <StepWords step={step} titleId={titleId} bodyId={bodyId} />
+            </div>
+            {STEPS.map((other, index) =>
+              index === step ? null : (
+                <div key={other.label} aria-hidden="true" className="invisible col-start-1 row-start-1">
+                  <StepWords step={index} />
+                </div>
+              ),
+            )}
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          {/* One line on every step, so the dialog keeps its size: on phones, without the dots. */}
+          <div className="mt-6 flex items-center justify-between gap-4">
             <button
               ref={nextRef}
               type="button"
               onClick={forward}
-              className="ink-button lift-button inline-flex h-11 items-center rounded-full px-[18px] text-[15px] font-medium"
+              className="ink-button lift-button inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full px-[18px] text-[15px] font-medium"
             >
               {next}
             </button>
@@ -184,7 +195,7 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               </button>
-              <span aria-hidden="true" className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="hidden items-center gap-1.5 sm:flex">
                 {STEPS.map((shown, index) => (
                   <span
                     key={shown.label}
@@ -208,6 +219,24 @@ function TourDialog({ onClosed }: { onClosed: () => void }) {
         </div>
       </div>
     </dialog>
+  )
+}
+
+/** A step's label, title and words. */
+function StepWords({ step, titleId, bodyId }: { step: number; titleId?: string; bodyId?: string }) {
+  const { label, title, body } = STEPS[step]
+  return (
+    <>
+      <p className="label-mono pr-12 text-ink-2">
+        {label} · {step + 1} of {STEPS.length}
+      </p>
+      <h2 id={titleId} className="mt-3 font-serif text-[27px] leading-[1.15] tracking-[-0.01em] sm:text-[32px]">
+        {title}
+      </h2>
+      <p id={bodyId} className="mt-3 max-w-[540px] text-[15px] leading-relaxed text-ink-2">
+        {body}
+      </p>
+    </>
   )
 }
 
@@ -244,7 +273,11 @@ function Miniature({ parts }: { parts: readonly Part[] }) {
   )
 
   return (
-    <div aria-hidden="true" className="desk absolute inset-0 bg-scroll">
+    <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(180deg,#9fb5ee,#c9d6f7_55%,#e6dcf0)]">
+      {/* The sky, drawn in characters, its clouds at the foot as on the desk. */}
+      <pre className="pointer-events-none absolute bottom-0 left-1/2 m-0 -translate-x-1/2 select-none font-mono text-[6px] leading-[7px] text-white sm:text-[11px] sm:leading-[9.5px]">
+        {ASCII_SKY}
+      </pre>
       {/* Wide screens: the top bar over three panels. */}
       <div className="absolute inset-0 hidden flex-col gap-2.5 p-4 sm:p-5 xl:flex">
         <div className={`flex h-8 shrink-0 items-center gap-3 px-3.5 ${MINI_PANEL}`}>
@@ -264,7 +297,7 @@ function Miniature({ parts }: { parts: readonly Part[] }) {
               </span>
             ))}
           </div>
-          <div className={`flex w-[38%] flex-col gap-3.5 px-4 py-3.5 ${MINI_PANEL} ${shown("form")}`}>
+          <div className={`flex min-w-0 flex-1 flex-col gap-3.5 px-4 py-3.5 ${MINI_PANEL} ${shown("form")}`}>
             <span className="block h-2 w-[45%] rounded-full bg-ink/60" />
             {field("30%")}
             {field("22%")}
@@ -274,7 +307,8 @@ function Miniature({ parts }: { parts: readonly Part[] }) {
             </span>
             <span className="block min-h-0 flex-1 rounded-[calc(var(--radius-panel)*0.3)] border border-ink/15 bg-white" />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-center">
+          {/* As wide as the page in it, so the page sits the panels' gap from the form, as in the editor. */}
+          <div className="flex shrink-0 items-center">
             <Page lit={lit("page")} shown={shown("page")} />
           </div>
         </div>

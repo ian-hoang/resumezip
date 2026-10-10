@@ -57,6 +57,19 @@
     --glass-blur: 24px;
     --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.6));
   }
+  /* Nearly clear, for a small control floating over the page (the
+     dashboard's Undo bar, the phone's Edit / Preview switch): what's behind
+     shows through, only softened. */
+  .glass-clear {
+    --glass-blur: 3px;
+    --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0.16));
+  }
+  /* Heavily frosted and nearly white, for floating controls and menus with
+     words on them (the zoom pill, the ▾ menu, the home page's Start writing). */
+  .glass-float {
+    --glass-blur: 22px;
+    --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.68));
+  }
   /* Dark glass, for over the home page's video. */
   .glass-smoke {
     --glass-fill: linear-gradient(180deg, rgb(28 30 36 / 0.52), rgb(17 19 24 / 0.36));

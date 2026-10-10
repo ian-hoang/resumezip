@@ -124,6 +124,38 @@ test("a long resume name wraps in the table, and every resume's buttons stay on 
   expect(errors).toEqual([])
 })
 
+test("in the list, each resume's small page has its edge on all four sides", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await dashboardWith(page, [resume("a", "Ada")])
+  await page.getByRole("button", { name: "List" }).click()
+  const row = page
+    .getByRole("table")
+    .getByRole("row")
+    .filter({ has: page.getByRole("link", { name: "Ada", exact: true }) })
+  // The page is hidden from screen readers (its name's link opens the same resume), so it's found by
+  // the attribute the view switch moves it by. It sits right at the left edge of the table's scroll box.
+  const picture = row.locator("[data-resume-page]")
+  await expect(picture).toBeVisible()
+  const box = (await picture.boundingBox())!
+
+  // Its left-most column of pixels, halfway down, as drawn: the grey edge, not the white page inside.
+  const shot = await page.screenshot({ clip: { x: Math.round(box.x), y: Math.round(box.y + box.height / 2) - 4, width: 1, height: 8 } })
+  const pixels = await page.evaluate(async (png) => {
+    const image = new Image()
+    image.src = `data:image/png;base64,${png}`
+    await image.decode()
+    const canvas = document.createElement("canvas")
+    canvas.width = image.width
+    canvas.height = image.height
+    const context = canvas.getContext("2d")!
+    context.drawImage(image, 0, 0)
+    return Array.from(context.getImageData(0, 0, image.width, image.height).data)
+  }, shot.toString("base64"))
+  // Red, green and blue of each pixel; white would be the page, with its edge cut off.
+  const reds = pixels.filter((_, index) => index % 4 === 0)
+  expect(Math.max(...reds)).toBeLessThan(240)
+})
+
 test("on a tablet, two resumes whose names differ only by a number both show it", async ({ page }) => {
   const errors = pageErrors(page)
   // Giving a resume a name that's taken adds a number, as "… 2", which only tells them apart if it shows.
@@ -414,6 +446,90 @@ test("the search finds resumes by name or template, and opens one from the keybo
   expect(errors).toEqual([])
 })
 
+test("in use, the search lifts into the middle of the screen, and Escape or a press on the page puts it back", async ({
+  page,
+  browserName,
+}) => {
+  const errors = pageErrors(page)
+  // Tall, so the footer is on screen under the page once nothing matches.
+  await page.setViewportSize({ width: 1280, height: 1200 })
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  const search = page.getByRole("combobox", { name: "Search your resumes" })
+  // Whether it's in the middle of the screen, rather than at the start of the toolbar.
+  const middle = async () => {
+    const box = (await search.boundingBox())!
+    return Math.abs(box.x + box.width / 2 - 640) < 40
+  }
+  await expect(search).toBeVisible()
+  expect(await middle()).toBe(false)
+
+  await search.click()
+  await expect.poll(middle).toBe(true)
+  // The header, a pill the same shape, tucks away above the screen meanwhile.
+  await expect(page.getByRole("banner")).not.toBeInViewport()
+  await search.fill("ada")
+  await expect(page.getByRole("listbox", { name: "Matching resumes" })).toBeVisible()
+
+  // With nothing to list, it says so; and the softened page covers the whole
+  // screen, the footer included (on a tall screen, with the page now short).
+  await search.fill("zzz")
+  // The panel's line and the screen readers' status say the same.
+  await expect(page.getByText("No resume matches “zzz”").filter({ visible: true })).toHaveCount(2)
+  // Playwright's WebKit on Linux draws no backdrop-filter at all (no glass blurs there, the
+  // search field's own included), so the blur is only measured where it's drawn.
+  if (browserName !== "webkit") {
+    // Once the veil's faded in, the footer under it is blurred too: no sharp edges
+    // (as its zipper's teeth have), only small steps from one pixel to the next.
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+          .map((animation) => animation.finished.catch(() => undefined)),
+      ),
+    )
+    const footer = (await page.getByRole("contentinfo").boundingBox())!
+    const top = Math.max(0, Math.round(footer.y))
+    expect(top).toBeLessThan(1100)
+    const shot = await page.screenshot({ clip: { x: 120, y: top, width: 1040, height: 1200 - top } })
+    const sharpest = await page.evaluate(async (png) => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${png}`
+      await image.decode()
+      const canvas = document.createElement("canvas")
+      canvas.width = image.width
+      canvas.height = image.height
+      const context = canvas.getContext("2d")!
+      context.drawImage(image, 0, 0)
+      const { data, width, height } = context.getImageData(0, 0, image.width, image.height)
+      let most = 0
+      for (let y = 0; y < height; y++)
+        for (let x = 1; x < width; x++) most = Math.max(most, Math.abs(data[(y * width + x) * 4] - data[(y * width + x - 1) * 4]))
+      return most
+    }, shot.toString("base64"))
+    expect(sharpest).toBeLessThan(60)
+  }
+
+  // Escape starts again first, then puts it back and lets go of it; "/" lifts it again.
+  await search.press("Escape")
+  await expect(search).toHaveValue("")
+  expect(await middle()).toBe(true)
+  await search.press("Escape")
+  await expect.poll(middle).toBe(false)
+  await expect(search).not.toBeFocused()
+  await expect(page.getByRole("banner")).toBeInViewport()
+  await page.keyboard.press("/")
+  await expect(search).toBeFocused()
+  await expect.poll(middle).toBe(true)
+  await page.keyboard.type("g")
+
+  // A press on the softened page puts it back, keeping what was typed.
+  await page.mouse.click(1200, 700)
+  await expect.poll(middle).toBe(false)
+  await expect(search).toHaveValue("g")
+  expect(errors).toEqual([])
+})
+
 test("the tags show their resumes, with how many each has", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace", { resumeTag: "personal" }), resume("c", "Kestrel")])
@@ -472,16 +588,20 @@ test("a page shows the resume itself, with nothing stamped over it, even one the
   expect(errors).toEqual([])
 })
 
-test("with no resumes, the empty pages start one or open a file", async ({ page }) => {
+test("with no resumes, the page keeps its toolbar and buttons, and the empty pages start one or open a file", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
   await expect(page.getByText("No resumes yet.")).toBeVisible()
-  await expect(page.getByRole("combobox", { name: "Search your resumes" })).toHaveCount(0)
+  // The same page as with resumes, so it doesn't change shape when the first arrives.
+  await expect(page.getByRole("combobox", { name: "Search your resumes" })).toBeVisible()
+  await expect(page.getByRole("group", { name: "View" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Open a file" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Download all" })).toBeDisabled()
 
   const choosing = page.waitForEvent("filechooser")
   await page.getByRole("button", { name: "Drop a PDF or Docx file Choose a file" }).click()
   await choosing
-  await page.getByRole("button", { name: "New resume" }).click()
+  await page.getByRole("button", { name: "New resume" }).first().click()
   await expect(page.getByRole("dialog", { name: "New resume" })).toBeVisible()
   expect(errors).toEqual([])
 })

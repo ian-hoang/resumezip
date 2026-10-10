@@ -1,35 +1,28 @@
 import { expect, test } from "@playwright/test"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
-const PAGES = ["/", "/templates", "/about", "/contact", "/terms", "/create/dashboard", "/does-not-exist"]
+const PAGES = ["/", "/templates", "/about", "/terms", "/create/dashboard", "/does-not-exist"]
 
-test("contact shows the support address before and after opening a message", async ({ page }) => {
+test("contact, on the about page, gives the support address to write to or copy", async ({ page, context, browserName }) => {
+  // Contact is part of About now; its old address still leads to it.
   await page.goto("/contact")
-  const emailLinks = page.getByRole("link", { name: "hello@tryresumezip.com", exact: true })
-  await expect(emailLinks).toHaveCount(1)
-  await expect(emailLinks).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
+  await expect(page).toHaveURL(/\/about#contact$/)
+  const email = page.getByRole("link", { name: "hello@tryresumezip.com", exact: true })
+  await expect(email).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
 
-  await page.getByLabel("Your name").fill("Ada Lovelace")
-  await page.getByLabel("Email address").fill("ada@example.com")
-  await page.getByLabel("Subject", { exact: true }).selectOption("support")
-  await page.getByLabel("Your message").fill("I have a question about my resume.")
-  await page.getByRole("button", { name: "Send with your email app" }).click()
-
-  await expect(page.getByRole("heading", { name: "Check your email app" })).toBeVisible()
-  await expect(emailLinks).toHaveCount(2)
-  for (const link of await emailLinks.all()) {
-    await expect(link).toBeVisible()
-    await expect(link).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
-  }
+  // Copied for those who write from a webmail, where the link opens nothing.
+  test.skip(browserName !== "chromium", "Reading the clipboard back needs Chromium's permission")
+  await context.grantPermissions(["clipboard-read", "clipboard-write"])
+  await page.getByRole("button", { name: "Copy email" }).click()
+  await expect(page.getByRole("button", { name: "Copied" })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("hello@tryresumezip.com")
 })
 
 // Google's sign-in, for Save to Google Drive, links to the privacy policy this way.
 test("/terms#privacy opens the privacy policy, and a tab's address opens it from the page too", async ({ page }) => {
   await page.goto("/terms#privacy")
   await expect(page.getByRole("tab", { name: "Privacy policy" })).toHaveAttribute("aria-selected", "true")
-  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText(
-    "If you press Save to Google Drive, Google asks you first",
-  )
+  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText("save a PDF to your own Google Drive when you ask")
 
   await page.evaluate(() => (window.location.hash = "faq"))
   await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")

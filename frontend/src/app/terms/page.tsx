@@ -7,6 +7,7 @@ import PageIntro from "@/components/site/PageIntro"
 import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
+import { SHEET } from "@/components/site/sheet"
 
 type TabId = "terms" | "privacy" | "faq"
 
@@ -43,7 +44,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "What we collect",
-        body: "We don’t collect or store your resume. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up. If you press Save to Google Drive, Google asks you first, then your browser sends that resume’s PDF straight to your Drive. resumezip can only reach the files it saves there, and we never see them.",
+        body: "We don’t collect your resume, and there are no ads or trackers. Your browser only goes online to load the site and its tools (our host and jsDelivr keep basic logs), look up a paper’s DOI you add, or save a PDF to your own Google Drive when you ask.",
       },
       {
         title: "How it’s used",
@@ -122,7 +123,7 @@ export default function TermsAndPrivacy() {
   return (
     <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-12 md:px-10 md:pt-16">
+      <main className={SHEET}>
         <PageIntro label="Legal" title="Terms & privacy">
           The short version: your resume is saved in your browser, and we don’t store it.
         </PageIntro>
@@ -175,7 +176,7 @@ export default function TermsAndPrivacy() {
           <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
           <div className="md:col-span-2">
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">Ask us anything about these terms or your privacy.</p>
-            <Link href="/contact" className={`${INK_PILL} mt-6`}>
+            <Link href="/about#contact" className={`${INK_PILL} mt-6`}>
               Contact us
             </Link>
           </div>
