@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { ATTACHMENT_NAME, cleanResume, MAX_LENGTH, toAttachment, toJson, toJsonOfAll } from "@/lib/resumeFile"
+import { toWordFile } from "@/lib/word"
+import { crc32, storedFile, zip, zipDirectory, type ZipEntry } from "@/lib/zip"
 import { MAX_CHARACTERS, MAX_PAGES, TIME_LIMIT_MS } from "./limits"
 import { readFile, type ReadRequest } from "./read"
 import { wordFile } from "./testFiles"
@@ -326,8 +328,52 @@ test(`reading stops after ${TIME_LIMIT_MS / 1000} seconds`, async () => {
 })
 
 describe("a Word file", () => {
-  const docx = (buffer: Buffer) =>
-    new File([new Uint8Array(buffer)], "Mara Lin.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" })
+  const docx = (data: Uint8Array) =>
+    new File([new Uint8Array(data)], "Mara Lin.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" })
+  // A Word file from resumezip with `attachment` in it, its text and links unchanged since.
+  const document = "<w:document/>"
+  const relationships = "<Relationships/>"
+  const crc = (text: string) => crc32(new TextEncoder().encode(text))
+  const carrying = (attachment: object) =>
+    zip({
+      "word/document.xml": document,
+      "word/_rels/document.xml.rels": relationships,
+      [ATTACHMENT_NAME]: JSON.stringify({ ...attachment, documentCrc32: crc(document), relationshipsCrc32: crc(relationships) }),
+    })
+
+  test("that resumezip made restores its resume, without reading its text", async () => {
+    await expect(openResumeFile(docx(toWordFile(resume)))).resolves.toEqual({
+      kind: "resumezip",
+      resume: cleanResume(resume),
+      title: "Mara Lin",
+      from: "docx",
+    })
+    expect(workers).toEqual([])
+    expect(downloads).toBe(0)
+  })
+
+  test("that resumezip made, whose text another app has changed since, is read for its text", async () => {
+    const made = toWordFile(resume)
+    const files = Object.fromEntries(
+      (zipDirectory(made.buffer) as ZipEntry[]).map((entry) => [entry.name, storedFile(made.buffer, entry)!]),
+    )
+    // Another app changed the name, and kept the attachment as it was.
+    const text = new TextDecoder().decode(files["word/document.xml"]).replace("Mara Lin", "Mara Lin-Chen")
+    const changed = zip({ ...files, "word/document.xml": text })
+    const file = await openResumeFile(docx(changed))
+    expect(file.kind === "parsed" && file.parsed.profile.fullName).toBe("Mara Lin-Chen")
+    expect(workers.map((worker) => worker.ended)).toEqual([true])
+  })
+
+  test("that resumezip made, with its resume damaged or from a newer resumezip, says so", async () => {
+    await expect(openResumeFile(docx(carrying({ format: "resumezip", version: 2, resume: "nope" })))).rejects.toThrow(
+      new OpenFileError("The resume data in this Word file is damaged. Try another saved Word file."),
+    )
+    await expect(openResumeFile(docx(carrying({ format: "resumezip", version: 3, resume: {} })))).rejects.toThrow(
+      new OpenFileError("This Word file needs a newer resumezip. Refresh the app and try again, or open it with a newer version."),
+    )
+    expect(workers).toEqual([])
+  })
 
   test("is read in a worker, without pdf.js", async () => {
     const file = await openResumeFile(docx(wordFile(["Mara Lin", "mara@example.com", "Education", "State University"])))

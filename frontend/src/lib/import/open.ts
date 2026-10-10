@@ -1,9 +1,9 @@
 // Opens a resume file someone picked or dropped, entirely in the browser. A
-// PDF that resumezip made carries its resume (see lib/resumeFile.ts) and is
-// restored exactly, as is a JSON file it saved; anything else is read and
-// sorted into fields by parse.ts, in a worker (read.ts). Reading stops at the
-// limits in limits.ts, when it's cancelled or when it runs out of time, and
-// shuts down whatever it started.
+// PDF or Word file that resumezip made carries its resume (see
+// lib/resumeFile.ts) and is restored exactly, as is a JSON file it saved;
+// anything else is read and sorted into fields by parse.ts, in a worker
+// (read.ts). Reading stops at the limits in limits.ts, when it's cancelled or
+// when it runs out of time, and shuts down whatever it started.
 
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { ResumeContent } from "@/lib/resume"
@@ -16,8 +16,11 @@ import {
   MAX_LENGTH,
   MAX_RESUMES,
   TooLongError,
+  WORD_DOCUMENT,
+  WORD_RELATIONSHIPS,
   type FileResume,
 } from "@/lib/resumeFile"
+import { storedFile, zipDirectory } from "@/lib/zip"
 import { MAX_BYTES, MAX_PAGES, TIME_LIMIT_MS, TooMuchTextError } from "./limits"
 import { readPdf, type Line, type PageSize, type PdfPage } from "./lines"
 import type { ParsedResume } from "./parse"
@@ -30,8 +33,8 @@ export type OpenedFile =
       title: string
       /** Its tag in the list, from a JSON file that has one. */
       tag?: string
-      /** A JSON file has everything; a PDF has only what it prints. */
-      from: "pdf" | "json"
+      /** A JSON file has everything; a PDF or Word file has only what it prints. */
+      from: "pdf" | "docx" | "json"
     }
   /** A JSON file of several resumes, from "Download all". */
   | { kind: "all"; resumes: FileResume[] }
@@ -135,14 +138,14 @@ function found(result: ReadResult, noText: string): ParsedResume {
 const most = (count: number) => count.toLocaleString("en-US")
 
 /** Reads a resumezip file's text with `read`, with any problem worded for the person who picked the file. */
-function readSaved<T>(read: () => T, kind: "pdf" | "json"): T {
+function readSaved<T>(read: () => T, kind: "pdf" | "docx" | "json"): T {
   try {
     return read()
   } catch (error) {
     if (error instanceof AttachmentError) throw new OpenFileError(error.message)
     if (!(error instanceof TooLongError)) throw error
     throw new OpenFileError(
-      kind === "pdf"
+      kind !== "json"
         ? `This resume is longer than resumezip can open (more than ${most(MAX_ENTRIES)} entries or ${most(MAX_LENGTH)} characters).`
         : `This file is longer than resumezip can open (more than ${most(MAX_RESUMES)} resumes, ${most(MAX_ENTRIES)} entries in one, or ${most(MAX_LENGTH)} characters).`,
     )
@@ -219,7 +222,28 @@ function openJson(data: ArrayBuffer, title: string): OpenedFile {
   return { kind: "resumezip", resume, title: saved ?? title, ...(tag && { tag }), from: "json" }
 }
 
+/**
+ * The resume a resumezip Word file carries (see lib/word.ts), or null for a
+ * Word file from anywhere else. Null too once another app has changed its
+ * text or where a link goes, or zipped the file again compressed: resumezip
+ * leaves the attachment uncompressed.
+ */
+export function wordFileResume(data: ArrayBuffer): ResumeContent | null {
+  const files = zipDirectory(data)
+  if (!Array.isArray(files)) return null
+  const document = files.find((file) => file.name === WORD_DOCUMENT)
+  const relationships = files.find((file) => file.name === WORD_RELATIONSHIPS)
+  const attached = files.find((file) => file.name === ATTACHMENT_NAME)
+  const contents = document && attached && storedFile(data, attached)
+  if (!document || !contents) return null
+  const crcs = { documentCrc32: document.crc, relationshipsCrc32: relationships?.crc }
+  return readSaved(() => fromAttachment(new TextDecoder().decode(contents), "Word file", crcs), "docx")
+}
+
+/** A Word file: resumezip's own is restored as it was; any other is read for its text. */
 async function openWordFile(data: ArrayBuffer, title: string, fileName: string, signal: AbortSignal): Promise<OpenedFile> {
+  const resume = wordFileResume(data)
+  if (resume) return { kind: "resumezip", resume, title, from: "docx" }
   const parsed = found(await readInWorker({ kind: "docx", data }, signal), "This Word file has no text in it.")
   return { kind: "parsed", parsed, lines: parsed.lines, title, fileName }
 }

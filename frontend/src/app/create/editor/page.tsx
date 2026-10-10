@@ -338,7 +338,8 @@ function Editor({ id }: { id: string }) {
       const save = await makeDownload({ ...resume, sectionOrder: resolveSections(resume) })
       await filled
       save()
-      setFailure(null)
+      // Only a failed PDF is put right; a failed Word file still is one.
+      setFailure((previous) => (previous?.of ? previous : null))
       setDownloadedAt(Date.now())
     } catch (error) {
       console.error("Error downloading resume:", error)
@@ -348,14 +349,35 @@ function Editor({ id }: { id: string }) {
     }
   }
 
+  // Says aloud that another format was downloaded, even when it's the same as last time.
+  const sayDownloaded = (what: string) => {
+    setSavedAs("")
+    requestAnimationFrame(() => setSavedAs(`${what} downloaded`))
+  }
+
+  // The PDF's words in a plain layout, to change in Word, Google Docs or Pages.
+  // Its code downloads the first time it's chosen.
+  const downloadWord = async () => {
+    const resume = read()
+    if (!resume) return
+    try {
+      const { toWordFile, WORD_TYPE } = await import("@/lib/word")
+      saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
+      // Only a failed Word file is put right; a failed PDF still is one.
+      setFailure((previous) => (previous?.of ? null : previous))
+      sayDownloaded("Word file")
+    } catch (error) {
+      console.error("Error downloading the Word file:", error)
+      setFailure((previous) => nextFailure(previous, error, "Word file"))
+    }
+  }
+
   // Everything in the resume, what's left out of the PDF too, as a file to keep or open here again.
   const downloadJson = () => {
     const resume = read()
     if (!resume) return
     saveFile(toJson(resume), fileNameOf(resume, "json"), "application/json")
-    // Said again, even when it's the same as last time.
-    setSavedAs("")
-    requestAnimationFrame(() => setSavedAs("JSON downloaded"))
+    sayDownloaded("JSON")
   }
 
   if (!loaded) {
@@ -439,7 +461,10 @@ function Editor({ id }: { id: string }) {
                 )}
               </button>
               <DownloadMenu
-                choices={[{ title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson }]}
+                choices={[
+                  { title: "Word", hint: "To edit in Word, Google Docs or Pages", onChoose: downloadWord },
+                  { title: "JSON", hint: "A backup with everything, even what the PDF leaves out", onChoose: downloadJson },
+                ]}
               />
             </div>
             <span role="status" className="sr-only">
@@ -457,7 +482,7 @@ function Editor({ id }: { id: string }) {
             key={failure.count}
             failure={failure}
             retrying={downloading}
-            onRetry={download}
+            onRetry={failure.of ? downloadWord : download}
             className="border-t border-rule px-5 py-2.5 lg:px-6"
           />
         )}

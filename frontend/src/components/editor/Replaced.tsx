@@ -21,7 +21,7 @@ export default function Replaced({ id, className = "" }: ReplacedProps) {
   const { undoReplace } = useResumeActions()
   const message = useRef<HTMLParagraphElement>(null)
   if (!replaced) return null
-  const file = replaced.from === "json" ? "file" : "PDF"
+  const file = replaced.from === "json" ? "file" : replaced.from === "docx" ? "Word file" : "PDF"
 
   // Undo goes once it's pressed, so focus moves to what's now said instead of
   // being lost to the page. That's read out as focus lands on it.
