@@ -13,40 +13,42 @@
 #let subheadings = rgb("#333333")
 #let body-grey = rgb("#444444")
 
-// The page's side margin, which the rule under the name runs out over.
-#let side = 0.5in
+// The page's side margin, which the rule under the name runs out over. Keep
+// it in step with the page's.
+#let side = page-margin(0.5in)
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: side, top: 0.42in, bottom: 0.4in))
-#set text(font: "Lato", weight: 300, size: 10.3pt, lang: "en", fill: body-grey)
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.5in, top: 0.42in, bottom: 0.4in)))
+#set text(font: "Lato", weight: 300, size: sized(10.3pt), lang: "en", fill: body-grey)
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.5em, spacing: 0pt)
+// Vertical spacing below follows Fine-tune (see common.typ).
+#set par(justify: false, leading: 0.5em * tune.leading, spacing: 0pt)
 
 // Raleway, with lining figures rather than its default old-style ones.
-#let raleway(body, size: 9.7pt, fill: headings) = text(font: "Raleway-v4020", weight: 500, size: size, fill: fill, number-type: "lining", body)
+#let raleway(body, size: sized(9.7pt), fill: headings) = text(font: "Raleway-v4020", weight: 500, size: size, fill: fill, number-type: "lining", body)
 // Deedy's \descript: the role or degree in small capitals.
-#let descript(body) = raleway(smallcaps(body), size: 10.4pt, fill: subheadings)
+#let descript(body) = raleway(smallcaps(body), size: sized(10.4pt), fill: subheadings)
 // Deedy's \location: dates and places.
 #let location(body) = raleway(body)
 // Deedy's \runsubsection: an entry's name in bold capitals.
-#let entry-name(body) = text(size: 11.4pt, weight: 700, fill: subheadings, upper(body))
+#let entry-name(body) = text(size: sized(11.4pt), weight: 700, fill: subheadings, upper(body))
 
 #let bullets(items) = if items.len() > 0 {
-  v(4.2pt)
-  list(marker: [•], indent: 3pt, body-indent: 6pt, spacing: 4.2pt, ..items.map(rich))
+  v(spaced(4.2pt))
+  list(marker: [•], indent: 3pt, body-indent: 6pt, spacing: spaced(4.2pt), ..items.map(rich))
 }
 
 // A section title in light capitals. The first in each column has no space above it.
 #let section(title, body, first: false) = {
-  if not first { v(13pt) }
+  if not first { v(sized(13pt)) }
   block(sticky: true, {
-    text(size: 16.5pt, weight: 300, fill: headings, upper(title))
-    v(7pt)
+    text(size: sized(16.5pt), weight: 300, fill: headings, upper(title))
+    v(sized(7pt))
   })
   body
 }
 
-#let entries(items, gap: 9pt) = items.join(v(gap))
+#let entries(items, gap: 9pt) = items.join(v(sized(gap)))
 
 // An entry on the right: its name and, after a bar, the role, then the dates
 // and place, then its bullets. The lines stay with the first bullet, but only
@@ -58,7 +60,7 @@
     if has(role) { h(0.4em) + descript([| ] + role) }
     let when = join-present(" | ", dates, place)
     if has(when) {
-      v(4.4pt)
+      v(spaced(4.4pt))
       location(when)
     }
   })
@@ -70,7 +72,7 @@
 #align(center, {
   // First names hairline, the last name light.
   let words = p.name.split(" ").filter(word => word != "")
-  text(size: 38pt, fill: headings, {
+  text(size: sized(38pt), fill: headings, {
     text(weight: 100, words.slice(0, calc.max(0, words.len() - 1)).join(" "))
     if words.len() > 1 { [ ] }
     text(weight: 300, words.last(default: ""))
@@ -86,14 +88,14 @@
   if has(p.location) { reach.push(p.location) }
   // The first line far enough below the name that it doesn't read as part of it.
   for (i, items) in (profiles, reach).filter(items => items.len() > 0).enumerate() {
-    v(if i == 0 { 12pt } else { 5pt })
-    raleway(size: 10.8pt, fill: body-grey, items.map(box).join(h(0.35em) + [|] + h(0.35em)))
+    v(sized(if i == 0 { 12pt } else { 5pt }))
+    raleway(size: sized(10.8pt), fill: body-grey, items.map(box).join(h(0.35em) + [|] + h(0.35em)))
   }
 })
-#v(9pt)
+#v(sized(9pt))
 // A rule across the whole page, as Deedy's is.
 #move(dx: -side, line(length: 100% + 2 * side, stroke: 0.5pt + headings))
-#v(12pt)
+#v(sized(12pt))
 
 // ---------- Sections ----------
 
@@ -109,7 +111,7 @@
       block(sticky: more, {
         entry-name(e.school)
         if has(e.degree) {
-          v(3.4pt)
+          v(spaced(3.4pt))
           descript(e.degree)
         }
       })
@@ -119,11 +121,11 @@
       if has(e.gpa) { details.push(location([GPA: #e.gpa])) }
       if has(e.involvement) { details.push([Involvement: #e.involvement]) }
       if details.len() > 0 {
-        v(3.4pt)
-        details.join(v(3.4pt))
+        v(spaced(3.4pt))
+        details.join(v(spaced(3.4pt)))
       }
       if has(e.coursework) {
-        v(5pt)
+        v(spaced(5pt))
         descript[Coursework:] + [ ] + e.coursework
       }
     })))
@@ -131,7 +133,7 @@
     (heading-or(hd.skills, "Skills"), entries(gap: 8pt, data.skills.map(s => {
       if has(s.name) {
         entry-name(s.name)
-        v(3.4pt)
+        v(spaced(3.4pt))
       }
       s.details
     })))
@@ -151,7 +153,7 @@
         if has(pr.techStack) { h(0.4em) + descript([| ] + pr.techStack) }
         let when = (pr.date, ..pr.links.map(url => web-link(url, url))).filter(has)
         if when.len() > 0 {
-          v(4.4pt)
+          v(spaced(4.4pt))
           location(when.join([ | ]))
         }
       })
@@ -168,7 +170,7 @@
     (heading-or(hd.awards, "Awards & Certifications"), grid(
       columns: (auto, 1fr),
       column-gutter: 0.9em,
-      row-gutter: 5pt,
+      row-gutter: spaced(5pt),
       align: (right, left),
       ..data.awards.map(a => (location(a.date), text(weight: 400, a.name) + if has(a.organization) { [ | #a.organization] })).flatten(),
     ))

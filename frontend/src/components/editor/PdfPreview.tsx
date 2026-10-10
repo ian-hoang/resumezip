@@ -1,6 +1,6 @@
 "use client"
 
-import type { PDFWorker } from "pdfjs-dist"
+import type { PDFDocumentProxy, PDFWorker } from "pdfjs-dist"
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ClipboardEvent } from "react"
 // react-pdf's styles are in the page's first download, though its code isn't
 // (see below). Next loads a later chunk's CSS as a React stylesheet resource,
@@ -11,6 +11,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css"
 import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 import { scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
+import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 
 type ReactPdf = typeof import("./reactPdf")
 
@@ -51,6 +52,8 @@ interface Drawing {
   template: string | null
   width: number
   pages: number | null
+  /** Its pages' height over their width, once read from the PDF. */
+  ratio: number | null
   /** The page numbers drawn so far. */
   rendered: number[]
   ready: boolean
@@ -59,9 +62,12 @@ interface Drawing {
 const MAX_PAGE_WIDTH = 640
 const MIN_ZOOM = 0.5
 const MAX_ZOOM = 2.5
+// The least Fit goes to, below MIN_ZOOM: a short, wide window can need it to show the whole page.
+const MIN_FIT = 0.2
 // The most one Ctrl + scroll zooms by, as a factor: a mouse wheel's notch.
 const WHEEL_STEP = 1.1
-// Height over width: every template prints on US Letter.
+// Height over width of US Letter, which every template prints on unless the
+// person picks another paper. A PDF's own is read as it loads (pageRatioOf).
 const PAGE_RATIO = 11 / 8.5
 // Space between pages, matching gap-4.
 const PAGE_GAP = 16
@@ -118,6 +124,8 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
   const pagesRef = useRef<HTMLDivElement>(null)
   // Set just before the zoom changes, and used up once the pages have their new size.
   const anchorRef = useRef<ZoomAnchor | null>(null)
+  // Set by Fit, which shows the first page from its top rather than keeping a point in place.
+  const toTopRef = useRef(false)
   const heldRef = useRef<HeldAnchor | null>(null)
   // The drawing on screen and its pages, and the text each PDF printed, page
   // by page, to light up what the next one changes (lightUpChanges).
@@ -164,6 +172,15 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
   const pageWidth = fitWidth * zoom
   const drawWidth = fitWidth * drawnZoom
 
+  const shownDrawing = drawings.findLast((drawing) => drawing.ready) ?? drawings[drawings.length - 1]
+  const numPages = shownDrawing?.pages ?? 1
+  const ratio = shownDrawing?.ratio ?? PAGE_RATIO
+  // For the zoom's anchor, which is worked out in event handlers and effects.
+  const ratioRef = useRef(ratio)
+  useLayoutEffect(() => {
+    ratioRef.current = ratio
+  })
+
   useEffect(() => {
     const timer = setTimeout(() => setDrawnZoom(zoom), SETTLE_MS)
     return () => clearTimeout(timer)
@@ -185,6 +202,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
         width: drawWidth,
         // Known already if this PDF is drawn at another size.
         pages: drawings.find((drawing) => drawing.file === pdfUrl)?.pages ?? null,
+        ratio: drawings.find((drawing) => drawing.file === pdfUrl)?.ratio ?? null,
         rendered: [],
         ready: false,
       }
@@ -213,9 +231,9 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
       if (!event.ctrlKey && !event.metaKey) return
       event.preventDefault()
       const pages = pagesRef.current
-      if (pages) anchorRef.current = anchorAt(pages, event.clientX, event.clientY, heldRef.current)
+      if (pages) anchorRef.current = anchorAt(pages, event.clientX, event.clientY, heldRef.current, ratioRef.current)
       const factor = wheelZoom(event)
-      setZoom((z) => clampZoom(z * factor))
+      setZoom((z) => clampZoom(z * factor, z))
     }
     scroller.addEventListener("wheel", onWheel, { passive: false })
     return () => scroller.removeEventListener("wheel", onWheel)
@@ -227,8 +245,13 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     const anchor = anchorRef.current
     const pages = pagesRef.current
     anchorRef.current = null
+    if (toTopRef.current && scrollerRef.current) {
+      toTopRef.current = false
+      scrollerRef.current.scrollTo({ top: 0, left: 0, behavior: "instant" })
+      return
+    }
     if (!anchor || !pages || !scrollerRef.current) return
-    const at = onScreen(anchor, pages.getBoundingClientRect())
+    const at = onScreen(anchor, pages.getBoundingClientRect(), ratioRef.current)
     // Across, the panel scrolls. Up and down, the panel does on wide screens and
     // the page on small ones, which would scroll smoothly without "instant".
     // Rounded, as WebKit would drop the fraction of a pixel instead.
@@ -245,13 +268,28 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
       const box = scroller.getBoundingClientRect()
       const view = uncovered()
       const middle = (Math.max(box.top, view.top) + Math.min(box.top + scroller.clientHeight, view.bottom)) / 2
-      anchorRef.current = anchorAt(pages, box.left + scroller.clientWidth / 2, middle, heldRef.current)
+      anchorRef.current = anchorAt(pages, box.left + scroller.clientWidth / 2, middle, heldRef.current, ratioRef.current)
     }
     setZoom(change)
   }
 
-  const shownDrawing = drawings.findLast((drawing) => drawing.ready) ?? drawings[drawings.length - 1]
-  const numPages = shownDrawing?.pages ?? 1
+  // Fit: the whole of the first page in view, from its top, at most at the
+  // usual size. On wide screens the panel scrolls, so its height is what shows.
+  function fit() {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const style = getComputedStyle(scroller)
+    const room = scroller.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+    const fitted = Math.max(MIN_FIT, Math.min(1, room / (fitWidth * ratio)))
+    // Scrolled to the top once the pages have their new size; at that size already, now.
+    if (fitted !== zoom) {
+      anchorRef.current = null
+      toTopRef.current = true
+      setZoom(fitted)
+    }
+    scroller.scrollTo({ top: 0, left: 0, behavior: "instant" })
+  }
+
   const waiting = !drawings.some((drawing) => drawing.ready)
   const files = [...new Set(drawings.map((drawing) => drawing.file))]
 
@@ -266,8 +304,14 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     return () => clearTimeout(timer)
   }, [waiting])
 
-  function onLoadSuccess(file: string, pages: number) {
+  function onLoadSuccess(file: string, loaded: PDFDocumentProxy) {
+    const pages = loaded.numPages
     setDrawings((drawings) => drawings.map((drawing) => (drawing.file === file ? { ...drawing, pages } : drawing)))
+    pageRatioOf(loaded).then(
+      (ratio) => setDrawings((drawings) => drawings.map((drawing) => (drawing.file === file ? { ...drawing, ratio } : drawing))),
+      // The PDF closed first, as when a newer one replaced it.
+      () => {},
+    )
   }
 
   // Once every page of a drawing has rendered, it's shown and the older ones are dropped.
@@ -340,46 +384,33 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     if (file === pdfUrl) setLoadError(true)
   }
 
-  // At the smallest or largest zoom, its button stays focusable but does nothing, as MoveButtons do.
-  const iconButton =
-    "inline-flex h-8 w-8 items-center justify-center text-ink-2 transition-colors hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:text-ink-2"
+  const zoomControls = (
+    <ZoomControls
+      zoom={zoom}
+      onOut={() => zoomFromMiddle((z) => stepZoom(z, -1))}
+      onReset={() => zoomFromMiddle(() => 1)}
+      onIn={() => zoomFromMiddle((z) => stepZoom(z, 1))}
+    />
+  )
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8">
-        <span className="label-mono text-ink-2">{updating ? "Preview · updating…" : "Preview · updates as you type"}</span>
+    <div className="relative flex h-full min-h-0 flex-col">
+      {/* On wide screens the zoom is in a pill of its own under the page, below, and the page has this room. */}
+      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
-          <button
-            type="button"
-            aria-label="Zoom out"
-            aria-disabled={zoom <= MIN_ZOOM || undefined}
-            onClick={() => zoomFromMiddle((z) => stepZoom(z, -1))}
-            className={iconButton}
-          >
-            −
-          </button>
-          <button type="button" onClick={() => zoomFromMiddle(() => 1)} title="Reset zoom" className="w-12 text-center hover:text-ink">
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            type="button"
-            aria-label="Zoom in"
-            aria-disabled={zoom >= MAX_ZOOM || undefined}
-            onClick={() => zoomFromMiddle((z) => stepZoom(z, 1))}
-            className={iconButton}
-          >
-            +
-          </button>
+          {zoomControls}
           {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
         </div>
       </div>
 
-      {/* Focusable, so the preview can be scrolled from the keyboard. */}
+      {/* Focusable, so the preview can be scrolled from the keyboard. On wide
+          screens the pages scroll in the space above the zoom
+          pill, under soft edges (.preview-canvas in styles/editor.css). */}
       <div
         ref={scrollerRef}
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
-        className="relative min-h-[480px] flex-1 overflow-auto px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8"
+        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-2 xl:pb-4 xl:pt-3"
       >
         {loadError || (error && drawings.length === 0) ? (
           <div className="flex h-full min-h-[480px] items-center justify-center text-sm text-ink-2">
@@ -387,10 +418,12 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
           </div>
         ) : (
           // The out-of-date page fades a little, after a moment, so a quick switch doesn't flicker.
+          // A resume's page on the dashboard grows into this one as it's opened (viewSwitch.ts).
           <div
             ref={pagesRef}
+            data-open-target=""
             className={`relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
-            style={{ width: pageWidth, minHeight: numPages * pageWidth * PAGE_RATIO + (numPages - 1) * PAGE_GAP }}
+            style={{ viewTransitionName: OPEN_NAME, width: pageWidth, minHeight: numPages * pageWidth * ratio + (numPages - 1) * PAGE_GAP }}
           >
             {!faded && <PrintingPage width={pageWidth} leaving={!waiting} />}
             {/* A <Document> loads and parses its file, so the drawings of a PDF share one.
@@ -404,7 +437,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
                   options={previewOptions(pdf.pdfjs)}
                   // A link in the preview, such as the person's LinkedIn, opens in a new tab rather than leaving the editor.
                   externalLinkTarget="_blank"
-                  onLoadSuccess={({ numPages }) => onLoadSuccess(file, numPages)}
+                  onLoadSuccess={(loaded) => onLoadSuccess(file, loaded)}
                   onLoadError={() => onLoadError(file)}
                   loading={null}
                 >
@@ -428,8 +461,8 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
                                   }
                                 : undefined
                             }
-                            className="bg-sheet shadow-[0_1px_2px_rgba(17,19,24,0.06),0_18px_40px_-16px_rgba(17,19,24,0.22)]"
-                            style={{ width: pageWidth, height: pageHeight(pageWidth) }}
+                            className="bg-sheet shadow-[0_1px_3px_rgba(17,19,24,0.08),0_32px_64px_-24px_rgba(24,44,110,0.4)]"
+                            style={{ width: pageWidth, height: pageHeight(pageWidth, drawing.ratio ?? PAGE_RATIO) }}
                           >
                             <div
                               className="origin-top-left"
@@ -458,12 +491,49 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
         )}
       </div>
 
+      {/* On wide screens, the zoom in a glass pill under the page. */}
+      <div className="glass glass-frost mt-2 hidden h-11 shrink-0 items-center gap-1 self-center rounded-full px-2 font-mono text-xs text-ink-2 xl:flex">
+        {zoomControls}
+        <span aria-hidden="true" className="mx-1.5 h-5 w-px bg-ink/10" />
+        <button
+          type="button"
+          onClick={fit}
+          title="Show the whole page"
+          className="h-8 rounded-full px-3 font-sans text-[13px] text-ink-2 transition-colors hover:bg-ink/[0.05] hover:text-ink"
+        >
+          Fit
+        </button>
+      </div>
+
       {error && (
-        <p role="status" className="border-t border-rule px-5 py-2 text-xs text-[#b42318] md:px-8">
+        <p
+          role="status"
+          className="border-t border-rule px-5 py-2 text-xs text-[#b42318] md:px-8 xl:absolute xl:left-1/2 xl:top-9 xl:w-max xl:max-w-[90%] xl:-translate-x-1/2 xl:rounded-full xl:border-0 xl:bg-sheet xl:px-4 xl:shadow-[0_8px_24px_-12px_rgba(17,19,24,0.35)]"
+        >
           Couldn&apos;t update the preview: {error}
         </p>
       )}
     </div>
+  )
+}
+
+/** The zoom's − 100% + buttons: in the bar over the preview, or in the pill under the page on wide screens. */
+function ZoomControls({ zoom, onOut, onReset, onIn }: { zoom: number; onOut: () => void; onReset: () => void; onIn: () => void }) {
+  // At the smallest or largest zoom, its button stays focusable but does nothing, as MoveButtons do.
+  const iconButton =
+    "inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:text-ink-2"
+  return (
+    <>
+      <button type="button" aria-label="Zoom out" aria-disabled={zoom <= MIN_ZOOM || undefined} onClick={onOut} className={iconButton}>
+        −
+      </button>
+      <button type="button" onClick={onReset} title="Reset zoom" className="w-12 text-center tabular-nums hover:text-ink">
+        {Math.round(zoom * 100)}%
+      </button>
+      <button type="button" aria-label="Zoom in" aria-disabled={zoom >= MAX_ZOOM || undefined} onClick={onIn} className={iconButton}>
+        +
+      </button>
+    </>
   )
 }
 
@@ -482,8 +552,12 @@ function copyPlainText(event: ClipboardEvent, pdfjs: ReactPdf["pdfjs"]) {
   event.preventDefault()
 }
 
-function clampZoom(zoom: number) {
-  return Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM)
+/**
+ * A zoom within the limits. `from`, the zoom it changes from, can be below
+ * MIN_ZOOM after Fit: zooming out from there stays put rather than jumping up to MIN_ZOOM.
+ */
+function clampZoom(zoom: number, from = MIN_ZOOM) {
+  return Math.min(Math.max(zoom, Math.min(MIN_ZOOM, from)), MAX_ZOOM)
 }
 
 /**
@@ -504,11 +578,17 @@ function wheelZoom({ deltaY, deltaMode }: WheelEvent) {
  */
 function stepZoom(zoom: number, direction: 1 | -1) {
   const tenths = Math.round(zoom * 100) / 10
-  return clampZoom((direction > 0 ? Math.floor(tenths) + 1 : Math.ceil(tenths) - 1) / 10)
+  return clampZoom((direction > 0 ? Math.floor(tenths) + 1 : Math.ceil(tenths) - 1) / 10, zoom)
 }
 
 // In whole pixels, as react-pdf sizes a page's canvas.
-const pageHeight = (width: number) => Math.floor(width * PAGE_RATIO)
+const pageHeight = (width: number, ratio: number) => Math.floor(width * ratio)
+
+/** The first page's height over its width, from its size in the PDF. */
+async function pageRatioOf(loaded: PDFDocumentProxy): Promise<number> {
+  const [left, bottom, right, top] = (await loaded.getPage(1)).view
+  return (top - bottom) / (right - left) || PAGE_RATIO
+}
 
 /**
  * Where a point on screen falls on the pages. Zooming again around the same
@@ -516,18 +596,18 @@ const pageHeight = (width: number) => Math.floor(width * PAGE_RATIO)
  * scroll by whole pixels, and measuring the point afresh each time would add
  * up the rounding until it crept away from the cursor.
  */
-function anchorAt(pages: HTMLElement, clientX: number, clientY: number, held: HeldAnchor | null): ZoomAnchor {
+function anchorAt(pages: HTMLElement, clientX: number, clientY: number, held: HeldAnchor | null, ratio: number): ZoomAnchor {
   const box = pages.getBoundingClientRect()
   const still = held && held.box.left === box.left && held.box.top === box.top && held.box.width === box.width
   if (still && held.anchor.clientX === clientX && held.anchor.clientY === clientY) return held.anchor
-  const pitch = pageHeight(box.width) + PAGE_GAP
+  const pitch = pageHeight(box.width, ratio) + PAGE_GAP
   const down = clientY - box.top
   const page = Math.max(0, Math.floor(down / pitch))
-  return { clientX, clientY, page, x: (clientX - box.left) / box.width, y: (down - page * pitch) / pageHeight(box.width) }
+  return { clientX, clientY, page, x: (clientX - box.left) / box.width, y: (down - page * pitch) / pageHeight(box.width, ratio) }
 }
 
 /** Where an anchor is on screen with the pages laid out in `box`. */
-function onScreen(anchor: ZoomAnchor, box: DOMRect) {
-  const height = pageHeight(box.width)
+function onScreen(anchor: ZoomAnchor, box: DOMRect, ratio: number) {
+  const height = pageHeight(box.width, ratio)
   return { x: box.left + anchor.x * box.width, y: box.top + anchor.page * (height + PAGE_GAP) + anchor.y * height }
 }

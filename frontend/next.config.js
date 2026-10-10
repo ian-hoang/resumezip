@@ -16,7 +16,7 @@ module.exports = {
   // shown. These keep their names when they change (e.g. a template's new
   // picture), so browsers keep them for a day rather than for good.
   async headers() {
-    return ["/previews/:file*", "/video/:file*", "/how-it-works/:file*"].map((source) => ({
+    return ["/previews/:file*", "/video/:file*", "/how-it-works/:file*", "/backgrounds/:file*"].map((source) => ({
       source,
       headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
     }))

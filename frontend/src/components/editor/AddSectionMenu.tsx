@@ -78,7 +78,7 @@ function placeBy(button: HTMLElement): Placement {
 }
 
 const item =
-  "group flex w-full items-center gap-2.5 rounded-[3px] px-2.5 py-2 text-left text-sm leading-snug text-ink outline-none transition-colors duration-150 hover:bg-paper focus-visible:bg-paper"
+  "group flex w-full items-center gap-2.5 rounded-row px-3 py-2 text-left text-sm leading-snug text-ink outline-none transition-colors duration-150 hover:bg-ink/[0.05] focus-visible:bg-ink/[0.05]"
 const icon = "h-4 w-4 shrink-0 text-ink-2 transition-colors duration-150 group-hover:text-ink group-focus-visible:text-ink"
 
 interface AddSectionMenuProps {
@@ -217,7 +217,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => (open ? close() : show())}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[4px] border border-dashed border-rule-strong px-3 text-sm text-ink-2 transition-[color,border-color,scale] duration-150 hover:border-ink hover:text-ink active:scale-[0.98] aria-expanded:border-ink aria-expanded:text-ink motion-reduce:transition-none xl:mt-3 xl:h-10 xl:w-full"
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-dashed border-ink/25 px-3.5 text-sm text-ink-2 transition-[color,border-color,scale] duration-150 hover:border-ink hover:text-ink active:scale-[0.98] aria-expanded:border-ink aria-expanded:text-ink motion-reduce:transition-none xl:mt-3 xl:h-10 xl:w-full"
       >
         {/* It turns into a cross while the menu is open. */}
         <Plus
@@ -230,59 +230,62 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
       {place &&
         createPortal(
           // It fades and grows in from the button's side (`starting:` is CSS
-          // @starting-style), and fades back the same way.
+          // @starting-style), and fades back the same way. The glass is on the
+          // menu, which doesn't scroll, so it stays behind what scrolls inside it.
           <div
             ref={menu}
             id={menuId}
             role="menu"
             aria-label="Add section"
             onKeyDown={onKeyDown}
-            style={{ left: place.left, width: place.width, top: place.top, bottom: place.bottom, maxHeight: place.maxHeight }}
-            className={`fixed z-50 overflow-y-auto overscroll-contain rounded-[4px] bg-sheet p-1.5 shadow-[0_18px_40px_-16px_rgba(17,19,24,0.3)] ring-1 ring-rule transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:scale-[0.97] starting:opacity-0 ${
+            style={{ left: place.left, width: place.width, top: place.top, bottom: place.bottom }}
+            className={`glass glass-frost fixed z-50 flex flex-col rounded-panel transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:scale-[0.97] starting:opacity-0 ${
               place.above ? "origin-bottom-left starting:translate-y-1" : "origin-top-left starting:-translate-y-1"
             } ${closing ? `scale-[0.97] opacity-0 duration-150 ${place.above ? "translate-y-1" : "-translate-y-1"}` : "duration-200"}`}
           >
-            <div style={{ height }} className="overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none">
-              <div
-                className={`flex w-[200%] items-start transition-transform duration-300 ease-out motion-reduce:transition-none ${custom ? "-translate-x-1/2" : ""}`}
-              >
-                <div ref={mainPanel} inert={custom} className="w-1/2">
-                  {sections.length > 0 && (
-                    <>
-                      {/* Two columns where there's room: the first as wide as its words, so the second has room for "Awards & Certifications". */}
-                      <div className={`grid gap-0.5 ${place.narrow ? "" : "grid-cols-[auto_1fr]"}`}>
-                        {sections.map((name) => {
-                          const Icon = ICONS[name]
-                          return (
-                            <button key={name} type="button" role="menuitem" onClick={() => choose(name)} className={item}>
-                              <Icon className={icon} aria-hidden="true" />
-                              {SECTIONS[name].title}
-                            </button>
-                          )
-                        })}
-                      </div>
-                      <div role="separator" className="mx-1 my-1.5 h-px bg-rule" />
-                    </>
-                  )}
-                  <button type="button" role="menuitem" data-custom onClick={() => setCustom(true)} className={item}>
-                    <Plus className={icon} aria-hidden="true" />
-                    Custom section
-                    <ChevronRight className={`${icon} ml-auto`} aria-hidden="true" />
-                  </button>
-                </div>
-
-                <div ref={customPanel} inert={!custom} className="w-1/2">
-                  <button type="button" role="menuitem" onClick={back} className={`${item} text-ink-2`}>
-                    <ChevronLeft className={icon} aria-hidden="true" />
-                    Back
-                  </button>
-                  <div role="separator" className="mx-1 my-1.5 h-px bg-rule" />
-                  {CUSTOM.map(({ kind, title, Icon }) => (
-                    <button key={kind} type="button" role="menuitem" onClick={() => choose(kind)} className={item}>
-                      <Icon className={icon} aria-hidden="true" />
-                      {title}
+            <div style={{ maxHeight: place.maxHeight }} className="overflow-y-auto overscroll-contain p-1.5">
+              <div style={{ height }} className="overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none">
+                <div
+                  className={`flex w-[200%] items-start transition-transform duration-300 ease-out motion-reduce:transition-none ${custom ? "-translate-x-1/2" : ""}`}
+                >
+                  <div ref={mainPanel} inert={custom} className="w-1/2">
+                    {sections.length > 0 && (
+                      <>
+                        {/* Two columns where there's room: the first as wide as its words, so the second has room for "Awards & Certifications". */}
+                        <div className={`grid gap-0.5 ${place.narrow ? "" : "grid-cols-[auto_1fr]"}`}>
+                          {sections.map((name) => {
+                            const Icon = ICONS[name]
+                            return (
+                              <button key={name} type="button" role="menuitem" onClick={() => choose(name)} className={item}>
+                                <Icon className={icon} aria-hidden="true" />
+                                {SECTIONS[name].title}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div role="separator" className="mx-3 my-1.5 h-px bg-ink/10" />
+                      </>
+                    )}
+                    <button type="button" role="menuitem" data-custom onClick={() => setCustom(true)} className={item}>
+                      <Plus className={icon} aria-hidden="true" />
+                      Custom section
+                      <ChevronRight className={`${icon} ml-auto`} aria-hidden="true" />
                     </button>
-                  ))}
+                  </div>
+
+                  <div ref={customPanel} inert={!custom} className="w-1/2">
+                    <button type="button" role="menuitem" onClick={back} className={`${item} text-ink-2`}>
+                      <ChevronLeft className={icon} aria-hidden="true" />
+                      Back
+                    </button>
+                    <div role="separator" className="mx-3 my-1.5 h-px bg-ink/10" />
+                    {CUSTOM.map(({ kind, title, Icon }) => (
+                      <button key={kind} type="button" role="menuitem" onClick={() => choose(kind)} className={item}>
+                        <Icon className={icon} aria-hidden="true" />
+                        {title}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

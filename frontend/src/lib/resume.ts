@@ -12,6 +12,7 @@
 import type { ChoiceKey, DataKey, FieldKey, HeadingKey, ProfileKey } from "@/components/editor/sections"
 import type { CHECK_FIELD, SavedCheck } from "@/lib/check/state"
 import type { ExtraSections } from "@/lib/resumeSections"
+import type { Tune } from "@/lib/tune"
 
 /** The tags a resume can have in the dashboard's list. */
 export const RESUME_TAGS = [
@@ -19,6 +20,19 @@ export const RESUME_TAGS = [
   { id: "academic", name: "Academic" },
   { id: "professional", name: "Professional" },
 ]
+
+/** The longest type someone can name themselves, in characters: about what fits on a filter chip. */
+export const MAX_TAG_LENGTH = 24
+
+/**
+ * A type as it's saved: one of RESUME_TAGS by id, when it's one of their
+ * names in any case, or a type of the person's own, trimmed, with its spaces
+ * run together, and cut to MAX_TAG_LENGTH. "" when there's nothing left.
+ */
+export function cleanTag(input: string): string {
+  const tag = input.trim().replace(/\s+/g, " ").slice(0, MAX_TAG_LENGTH).trim()
+  return RESUME_TAGS.find((option) => option.name.toLowerCase() === tag.toLowerCase() || option.id === tag.toLowerCase())?.id ?? tag
+}
 
 /** One entry in a list section, like a job. Only its own section's fields are set. */
 export type Entry = { id: number; leftOut?: true } & { [Key in FieldKey]?: string }
@@ -33,7 +47,7 @@ export type Resume = {
   id?: string
   /** Its name in the dashboard's list; not printed. */
   resumeTitle?: string
-  /** One of RESUME_TAGS, by id: "personal", "academic" or "professional". */
+  /** One of RESUME_TAGS by id ("personal", "academic" or "professional"), or a type of the person's own (cleanTag). */
   resumeTag?: string
   /** When it last changed, as an ISO date. */
   updatedAt?: string
@@ -51,6 +65,8 @@ export type Resume = {
   profileSection?: Profile | null
   /** Sections beyond the built-in ones, by key, read with extrasOf (lib/resumeSections.ts). */
   extraSections?: ExtraSections
+  /** Adjustments to the template's sizes and page, from Fine-tune (lib/tune.ts). */
+  tune?: Tune | null
 } & { [Key in DataKey]?: Entry[] | null } & { [Key in ChoiceKey]?: string } & {
   /** What the person told the checker, read with readCheckState (lib/check/state.ts). */
   [Key in typeof CHECK_FIELD]?: SavedCheck | null

@@ -47,6 +47,7 @@ describe("what the editor can show of a saved resume", () => {
     ["a section order that isn't a list", "sectionOrder", "Work"],
     ["checker settings that aren't an object", "check", ["B1|a|b"]],
     ["a mark that the sections were chosen that isn't true", "sectionsChosen", "yes"],
+    ["Fine-tune's settings that aren't an object", "tune", "small"],
   ])("leaves out a field in a shape it can't show (%s)", (_, field, value) => {
     const { resume, complete } = readResume(JSON.stringify({ ...ada, [field]: value }))
     expect(complete).toBe(false)
@@ -69,6 +70,20 @@ describe("what the editor can show of a saved resume", () => {
   test("is all of an older resume that lacks newer fields, or has them empty", () => {
     const old = { id: "o", resumeTitle: "Old", profileSection: { fullName: "Ada" }, educationSection: null, headings: null }
     expect(readResume(JSON.stringify(old))).toEqual({ resume: old, complete: true })
+    expect(readResume(JSON.stringify({ ...old, tune: null }))).toEqual({ resume: { ...old, tune: null }, complete: true })
+  })
+
+  test("keeps Fine-tune's settings", () => {
+    const tuned = { ...ada, tune: { size: 0.9, margin: 1.2, leading: 1.15, paper: "a4", onePage: true } }
+    expect(readResume(JSON.stringify(tuned))).toEqual({ resume: tuned, complete: true })
+  })
+
+  test("keeps only the Fine-tune settings it knows, in range, and the rest of the resume", () => {
+    const { resume, complete } = readResume(
+      JSON.stringify({ ...ada, tune: { size: 3, margin: "wide", paper: "legal", columns: 2, onePage: true } }),
+    )
+    expect(complete).toBe(false)
+    expect(resume).toEqual({ ...ada, tune: { size: 1.15, onePage: true } })
   })
 })
 
@@ -275,6 +290,20 @@ describe("mergeResume", () => {
   test("keeps the later edit time", () => {
     const merged = mergeResume({ updatedAt: "2026-10-06T10:00:00.000Z" }, { updatedAt: "2026-10-06T11:00:00.000Z" }, new Set(["updatedAt"]))
     expect(merged.updatedAt).toBe("2026-10-06T11:00:00.000Z")
+  })
+
+  test("keeps a Fine-tune setting changed in each tab", () => {
+    const before = { size: 1.1 }
+    const theirs = { ...ada, tune: { size: 1.1, margin: 1.2 } }
+    const ours = { ...ada, tune: { size: 1.1, paper: "a4" as const } }
+    const changed = new Set(changedPaths("tune", before, ours.tune))
+    expect(mergeResume(theirs, ours, changed).tune).toEqual({ size: 1.1, margin: 1.2, paper: "a4" })
+  })
+
+  test("keeps Fine-tune's settings when a tab whose copy lacks them, as an older version's, changes something else", () => {
+    const theirs = { ...ada, tune: { size: 0.9 } }
+    const ours = { ...ada, profileSection: { fullName: "Ada King" } }
+    expect(mergeResume(theirs, ours, new Set(["profileSection.fullName"]))).toEqual({ ...theirs, profileSection: { fullName: "Ada King" } })
   })
 })
 

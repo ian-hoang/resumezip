@@ -30,8 +30,8 @@ interface SectionNavProps {
 const pad = (n: number) => String(n).padStart(2, "0")
 
 /**
- * The numbered sections: a list in the left bar on wide screens, a row of tabs on narrower ones.
- * Profile stays first; the rest can be dragged into any order.
+ * The numbered sections: a list in the left panel on wide screens, a row of pill tabs on narrower
+ * ones. Profile stays first; the rest can be dragged into any order.
  */
 function SectionNav({ sections, headings, extras, active, onSelect, onReorder, onAdd }: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null)
@@ -164,9 +164,11 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     return () => observer.disconnect()
   }, [active, sections, allTitles, wide, dnd, dragging])
 
+  // Keyboard focus shows as a soft shade and dark text rather than the site's blue ring, which boxed the row in.
+  // The chosen section has the white tab behind it already, so a shade there would draw a second pill inside it.
   const item = (isActive: boolean) =>
-    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-[4px] px-2 py-[9px] text-left text-sm transition-colors xl:w-full xl:min-w-0 xl:shrink ${
-      isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink"
+    `flex shrink-0 items-center gap-3 whitespace-nowrap rounded-full py-[9px] pl-2 pr-3.5 text-left text-sm transition-colors focus-visible:outline-none xl:w-full xl:min-w-0 xl:shrink xl:py-[8px] ${
+      isActive ? "font-medium text-ink" : "text-ink-2 hover:text-ink focus-visible:bg-ink/[0.06] focus-visible:text-ink"
     }`
   // A row's own background: the white tab is drawn behind the chosen one,
   // except while a section is dragged, when the rows move under it and the
@@ -185,21 +187,21 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         ref={drag?.innerRef}
         {...drag?.draggableProps}
         data-section-row
-        className={`flex shrink-0 items-center rounded-[4px] transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none ${
+        className={`flex shrink-0 items-center rounded-full pl-1 transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none ${
           added.has(name) ? "starting:-translate-x-2 starting:opacity-0" : ""
         } ${isDragged ? "bg-sheet shadow-sm ring-1 ring-rule" : rowBackground(isActive)}`}
       >
         <span
           {...drag?.dragHandleProps}
           aria-label={drag && `Reorder ${labelOf(name, index)}`}
-          className="flex h-9 w-6 shrink-0 items-center justify-center text-ink-2 hover:text-ink"
+          className="flex h-9 w-6 shrink-0 items-center justify-center rounded-full text-ink-2 hover:text-ink focus-visible:bg-ink/[0.06] focus-visible:text-ink focus-visible:outline-none"
         >
           <GripVertical className="h-3.5 w-3.5" />
         </span>
         <button
           type="button"
           onClick={() => onSelect(name)}
-          className={`${item(isActive)} relative -ml-1 ${count > 0 ? "xl:pr-[calc(0.75rem+var(--digits)*1ch)]" : ""}`}
+          className={`${item(isActive)} relative -ml-1 ${count > 0 ? "xl:pr-[calc(1.25rem+var(--digits)*1ch)]" : ""}`}
           style={{ "--digits": String(count).length } as React.CSSProperties}
           aria-current={isActive || undefined}
           aria-label={`${pad(index + 2)} ${labelOf(name, index)}`}
@@ -212,7 +214,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
               room kept for it, so the longest titles still fit beside it. The form lists the entries,
               so it isn't read out. */}
           {count > 0 && (
-            <span aria-hidden="true" className="absolute right-2 hidden font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
+            <span aria-hidden="true" className="absolute right-3.5 hidden font-mono text-[11px] tabular-nums text-ink-2 xl:inline">
               {count}
             </span>
           )}
@@ -221,24 +223,52 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
     )
   }
 
+  // Arrows move from section to section, opening each as they go, as the
+  // Write / Check / Style tabs do: up and down in the list on wide screens, and
+  // either way along the row on narrow ones. Only from a section's button, so
+  // a drag handle's own keys (Space to lift, then arrows to move) still work.
+  const onArrowKey = (event: React.KeyboardEvent) => {
+    const target = event.target as HTMLElement
+    if (!target.matches("button[data-section-ref]")) return
+    const buttons = [...(navRef.current?.querySelectorAll<HTMLButtonElement>("button[data-section-ref]") ?? [])]
+    const index = buttons.indexOf(target as HTMLButtonElement)
+    const moves: Record<string, number> = {
+      ArrowDown: index + 1,
+      ArrowRight: index + 1,
+      ArrowUp: index - 1,
+      ArrowLeft: index - 1,
+      Home: 0,
+      End: buttons.length - 1,
+    }
+    const next = buttons[moves[event.key]]
+    if (moves[event.key] === undefined || !next) return
+    event.preventDefault()
+    next.focus()
+    next.click()
+  }
+
   return (
     <nav
       ref={navRef}
+      onKeyDown={onArrowKey}
       aria-label="Sections"
-      className="relative isolate flex gap-1 overflow-x-auto px-3 py-2 [scrollbar-width:none] xl:flex-col xl:overflow-visible xl:p-0 [&::-webkit-scrollbar]:hidden"
+      className="relative isolate flex gap-1 overflow-x-auto px-2 py-2 [scrollbar-width:none] xl:flex-col xl:gap-0.5 xl:overflow-visible xl:p-0 [&::-webkit-scrollbar]:hidden"
     >
       <span
         ref={tabRef}
         aria-hidden="true"
-        className={`absolute left-0 top-0 -z-10 rounded-[4px] bg-sheet ring-1 ring-inset ring-rule transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
+        className={`absolute left-0 top-0 -z-10 rounded-full bg-sheet shadow-[0_1px_3px_rgb(17_19_24/0.08)] ring-1 ring-inset ring-ink/[0.06] transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none ${
           dragging ? "invisible" : ""
         }`}
       />
-      <span className="label-mono hidden px-2 pb-3 text-ink-2 xl:block">Sections</span>
+      <span className="label-mono hidden px-3 pb-3 text-ink-2 xl:block">Sections</span>
 
       {/* Laid out as the other sections are, with an empty space where they have their
           handle, so the numbers and titles line up in the list. */}
-      <div data-section-row className={`flex shrink-0 items-center rounded-[4px] transition-colors ${rowBackground(active === "Profile")}`}>
+      <div
+        data-section-row
+        className={`flex shrink-0 items-center rounded-full pl-1 transition-colors ${rowBackground(active === "Profile")}`}
+      >
         <span className="hidden h-9 w-6 shrink-0 xl:block" aria-hidden="true" />
         <button
           type="button"
@@ -256,7 +286,7 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
         <dnd.DragDropContext onDragStart={() => setDragging(true)} onDragEnd={onDragEnd}>
           <dnd.Droppable droppableId="sections" direction={wide ? "vertical" : "horizontal"}>
             {(drop) => (
-              <div ref={drop.innerRef} {...drop.droppableProps} className="flex gap-1 xl:flex-col">
+              <div ref={drop.innerRef} {...drop.droppableProps} className="flex gap-1 xl:flex-col xl:gap-0.5">
                 {sections.map((name, index) => (
                   <dnd.Draggable key={name} draggableId={name} index={index}>
                     {(drag, snapshot) => renderSection(name, index, drag, snapshot.isDragging)}
@@ -268,12 +298,12 @@ function SectionNav({ sections, headings, extras, active, onSelect, onReorder, o
           </dnd.Droppable>
         </dnd.DragDropContext>
       ) : (
-        <div className="flex gap-1 xl:flex-col">{sections.map((name, index) => renderSection(name, index))}</div>
+        <div className="flex gap-1 xl:flex-col xl:gap-0.5">{sections.map((name, index) => renderSection(name, index))}</div>
       )}
 
       {onAdd && <AddSectionMenu sections={addable} onAdd={onAdd} />}
 
-      <p className="mt-3 hidden border-t border-rule px-2 pt-5 text-[13px] leading-normal text-ink-2 xl:block">
+      <p className="mx-1 mt-4 hidden border-t border-ink/[0.08] px-2 pt-4 text-[13px] leading-normal text-ink-2 xl:block">
         Drag a section to change its place on the page.
       </p>
     </nav>

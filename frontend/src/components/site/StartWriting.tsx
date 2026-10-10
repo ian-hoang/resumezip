@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { getStorage, hasSavedResumes } from "@/lib/resumeKeys"
 import type { TemplateId } from "@/lib/templates"
 import { loadCompiler, savingData } from "@/lib/typst/compile"
+import { rise } from "./rise"
 
 // How long a mouse rests on a link before it counts as reaching for it. One
 // passing over it on the way somewhere else is there for less.
@@ -34,13 +35,13 @@ export function useStartWriting() {
       const store = opensNew(template) ? (await loadResumes()).openResumes() : null
       // Resumes the browser couldn't save are only in the store, until the page is closed.
       if (!store || (template === undefined && Object.keys(store.getState().resumes).length > 0)) {
-        router.push("/create/dashboard")
+        rise(() => router.push("/create/dashboard"))
         return
       }
       const id = store.create("Untitled resume", "personal", template)
       // The editor's preview needs the PDF compiler and the template's fonts, so they start downloading now.
       loadCompiler(template)
-      router.push(`/create/new/${id}`)
+      rise(() => router.push(`/create/new/${id}`))
     },
     [router],
   )

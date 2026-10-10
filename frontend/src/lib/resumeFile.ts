@@ -10,8 +10,9 @@
 import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS } from "@/components/editor/sections"
 import { CHECK_FIELD, readCheckState } from "@/lib/check/state"
 import { isLeftOut, printedResume } from "@/lib/leftOut"
-import { RESUME_TAGS, type Entry, type Headings, type Profile, type Resume, type ResumeContent } from "@/lib/resume"
+import { cleanTag, type Entry, type Headings, type Profile, type Resume, type ResumeContent } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
+import { readTune } from "@/lib/tune"
 import { extraKey, readExtraSections, resolveSections } from "./resumeSections"
 
 export const ATTACHMENT_NAME = "resumezip.json"
@@ -124,7 +125,7 @@ export function fromJson(text: string): FileResume[] | null {
         ...(check !== undefined && { [CHECK_FIELD]: readCheckState({ [CHECK_FIELD]: object(check) }) }),
       },
       ...(typeof resumeTitle === "string" && resumeTitle.trim() !== "" && { title: resumeTitle }),
-      ...(RESUME_TAGS.some((tag) => tag.id === resumeTag) && { tag: resumeTag as string }),
+      ...(typeof resumeTag === "string" && cleanTag(resumeTag) !== "" && { tag: cleanTag(resumeTag) }),
     }
   })
 }
@@ -234,9 +235,13 @@ export function cleanResume(input: unknown): ResumeContent {
   const resume = object(input)
   const profile = object(resume.profileSection)
   const headings = object(resume.headings)
+  // Fine-tune's settings, if any. Files from before them, and older versions
+  // of resumezip opening files with them, print with the template's own.
+  const tune = readTune(resume.tune).tune
 
   const clean: ResumeContent = {
     selectedTemplate: templateById(resume.selectedTemplate).id,
+    ...(tune && { tune }),
     headings: Object.fromEntries(
       SECTION_NAMES.map((name) => SECTIONS[name].headingKey)
         .filter((key) => string(headings[key]).trim() !== "")

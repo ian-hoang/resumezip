@@ -5,6 +5,7 @@ import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myr
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import { fontsOf, templateById } from "@/lib/templates"
+import { fitOnePage, pageCount } from "@/lib/tune"
 import accent from "./templates/accent.typ"
 import common from "./templates/common.typ"
 import deedy from "./templates/deedy.typ"
@@ -213,6 +214,9 @@ addEventListener("message", ({ data: request }: MessageEvent<WorkerRequest>) => 
   } else void compile(request)
 })
 
+// Typst couldn't lay out the resume: its diagnostics.
+class Unprintable extends Error {}
+
 async function compile({ id, template, data, attachment }: CompileRequest) {
   let response: CompileResponse
   let typst: TypstCompiler | undefined
@@ -221,26 +225,38 @@ async function compile({ id, template, data, attachment }: CompileRequest) {
     // The fonts download alongside the compiler, or before compiling when
     // the template or the text needs ones that aren't here yet.
     ;[typst] = await Promise.all([getCompiler(), fetchFontsOf(template, json)])
-    // Compiling comes next.
-    reportProgress(true)
-    // Nothing is awaited between writing the data and compiling it, so
-    // concurrent requests can't see each other's data.
-    typst.mapShadow("/resume.json", new TextEncoder().encode(json))
-    if (attachment !== undefined) {
-      typst.mapShadow(`/${ATTACHMENT_NAME}`, new TextEncoder().encode(attachment))
-      typst.addSource("/download.typ", withAttachment(template))
+    const compiler = typst
+    // Prints the resume with its text at `size` times the template's, and counts the pages.
+    const print = async (size: number) => {
+      // Compiling comes next.
+      reportProgress(true)
+      // Nothing is awaited between writing the data and compiling it, so
+      // concurrent requests can't see each other's data.
+      compiler.mapShadow("/resume.json", new TextEncoder().encode(JSON.stringify({ ...data, tune: { ...data.tune, size } })))
+      if (attachment !== undefined) {
+        compiler.mapShadow(`/${ATTACHMENT_NAME}`, new TextEncoder().encode(attachment))
+        compiler.addSource("/download.typ", withAttachment(template))
+      }
+      const { result, diagnostics } = await compiler.compile({
+        mainFilePath: attachment === undefined ? `/${template}.typ` : "/download.typ",
+        format: CompileFormatEnum.pdf,
+        diagnostics: "unix",
+      })
+      if (!result) throw new Unprintable(diagnostics?.join("\n") || "Typst produced no output")
+      // A count it can't read is taken as one page, so the resume is left as the person set it.
+      return { pages: pageCount(result) || 1, printed: result }
     }
-    const { result, diagnostics } = await typst.compile({
-      mainFilePath: attachment === undefined ? `/${template}.typ` : "/download.typ",
-      format: CompileFormatEnum.pdf,
-      diagnostics: "unix",
-    })
-    response = result ? { id, pdf: result } : { id, error: diagnostics?.join("\n") || "Typst produced no output", failure: "resume" }
+    if (data.tune.onePage) {
+      const { fit, printed } = await fitOnePage(data.tune.size, print)
+      response = { id, pdf: printed, fit }
+    } else {
+      response = { id, pdf: (await print(data.tune.size)).printed }
+    }
   } catch (error) {
     // Without a compiler, it couldn't be downloaded. With one, the compiler
     // itself broke, and the page replaces this worker.
     const message = error instanceof Error ? error.message : String(error)
-    response = { id, error: message, failure: typst === undefined ? "connection" : "crash" }
+    response = { id, error: message, failure: error instanceof Unprintable ? "resume" : typst === undefined ? "connection" : "crash" }
   }
   postMessage(response)
 }

@@ -8,31 +8,33 @@
 #let grey = luma(92)
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.55in, top: 0.55in, bottom: 0.45in))
-#set text(font: "Charis SIL", size: 9.6pt, lang: "en")
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.55in, top: 0.55in, bottom: 0.45in)))
+#set text(font: "Charis SIL", size: sized(9.6pt), lang: "en")
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.5em, spacing: 0pt)
+// Vertical spacing below follows Fine-tune (see common.typ).
+#set par(justify: false, leading: 0.5em * tune.leading, spacing: 0pt)
 
-#let margin = 0.98in
+// The headings' column, which grows with the text in it.
+#let margin = sized(0.98in)
 #let gutter = 0.2in
 #let old(body) = text(number-type: "old-style", body)
 
 // A heading in the margin, level with the first line of its section. Spaced
 // any wider, its letters read as separate words in the PDF's text.
 #let section(title, body) = {
-  v(12.5pt)
+  v(sized(12.5pt))
   grid(
     columns: (margin, 1fr),
     column-gutter: gutter,
     align: (right + top, left + top),
-    pad(top: 1.2pt, text(size: 7.9pt, tracking: 0.08em, fill: luma(55), upper(title))),
+    pad(top: sized(1.2pt), text(size: sized(7.9pt), tracking: 0.08em, fill: luma(55), upper(title))),
     body,
   )
 }
 
 #let bullets(items) = if items.len() > 0 {
-  v(3.8pt)
-  list(marker: text(fill: grey, [–]), indent: 0pt, body-indent: 6pt, spacing: 3.9pt, ..items.map(rich))
+  v(spaced(3.8pt))
+  list(marker: text(fill: grey, [–]), indent: 0pt, body-indent: 6pt, spacing: spaced(3.9pt), ..items.map(rich))
 }
 
 // The organization and its dates, then the role and the place, then bullets.
@@ -42,14 +44,14 @@
   block(sticky: items.len() > 0, {
     row(strong(title), old(dates))
     if has(subtitle) or has(place) {
-      v(3.5pt)
+      v(spaced(3.5pt))
       row(emph(subtitle), text(fill: grey, place))
     }
   })
   bullets(items)
 }
 
-#let entries(items, gap: 8pt) = items.join(v(gap))
+#let entries(items, gap: 8pt) = items.join(v(sized(gap)))
 
 // ---------- Heading ----------
 
@@ -58,7 +60,7 @@
   column-gutter: gutter,
   [],
   {
-    text(size: 25pt, tracking: 0.01em, p.name)
+    text(size: sized(25pt), tracking: 0.01em, p.name)
     // How to reach you, then your links, each on a line of its own.
     let reach = ()
     if has(p.location) { reach.push(p.location) }
@@ -70,12 +72,12 @@
     if has(p.website) { links.push(web-link(p.website, p.website)) }
     let lines = (reach, links).filter(items => items.len() > 0)
     if lines.len() > 0 {
-      v(7pt)
-      text(size: 9pt, fill: grey, lines.map(items => items.map(box).join(h(0.5em) + [·] + h(0.5em))).join(linebreak()))
+      v(sized(7pt))
+      text(size: sized(9pt), fill: grey, lines.map(items => items.map(box).join(h(0.5em) + [·] + h(0.5em))).join(linebreak()))
     }
   },
 )
-#v(2pt)
+#v(sized(2pt))
 
 // ---------- Sections ----------
 
@@ -110,7 +112,7 @@
     section(heading-or(hd.skills, "Skills"), data.skills.map(s => {
       if has(s.name) { strong(s.name) + [: ] }
       s.details
-    }).join(v(3.9pt)))
+    }).join(v(spaced(3.9pt))))
   } else if name == "Leadership" and data.leadership.len() > 0 {
     section(heading-or(hd.leadership, "Leadership"), entries(data.leadership.map(l => {
       entry(l.organization, date-range(l.start, l.end), l.role, l.location, items: l.bullets)
@@ -128,6 +130,6 @@
         },
         old(a.date),
       )
-    }).join(v(4.5pt)))
+    }).join(v(spaced(4.5pt))))
   }
 }

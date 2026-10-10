@@ -95,9 +95,10 @@ test("the template gallery works from the keyboard, and closes every way", async
   expect(errors).toEqual([])
 })
 
-test("on a wide screen the gallery opens under its button, and a click elsewhere closes it", async ({ page }) => {
+// From 1280px the editor's Style tab lists the templates instead (e2e/editor-panels.spec.ts).
+test("on a wider screen the gallery opens under its button, and a click elsewhere closes it", async ({ page }) => {
   const errors = pageErrors(page)
-  await startWriting(page)
+  await startWriting(page, 1024, 768)
   await picker(page).click()
   const dialog = gallery(page)
   await expect(dialog).toBeVisible()
@@ -110,10 +111,10 @@ test("on a wide screen the gallery opens under its button, and a click elsewhere
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
 
-  // What was clicked keeps the focus.
-  await page.getByLabel("Full name").click()
+  // What was clicked keeps the focus. (The resume's name is beside the gallery, not under it.)
+  await page.getByLabel("Resume name").click()
   await expect(dialog).toBeHidden()
-  await expect(page.getByLabel("Full name")).toBeFocused()
+  await expect(page.getByLabel("Resume name")).toBeFocused()
 
   expect(errors).toEqual([])
 })

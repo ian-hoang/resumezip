@@ -9,22 +9,23 @@
 #let grey = luma(105)
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.55in, top: 0.48in, bottom: 0.42in))
-#set text(font: "TeX Gyre Heros", size: 9.2pt, lang: "en")
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.55in, top: 0.48in, bottom: 0.42in)))
+#set text(font: "TeX Gyre Heros", size: sized(9.2pt), lang: "en")
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.5em, spacing: 0pt)
+// Vertical spacing below follows Fine-tune (see common.typ).
+#set par(justify: false, leading: 0.5em * tune.leading, spacing: 0pt)
 
 #let bullets(items) = if items.len() > 0 {
-  v(3.8pt)
-  list(marker: text(fill: red, [–]), indent: 0pt, body-indent: 6pt, spacing: 3.6pt, ..items.map(rich))
+  v(spaced(3.8pt))
+  list(marker: text(fill: red, [–]), indent: 0pt, body-indent: 6pt, spacing: spaced(3.6pt), ..items.map(rich))
 }
 
 // A section title big enough to find from across the room.
 #let section(title, body) = {
-  v(13pt)
+  v(sized(13pt))
   block(sticky: true, {
-    text(size: 15pt, weight: "bold", tracking: -0.015em, title)
-    v(7pt)
+    text(size: sized(15pt), weight: "bold", tracking: -0.015em, title)
+    v(sized(7pt))
   })
   body
 }
@@ -34,21 +35,21 @@
   block(sticky: true, {
     row(text(weight: "bold", org), dates)
     if has(role) or has(place) {
-      v(3.4pt)
+      v(spaced(3.4pt))
       row(role, text(fill: grey, place))
     }
   })
   bullets(items)
 }
 
-#let entries(items, gap: 8pt) = items.join(v(gap))
+#let entries(items, gap: 8pt) = items.join(v(sized(gap)))
 
 // Between the parts of a line, so they don't run together when read as text.
 #let dot = h(0.45em) + text(fill: grey, [·]) + h(0.45em)
 
 // ---------- Heading ----------
 
-#text(size: 40pt, weight: "bold", tracking: -0.035em, p.name)
+#text(size: sized(40pt), weight: "bold", tracking: -0.035em, p.name)
 #{
   let items = ()
   if has(p.location) { items.push(p.location) }
@@ -59,13 +60,13 @@
   if has(p.website) { items.push(web-link(p.website, p.website)) }
   // Far enough below the name that the line doesn't read as part of it.
   if items.len() > 0 {
-    v(14pt)
+    v(sized(14pt))
     items.map(box).join(h(1em))
   }
 }
-#v(9pt)
+#v(sized(9pt))
 #line(length: 100%, stroke: 2.4pt + red)
-#v(2pt)
+#v(sized(2pt))
 
 // ---------- Sections ----------
 
@@ -97,7 +98,7 @@
     section(heading-or(hd.skills, "Skills"), grid(
       columns: (auto, 1fr),
       column-gutter: 1.2em,
-      row-gutter: 4.2pt,
+      row-gutter: spaced(4.2pt),
       ..data.skills.map(s => (text(weight: "bold", s.name), s.details)).flatten(),
     ))
   } else if name == "Leadership" and data.leadership.len() > 0 {
@@ -111,6 +112,6 @@
         if has(a.organization) { dot + text(fill: grey, a.organization) }
       },
       a.date,
-    )).join(v(4.4pt)))
+    )).join(v(spaced(4.4pt))))
   }
 }

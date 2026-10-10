@@ -1,0 +1,134 @@
+/* Styles for the editor (components under src/components/editor and its pages). */
+
+@layer components {
+  /* On wide screens (Tailwind's `xl`, WIDE_SCREEN in components/editor/layout.ts)
+     the pages scroll between the preview's label and its zoom pill, under soft
+     edges rather than being cut off (components/editor/PdfPreview.tsx). */
+  @media (min-width: 80rem) {
+    .preview-canvas {
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 20px), transparent);
+      mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 20px), transparent);
+    }
+  }
+
+  /* Narrower, Style takes the form's place: the left bar shows the templates
+     and Fine-tune where the form would be (components/editor/LeftBar.tsx). */
+  @media (width < 80rem) {
+    aside[data-mode="style"] ~ .editor-form {
+      display: none;
+    }
+  }
+
+  /* The checker's score, rolling like an odometer when it changes
+     (components/editor/CheckPanel.tsx). Each digit is a strip of 0 to 9 drawn
+     by CSS, so the page's text, and what's read aloud, is just the number,
+     which sits unseen under it. With less motion the number shows as it is,
+     and these aren't drawn. */
+  .odometer-digit {
+    display: inline-block;
+    width: 1ch;
+    height: 1em;
+    overflow: hidden;
+    line-height: 1;
+  }
+  .odometer-digit::before {
+    content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+    display: block;
+    white-space: pre;
+    line-height: 1;
+    text-align: center;
+    transform: translateY(calc(var(--digit) * -1em));
+    transition: transform 600ms var(--ease-glide);
+  }
+
+  /* While the score is worked out: three dots where the number goes, each
+     rising and darkening in turn, and still with less motion. */
+  .score-dots {
+    display: inline-flex;
+    gap: 0.04em;
+  }
+  .score-dots i {
+    font-style: normal;
+    opacity: 0.35;
+    animation: score-dot 1.2s ease-in-out infinite;
+  }
+  .score-dots i:nth-child(2) {
+    animation-delay: 150ms;
+  }
+  .score-dots i:nth-child(3) {
+    animation-delay: 300ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .score-dots i {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+
+  /* A perfect score: the number glows, and the scale's fill turns from ink
+     to blue through violet to green, with a light that sweeps along it once
+     as it finishes filling. */
+  .score-number {
+    transition: filter 600ms var(--ease-glide);
+  }
+  [data-perfect] .score-number {
+    filter: drop-shadow(0 0 8px rgb(122 90 248 / 0.45));
+  }
+  [data-perfect] .score-fill {
+    background: linear-gradient(90deg, var(--color-accent), #7a5af8, #079455);
+    overflow: hidden;
+  }
+  [data-perfect] .score-fill::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.95), transparent);
+    animation: score-glint 1.4s cubic-bezier(0.65, 0, 0.35, 1) 900ms both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .score-number {
+      transition: none;
+    }
+    [data-perfect] .score-fill::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes score-dot {
+  0%,
+  60%,
+  100% {
+    translate: 0 0;
+    opacity: 0.35;
+  }
+  30% {
+    translate: 0 -0.18em;
+    opacity: 1;
+  }
+}
+/* A perfect score's light, along the scale once. */
+@keyframes score-glint {
+  from {
+    translate: -100% 0;
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  to {
+    translate: 100% 0;
+    opacity: 0;
+  }
+}
+/* While the score's worked out, a short run along the empty scale. */
+@keyframes score-sweep-bar {
+  from {
+    translate: -100% 0;
+  }
+  to {
+    translate: 400% 0;
+  }
+}

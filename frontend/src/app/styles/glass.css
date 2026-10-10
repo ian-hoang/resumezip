@@ -1,0 +1,142 @@
+/* Glass: a pane that blurs and brightens what passes behind it, with a lit
+   top edge and a thin rim. For the few things that float over content (the
+   header over the hero, the editor's panels over the page); over flat paper
+   there's nothing behind it to see, so it reads as a plain card.
+
+   Its blur sits on ::before, under the pane's own content, so text on the
+   pane stays sharp. Tints set --glass-fill and --glass-blur. */
+@layer components {
+  .glass {
+    position: relative;
+    isolation: isolate;
+    box-shadow:
+      0 18px 38px -16px rgb(17 19 24 / 0.35),
+      0 2px 6px -2px rgb(17 19 24 / 0.14);
+  }
+  .glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(1.6) brightness(1.04);
+    backdrop-filter: blur(var(--glass-blur, 16px)) saturate(1.6) brightness(1.04);
+    background:
+      radial-gradient(130% 70% at 18% 0%, rgb(255 255 255 / 0.35), transparent 55%),
+      var(--glass-fill, linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.44)));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      inset 0 -1px 0 rgb(17 19 24 / 0.06),
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.5);
+  }
+  /* The rim: bright at two corners, clear between. */
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.95),
+      rgb(255 255 255 / 0.15) 28%,
+      transparent 50%,
+      rgb(255 255 255 / 0.15) 72%,
+      rgb(255 255 255 / 0.7)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  /* More blur and a whiter fill, for panels with a lot of text. */
+  .glass-frost {
+    --glass-blur: 24px;
+    --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.6));
+  }
+  /* Dark glass, for over the home page's video. */
+  .glass-smoke {
+    --glass-fill: linear-gradient(180deg, rgb(28 30 36 / 0.52), rgb(17 19 24 / 0.36));
+  }
+  .glass-smoke::before {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      inset 0 0 0 0.5px rgb(255 255 255 / 0.14);
+  }
+  .glass-smoke::after {
+    opacity: 0.35;
+  }
+
+  /* The desk: a painted sky every app page sits on, and the glass floats
+     over (public/backgrounds: a wide one, and a tall one for phones). It stays
+     put as the page scrolls (browsers that don't fix backgrounds, as on iOS,
+     scroll it). The color under it is the sky's own, so the page is already
+     blue while the picture loads, and a light wash (--desk-wash) keeps text on
+     it readable: secondary text is a shade darker than on paper, 4.9:1 against
+     the sky's bluest part (4.5:1 is the minimum).
+     Each time of day can have its own sky (data-sky on <html>, set by the
+     clock in layout.tsx): a time with no picture of its own keeps this one. */
+  .desk {
+    --color-ink-2: #4b4e55;
+    --desk-wash: 0.16;
+    --desk-sky: url("/backgrounds/sky-wide.webp");
+    background-color: #c3d4f8;
+    background-image: linear-gradient(rgb(255 255 255 / var(--desk-wash)), rgb(255 255 255 / var(--desk-wash))), var(--desk-sky);
+    background-size: cover;
+    background-position: center bottom;
+    background-attachment: fixed;
+  }
+  @media (max-aspect-ratio: 4/5) {
+    .desk {
+      --desk-sky: url("/backgrounds/sky-tall.webp");
+    }
+  }
+  /* The editor is for work, and the page in it is what to look at: the sky
+     there is mostly washed out, a tint of color rather than a picture. */
+  .desk.desk-quiet {
+    --desk-wash: 0.58;
+  }
+
+  /* An etched pane: frosted glass laid on the sky, nearly square, with no
+     shadow, only a lit top edge and a white hairline round it. For How it
+     works' steps and the dashboard's sheet. The blur is on ::before, so the
+     pane doesn't become the box its fixed descendants are placed in. */
+  .pane-etched {
+    position: relative;
+    isolation: isolate;
+    border-radius: 4px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      inset 0 0 0 1px rgb(255 255 255 / 0.6);
+  }
+  .pane-etched::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgb(255 255 255 / 0.42);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+  }
+
+  /* Some people ask for less see-through UI: a solid pane instead. */
+  @media (prefers-reduced-transparency: reduce) {
+    .pane-etched::before {
+      background: rgb(255 255 255 / 0.92);
+      backdrop-filter: none;
+    }
+    .glass::before {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      background: var(--color-sheet);
+    }
+    .glass-smoke::before {
+      background: var(--color-ink);
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import type { CompileRequest, CompileResponse, CompilerStatus, PdfError, WorkerMessage, WorkerRequest } from "./compile"
 
 // Stands in for the Typst worker. Each test says how it answers (undefined
@@ -71,6 +71,9 @@ let prefetch: typeof import("./compile").prefetchCompiler
 let compilerStatus: typeof import("./compile").compilerStatus
 let onCompilerStatus: typeof import("./compile").onCompilerStatus
 let savingData: typeof import("./compile").savingData
+let previewFit: typeof import("./compile").previewFit
+let onPreviewFit: typeof import("./compile").onPreviewFit
+let forgetPreviewFit: typeof import("./compile").forgetPreviewFit
 
 /** The elements the page added to its head. */
 let addedToHead: object[] = []
@@ -96,6 +99,9 @@ beforeEach(async () => {
     compilerStatus,
     onCompilerStatus,
     savingData,
+    previewFit,
+    onPreviewFit,
+    forgetPreviewFit,
   } = await import("./compile"))
 })
 
@@ -304,6 +310,75 @@ test("renaming a resume doesn't change what it prints", () => {
   const resume = { resumeTitle: "Old name", profileSection: { fullName: "Ada Lovelace" } }
   expect(printedOf({ ...resume, resumeTitle: "New name" })).toEqual(printedOf(resume))
   expect(printedOf({ ...resume, profileSection: { fullName: "Ada King" } })).not.toEqual(printedOf(resume))
+})
+
+test("changing Fine-tune's settings changes what a resume prints", () => {
+  const resume = { profileSection: { fullName: "Ada Lovelace" } }
+  expect(printedOf({ ...resume, tune: { size: 1.1 } })).not.toEqual(printedOf(resume))
+  expect(printedOf({ ...resume, tune: { onePage: true } })).not.toEqual(printedOf(resume))
+  expect(printedOf({ ...resume, tune: null })).toEqual(printedOf(resume))
+})
+
+describe("what keeping the preview to one page took", () => {
+  const onePage = (name: string) => printedOf({ profileSection: { fullName: name }, tune: { size: 1.1, onePage: true } })
+  const fitted = { size: 1.05, fits: true }
+
+  test("is told once the preview that did it is ready, with what it printed", async () => {
+    FakeWorker.answer = ({ id, data }) => (data.tune.onePage ? { id, pdf: PDF, fit: fitted } : { id, pdf: PDF })
+    const heard = vi.fn()
+    onPreviewFit(heard)
+    expect(previewFit()).toBeNull()
+
+    const preview = track(compilePreview(onePage("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(preview.value).toMatch(/^blob:/)
+    expect(previewFit()).toEqual({ template: "jake", tune: { size: 1.1, margin: 1, leading: 1, paper: "", onePage: true }, fit: fitted })
+    expect(heard).toHaveBeenCalledTimes(1)
+
+    // A preview that isn't kept to one page has nothing to tell.
+    track(compilePreview(printing("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(previewFit()).toBeNull()
+    expect(heard).toHaveBeenCalledTimes(2)
+  })
+
+  test("isn't told for a preview withdrawn while it compiled, which isn't shown", async () => {
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    const wanted = new AbortController()
+    const preview = track(compilePreview(onePage("Ada"), wanted.signal))
+    await vi.advanceTimersByTimeAsync(5)
+    wanted.abort()
+    await vi.advanceTimersByTimeAsync(10)
+    expect(preview.value).toMatch(/^blob:/)
+    expect(previewFit()).toBeNull()
+  })
+
+  test("is forgotten when a preview can't be built, and when the editor opens another resume", async () => {
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    track(compilePreview(onePage("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(previewFit()).not.toBeNull()
+
+    FakeWorker.answer = ({ id }) => ({ id, error: "unknown variable: foo", failure: "resume" })
+    track(compilePreview(onePage("Ada Lovelace")))
+    await vi.advanceTimersByTimeAsync(10)
+    expect(previewFit()).toBeNull()
+
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    track(compilePreview(onePage("Ada")))
+    await vi.advanceTimersByTimeAsync(10)
+    const heard = vi.fn()
+    onPreviewFit(heard)
+    forgetPreviewFit()
+    expect(previewFit()).toBeNull()
+    expect(heard).toHaveBeenCalledTimes(1)
+  })
+
+  test("isn't told for a download", async () => {
+    FakeWorker.answer = ({ id }) => ({ id, pdf: PDF, fit: fitted })
+    await Promise.all([compileResume({ tune: { onePage: true } }), vi.advanceTimersByTimeAsync(10)])
+    expect(previewFit()).toBeNull()
+  })
 })
 
 test("while previews keep coming, one compiles and only the newest waits", async () => {

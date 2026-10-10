@@ -150,3 +150,12 @@ export const holdPreviews = (page: Page, hold: boolean): Promise<void> => page.e
 
 /** How many PDFs the compiler's worker has sent back, with holdablePreviews. */
 export const previewsBuilt = (page: Page): Promise<number> => page.evaluate(() => (window as any).previewsBuilt)
+
+/** Chooses a template from the gallery behind the header's Template button, which every screen has. */
+export async function chooseTemplate(page: Page, name: string): Promise<void> {
+  await page.getByRole("button", { name: /^Template/ }).click()
+  await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name, exact: true }).click()
+}
+
+/** What names the resume's template on screen: the header's Template button. */
+export const templateShown = (page: Page): Locator => page.getByRole("button", { name: /^Template/ })

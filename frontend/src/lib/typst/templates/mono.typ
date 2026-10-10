@@ -8,23 +8,24 @@
 #let grey = luma(105)
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.55in, top: 0.5in, bottom: 0.42in))
-#set text(font: "IBM Plex Mono", size: 8.4pt, lang: "en", fill: rgb("#111111"))
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.55in, top: 0.5in, bottom: 0.42in)))
+#set text(font: "IBM Plex Mono", size: sized(8.4pt), lang: "en", fill: rgb("#111111"))
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.52em, spacing: 0pt)
+// Vertical spacing below follows Fine-tune (see common.typ).
+#set par(justify: false, leading: 0.52em * tune.leading, spacing: 0pt)
 
 #let bullets(items) = if items.len() > 0 {
-  v(3.6pt)
-  list(marker: text(fill: grey, [-]), indent: 0pt, body-indent: 1em, spacing: 3.4pt, ..items.map(rich))
+  v(spaced(3.6pt))
+  list(marker: text(fill: grey, [-]), indent: 0pt, body-indent: 1em, spacing: spaced(3.4pt), ..items.map(rich))
 }
 
 #let section(title, body) = {
-  v(13pt)
+  v(sized(13pt))
   block(sticky: true, {
     text(weight: 600, tracking: 0.04em, upper(title))
-    v(4pt)
+    v(sized(4pt))
     line(length: 100%, stroke: (paint: luma(150), thickness: 0.6pt, dash: (2pt, 2pt)))
-    v(6pt)
+    v(sized(6pt))
   })
   body
 }
@@ -33,18 +34,18 @@
   block(sticky: true, {
     row(text(weight: 600, org), text(fill: grey, dates))
     if has(role) or has(place) {
-      v(3.2pt)
+      v(spaced(3.2pt))
       row(role, text(fill: grey, place))
     }
   })
   bullets(items)
 }
 
-#let entries(items, gap: 7.5pt) = items.join(v(gap))
+#let entries(items, gap: 7.5pt) = items.join(v(sized(gap)))
 
 // ---------- Heading ----------
 
-#text(size: 18pt, weight: 600, p.name)
+#text(size: sized(18pt), weight: 600, p.name)
 #{
   let items = ()
   if has(p.location) { items.push(p.location) }
@@ -55,7 +56,7 @@
   if has(p.website) { items.push(web-link(p.website, p.website)) }
   // Where you are and how to reach you on one line, your profiles on the next.
   if items.len() > 0 {
-    v(6pt)
+    v(sized(6pt))
     text(fill: grey, {
       items.slice(0, calc.min(3, items.len())).map(box).join(h(1.5em))
       if items.len() > 3 { linebreak(); items.slice(3).map(box).join(h(1.5em)) }
@@ -93,7 +94,7 @@
     section(heading-or(hd.skills, "Skills"), grid(
       columns: (auto, 1fr),
       column-gutter: 1.5em,
-      row-gutter: 4pt,
+      row-gutter: spaced(4pt),
       ..data.skills.map(s => (text(weight: 600, s.name), s.details)).flatten(),
     ))
   } else if name == "Leadership" and data.leadership.len() > 0 {
@@ -107,6 +108,6 @@
         if has(a.organization) { text(fill: grey, [ | ]) + a.organization }
       },
       text(fill: grey, a.date),
-    )).join(v(4.2pt)))
+    )).join(v(spaced(4.2pt))))
   }
 }

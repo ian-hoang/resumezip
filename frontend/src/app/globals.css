@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Each part of the site keeps its own styles in a file of its own. */
+@import "./styles/glass.css";
+@import "./styles/home.css";
+@import "./styles/dashboard.css";
+@import "./styles/editor.css";
 
 /* resumezip design tokens: use them as bg-paper, text-ink, border-rule, ... */
 @theme {
@@ -24,9 +29,12 @@
 @layer components {
   /* --u is the logo's unit: its key is 56 across and its ring 26. From the ring
      at the page's margin to the right edge, it's the logo. */
+  /* The footer: soft charcoal deepening to black, which the sky above fades
+     into. The zipper's ring is filled with the charcoal it sits on. */
   .zip-footer {
     --u: 1px;
-    --zipper-bg: #171717;
+    --zipper-bg: #25262b;
+    background: linear-gradient(180deg, #2b2c31, #0c0c0e 70%);
   }
   @media (min-width: 48rem) {
     .zip-footer {
@@ -76,19 +84,48 @@
   }
 }
 
-/* Fonts are loaded by next/font in app/layout.tsx. The home page uses the
-   system font (font-system); the app uses Geist. */
+/* Fonts are loaded by next/font in app/layout.tsx. Every page, the home page
+   included, uses Newsreader for titles (font-serif), Geist for everything read
+   or pressed (font-sans, the default), Geist Mono for label-mono, and Outfit
+   for the wordmark. */
 @theme inline {
   --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
   --font-logo: var(--font-outfit), var(--font-geist), sans-serif; /* the "resumezip" wordmark */
 }
 
 /* Fast start, soft stop: for what slides or draws into place, as ease-glide. */
 @theme {
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* A page's content fades in as it opens from a header link, so the jump to
+   the top of the new page isn't abrupt. Only `main`: the header is the same on
+   every page and stays still. A fade and no more: moving `main` as well would
+   make it the box its fixed children sit in, and move what's under a click. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+}
+main {
+  animation: page-in 450ms var(--ease-glide) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  main {
+    animation: none;
+  }
+}
+
+/* Three shapes: paper is square, controls are pills (rounded-full), and what
+   floats over the desk (panels, menus, dialogs, cards) is rounded-panel. */
+@theme {
+  --radius-panel: 20px;
+  /* A row inside a panel, as a menu's items: the panel's corner less its
+     6px padding, so the two corners run side by side. A pill would bulge
+     out of a row of two lines. */
+  --radius-row: 14px;
 }
 
 /* The line along the bottom of the editor's Download PDF button while the PDF
@@ -137,7 +174,62 @@
   }
 }
 
-/* Small monospace caps for metadata: "03 / 08", "SAVED IN THIS BROWSER". */
+/* The main action's button, ink: a shade lighter under the pointer, darker as
+   it's pressed, which sinks it a little. Black to a slightly blacker black was
+   too small a change to feel. Its transitions are its own, so a button using
+   it shouldn't set transition-* or bg-* itself. */
+@utility ink-button {
+  background-color: var(--color-ink);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+  transition:
+    background-color 150ms,
+    box-shadow 200ms,
+    translate 200ms var(--ease-glide),
+    scale 120ms ease-out;
+  &:hover:not(:disabled) {
+    background-color: #2b2f3a;
+  }
+  &:active:not(:disabled) {
+    background-color: #000;
+    scale: 0.97;
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:active:not(:disabled) {
+      scale: none;
+    }
+  }
+}
+
+/* A button that stands on its own rises a pixel under the pointer, with a
+   shadow under it, and settles as it's pressed. Not for one half of a split
+   button, as Download PDF and its ▾, which would come apart. */
+@utility lift-button {
+  &:hover:not(:disabled) {
+    translate: 0 -1px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.12),
+      0 10px 22px -10px rgb(17 19 24 / 0.6);
+  }
+  &:active:not(:disabled) {
+    translate: 0 0;
+    box-shadow: 0 2px 6px -2px rgb(17 19 24 / 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
+      translate: none;
+    }
+  }
+}
+
+/* Small monospace caps, the site's one label style: for facts about things
+   ("03 / 08", "SAVED IN THIS BROWSER") and eyebrows over titles. Buttons and
+   links say their words in sentence case instead. */
 @utility label-mono {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 11px;
@@ -146,20 +238,17 @@
   text-transform: uppercase;
 }
 
-/* Small bold caps for the home page's labels and buttons: "START WRITING". */
-@utility label-caps {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* A slightly larger label-caps for the home page's section titles: "HOW IT WORKS". */
+/* A home page section's title, as HOW IT WORKS: label-mono, at a size that
+   reads as a heading across a wide section. */
 @utility label-section {
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  @media (min-width: 48rem) {
+    font-size: 15px;
+  }
 }
 
 @layer utilities {
@@ -381,5 +470,114 @@
   }
   60% {
     transform: rotate(6deg) translateX(1px);
+  }
+}
+
+/* Opening a resume from the dashboard (openResume in components/dashboard/viewSwitch.ts):
+   its page grows into the editor's page while the rest crossfades. Here rather
+   than in dashboard.css, as the editor's styles replace the dashboard's mid-way. */
+:root:active-view-transition-type(resume-open)::view-transition-group(*),
+:root:active-view-transition-type(resume-open)::view-transition-old(*),
+:root:active-view-transition-type(resume-open)::view-transition-new(*) {
+  animation-duration: 520ms;
+  animation-timing-function: var(--ease-glide);
+}
+:root:active-view-transition-type(resume-open)::view-transition {
+  pointer-events: none;
+}
+/* The page's two pictures keep the page's shape as it grows, rather than each being stretched to the other's. */
+:root:active-view-transition-type(resume-open)::view-transition-old(resume-open-page),
+:root:active-view-transition-type(resume-open)::view-transition-new(resume-open-page) {
+  height: auto;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* The loader (components/site/Loader.tsx): nine squares, lit in turn from one
+   corner to the other, and dots typing out after the word. */
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 4px);
+  gap: 1.5px;
+}
+.loader-grid i {
+  width: 4px;
+  height: 4px;
+  border-radius: 0.5px;
+  background: currentColor;
+  opacity: 0.15;
+  animation: loader-light 1.75s ease-in-out infinite;
+  animation-delay: calc(var(--step) * 175ms);
+}
+@keyframes loader-light {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+/* "Loading", then one dot, two, three, and round again: each dot shows from its quarter of the cycle to the end. */
+.loader-dots i {
+  font-style: normal;
+  opacity: 0;
+  animation: loader-dot-1 1.6s steps(1, end) infinite;
+}
+.loader-dots i:nth-child(2) {
+  animation-name: loader-dot-2;
+}
+.loader-dots i:nth-child(3) {
+  animation-name: loader-dot-3;
+}
+@keyframes loader-dot-1 {
+  25% {
+    opacity: 1;
+  }
+}
+@keyframes loader-dot-2 {
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes loader-dot-3 {
+  75% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-grid i {
+    animation: none;
+    opacity: 0.6;
+  }
+  .loader-dots i {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Start writing (StartWriting.tsx): the page lifts away and the next one
+   rises up from below, as into the sky. Everything moves together, the
+   resumes' own named pictures included. */
+:root:active-view-transition-type(rise)::view-transition-old(*) {
+  animation: rise-out 420ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+:root:active-view-transition-type(rise)::view-transition-new(*) {
+  animation: rise-in 640ms var(--ease-glide) 120ms both;
+}
+:root:active-view-transition-type(rise)::view-transition {
+  pointer-events: none;
+}
+@keyframes rise-out {
+  to {
+    opacity: 0;
+    translate: 0 -6vh;
+    filter: blur(6px);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 8vh;
   }
 }

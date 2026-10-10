@@ -577,6 +577,15 @@ describe("replacing a resume with a file", () => {
     expect(tab.getState().resumes.g.updatedAt).toBe("2026-10-06T12:00:00.000Z")
   })
 
+  test("with one from before Fine-tune prints it with the template's own settings, as the file was", () => {
+    const storage = memoryStorage(saved({ ...ada, tune: { size: 0.9, paper: "a4" } }))
+    const tab = openTab(storage)
+    tab.replace("a", older)
+    expect(tab.getState().resumes.a.tune).toBeNull()
+    tab.replace("a", { ...older, tune: { margin: 1.2 } })
+    expect(stored(storage, "a")?.tune).toEqual({ margin: 1.2 })
+  })
+
   test("can be undone, which puts back and saves the copy it replaced", () => {
     const storage = memoryStorage(saved(ada))
     const tab = openTab(storage)

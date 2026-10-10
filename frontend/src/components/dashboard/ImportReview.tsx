@@ -19,6 +19,7 @@ import {
 } from "@/lib/import/parse"
 import type { ResumeContent } from "@/lib/resume"
 import Modal from "./Modal"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 
 type ParsedFile = Extract<OpenedFile, { kind: "parsed" }>
 
@@ -212,7 +213,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
         <section
           aria-label="Your file"
           tabIndex={0}
-          className="hidden min-h-0 overflow-y-auto border-r border-rule bg-desk focus-visible:outline-offset-[-2px] lg:block"
+          className="hidden min-h-0 overflow-y-auto border-r border-ink/10 bg-ink/[0.04] focus-visible:outline-offset-[-2px] lg:block"
         >
           {file.pdf ? (
             <PdfPages doc={file.pdf.doc} pages={file.pdf.pages} lines={file.lines} highlight={highlight} />
@@ -234,8 +235,8 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
             </p>
 
             {muchUnplaced && (
-              <div className="mt-5 flex max-w-md gap-3 rounded-[4px] border border-rule bg-sheet px-4 py-3">
-                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#b42318]" aria-hidden="true" />
+              <div className="mt-5 flex max-w-md gap-3 rounded-panel bg-sheet/80 px-5 py-4 ring-1 ring-ink/10">
+                <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-alert" aria-hidden="true" />
                 <div className="min-w-0 text-sm leading-relaxed">
                   <p className="font-medium text-ink">We couldn&apos;t place {share >= 0.5 ? "most" : "a lot"} of this file.</p>
                   <p className="mt-1 text-ink-2">
@@ -305,7 +306,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                         ? (entry.fields[shown.bullets] ?? "").split("\n").filter((line) => line.trim()).length
                         : 0
                       return (
-                        <li key={key} className="flex items-start gap-3 border-b border-rule py-3" {...point(entry.lines)}>
+                        <li key={key} className="flex items-start gap-3 border-b border-ink/10 py-3" {...point(entry.lines)}>
                           <input
                             type="checkbox"
                             checked={!off}
@@ -330,7 +331,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                               title={shown.swapLabel}
                               aria-label={`${shown.swapLabel}: ${primary || "this entry"}`}
                               aria-pressed={swapped.has(key)}
-                              className="shrink-0 rounded-[4px] p-1.5 text-ink-2 transition-colors hover:bg-sheet hover:text-ink aria-pressed:text-accent"
+                              className="-my-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-ink/[0.06] hover:text-ink aria-pressed:text-accent"
                             >
                               <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                             </button>
@@ -349,11 +350,11 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                   <h3 id="couldnt-place" className="label-mono text-ink-2">
                     {leftovers > 0 ? <>Couldn&apos;t place · {plural(leftovers, "line")}</> : <>Unticked · {plural(unticked, "line")}</>}
                   </h3>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={copyLeftovers}
-                      className="inline-flex items-center gap-1.5 text-sm text-ink-2 transition-colors hover:text-ink"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm text-ink ring-1 ring-ink/15 transition-[box-shadow] hover:ring-ink/40"
                     >
                       {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
                       {copied ? "Copied" : "Copy"}
@@ -361,7 +362,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                     <button
                       type="button"
                       onClick={downloadLeftovers}
-                      className="inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm text-ink ring-1 ring-ink/15 transition-[box-shadow] hover:ring-ink/40"
                     >
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />
                       Download
@@ -392,7 +393,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                               return next
                             })
                           }}
-                          className="h-8 max-w-full cursor-pointer appearance-none rounded-[4px] border border-rule bg-white pl-2.5 pr-8 text-base text-ink transition-colors hover:border-ink-2 sm:text-sm"
+                          className="h-9 max-w-full cursor-pointer appearance-none rounded-full bg-sheet/80 pl-3.5 pr-9 text-base text-ink ring-1 ring-ink/15 transition-[box-shadow] hover:ring-ink/40 sm:text-sm"
                         >
                           <option value="">Leave out</option>
                           <option value="text">Add as a text section</option>
@@ -400,7 +401,7 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                         </select>
                         <ChevronDown
                           aria-hidden="true"
-                          className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-2"
+                          className="pointer-events-none absolute right-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-2"
                         />
                       </div>
                     </div>
@@ -418,19 +419,19 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
           </div>
 
           {/* Not a <footer>: inside a dialog, that would be a second footer for the whole page. */}
-          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3 border-t border-rule px-6 py-4 sm:px-8">
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3 border-t border-ink/10 px-6 py-4 sm:px-8">
             <p role="status" className="mr-auto text-sm text-ink-2">
               {nothingTicked && "Tick something to create a resume."}
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={close} className="h-10 px-4 text-sm text-ink-2 hover:text-ink">
+              <button type="button" onClick={close} className={OUTLINE_PILL}>
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => onCreate(toResumeContent(parsed, skipped, { keepAs }))}
                 disabled={nothingTicked}
-                className="h-10 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                className={INK_PILL}
               >
                 Create resume
               </button>
@@ -451,14 +452,10 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
             Closing loses what you unticked and swapped, and no resume is created from this file.
           </p>
           <div className="mt-7 flex justify-end gap-2">
-            <button type="button" onClick={() => setClosing(false)} className="h-10 px-4 text-sm text-ink-2 hover:text-ink">
+            <button type="button" onClick={() => setClosing(false)} className={OUTLINE_PILL}>
               Keep reviewing
             </button>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="h-10 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black"
-            >
+            <button type="button" onClick={onCancel} className={INK_PILL}>
               Discard
             </button>
           </div>

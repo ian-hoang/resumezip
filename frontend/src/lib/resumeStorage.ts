@@ -7,6 +7,7 @@
 import { SECTIONS } from "@/components/editor/sections"
 import { CHECK_FIELD } from "@/lib/check/state"
 import { readExtraSections } from "@/lib/resumeSections"
+import { readTune } from "@/lib/tune"
 import type { Resume } from "./resume"
 import { idOf, keyOf, LEGACY_KEY } from "./resumeKeys"
 
@@ -254,10 +255,11 @@ export const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
 // Fields the editor reads as lists of entries, and as objects of named
-// values (the checker's dismissals and added words are one). Older resumes
-// can lack some of them, or have them empty (null); only other shapes count.
+// values (the checker's dismissals and added words are one, Fine-tune's
+// settings another). Older resumes can lack some of them, or have them empty
+// (null); only other shapes count.
 const ENTRY_LISTS: ReadonlySet<string> = new Set(Object.values(SECTIONS).map((section) => section.dataKey))
-const OBJECT_FIELDS: ReadonlySet<string> = new Set(["profileSection", "headings", "extraSections", CHECK_FIELD])
+const OBJECT_FIELDS: ReadonlySet<string> = new Set(["profileSection", "headings", "extraSections", CHECK_FIELD, "tune"])
 
 /** A field as the editor can show it, and whether that's all of it; null if none of it. */
 function readField(key: string, value: unknown): { value: unknown; complete: boolean } | null {
@@ -273,6 +275,11 @@ function readField(key: string, value: unknown): { value: unknown; complete: boo
     return { value: items, complete: items.length === value.length }
   }
   if (OBJECT_FIELDS.has(key) && !isObject(value)) return null
+  // Only the settings Fine-tune knows, in range (see readTune).
+  if (key === "tune") {
+    const { tune, complete } = readTune(value)
+    return { value: tune, complete }
+  }
   if (key === "sectionsChosen" && value !== true) return null
   return { value, complete: true }
 }

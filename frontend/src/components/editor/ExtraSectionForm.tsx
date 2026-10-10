@@ -70,7 +70,7 @@ export default function ExtraSectionForm({ sectionId, position, onDelete }: { se
               rows={8}
               aria-invalid={flagAt("text")?.level === "fix" || undefined}
               aria-describedby={flagAt("text") ? `extra-text-note-${sectionId}` : undefined}
-              className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-3.5 py-3 text-base leading-relaxed outline-none focus:border-accent"
+              className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-4 py-3.5 text-base leading-relaxed outline-none focus:border-accent"
             />
           </label>
           {flagAt("text") && <FlagNote id={`extra-text-note-${sectionId}`} finding={flagAt("text")!} />}

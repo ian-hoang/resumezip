@@ -1,27 +1,38 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { FileDown, FileUp, Plus } from "lucide-react"
-import { useResumeContext } from "@/context/ResumeContext"
+import { openResumes, useResumeContext } from "@/context/ResumeContext"
 import CreateResumeModal from "@/components/dashboard/CreateResumeModal"
-import DeleteResumeModal from "@/components/dashboard/DeleteResumeModal"
+import TypeModal from "@/components/dashboard/TypeModal"
+import DeletedToast from "@/components/dashboard/DeletedToast"
+import EmptyShelf from "@/components/dashboard/EmptyShelf"
+import Filters, { type Sort, type View } from "@/components/dashboard/Filters"
 import { AllConflictDialog, ConflictDialog, OpenErrorDialog, ReadingDialog, type Differing } from "@/components/dashboard/OpenFileDialogs"
-import ResumeTable from "@/components/dashboard/ResumeTable"
+import { keepPictures, startPictures } from "@/components/dashboard/pagePictures"
+import ResumeGrid from "@/components/dashboard/ResumeGrid"
+import ResumeTable, { tagName } from "@/components/dashboard/ResumeTable"
+import SearchBar, { matches } from "@/components/dashboard/SearchBar"
 import UnreadableData from "@/components/dashboard/UnreadableData"
+import { focusShown, nameOf, useListActions } from "@/components/dashboard/useListActions"
+import { switchView } from "@/components/dashboard/viewSwitch"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
+import DownloadFailed from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
 import PageIntro from "@/components/site/PageIntro"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 import type { OpenedFile } from "@/lib/import/open"
 import { hasLeftOut } from "@/lib/leftOut"
-import type { ResumeWithId } from "@/lib/resume"
+import { RESUME_TAGS, type ResumeWithId } from "@/lib/resume"
 import { toJsonOfAll, type FileResume } from "@/lib/resumeFile"
 import { copyHere } from "@/lib/resumeStore"
 import { saveFile } from "@/lib/saveFile"
 import { loadCompiler, savingData } from "@/lib/typst/compile"
 import { templateIdOf } from "@/lib/typst/resumeData"
+import { SHEET } from "@/components/site/sheet"
 
 // Only loaded when someone opens a file that isn't a resumezip PDF.
 const ImportReview = dynamic(() => import("@/components/dashboard/ImportReview"))
@@ -51,11 +62,34 @@ function openedAll(total: number, { added, replaced }: { added: number; replaced
   return same > 0 ? `${done} ${same} ${same === 1 ? "was" : "were"} already here.` : done
 }
 
+// Where the dashboard remembers whether it shows pages or a list. Only this
+// browser's choice, like the resumes; nothing breaks without it.
+const VIEW_KEY = "dashboard-view"
+
+function savedView(): View {
+  try {
+    return window.localStorage.getItem(VIEW_KEY) === "list" ? "list" : "pages"
+  } catch {
+    return "pages"
+  }
+}
+
+/** How long a deleted resume takes to crumple or fold away, in milliseconds (dashboard.css has the same). */
+const LEAVING_MS = 480
+/** How long one put back takes to smooth out again. */
+const RETURNING_MS = 420
+
+const lessMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
 /** Today, as "2026-10-09", for the name of a file of every resume. */
 function today() {
   const now = new Date()
   return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, "0")).join("-")
 }
+
+// The "All" chip's value: empty, which no type can be (cleanTag drops a blank
+// one), so a type of the person's own named "all" is a chip of its own.
+const EVERY_TYPE = ""
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -70,15 +104,33 @@ export default function DashboardPage() {
     replaceResume,
     duplicateResume,
     renameResume,
+    editResume,
   } = useResumeContext()
   const [creating, setCreating] = useState(false)
-  const [resumeToDelete, setResumeToDelete] = useState<ResumeWithId | null>(null)
+  // The resume whose type is being changed, while its dialog is open.
+  const [retyping, setRetyping] = useState<ResumeWithId | null>(null)
   const [opening, setOpening] = useState<Opening | null>(null)
   // What opening a file of them all did, until another file is opened.
   const [allOpened, setAllOpened] = useState("")
-  // What's said aloud about the last file opened or downloaded.
+  // What's said aloud about the last file opened or downloaded, or resume deleted.
   const [announcement, setAnnouncement] = useState("")
   const [dragging, setDragging] = useState(false)
+  const [view, setView] = useState<View>("pages")
+  // Set once a switch has had to fade the new view in, without view transitions.
+  const [fadeIn, setFadeIn] = useState(false)
+  const [sort, setSort] = useState<Sort>("edited")
+  const [tag, setTag] = useState(EVERY_TYPE)
+  const [query, setQuery] = useState("")
+  // The resume deleted last, while it can still be put back. It's only
+  // hidden until then, so Undo puts back exactly what was there; it's
+  // deleted from the browser when the time's up, another is deleted, or the
+  // page is left.
+  const [deleting, setDeleting] = useState<{ resume: ResumeWithId; key: number } | null>(null)
+  const deletingRef = useRef(deleting)
+  const deletions = useRef(0)
+  // Resumes crumpling or folding away, and the one put back, smoothing out.
+  const [leaving, setLeaving] = useState<ReadonlySet<string>>(new Set())
+  const [returning, setReturning] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   // The file being read. Cancelling (or opening another file) stops it, and
   // means it can't reappear if it was just finishing.
@@ -92,14 +144,47 @@ export default function DashboardPage() {
     [],
   )
 
+  // Before the first paint, so someone who chose the list doesn't see pages first.
+  useLayoutEffect(() => setView(savedView()), [])
+  const chooseView = (next: View) => {
+    if (next === view) return
+    if (switchView(() => setView(next)) === "fade") setFadeIn(true)
+    try {
+      window.localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      // Not remembered, then: pages next time.
+    }
+  }
+
   const sorted = useMemo(
     () =>
-      // Each with the id it's saved under, which is what opens it.
+      // Each with the id it's saved under, which is what opens it. Resumes
+      // edited at the same moment go by name, rather than in whatever order
+      // the browser keeps its storage in.
       Object.entries(resumes)
         .map(([id, resume]): ResumeWithId => ({ ...resume, id }))
-        .sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()),
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime() ||
+            nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" }),
+        ),
     [resumes],
   )
+  // Every resume but one deleted a moment ago; that one shows while it crumples away.
+  const deletedId = deleting?.resume.id
+  const kept = useMemo(() => sorted.filter((resume) => resume.id !== deletedId), [sorted, deletedId])
+
+  const announce = (text: string) => {
+    // Cleared first, so the same words twice in a row are said aloud again.
+    setAnnouncement("")
+    requestAnimationFrame(() => setAnnouncement(text))
+  }
+
+  const actions = useListActions({
+    onDuplicate: (resume) => duplicateResume(resume.id),
+    onRename: (resume, title) => renameResume(resume.id, title),
+    announce,
+  })
 
   const create = (title: string, tag: string) => {
     setCreating(false)
@@ -111,16 +196,68 @@ export default function DashboardPage() {
     router.push(`/create/new/${id}`)
   }
 
+  // Deletes the resume waiting to be put back from the browser, for good.
+  const finishDeleting = () => {
+    const pending = deletingRef.current
+    if (!pending) return
+    deletingRef.current = null
+    setDeleting(null)
+    deleteResume(pending.resume.id)
+  }
+  const finishDeletingRef = useRef(finishDeleting)
+  finishDeletingRef.current = finishDeleting
+  // Closing the page, or going to another, can't wait for the time to be up.
+  useEffect(() => {
+    const finish = () => finishDeletingRef.current()
+    window.addEventListener("pagehide", finish)
+    return () => {
+      window.removeEventListener("pagehide", finish)
+      finish()
+    }
+  }, [])
+
+  const remove = (resume: ResumeWithId) => {
+    finishDeleting()
+    const pending = { resume, key: ++deletions.current }
+    deletingRef.current = pending
+    setDeleting(pending)
+    announce(`“${nameOf(resume)}” deleted`)
+    if (lessMotion()) return
+    setLeaving((ids) => new Set(ids).add(resume.id))
+    setTimeout(
+      () =>
+        setLeaving((ids) => {
+          const next = new Set(ids)
+          next.delete(resume.id)
+          return next
+        }),
+      LEAVING_MS,
+    )
+  }
+
+  const undo = () => {
+    const pending = deletingRef.current
+    if (!pending) return
+    const { id } = pending.resume
+    deletingRef.current = null
+    setDeleting(null)
+    setLeaving((ids) => {
+      const next = new Set(ids)
+      next.delete(id)
+      return next
+    })
+    announce(`“${nameOf(pending.resume)}” is back`)
+    // Focus goes to it, as Undo is gone.
+    requestAnimationFrame(() => focusShown(`[data-resume-link="${CSS.escape(id)}"]`))
+    if (lessMotion()) return
+    setReturning(id)
+    setTimeout(() => setReturning((current) => (current === id ? null : current)), RETURNING_MS)
+  }
+
   const closeOpening = () => {
     reading.current?.abort()
     reading.current = null
     setOpening(null)
-  }
-
-  const announce = (text: string) => {
-    // Cleared first, so the same words twice in a row are said aloud again.
-    setAnnouncement("")
-    requestAnimationFrame(() => setAnnouncement(text))
   }
 
   const addAll = (files: FileResume[], options?: { replace?: boolean }) => {
@@ -131,6 +268,8 @@ export default function DashboardPage() {
   }
 
   const openFile = async (file: File) => {
+    // A file may have the resume just deleted in it, which would otherwise look like it's still here.
+    finishDeleting()
     reading.current?.abort()
     const current = new AbortController()
     reading.current = current
@@ -143,6 +282,9 @@ export default function DashboardPage() {
       const open = await import("@/lib/import/open")
       OpenFileError = open.OpenFileError
       const opened = await open.openResumeFile(file, { signal: current.signal })
+      // The resumes as they are now, read from storage if the page hasn't yet:
+      // a file chosen as the page loads can be opened before it has.
+      const { resumes: saved } = openResumes().getState()
       if (current !== reading.current) {
         if (opened.kind === "parsed") void opened.pdf?.doc.destroy()
         return
@@ -155,7 +297,7 @@ export default function DashboardPage() {
       // Each resume in a file of them all that's here, but different, which takes a question.
       if (opened.kind === "all") {
         const differing = opened.resumes.flatMap(({ resume }): Differing[] => {
-          const here = copyHere(resumes, resume)
+          const here = copyHere(saved, resume)
           return here && !here.unchanged
             ? [{ existingTitle: here.resume.resumeTitle, existingEdited: here.resume.updatedAt, fileEdited: resume.updatedAt }]
             : []
@@ -165,7 +307,7 @@ export default function DashboardPage() {
         return
       }
       // A resumezip PDF or JSON file: it restores exactly, unless this browser already has that resume.
-      const here = copyHere(resumes, opened.resume)
+      const here = copyHere(saved, opened.resume)
       if (!here) edit(importResume(opened.resume, opened.title, { tag: opened.tag }))
       else if (here.unchanged) edit(opened.resume.id!)
       else setOpening({ step: "conflict", file: opened, existing: { ...here.resume, id: opened.resume.id! } })
@@ -197,6 +339,18 @@ export default function DashboardPage() {
     const timer = setTimeout(() => loadCompiler(lastTemplate), 1_000)
     return () => clearTimeout(timer)
   }, [loaded, lastTemplate])
+
+  // The pictures of the resumes' first pages use that compiler, and start a
+  // moment later, so opening a resume straight away isn't kept waiting.
+  const total = kept.length
+  const settledWithResumes = useSettled(loaded && total > 0)
+  useEffect(() => {
+    if (settledWithResumes && !savingData()) startPictures()
+  }, [settledWithResumes])
+  // A deleted resume's picture is let go of, rather than kept for the rest of the visit.
+  useEffect(() => {
+    if (loaded) keepPictures(Object.keys(resumes))
+  }, [loaded, resumes])
 
   // Dropping a file anywhere on the page opens it.
   const openFileRef = useRef(openFile)
@@ -245,47 +399,70 @@ export default function DashboardPage() {
 
   // Every resume in one JSON file, newest first, as the list shows them.
   const downloadAll = () => {
-    saveFile(toJsonOfAll(sorted), `resumezip-resumes-${today()}.json`, "application/json")
-    announce(`Downloaded ${count(sorted.length, "resume")} in one file`)
+    saveFile(toJsonOfAll(kept), `resumezip-resumes-${today()}.json`, "application/json")
+    announce(`Downloaded ${count(kept.length, "resume")} in one file`)
   }
 
-  const total = sorted.length
-  const newResumeButton = (
-    <button
-      type="button"
-      onClick={() => setCreating(true)}
-      className="inline-flex h-11 items-center gap-2 rounded-[4px] bg-ink px-[18px] text-sm font-medium text-white transition-colors hover:bg-black"
-    >
-      <Plus className="h-4 w-4" aria-hidden="true" />
-      New resume
-    </button>
-  )
+  // What's shown: the resumes found by the search, with the chosen tag, in the chosen order.
+  // A resume crumpling away keeps its place until it's gone.
+  const showing = sorted.filter((resume) => resume.id !== deletedId || leaving.has(resume.id))
+  const found = showing.filter((resume) => matches(resume, query))
+  const tagOf = (resume: ResumeWithId) => resume.resumeTag?.toLowerCase() ?? ""
+  // Counted without the one crumpling away, so the tabs agree with the count above them at once.
+  const counted = found.filter((resume) => resume.id !== deletedId)
+  const tags = [
+    { id: EVERY_TYPE, name: "All", count: counted.length },
+    ...[...new Set([...RESUME_TAGS.map((option) => option.id), ...counted.map(tagOf).filter(Boolean)])]
+      // A type of the person's own is named as they wrote it, from the first resume that has it.
+      .map((id) => ({
+        id,
+        name: tagName(counted.find((resume) => tagOf(resume) === id)?.resumeTag ?? id),
+        count: counted.filter((resume) => tagOf(resume) === id).length,
+      }))
+      .filter((option) => option.count > 0 || option.id === tag),
+  ]
+  // The person's own types, as they wrote them, once each whatever the case, to pick again.
+  const ownTypes = [
+    ...new Map(
+      sorted
+        .map((resume) => resume.resumeTag ?? "")
+        .filter((tag) => tag !== "" && !RESUME_TAGS.some((option) => option.id === tag.toLowerCase()))
+        .map((tag) => [tag.toLowerCase(), tag]),
+    ).values(),
+  ]
+  const tagged = found.filter((resume) => tag === EVERY_TYPE || tagOf(resume) === tag)
+  const shown =
+    sort === "name"
+      ? [...tagged].sort((a, b) => nameOf(a).localeCompare(nameOf(b), undefined, { numeric: true, sensitivity: "base" }))
+      : tagged
+  // The latest copies, in case one was renamed or deleted since.
+  const failedResumes = kept.filter((resume) => actions.failed[resume.id])
+
   const openFileButton = (
-    <button
-      type="button"
-      onClick={chooseFile}
-      className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
-    >
+    <button type="button" onClick={chooseFile} className={`${OUTLINE_PILL} h-11`}>
       <FileUp className="h-4 w-4" aria-hidden="true" />
       Open a file
     </button>
   )
   const downloadAllButton = (
-    <button
-      type="button"
-      onClick={downloadAll}
-      className="inline-flex h-11 items-center gap-2 rounded-[4px] border border-rule-strong px-[18px] text-sm font-medium text-ink transition-colors hover:border-ink"
-    >
+    <button type="button" onClick={downloadAll} className={`${OUTLINE_PILL} h-11`}>
       <FileDown className="h-4 w-4" aria-hidden="true" />
       Download all
     </button>
   )
+  const newResumeButton = (
+    <button type="button" onClick={() => setCreating(true)} className={`${INK_PILL} h-11`}>
+      <Plus className="h-4 w-4" aria-hidden="true" />
+      New resume
+    </button>
+  )
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper">
-      <SiteHeader onStartWriting={() => setCreating(true)} />
+    <div className="desk flex min-h-screen flex-col">
+      <SiteHeader />
 
-      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-12 px-5 pb-24 pt-16 md:px-10 md:pt-20">
+      {/* One etched pane over the sky, holding the title, the toolbar, the resumes and the note. */}
+      <main className={`${SHEET} flex flex-col gap-10 md:gap-12`}>
         <PageIntro
           label={
             loaded
@@ -312,39 +489,92 @@ export default function DashboardPage() {
             <p className="min-w-0 flex-[1_1_280px] text-sm leading-relaxed text-ink">{allOpened}</p>
           </div>
         )}
+        {failedResumes.length > 0 && (
+          <div className="flex max-w-[720px] flex-col gap-4">
+            {failedResumes.map((resume) => (
+              <DownloadFailed
+                key={`${resume.id}-${actions.failed[resume.id].count}`}
+                failure={actions.failed[resume.id]}
+                title={nameOf(resume)}
+                retrying={actions.downloading.includes(resume.id)}
+                onRetry={() => actions.download(resume)}
+              />
+            ))}
+          </div>
+        )}
         <p role="status" className="sr-only">
           {announcement}
         </p>
 
-        {loaded && total > 0 && (
-          <ResumeTable
-            resumes={sorted}
-            onDuplicate={(resume) => duplicateResume(resume.id)}
-            onRename={(resume, title) => renameResume(resume.id, title)}
-            onDelete={setResumeToDelete}
-          />
-        )}
-
-        {loaded && total === 0 && (
-          <div className="flex flex-col items-start gap-5 border-t border-ink pt-8">
-            <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
-            <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-              Start one, or open a resume you already have: a PDF, a Word file, or a JSON file from resumezip.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {newResumeButton}
-              {openFileButton}
-            </div>
+        {loaded && showing.length > 0 && (
+          <div className="flex flex-col gap-8">
+            <Filters
+              search={<SearchBar resumes={kept} query={query} onQuery={setQuery} />}
+              tags={tags}
+              tag={tag}
+              onTag={setTag}
+              sort={sort}
+              onSort={setSort}
+              view={view}
+              onView={chooseView}
+            />
+            {shown.length === 0 ? (
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <p className="font-serif text-[24px] leading-tight tracking-[-0.02em]">
+                  {query.trim() ? (
+                    <>
+                      No resumes match &ldquo;{query.trim()}&rdquo;{tag !== EVERY_TYPE && ` in ${tagName(tag)}`}.
+                    </>
+                  ) : (
+                    "None here."
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("")
+                    setTag(EVERY_TYPE)
+                  }}
+                  className={OUTLINE_PILL}
+                >
+                  Show all
+                </button>
+              </div>
+            ) : (
+              // A new one for each view, so the fade starts from nothing.
+              <div key={view} className={fadeIn ? "view-fade" : undefined}>
+                {view === "pages" ? (
+                  <ResumeGrid
+                    resumes={shown}
+                    actions={actions}
+                    onDelete={remove}
+                    onRetype={setRetyping}
+                    leaving={leaving}
+                    returning={returning}
+                    onChooseFile={chooseFile}
+                    dragging={dragging}
+                  />
+                ) : (
+                  <ResumeTable
+                    resumes={shown}
+                    actions={actions}
+                    onDelete={remove}
+                    onRetype={setRetyping}
+                    leaving={leaving}
+                    returning={returning}
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="flex max-w-[720px] flex-wrap items-baseline gap-x-8 gap-y-3">
+        {loaded && showing.length === 0 && <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />}
+
+        <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-ink-2">
           <span className="label-mono text-accent">Stored locally</span>
-          <p className="min-w-0 flex-[1_1_320px] text-sm leading-relaxed text-ink-2">
-            Resumes live in this browser only. Every PDF you download carries its resume, so you can open it here again on any computer.
-            Download all puts every resume in one file, to move them all at once.
-          </p>
-        </div>
+          Only in this browser. Any PDF you download opens here again.
+        </p>
       </main>
 
       <SiteFooter />
@@ -362,22 +592,26 @@ export default function DashboardPage() {
       />
 
       {dragging && (
-        <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40 bg-paper/95 p-4 backdrop-blur-sm">
-          <div className="flex h-full flex-col items-center justify-center gap-2 rounded-[4px] border-2 border-dashed border-accent">
+        <div aria-hidden="true" className="dialog-backdrop pointer-events-none fixed inset-0 z-40 p-4">
+          <div className="flex h-full flex-col items-center justify-center gap-2 rounded-panel border-2 border-dashed border-accent bg-sheet/40">
             <p className="font-serif text-[40px] leading-tight tracking-[-0.02em]">Drop to open</p>
             <p className="label-mono text-ink-2">PDF, Word or JSON file</p>
           </div>
         </div>
       )}
 
-      {creating && <CreateResumeModal onClose={() => setCreating(false)} onCreate={create} />}
-      {resumeToDelete && (
-        <DeleteResumeModal
-          resumeTitle={resumeToDelete.resumeTitle}
-          onClose={() => setResumeToDelete(null)}
-          onDelete={() => {
-            deleteResume(resumeToDelete.id)
-            setResumeToDelete(null)
+      {deleting && <DeletedToast key={deleting.key} title={nameOf(deleting.resume)} onUndo={undo} onDone={finishDeleting} />}
+
+      {creating && <CreateResumeModal own={ownTypes} onClose={() => setCreating(false)} onCreate={create} />}
+      {retyping && (
+        <TypeModal
+          resume={retyping}
+          own={ownTypes}
+          onClose={() => setRetyping(null)}
+          onSave={(tag) => {
+            editResume(retyping.id, "resumeTag", tag)
+            announce(tag ? `${nameOf(retyping)} is now ${tagName(tag)}` : `${nameOf(retyping)} has no type now`)
+            setRetyping(null)
           }}
         />
       )}
@@ -416,4 +650,15 @@ export default function DashboardPage() {
       )}
     </div>
   )
+}
+
+/** Whether `ready` has held for a moment, so what starts then doesn't compete with the page coming in. */
+function useSettled(ready: boolean): boolean {
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    if (!ready || settled) return
+    const timer = setTimeout(() => setSettled(true), 1_500)
+    return () => clearTimeout(timer)
+  }, [ready, settled])
+  return settled
 }

@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test"
-import { pageErrors } from "./helpers"
+import { expect, test, type Page } from "@playwright/test"
+import { pageErrors, templateShown } from "./helpers"
 
 declare global {
   interface Window {
@@ -10,6 +10,18 @@ declare global {
 
 // The editor is one page, built once, that next.config.js serves at every
 // resume's address, /create/new/<id>. The page reads the id from the address.
+
+/**
+ * What names the resume's template on screen. On wide screens it's in the
+ * left panel's Style tab, so that's opened first; narrower, the header's
+ * Template button says it.
+ */
+async function templateChosen(page: Page) {
+  const style = page.getByRole("tab", { name: "Style" })
+  await expect(style).toBeVisible()
+  if (await page.getByRole("button", { name: /^Template/ }).isHidden()) await style.click()
+  return templateShown(page)
+}
 
 test("every resume's address gets the same page, built once", async ({ request }) => {
   // Resumes only exist in the browser, so a page rendered for each visit
@@ -69,7 +81,7 @@ test("resumes open in the page from links and the history, each one afresh", asy
   await page.getByRole("link", { name: /^Harvard template/ }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
   const first = page.url()
-  await expect(page.getByRole("button", { name: /^Template/ })).toContainText("Harvard")
+  await expect(await templateChosen(page)).toContainText("Harvard")
   await page.getByLabel("Full name").fill("Ada Lovelace")
 
   // So does the dashboard's New resume.
@@ -91,7 +103,7 @@ test("resumes open in the page from links and the history, each one afresh", asy
   await page.evaluate(() => history.go(-2))
   await expect(page).toHaveURL(first)
   await expect(page.getByLabel("Full name")).toHaveValue("Ada Lovelace")
-  await expect(page.getByRole("button", { name: /^Template/ })).toContainText("Harvard")
+  await expect(await templateChosen(page)).toContainText("Harvard")
 
   // And the dashboard's link to a resume opens that one.
   await page.getByRole("link", { name: "Your resumes" }).click()

@@ -202,7 +202,7 @@ export default function PaperFromLink({ entries, owner, onAdd, children }: Paper
           onClick={open ? close : show}
           aria-expanded={open}
           aria-controls={open ? panelId : undefined}
-          className="inline-flex h-10 items-center gap-2 rounded-[4px] border border-rule-strong px-3.5 text-sm text-ink transition-colors hover:border-ink"
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-sheet/70 px-4 text-sm text-ink ring-1 ring-ink/15 transition-shadow hover:ring-ink/40"
         >
           <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
           Add from DOI or link
@@ -227,7 +227,7 @@ export default function PaperFromLink({ entries, owner, onAdd, children }: Paper
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
-              className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-3.5 py-3 font-mono text-[13px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
+              className="w-full resize-y rounded-[4px] border border-rule bg-sheet px-4 py-3.5 font-mono text-[13px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus:border-accent focus-visible:outline-none"
             />
           </label>
           <p id={noteId} className="text-[13px] leading-normal text-ink-2">
@@ -267,7 +267,7 @@ export default function PaperFromLink({ entries, owner, onAdd, children }: Paper
                 else void run()
               }}
               disabled={!progress && !text.trim()}
-              className="h-10 rounded-[4px] bg-ink px-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="ink-button lift-button h-10 rounded-full px-[18px] text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {progress ? "Stop" : "Add papers"}
             </button>

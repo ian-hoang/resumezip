@@ -8,10 +8,13 @@ import { printedResume } from "@/lib/leftOut"
 import type { Entry, Resume } from "@/lib/resume"
 import { extraHeading, extraHasBody, extrasOf, resolveSections } from "@/lib/resumeSections"
 import { templateById, type TemplateId } from "@/lib/templates"
+import { printedTune, type PrintedTune } from "@/lib/tune"
 
 export type { TemplateId }
 
 export interface TemplateData {
+  /** Fine-tune's settings, each there (see templates/common.typ). */
+  tune: PrintedTune
   profile: { name: string; location: string; phone: string; email: string; linkedin: string; github: string; website: string }
   /** The profile's summary, printed under its own heading above the sections. */
   summary: string[]
@@ -201,6 +204,7 @@ export function toTemplateData(saved: Resume): TemplateData {
   const linkTitles = resume.projectLinks === "title"
 
   return {
+    tune: printedTune(resume.tune),
     profile: {
       name: text(profile.fullName),
       location: text(profile.location),

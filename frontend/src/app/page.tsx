@@ -1,42 +1,14 @@
-import Image from "next/image"
 import Link from "next/link"
+import FloatingStart from "@/components/home/FloatingStart"
+import FocusWords from "@/components/home/FocusWords"
 import HeroVideo from "@/components/home/HeroVideo"
+import HomeChrome from "@/components/home/HomeChrome"
+import CheckDemo from "@/components/home/CheckDemo"
 import HowItWorks from "@/components/home/HowItWorks"
 import PrefetchCompiler from "@/components/home/PrefetchCompiler"
+import Questions from "@/components/home/Questions"
 import SiteFooter from "@/components/site/SiteFooter"
-import SiteHeader from "@/components/site/SiteHeader"
 import { StartWritingLink } from "@/components/site/StartWriting"
-import { TEMPLATES } from "@/lib/templates"
-
-const REPO_URL = "https://github.com/ian-hoang/resumezip"
-
-const QUESTIONS = [
-  {
-    question: "Is it really free?",
-    answer: "Yes. Every template and every download. No ads, no trial, no watermark.",
-  },
-  {
-    question: "Do you keep my resume?",
-    answer: (
-      <>
-        No. It’s saved in this browser, and we don’t store it. The code is{" "}
-        <a
-          href={REPO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[#171717] underline underline-offset-4 hover:decoration-2"
-        >
-          open source
-        </a>
-        , so anyone can check.
-      </>
-    ),
-  },
-  {
-    question: "How do I edit it later, or on another computer?",
-    answer: "Open the PDF you downloaded. resumezip reads your resume back out of it.",
-  },
-]
 
 function ArrowUpRight() {
   return (
@@ -46,128 +18,106 @@ function ArrowUpRight() {
   )
 }
 
+// An outline pill on the video and the blue, which fills with white from the bottom as it's pointed at (home.css).
+const OUTLINE_PILL =
+  "ink-fill inline-flex h-11 items-center self-start rounded-full border px-[18px] text-[15px] font-medium tracking-[-0.01em]"
+
+// Sections say what they're drawn on (data-tone), for the header's tint, and
+// data-tick gives them a tick at the side of the page (HomeChrome.tsx).
 export default function Home() {
   return (
-    <div className="bg-sheet font-system text-[#171717]">
-      <section className="relative flex min-h-[max(680px,100svh)] flex-col overflow-hidden bg-black text-white">
+    <div className="home relative flex flex-col bg-sheet text-ink">
+      <HomeChrome />
+
+      <section
+        data-hero
+        data-tone="dark"
+        data-tick
+        className="home-hero relative flex min-h-[max(680px,100svh)] flex-col overflow-hidden bg-black text-white"
+      >
         <HeroVideo />
         <div aria-hidden="true" className="absolute inset-0 bg-black/25" />
+        {/* The video darkens to black at its foot, where the blue section after it fades in from black. */}
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-black" />
 
-        <SiteHeader variant="overlay" starOnGitHub />
-
-        <div className="relative mx-auto w-full max-w-[1440px] px-5 pt-6 md:px-10">
+        <div className="relative mx-auto w-full max-w-[1440px] px-5 md:px-10">
           <h1 className="max-w-[1000px] text-balance font-serif text-[56px] leading-[0.92] tracking-[-0.045em] max-[359px]:text-[52px] sm:text-[80px] lg:text-[116px] lg:leading-[0.88]">
             {/* A line for each sentence. At 56px each is a few pixels wider than a 320px screen leaves, so it's a little smaller there. */}
-            Your resume. Not our data.
+            Your resume. Not our <em className="pr-[0.04em] text-accent-soft">data.</em>
           </h1>
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-wrap items-end justify-between gap-8 px-5 pb-6 pt-12 md:px-10 md:pb-10">
-          <div className="flex w-full max-w-[420px] flex-col gap-7 bg-white px-7 pb-5 pt-7 text-[#171717]">
+          {/* The square box: the sentence, a rule, and Start writing in capitals beside a blue square arrow. */}
+          <div className="flex w-full max-w-[420px] flex-col gap-7 bg-white px-7 pb-5 pt-7 text-ink">
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">
               resumezip is a free, open-source resume builder that runs in your browser. Pick a template, write, and download the PDF.
             </p>
-            <StartWritingLink className="group flex items-center justify-between gap-4 border-t border-[#171717] pt-4" preloadOnHover>
-              <span className="label-caps decoration-2 underline-offset-4 group-hover:underline">Start writing</span>
-              <span className="inline-flex h-7 w-7 items-center justify-center bg-accent text-white transition duration-200 group-hover:bg-[#2550d4] motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5">
+            <StartWritingLink className="group flex items-center justify-between gap-4 border-t border-ink pt-4" preloadOnHover>
+              <span className="text-[13px] font-semibold uppercase tracking-[0.1em] decoration-2 underline-offset-4 group-hover:underline">
+                Start writing
+              </span>
+              <span className="inline-flex h-7 w-7 items-center justify-center bg-accent text-white transition duration-200 group-hover:bg-[#2550d4] motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5">
                 <ArrowUpRight />
               </span>
             </StartWritingLink>
           </div>
           <div className="flex max-w-[340px] flex-col gap-4">
-            <span className="label-caps">Free · Saved in your browser</span>
+            <span className="label-mono">Free · Saved in your browser</span>
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">Nothing to install. No sign-up.</p>
-            <Link
-              href="/templates"
-              className="label-caps inline-flex h-11 items-center gap-3 self-start border border-white/70 px-[18px] transition-colors hover:bg-white hover:text-[#171717]"
-            >
-              See templates <ArrowUpRight />
+            <Link href="/templates" className={`${OUTLINE_PILL} border-white/70`}>
+              <span className="ink-fill-label inline-flex items-center gap-2.5">
+                See templates <ArrowUpRight />
+              </span>
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="bg-accent text-white">
+      <section data-tone="blue" data-tick className="cloud-seam fade-from-black relative bg-accent text-white">
         <div className="flex flex-col gap-24 px-5 pb-24 pt-8 md:gap-[200px] md:px-10 md:pb-[120px]">
+          {/* In capitals, as every section's title is here. */}
           <span className="label-section">Why resumezip</span>
-          <div className="flex max-w-[760px] flex-col gap-8">
-            <p className="font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[80px] md:leading-[0.92]">You keep it. We don’t.</p>
-            <p className="max-w-[520px] text-xl leading-[1.35] tracking-[-0.015em]">
-              No account, and no copy on our side. To switch devices, open your PDF or Word file on the new one.
-            </p>
-            <StartWritingLink
-              className="label-caps inline-flex h-11 items-center gap-3 self-start border border-white px-[18px] transition-colors hover:bg-white hover:text-accent"
-              preloadOnHover
+          <div className="max-w-[760px]">
+            <FocusWords
+              lines={[
+                {
+                  text: "You keep it. We don’t.",
+                  className: "font-serif text-5xl leading-[0.95] tracking-[-0.04em] md:text-[80px] md:leading-[0.92]",
+                  from: 0,
+                  to: 0.7,
+                  // White at 70% on the blue is 3.6:1.
+                  faint: 0.7,
+                },
+                {
+                  // A beat behind the heading.
+                  text: "No account, and no copy on our side. To switch devices, open your PDF, or a JSON backup, on the new one.",
+                  className: "max-w-[520px] text-xl leading-[1.35] tracking-[-0.015em]",
+                  from: 0.35,
+                  to: 1,
+                  // At 90%, 4.9:1.
+                  faint: 0.9,
+                },
+              ]}
             >
-              Start writing <ArrowUpRight />
-            </StartWritingLink>
+              <StartWritingLink className={`${OUTLINE_PILL} border-white`} preloadOnHover>
+                <span className="ink-fill-label inline-flex items-center gap-2.5">
+                  Start writing <ArrowUpRight />
+                </span>
+              </StartWritingLink>
+            </FocusWords>
           </div>
         </div>
       </section>
 
       <HowItWorks />
 
-      <section aria-labelledby="templates" className="bg-accent text-white">
-        <div className="border-b border-white/25">
-          <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-7 md:px-10">
-            <h2 id="templates" className="label-section">
-              Templates
-            </h2>
-            <Link
-              href="/templates"
-              className="label-caps inline-flex h-10 items-center gap-3 border border-white px-4 transition-colors hover:bg-white hover:text-accent"
-            >
-              See all <ArrowUpRight />
-            </Link>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-px bg-white/25">
-          {/* A few to show the range; "See all" has the rest. */}
-          {TEMPLATES.slice(0, 4).map((template) => (
-            <StartWritingLink
-              key={template.id}
-              template={template.id}
-              className="group flex min-w-0 flex-[1_1_260px] flex-col gap-5 bg-accent px-5 pb-7 pt-10 md:px-10"
-            >
-              <div className="relative aspect-[8.5/11] w-full overflow-hidden bg-white ring-2 ring-transparent transition-shadow group-hover:ring-[#171717]">
-                <Image
-                  src={template.image}
-                  alt={`${template.name} template`}
-                  fill
-                  sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover object-top"
-                />
-              </div>
-              <span className="label-caps">{template.name}</span>
-            </StartWritingLink>
-          ))}
-        </div>
-      </section>
+      <CheckDemo />
 
-      <section aria-labelledby="questions" className="bg-white">
-        <div className="border-b border-[#d4d4d4]">
-          <div className="px-5 py-7 md:px-10">
-            <h2 id="questions" className="label-section text-accent">
-              Questions
-            </h2>
-          </div>
-        </div>
-        <dl className="grid md:grid-cols-3">
-          {QUESTIONS.map((item, index) => (
-            <div
-              key={item.question}
-              className={`flex flex-col gap-4 border-[#d4d4d4] px-5 pb-12 pt-8 md:px-10 md:pb-20 md:pt-10 ${
-                index > 0 ? "border-t md:border-l md:border-t-0" : ""
-              }`}
-            >
-              <dt className="font-serif text-[32px] leading-none tracking-[-0.03em] md:text-[44px]">{item.question}</dt>
-              <dd className="max-w-[420px] text-base leading-[1.35] tracking-[-0.015em] text-[#5c5c5c] md:text-xl">{item.answer}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+      <Questions />
 
       <SiteFooter />
+      <FloatingStart />
       <PrefetchCompiler />
     </div>
   )

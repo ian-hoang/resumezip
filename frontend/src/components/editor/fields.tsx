@@ -63,7 +63,7 @@ export function FlagNote({ id, finding }: { id?: string; finding: Finding }) {
   return (
     <div
       id={id}
-      className="flex flex-col gap-2 rounded-[4px] border border-rule bg-sheet px-3 py-2.5 text-[13px] leading-normal text-balance"
+      className="flex flex-col gap-2 rounded-[4px] bg-sheet px-4 py-3 text-[13px] leading-normal text-balance ring-1 ring-ink/[0.08]"
     >
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink">
         <span className={levelPill(finding.level)}>{LEVELS[finding.level].name}</span>
@@ -97,7 +97,7 @@ export function Field({
     placeholder,
     "aria-describedby": flag ? noteId : undefined,
     "aria-invalid": flag?.level === "fix" || undefined,
-    className: `w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
+    className: `relative w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
       !flag ? "border-b border-rule-strong" : "border-b-2 border-accent"
     }`,
   }
@@ -105,6 +105,12 @@ export function Field({
     <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
       <label className="group/field relative flex min-w-0 flex-col gap-1.5">
         <span className="label-mono text-ink-2 transition-colors group-focus-within/field:text-accent">{label}</span>
+        {/* A soft blue light rises from the line while the field has focus. It's under the box (which
+            is `relative`, and later), so the text stays crisp, and nothing moves. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 rounded-t-[6px] bg-linear-to-t from-accent/[0.09] to-accent/0 opacity-0 transition-opacity duration-200 ease-out group-focus-within/field:opacity-100 motion-reduce:transition-none"
+        />
         {multiline ? (
           <textarea
             ref={textareaRef}
@@ -124,10 +130,10 @@ export function Field({
             {...shared}
           />
         )}
-        {/* The field being typed in is underlined in blue, drawn out from the left. */}
+        {/* The field being typed in is underlined in blue, drawn out from the left, with a glow. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-accent shadow-[0_0_10px_rgb(46_91_230/0.55)] transition-transform duration-300 ease-glide group-focus-within/field:scale-x-100 motion-reduce:transition-none"
         />
       </label>
       {flag && <FlagNote id={noteId} finding={flag} />}
@@ -177,7 +183,7 @@ export function MoveButtons({ name, first, last, onMove }: { name: string; first
             }}
             aria-label={`Move ${name} ${by < 0 ? "up" : "down"}`}
             aria-disabled={end || undefined}
-            className="rounded-[4px] p-1.5 text-ink-2 transition-colors hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:text-ink-2"
+            className="rounded-full p-1.5 text-ink-2 transition-colors hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:text-ink-2"
           >
             <Icon className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -404,7 +410,7 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
             type="button"
             onClick={() => setArranging(!arranging)}
             aria-label={arranging ? "Done arranging bullets" : "Arrange bullets"}
-            className="-my-1.5 inline-flex items-center gap-1.5 rounded-[4px] px-1.5 py-1.5 text-sm text-ink-2 transition-colors hover:text-ink"
+            className="-my-1.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-ink-2 transition-colors hover:bg-ink/[0.05] hover:text-ink"
           >
             {arranging ? (
               "Done"
@@ -432,7 +438,8 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
           onKeyDown={onKeyDown}
           onCopy={rememberCopied}
           onCut={rememberCopied}
-          className={`w-full resize-none overflow-hidden rounded-[4px] border bg-sheet px-3.5 py-3 text-[15px] leading-[1.7] text-ink outline-none transition-colors placeholder:text-ink-2/50 focus-visible:outline-none ${
+          // A soft blue halo while it has focus, as a field's glow: a shadow, so nothing moves.
+          className={`w-full resize-none overflow-hidden rounded-[4px] border bg-sheet px-4 py-3.5 text-[15px] leading-[1.7] text-ink outline-none transition-[border-color,box-shadow] duration-200 ease-out placeholder:text-ink-2/50 focus:shadow-[0_0_0_4px_rgb(46_91_230/0.1),0_10px_28px_-12px_rgb(46_91_230/0.5)] focus-visible:outline-none motion-reduce:transition-none ${
             !flag ? "border-rule focus:border-accent" : "border-accent ring-1 ring-accent"
           }`}
         />
@@ -477,9 +484,9 @@ function ArrangedBullets({ labelId, text, onChange }: { labelId: string; text: s
 
   return (
     <div className="flex flex-col gap-2">
-      <ul aria-labelledby={labelId} className="flex flex-col rounded-[4px] border border-rule bg-sheet">
+      <ul aria-labelledby={labelId} className="flex flex-col overflow-hidden rounded-[4px] border border-rule bg-sheet">
         {keyed.map((bullet, index) => (
-          <li key={bullet.key} className="flex items-start gap-3 border-b border-rule px-3.5 py-2 last:border-b-0">
+          <li key={bullet.key} className="flex items-start gap-3 border-b border-rule px-4 py-2 last:border-b-0">
             <input
               type="checkbox"
               checked={!bullet.leftOut}
@@ -563,7 +570,7 @@ export function SectionHeading({ position, title, onRename, flag, allowEmpty = f
               aria-label="Rename section"
               title="Rename section"
               onClick={() => setDraft(title)}
-              className="p-1.5 text-ink-2 transition-colors hover:text-ink"
+              className="rounded-full p-1.5 text-ink-2 transition-colors hover:text-ink"
             >
               <Pencil className="h-4 w-4" />
             </button>

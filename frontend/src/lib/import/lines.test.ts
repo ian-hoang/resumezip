@@ -237,6 +237,22 @@ describe("columns", () => {
     expect(texts).toEqual(["Dana Cole", ...left, ...right])
   })
 
+  // A name short enough to sit all on the right of the gap.
+  const short = item("Al Li", 260, 740, 24)
+
+  test("a short name over a centered contact line reads first, though it's all on one side of the gap", () => {
+    const contact = item("al@li.dev | (555) 012-3307 | Boston, MA", 120, 724)
+    const texts = linesFromPages([page([short, contact, ...leftItems, ...rightItems])]).map((line) => line.text)
+    expect(texts).toEqual(["Al Li", contact.text, ...left, ...right])
+  })
+
+  test("a contact line that starts on the left of the gap is above the columns, not in them", () => {
+    const contact = [item("al@li.dev", 100, 724), item("| linkedin.com/in/alli | Boston, MA", 150, 724)]
+    const texts = linesFromPages([page([short, ...contact, ...leftItems, ...rightItems])]).map((line) => line.text)
+    expect(texts[0]).toBe("Al Li")
+    expect(texts.slice(2)).toEqual([...left, ...right])
+  })
+
   test("text written line by line across both, like dates beside entries, isn't", () => {
     const written = rightItems.flatMap((rightItem, i) => (leftItems[i] ? [leftItems[i], rightItem] : [rightItem]))
     const texts = linesFromPages([page([name, ...written])]).map((line) => line.text)

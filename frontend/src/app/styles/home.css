@@ -1,0 +1,354 @@
+/* Styles for the home page and the site-wide header (src/components/home, src/components/site),
+   and the templates page (src/app/templates). */
+@layer components {
+  /* The hero starts under the header's strip. */
+  .home-hero {
+    padding-top: 84px;
+  }
+  @media (min-width: 48rem) {
+    .home-hero {
+      padding-top: 104px;
+    }
+  }
+
+  /* How far down the page is (HomeChrome.tsx sets --read, from 0 to 1). */
+  .reading-line {
+    transform-origin: left;
+    transform: scaleX(var(--read, 0));
+  }
+
+  /* The home page's glass header, tucked away above the top of the screen as
+     the page scrolls down. With the keyboard in it, it's always in sight. */
+  .site-pill {
+    transition: transform 360ms var(--ease-glide);
+  }
+  .site-pill[data-tucked]:not(:focus-within) {
+    transform: translateY(calc(-100% - 3rem));
+  }
+
+  /* An underline that draws itself from the left, under the header's and the footer's links. */
+  .nav-underline {
+    --underline: var(--color-accent);
+    background: linear-gradient(var(--underline), var(--underline)) no-repeat left bottom / 0% 1.5px;
+    transition:
+      background-size 420ms var(--ease-glide),
+      color 150ms;
+  }
+  .site-pill-dark .nav-underline {
+    --underline: var(--color-accent-soft);
+  }
+  .nav-underline:hover,
+  .nav-underline:focus-visible {
+    background-size: 100% 1.5px;
+  }
+
+  /* An outline button that fills with ink from the bottom. The label is drawn
+     in difference with what's under it, inside the button only (isolation),
+     so the part the ink has reached turns dark as the ink passes it. */
+  .ink-fill {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .ink-fill::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -15%;
+    right: -15%;
+    height: 150%;
+    z-index: -1;
+    background: #fff;
+    border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+    transform: translateY(70%);
+    transition:
+      transform 360ms var(--ease-glide),
+      border-radius 360ms var(--ease-glide);
+  }
+  .ink-fill:hover::before,
+  .ink-fill:focus-visible::before {
+    transform: translateY(-15%);
+    border-radius: 0;
+  }
+  .ink-fill-label {
+    color: #fff;
+    mix-blend-mode: difference;
+  }
+
+  /* Words that sharpen from a blur as the page scrolls (FocusWords.tsx). --focus
+     is how far the scroll has got, from 0 to 1. Each line takes its share of
+     that, from --from to --to, as --t, and each of its --n words in turn
+     (--i) takes its share of --t, as --s: 0 blurred and --faint, 1 sharp. */
+  .focus-line {
+    --t: clamp(0, (var(--focus, 1) - var(--from)) / (var(--to) - var(--from)), 1);
+  }
+  .focus-word {
+    --s: clamp(0, var(--t) * (var(--n) + 1) - var(--i), 1);
+    /* Filters don't apply to inline boxes in every browser. */
+    display: inline-block;
+    filter: blur(calc((1 - var(--s)) * 0.14em));
+    opacity: calc(var(--faint) + (1 - var(--faint)) * var(--s));
+  }
+  /* The head of the blue section after the hero: black, as the video ends,
+     deepening into the blue. */
+  .fade-from-black::before {
+    content: "";
+    display: block;
+    height: 120px;
+    background: linear-gradient(180deg, #000, rgb(23 46 115) 45%, var(--color-accent));
+  }
+  @media (min-width: 48rem) {
+    .fade-from-black::before {
+      height: 180px;
+    }
+  }
+
+  /* The head of a blue section after the sky: the sky deepens into the blue,
+     the other way to .cloud-seam. */
+  .cloud-seam-top::before {
+    content: "";
+    display: block;
+    height: 140px;
+    background:
+      linear-gradient(0deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+      linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+      url("/backgrounds/sky-wide.webp") center bottom / cover fixed;
+  }
+  @media (min-width: 48rem) {
+    .cloud-seam-top::before {
+      height: 220px;
+    }
+  }
+  @media (max-aspect-ratio: 4/5) {
+    .cloud-seam-top::before {
+      background:
+        linear-gradient(0deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+        linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+        url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
+    }
+  }
+
+  /* The check is a tall section the panel pins in, and the clouds at its
+     foot belong at its very bottom, not just after the panel's resting place
+     (where they'd show through mid-scroll): a column, with them pushed down. */
+  .check-demo {
+    display: flex;
+    flex-direction: column;
+  }
+  .check-demo::after {
+    margin-top: auto;
+  }
+
+  /* The check on the home page (CheckDemo.tsx). The scroll sets --scan,
+     --parse and --score, each 0 to 1, and these draw from them: the page is
+     tinted as it's read under a moving bar of light, each part is boxed in
+     turn (--i of --n), then the lines with notes are marked, and the notes and
+     the score come in. */
+  .check-scanned {
+    height: calc(var(--scan, 0) * 100%);
+    background: linear-gradient(180deg, rgb(46 91 230 / 0.04), rgb(46 91 230 / 0.1));
+    opacity: calc(1 - var(--parse, 0));
+  }
+  .check-scan-line {
+    top: calc(var(--scan, 0) * 100%);
+    height: 3px;
+    background: var(--color-accent);
+    box-shadow: 0 0 22px 6px rgb(46 91 230 / 0.45);
+    opacity: calc(1 - var(--parse, 0) * 4);
+  }
+  .check-part {
+    --t: clamp(0, calc(var(--parse, 0) * (var(--n) + 1) - var(--i)), 1);
+    outline: 2px solid var(--color-accent);
+    outline-offset: -1px;
+    background: rgb(46 91 230 / 0.06);
+    opacity: calc(var(--t) * (1 - var(--score, 0) * 0.75));
+    scale: calc(0.97 + 0.03 * var(--t));
+  }
+  .check-part-label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 6px;
+    background: var(--color-accent);
+    color: #fff;
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  /* What's read, flying off the page into the list: each row as its part is
+     boxed, the rows of one part a beat apart (--row). */
+  .check-field {
+    --t: clamp(0, calc(var(--parse, 0) * (var(--n) + 1) - var(--i) - var(--row) * 0.04), 1);
+    opacity: var(--t);
+    translate: calc((1 - var(--t)) * 180px) 0;
+  }
+  .check-mark {
+    --t: clamp(0, calc(var(--score, 0) * 3 - var(--i) * 0.7 - 0.5), 1);
+    background: rgb(46 91 230 / 0.16);
+    border-bottom: 2px solid var(--color-accent);
+    transform-origin: left;
+    scale: var(--t) 1;
+  }
+  .check-note {
+    --t: clamp(0, calc(var(--score, 0) * 3 - var(--i) * 0.7 - 0.8), 1);
+    opacity: var(--t);
+    translate: calc((1 - var(--t)) * 18px) 0;
+  }
+  .check-score {
+    --t: clamp(0, calc(var(--score, 0) * 2.5), 1);
+    opacity: var(--t);
+    translate: 0 calc((1 - var(--t)) * 18px);
+  }
+
+  /* The foot of a blue section: the blue thins out into the sky of the
+     section after it. The band is that same sky, fixed in place as the desk's
+     is (styles/glass.css), so the two meet without a line between them. */
+  .cloud-seam::after {
+    content: "";
+    display: block;
+    height: 140px;
+    background:
+      linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+      linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+      url("/backgrounds/sky-wide.webp") center bottom / cover fixed;
+  }
+  @media (min-width: 48rem) {
+    .cloud-seam::after {
+      height: 220px;
+    }
+  }
+  @media (max-aspect-ratio: 4/5) {
+    .cloud-seam::after {
+      background:
+        linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
+        linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
+        url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
+    }
+  }
+
+  /* The questions' plus, which turns into a minus as its answer opens. */
+  .question-sign::before,
+  .question-sign::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 1.5px;
+    margin-top: -0.75px;
+    background: currentColor;
+    transition: transform 300ms var(--ease-glide);
+  }
+  .question-sign::after {
+    transform: rotate(90deg);
+  }
+  .question-sign[data-open]::after {
+    transform: rotate(0deg);
+  }
+
+  /* Under the floating "Start writing": a blur that thickens toward the bottom
+     of the screen, in three bands that each fade in and out. */
+  .floating-blur {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    height: 7.5rem;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 300ms,
+      visibility 300ms;
+  }
+  .floating-blur[data-shown] {
+    opacity: 1;
+    visibility: visible;
+  }
+  .floating-blur > span {
+    position: absolute;
+    inset: 0;
+  }
+  .floating-blur > span:nth-child(1) {
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
+    mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 50%, transparent 75%);
+  }
+  .floating-blur > span:nth-child(2) {
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    mask-image: linear-gradient(to bottom, transparent 25%, #000 50%, #000 75%, transparent);
+  }
+  .floating-blur > span:nth-child(3) {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    mask-image: linear-gradient(to bottom, transparent 50%, #000 75%);
+  }
+
+  /* The templates page's cards: paper on the desk. A hover or focus lifts the
+     page and brings up "Use this template" over its foot. */
+  .template-card .template-page {
+    box-shadow:
+      0 1px 2px rgb(17 19 24 / 0.08),
+      0 14px 30px -18px rgb(30 40 90 / 0.4);
+    transition:
+      transform 300ms var(--ease-glide),
+      box-shadow 300ms var(--ease-glide);
+  }
+  .template-card .template-use {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 200ms var(--ease-glide),
+      transform 300ms var(--ease-glide);
+  }
+  .template-card:hover .template-page,
+  .template-card:focus-visible .template-page {
+    transform: translateY(-6px);
+    box-shadow:
+      0 1px 2px rgb(17 19 24 / 0.08),
+      0 28px 44px -22px rgb(30 40 90 / 0.5);
+  }
+  .template-card:hover .template-use,
+  .template-card:focus-visible .template-use {
+    opacity: 1;
+    transform: none;
+  }
+  /* Without a pointer to hover with, it's always there to say what a tap does. */
+  @media (hover: none) {
+    .template-card .template-use {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-pill,
+    .ink-fill::before,
+    .question-sign::before,
+    .question-sign::after,
+    .template-card .template-page,
+    .template-card .template-use {
+      transition: none;
+    }
+    .nav-underline {
+      transition: color 150ms;
+    }
+    .focus-word {
+      filter: none;
+      opacity: 1;
+    }
+    .template-card:hover .template-page,
+    .template-card:focus-visible .template-page {
+      transform: none;
+    }
+  }
+
+  /* Some people ask for less see-through UI. */
+  @media (prefers-reduced-transparency: reduce) {
+    .floating-blur {
+      display: none;
+    }
+  }
+}

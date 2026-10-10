@@ -4,6 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import PageIntro from "@/components/site/PageIntro"
+import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 
@@ -119,14 +120,14 @@ export default function TermsAndPrivacy() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper">
+    <div className="desk flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-16 md:px-10 md:pt-20">
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-5 pb-24 pt-12 md:px-10 md:pt-16">
         <PageIntro label="Legal" title="Terms & privacy">
           The short version: your resume is saved in your browser, and we don’t store it.
         </PageIntro>
 
-        <div role="tablist" aria-label="Terms, privacy and FAQ" className="mt-14 flex flex-wrap gap-x-6 border-b border-rule md:gap-x-8">
+        <div role="tablist" aria-label="Terms, privacy and FAQ" className="mt-14 flex flex-wrap gap-2">
           {TABS.map((tab, index) => {
             const selected = tab.id === activeTab
             return (
@@ -143,8 +144,8 @@ export default function TermsAndPrivacy() {
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setActiveTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, index)}
-                className={`-mb-px cursor-pointer border-b-[1.5px] py-3 text-[15px] transition-colors ${
-                  selected ? "border-ink text-ink" : "border-transparent text-ink-2 hover:text-ink"
+                className={`h-10 rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow] ${
+                  selected ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40"
                 }`}
               >
                 {tab.label}
@@ -174,10 +175,7 @@ export default function TermsAndPrivacy() {
           <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
           <div className="md:col-span-2">
             <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">Ask us anything about these terms or your privacy.</p>
-            <Link
-              href="/contact"
-              className="mt-6 inline-flex h-11 items-center rounded-[4px] bg-ink px-5 text-sm font-medium text-white transition-colors hover:bg-black"
-            >
+            <Link href="/contact" className={`${INK_PILL} mt-6`}>
               Contact us
             </Link>
           </div>

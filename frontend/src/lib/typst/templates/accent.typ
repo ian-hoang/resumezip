@@ -11,29 +11,30 @@
 #let grey = luma(112)
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: (x: 0.6in, top: 0.48in, bottom: 0.42in))
-#set text(font: "Source Sans 3", size: 10.5pt, lang: "en", fill: dark)
+#set page(paper: page-paper("us-letter"), margin: page-margin((x: 0.6in, top: 0.48in, bottom: 0.42in)))
+#set text(font: "Source Sans 3", size: sized(10.5pt), lang: "en", fill: dark)
 #set block(spacing: 0pt)
-#set par(justify: false, leading: 0.48em, spacing: 0pt)
+// Vertical spacing below follows Fine-tune (see common.typ).
+#set par(justify: false, leading: 0.48em * tune.leading, spacing: 0pt)
 
 #let bullets(items) = if items.len() > 0 {
-  v(3.6pt)
-  list(marker: text(fill: accent, [•]), indent: 2pt, body-indent: 5pt, spacing: 3.4pt, ..items.map(rich))
+  v(spaced(3.6pt))
+  list(marker: text(fill: accent, [•]), indent: 2pt, body-indent: 5pt, spacing: spaced(3.4pt), ..items.map(rich))
 }
 
 // The title's first three letters in the accent colour, then a hairline to the margin.
 #let section(title, body) = {
-  v(13pt)
+  v(sized(13pt))
   block(sticky: true, {
     let letters = title.clusters()
     let split = calc.min(3, letters.len())
-    text(size: 13.5pt, weight: "bold", {
+    text(size: sized(13.5pt), weight: "bold", {
       text(fill: accent, letters.slice(0, split).join())
       letters.slice(split).join()
     })
     h(6pt)
     box(width: 1fr, inset: (bottom: 0.32em), line(length: 100%, stroke: 0.6pt + luma(185)))
-    v(6pt)
+    v(sized(6pt))
   })
   body
 }
@@ -44,21 +45,21 @@
   block(sticky: true, {
     row(text(weight: "bold", org), text(fill: accent, style: "italic", place))
     if has(role) or has(dates) {
-      v(3.6pt)
-      row(text(size: 8pt, tracking: 0.08em, fill: grey, upper(role)), text(size: 8.6pt, fill: grey, style: "italic", dates))
+      v(spaced(3.6pt))
+      row(text(size: sized(8pt), tracking: 0.08em, fill: grey, upper(role)), text(size: sized(8.6pt), fill: grey, style: "italic", dates))
     }
   })
   bullets(items)
 }
 
-#let entries(items, gap: 9pt) = items.join(v(gap))
+#let entries(items, gap: 9pt) = items.join(v(sized(gap)))
 
 // ---------- Heading ----------
 
 #align(center, {
   // First names light, the last name bold.
   let words = p.name.split(" ")
-  text(size: 30pt, {
+  text(size: sized(30pt), {
     text(weight: 300, words.slice(0, calc.max(0, words.len() - 1)).join(" "))
     if words.len() > 1 { [ ] }
     text(weight: "bold", words.last(default: ""))
@@ -71,8 +72,8 @@
   if has(p.github) { items.push(web-link(p.github, p.github)) }
   if has(p.website) { items.push(web-link(p.website, p.website)) }
   if items.len() > 0 {
-    v(8pt)
-    text(size: 8.8pt, fill: grey, items.map(box).join(text(fill: accent, h(0.6em) + [|] + h(0.6em))))
+    v(sized(8pt))
+    text(size: sized(8.8pt), fill: grey, items.map(box).join(text(fill: accent, h(0.6em) + [|] + h(0.6em))))
   }
 })
 
@@ -98,7 +99,7 @@
     section(heading-or(hd.work, "Experience"), entries(data.work.map(w => entry(w.company, w.location, w.role, date-range(w.start, w.end), items: w.bullets))))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
-      block(sticky: true, row(project-header(pr, text(fill: accent, [ | ]), url => web-link(url, url)), text(size: 8.6pt, fill: grey, style: "italic", pr.date)))
+      block(sticky: true, row(project-header(pr, text(fill: accent, [ | ]), url => web-link(url, url)), text(size: sized(8.6pt), fill: grey, style: "italic", pr.date)))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
@@ -107,7 +108,7 @@
     section(heading-or(hd.skills, "Skills"), grid(
       columns: (auto, 1fr),
       column-gutter: 1em,
-      row-gutter: 4.2pt,
+      row-gutter: spaced(4.2pt),
       align: (right, left),
       ..data.skills.map(s => (text(weight: "bold", s.name), s.details)).flatten(),
     ))
@@ -121,7 +122,7 @@
         text(weight: "bold", a.name)
         if has(a.organization) { [, ] + a.organization }
       },
-      text(size: 8.6pt, fill: grey, style: "italic", a.date),
-    )).join(v(4.4pt)))
+      text(size: sized(8.6pt), fill: grey, style: "italic", a.date),
+    )).join(v(spaced(4.4pt))))
   }
 }

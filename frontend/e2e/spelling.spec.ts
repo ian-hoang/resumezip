@@ -23,7 +23,7 @@ test("unknown words are suggestions, and Add word clears them without the text l
   await page.getByLabel(/^What you did/).fill("Wrote the Zorbly notes on the Qwexy engine\nTaught Zorbly methods to the the society")
 
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   const panel = page.getByRole("tabpanel", { name: /^Check/ })

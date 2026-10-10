@@ -2,6 +2,7 @@
 // drawn in parts that move when it's pointed at (see "Row actions" in
 // app/globals.css): the copy lifts off, the arrow bobs into the tray, the
 // bin's lid tips open, the pencil writes, the eye blinks, the tick draws.
+// The dashboard's More dots hop (app/styles/dashboard.css).
 
 import type { ReactNode, Ref } from "react"
 
@@ -24,6 +25,8 @@ interface RowActionProps extends TipProps {
   busy?: boolean
   className?: string
   ref?: Ref<HTMLButtonElement>
+  /** For a button that opens a menu: whether it's open. */
+  menuOpen?: boolean
   [data: `data-${string}`]: string
 }
 
@@ -35,7 +38,7 @@ function Tip({ children, tipAtEnd, tipBelow }: { children: ReactNode } & TipProp
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-[3px] bg-ink px-2 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 group-has-[:focus-visible]/action:translate-y-0 group-has-[:focus-visible]/action:opacity-100 ${
+      className={`pointer-events-none absolute z-10 whitespace-nowrap rounded-full bg-ink px-2.5 py-1 font-mono text-[11px] leading-none text-paper opacity-0 transition duration-150 motion-reduce:transition-none group-hover/action:translate-y-0 group-hover/action:opacity-100 group-hover/action:delay-300 group-focus-visible/action:translate-y-0 group-focus-visible/action:opacity-100 group-has-[:focus-visible]/action:translate-y-0 group-has-[:focus-visible]/action:opacity-100 ${
         tipBelow ? "top-full mt-1 -translate-y-1" : "bottom-full mb-1 translate-y-1"
       } ${tipAtEnd ? "right-0" : "left-1/2 -translate-x-1/2"}`}
     >
@@ -56,6 +59,7 @@ export function RowAction({
   tipBelow,
   className = "",
   ref,
+  menuOpen,
   ...data
 }: RowActionProps) {
   return (
@@ -64,6 +68,8 @@ export function RowAction({
       type="button"
       aria-label={label}
       aria-busy={busy || undefined}
+      aria-haspopup={menuOpen === undefined ? undefined : "menu"}
+      aria-expanded={menuOpen}
       onClick={onClick}
       disabled={disabled}
       {...data}
@@ -182,6 +188,27 @@ export function DoneIcon() {
   return (
     <svg {...iconProps}>
       <path className="done-tick" pathLength={1} d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
+/** Three dots, for a menu of more actions. They hop one after another. */
+export function MoreIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle className="more-dot" cx="5.5" cy="12" r="1.4" fill="currentColor" />
+      <circle className="more-dot" cx="12" cy="12" r="1.4" fill="currentColor" />
+      <circle className="more-dot" cx="18.5" cy="12" r="1.4" fill="currentColor" />
+    </svg>
+  )
+}
+
+/** A label tag, for a resume's type. */
+export function TagIcon() {
+  return (
+    <svg {...iconProps} width={18} height={18}>
+      <path d="M3.5 12.1V4.9c0-.8.6-1.4 1.4-1.4h7.2c.4 0 .7.1 1 .4l7.4 7.4a1.4 1.4 0 0 1 0 2l-7.2 7.2a1.4 1.4 0 0 1-2 0l-7.4-7.4a1.4 1.4 0 0 1-.4-1Z" />
+      <circle cx="8" cy="8" r="1.3" />
     </svg>
   )
 }

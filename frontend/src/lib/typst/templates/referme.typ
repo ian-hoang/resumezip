@@ -6,30 +6,31 @@
 #let hd = data.headings
 
 #set document(title: heading-or(p.name, "Resume"))
-#set page(paper: "us-letter", margin: 0.5in)
-#set text(font: "TeX Gyre Heros", size: 10pt, lang: "en", hyphenate: true)
-// All vertical spacing below is explicit, measured against the LaTeX output.
-// Text lines are measured from their cap height (0.729em in this font), so a
-// v(x) before a 10pt line puts its baseline x + 7.3pt below the line above.
+#set page(paper: page-paper("us-letter"), margin: page-margin(0.5in))
+#set text(font: "TeX Gyre Heros", size: sized(10pt), lang: "en", hyphenate: true)
+// All vertical spacing below is explicit, measured against the LaTeX output,
+// and scaled by Fine-tune (see common.typ). Text lines are measured from
+// their cap height (0.729em in this font), so a v(x) before a 10pt line puts
+// its baseline x + 7.3pt below the line above.
 #set block(spacing: 0pt)
-#set par(justify: true, leading: 4.71pt, spacing: 4.71pt)
+#set par(justify: true, leading: spaced(4.71pt), spacing: spaced(4.71pt))
 
-#let ul(body) = underline(offset: 3pt, stroke: 0.4pt, evade: false, body)
+#let ul(body) = underline(offset: sized(3pt), stroke: 0.4pt, evade: false, body)
 
 #let bullets(items) = if items.len() > 0 {
-  v(5.8pt)
-  list(marker: [•], indent: 11.1pt, body-indent: 5.2pt, spacing: 4.71pt, ..items.map(rich))
+  v(spaced(5.8pt))
+  list(marker: [•], indent: 11.1pt, body-indent: 5.2pt, spacing: spaced(4.71pt), ..items.map(rich))
 }
 
 // Sticky so a heading is never left alone at the bottom of a page.
 #let section(title, body) = {
-  v(20.1pt)
+  v(sized(20.1pt))
   block(sticky: true, {
-    text(size: 12pt, weight: "bold", upper(title))
-    v(4.05pt)
+    text(size: sized(12pt), weight: "bold", upper(title))
+    v(sized(4.05pt))
     line(length: 100%, stroke: 0.4pt)
   })
-  v(4.7pt)
+  v(sized(4.7pt))
   body
 }
 
@@ -44,12 +45,12 @@
     emph(date-range(e.start, e.end)),
   ))
   bullets(e.bullets)
-}).join(v(6.8pt))
+}).join(v(sized(6.8pt)))
 
 // ---------- Heading ----------
 
 #align(center, {
-  text(size: 20.74pt, weight: "bold", p.name)
+  text(size: sized(20.74pt), weight: "bold", p.name)
   let items = ()
   if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push(p.phone) }
@@ -57,12 +58,13 @@
   if has(p.linkedin) { items.push(web-link(p.linkedin, ul(p.linkedin))) }
   if has(p.website) { items.push(web-link(p.website, ul(p.website))) }
   if has(p.github) { items.push(web-link(p.github, ul(p.github))) }
-  // The name and contacts are separate paragraphs, 4.71pt apart. A long
-  // line wraps between items, never inside a link, and isn't stretched.
+  // The name and contacts are separate paragraphs, a paragraph's spacing
+  // apart. A long line wraps between items, never inside a link, and isn't
+  // stretched.
   set par(justify: false)
   if items.len() > 0 { parbreak() + items.map(box).join([ • ]) }
 })
-#v(1.1pt)
+#v(sized(1.1pt))
 
 // ---------- Sections ----------
 
@@ -76,7 +78,7 @@
     let extra = data.extras.at(name)
     section(extra.heading, extra-body(extra, bullets))
   } else if name == "Education" and data.education.len() > 0 {
-    // Lines are 4.71pt apart, as in a paragraph, and schools 1pt further.
+    // Lines are as far apart as in a paragraph, and schools a little further.
     section(heading-or(hd.education, "Education"), data.education.map(e => {
       let dates = date-range(e.start, e.end)
       let place = join-present(", ", e.school, e.location)
@@ -85,8 +87,8 @@
       if has(place) or has(e.gpa) { lines.push(row(emph(place), if has(e.gpa) { emph("GPA: " + e.gpa) })) }
       if has(e.coursework) { lines.push(block(emph("Relevant Coursework: ") + e.coursework)) }
       if has(e.involvement) { lines.push(block(emph("Involvement: ") + e.involvement)) }
-      lines.join(v(4.71pt))
-    }).join(v(5.71pt)))
+      lines.join(v(spaced(4.71pt)))
+    }).join(v(spaced(5.71pt))))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), data.skills.map(s => {
       if has(s.name) { strong(s.name + ": ") }
@@ -104,9 +106,9 @@
       if has(pr.techStack) { details.push(emph(pr.techStack)) }
       for url in pr.links { details.push(box(web-link(url, ul(url)))) }
       if details.len() > 0 { lines.push(block({ set par(justify: false); details.join([ | ]) })) }
-      block(sticky: true, lines.join(v(4.71pt)))
+      block(sticky: true, lines.join(v(spaced(4.71pt))))
       bullets(pr.bullets)
-    }).join(v(6.8pt)))
+    }).join(v(sized(6.8pt))))
   } else if name == "Publications" and data.publications.len() > 0 {
     section(heading-or(hd.publications, "Publications"), citations(data.publications, (url, body) => web-link(url, ul(body))))
   } else if name == "Leadership" and data.leadership.len() > 0 {
@@ -121,6 +123,6 @@
         a.organization
       },
       emph(a.date),
-    )).join(v(4.71pt)))
+    )).join(v(spaced(4.71pt))))
   }
 }

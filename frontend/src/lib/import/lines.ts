@@ -226,7 +226,13 @@ function findGutter(items: Item[], width: number): { x: number; top: number } | 
     const right = items.filter((item) => item.x >= x - 1)
     const share = Math.min(chars(left), chars(right)) / total
     if (share < 0.05) continue
-    const top = Math.min(Math.max(...left.map((item) => item.baseline)), Math.max(...right.map((item) => item.baseline)))
+    // The columns start below the last line that crosses the gap, like a
+    // centered contact line, even where some of that line is on one side.
+    const crossed = new Set(items.filter((item) => item.x < x - 1 && item.right > x + 1).map((item) => Math.round(item.baseline)))
+    const highest = (list: Item[]) =>
+      Math.max(...list.filter((item) => !crossed.has(Math.round(item.baseline))).map((item) => item.baseline))
+    const top = Math.min(highest(left), highest(right))
+    if (!Number.isFinite(top)) continue
     const below = items.filter((item) => item.baseline <= top + 1)
     const crossing = chars(below.filter((item) => item.x < x - 1 && item.right > x + 1))
     if (crossing / total > 0.01) continue
@@ -364,10 +370,14 @@ export function linesFromPages(pages: PdfPage[]): Line[] {
     const gutter = findGutter(items, width)
     if (gutter !== null) {
       const { x, top } = gutter
-      // Above the columns, a line that crosses the gap spans them, even the parts of it on one side.
-      const spanning = new Set(items.filter((item) => item.x < x - 1 && item.right > x + 1).map((item) => Math.round(item.baseline)))
+      // Above the columns, a line that crosses the gap spans them, even the
+      // parts of it on one side, and so does all the text above it, like a
+      // short centered name over a contact line.
+      const crossing = items.filter((item) => item.baseline > top + 1 && item.x < x - 1 && item.right > x + 1)
+      const spanning = new Set(crossing.map((item) => Math.round(item.baseline)))
+      const below = Math.min(...crossing.map((item) => item.baseline))
       for (const item of items) {
-        const spans = item.baseline > top + 1 && spanning.has(Math.round(item.baseline))
+        const spans = item.baseline > top + 1 && (spanning.has(Math.round(item.baseline)) || item.baseline > below)
         item.column = spans ? 0 : item.right <= x + 1 ? 1 : item.x >= x - 1 ? 2 : 0
       }
     }

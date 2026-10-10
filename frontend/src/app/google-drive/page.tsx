@@ -21,7 +21,7 @@ export default function GoogleDriveSignedIn() {
   }, [])
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-paper px-5 text-center">
+    <main className="desk flex min-h-screen flex-col items-center justify-center gap-3 px-5 text-center">
       <span className="label-mono text-ink-2">Google Drive</span>
       <p className="max-w-sm text-[17px] leading-relaxed text-ink">You can close this window and go back to your resume.</p>
     </main>

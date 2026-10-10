@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "@playwright/test"
 import { holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
@@ -23,6 +24,37 @@ async function resumeToCheck(page: Page) {
   await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
 }
 
+/** The Jake template's sample resume, which passes every check, saved with these changes to its profile, and opened. */
+async function openSample(page: Page, id: string, profile: Record<string, string> = {}) {
+  const sample = JSON.parse(readFileSync("src/lib/typst/preview-samples/jake.json", "utf8"))
+  const resume = { ...sample, id, resumeTitle: "Marcus", profileSection: { ...sample.profileSection, ...profile } }
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, value)
+    },
+    { key: `resume:${id}`, value: JSON.stringify(resume) },
+  )
+  await page.goto(`/create/new/${id}`)
+}
+
+/** Whether a perfect score's scale shows, filled with a gradient rather than ink (.score-fill in styles/editor.css). */
+const perfectScaleShown = (score: Locator) =>
+  score.evaluate((element) =>
+    [...element.querySelectorAll("div")].some((div) => getComputedStyle(div).backgroundImage.startsWith("linear-gradient")),
+  )
+
+/** The names of the CSS animations in an element, running or done. */
+const animationNamesIn = (locator: Locator) =>
+  locator.evaluate((element) =>
+    document
+      .getAnimations()
+      .filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target
+        return "animationName" in animation && !!target && element.contains(target)
+      })
+      .map((animation) => (animation as CSSAnimation).animationName),
+  )
+
 /** How many CSS animations, as a spinner's, are running in an element. Transitions don't count. */
 const animationsIn = (locator: Locator) =>
   locator.evaluate(
@@ -33,38 +65,10 @@ const animationsIn = (locator: Locator) =>
       }).length,
   )
 
-/**
- * Notes how much of each arc added to the score ring is drawn the moment it's
- * added, in percent, until the returned function is called.
- */
-async function watchArcs(score: Locator): Promise<() => Promise<number[]>> {
-  const watching = await score.evaluateHandle((element) => {
-    const drawn: number[] = []
-    const observer = new MutationObserver((records) => {
-      for (const node of records.flatMap((record) => [...record.addedNodes])) {
-        if (!(node instanceof SVGCircleElement)) continue
-        // Read before it's painted: a transition that's just started is still where it starts from.
-        const style = getComputedStyle(node)
-        drawn.push(Math.round(100 * (1 - parseFloat(style.strokeDashoffset) / parseFloat(style.strokeDasharray))))
-      }
-    })
-    observer.observe(element, { childList: true, subtree: true })
-    return { drawn, stop: () => observer.disconnect() }
-  })
-  return async () => {
-    const drawn = await watching.evaluate(({ drawn, stop }) => {
-      stop()
-      return drawn
-    })
-    await watching.dispose()
-    return drawn
-  }
-}
-
 test("the left bar switches between writing and checking, and remembers which", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write or check" })
+  const modes = page.getByRole("tablist", { name: "Write, check or style" })
   const write = modes.getByRole("tab", { name: "Write" })
   const check = modes.getByRole("tab", { name: /^Check/ })
   const sections = page.getByRole("navigation", { name: "Sections" })
@@ -87,11 +91,12 @@ test("the left bar switches between writing and checking, and remembers which", 
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible()
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
-  // Arrow keys, Home and End move between the two, as in any set of tabs.
+  // Arrow keys, Home and End move between the three, as in any set of tabs.
+  const style = modes.getByRole("tab", { name: "Style" })
   await check.focus()
   for (const [key, tab] of [
     ["ArrowLeft", write],
-    ["End", check],
+    ["End", style],
     ["Home", write],
     ["ArrowRight", check],
   ] as const) {
@@ -134,7 +139,7 @@ test("the left bar switches between writing and checking, and remembers which", 
   // a freshly loaded dashboard too, but a new resume, with nothing to check
   // yet, opens on Write.
   await page.goto("/create/dashboard")
-  await page.getByRole("table").getByRole("link").first().click()
+  await page.getByRole("list", { name: "Resumes" }).getByRole("link").first().click()
   await expect(check).toHaveAttribute("aria-selected", "true")
   await expect(preview).toBeVisible()
   await checked()
@@ -225,7 +230,7 @@ test("the score goes up as a problem is fixed", async ({ page }) => {
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
 
@@ -258,8 +263,6 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   await missing.click()
   const email = page.getByLabel("Email")
   await expect(email).toBeFocused()
-  const count = Number((await check.getAttribute("aria-label"))?.match(/^Check, (\d+) to look at$/)?.[1])
-  expect(count).toBeGreaterThan(2)
 
   // With the page's clock stopped, typing never pauses. What the person
   // tells the checker still shows at once.
@@ -267,24 +270,21 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   const advice = panel.getByRole("button", { name: /Profile → LinkedIn Consider adding a LinkedIn profile/ })
   await panel.getByRole("button", { name: "Dismiss: Consider adding a LinkedIn profile" }).click()
   await expect(advice).toBeHidden()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 1} to look at`)
 
   // What's typed isn't checked yet: a fixed wait, to show nothing changes.
   await email.pressSequentially("ada@example.com")
   await page.waitForTimeout(1_000)
   await expect(missing).toBeVisible()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 1} to look at`)
 
   // Once typing pauses, it is.
   await page.clock.resume()
   await expect(missing).toBeHidden()
   await expect(panel.getByRole("status")).toBeHidden()
-  await expect(check).toHaveAccessibleName(`Check, ${count - 2} to look at`)
 
   expect(errors).toEqual([])
 })
 
-test("the score ring moves while the score is worked out: an arc runs round it, it fills up to the score, and it pulses while checked again", async ({
+test("the score moves while it's worked out: dots bounce in its place, the number comes in, and it pulses while checked again", async ({
   page,
 }) => {
   const errors = pageErrors(page)
@@ -294,22 +294,20 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   const score = panel.getByRole("region", { name: "Resume score" })
 
   // A change the preview hasn't caught up with keeps the checks on the PDF
-  // waiting, and the score with them. Meanwhile an arc runs round the ring.
+  // waiting, and the score with them. Meanwhile three dots bounce in its place.
   await holdPreviews(page, true)
   await page.getByLabel("Role").fill("Analyst")
   await page.getByRole("tab", { name: /^Check/ }).click()
   await expect(score).toContainText("Checking")
-  await expect.poll(() => animationsIn(score)).toBeGreaterThan(0)
+  await expect.poll(() => animationNamesIn(score)).toContain("score-dot")
 
-  // Once the score is in, the ring fills up to it from empty, then stops moving.
-  const arcs = await watchArcs(score)
+  // Once the score is in, it shows, and nothing keeps moving.
   await holdPreviews(page, false)
   await expect(score.getByText(/^\d+$/)).toBeVisible()
-  expect(await arcs()).toEqual([0])
   await expect(panel.getByRole("status")).toBeHidden()
   await expect.poll(() => animationsIn(score)).toBe(0)
 
-  // Checked again after a change, the ring keeps the score and pulses until it's done.
+  // Checked again after a change, the score stays and pulses until it's done.
   await holdPreviews(page, true)
   await page.getByLabel("Role").fill("Lead analyst")
   await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
@@ -322,16 +320,45 @@ test("the score ring moves while the score is worked out: an arc runs round it, 
   expect(errors).toEqual([])
 })
 
+test("the score's word says how it reads, and a perfect score's scale turns to a gradient a light sweeps along once", async ({ page }) => {
+  const errors = pageErrors(page)
+  await resumeToCheck(page)
+  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const score = panel.getByRole("region", { name: "Resume score" })
+  await page.getByRole("tab", { name: /^Check/ }).click()
+  await expect(panel.getByRole("status")).toBeHidden()
+  await expect(score).toContainText("Needs work")
+  expect(await perfectScaleShown(score)).toBe(false)
+
+  // A good resume, held at 89 by a missing email (Check stays open for the visit).
+  await openSample(page, "no-email", { email: "" })
+  await expect(panel.getByRole("status")).toBeHidden()
+  await expect(score).toContainText("Good")
+
+  // With the email added, every check passes: the scale turns to a gradient
+  // that a light sweeps along once.
+  await panel.getByRole("button", { name: /Add your email address/ }).click()
+  await page.getByLabel("Email").fill("marcus.bell@example.com")
+  await expect(score.getByText(/^\d+$/)).toHaveText("100")
+  await expect(score).toContainText("Perfect")
+  await expect.poll(() => perfectScaleShown(score)).toBe(true)
+  await expect.poll(() => animationNamesIn(score)).toContain("score-glint")
+  await expect.poll(() => animationsIn(score)).toBe(0)
+  expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+
+  expect(errors).toEqual([])
+})
+
 test("choosing a finding opens its field, where it shows while Check is open, fixing it clears it, and a suggestion can be dismissed", async ({
   page,
 }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write or check" })
+  const modes = page.getByRole("tablist", { name: "Write, check or style" })
   const check = modes.getByRole("tab", { name: /^Check/ })
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
 
-  // No count until there's a name and an entry to check.
+  // The tab says only Check: what it found is in the panel.
   await expect(check).toHaveAccessibleName("Check")
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email").fill("ada@example")
@@ -341,7 +368,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  await expect(check).toHaveAccessibleName(/^Check, \d+ to look at$/)
+  await expect(check).toHaveAccessibleName("Check")
 
   // The email's finding opens the profile, with the cursor in the field and why it matters under it.
   await check.click()
@@ -392,8 +419,8 @@ const lineWidths = (paragraph: Locator) =>
 
 test("the note under a field doesn't leave a word or two on a line of their own, and sets its sentences apart", async ({ page }) => {
   const errors = pageErrors(page)
-  // At this width the email's reason runs a word past one line.
-  await page.setViewportSize({ width: 1440, height: 900 })
+  // At this width the email's reason runs a word or two past one line.
+  await page.setViewportSize({ width: 480, height: 900 })
   await newResume(page)
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email").fill("ada@example")
@@ -404,7 +431,7 @@ test("the note under a field doesn't leave a word or two on a line of their own,
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   await page
@@ -420,8 +447,13 @@ test("the note under a field doesn't leave a word or two on a line of their own,
   const widths = await lineWidths(why)
   expect(widths).toHaveLength(2)
   expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2)
-  const [whyBox, suggestionBox] = [await why.boundingBox(), await suggestion.boundingBox()]
-  expect(suggestionBox!.y - (whyBox!.y + whyBox!.height)).toBeGreaterThanOrEqual(8)
+  // Both measured at once: the form is still scrolling smoothly to the field, so two
+  // measurements a moment apart could each be taken at a different place.
+  const gap = await why.evaluate(
+    (element, other) => other!.getBoundingClientRect().top - element.getBoundingClientRect().bottom,
+    await suggestion.elementHandle(),
+  )
+  expect(gap).toBeGreaterThanOrEqual(8)
 
   expect(errors).toEqual([])
 })
@@ -429,7 +461,7 @@ test("the note under a field doesn't leave a word or two on a line of their own,
 test("with Check open, the PDF is read too: a bullet that runs three lines is flagged and opens", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const check = page.getByRole("tablist", { name: "Write or check" }).getByRole("tab", { name: /^Check/ })
+  const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
 
   await page.getByLabel("Full name").fill("Ada Lovelace")
@@ -479,7 +511,7 @@ test("when the preview can't be built, the checker says its PDF checks are left 
   await page.getByLabel("Company").fill("Analytical Engines")
 
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
@@ -490,7 +522,7 @@ test("when the preview can't be built, the checker says its PDF checks are left 
 test.describe("with less motion", () => {
   test.use({ reducedMotion: "reduce" })
 
-  test("the score ring stays still: nothing runs round it, it shows the score at once, and it doesn't pulse", async ({ page }) => {
+  test("the score stays still: no dots bounce, it shows at once, and it doesn't pulse", async ({ page }) => {
     const errors = pageErrors(page)
     await holdablePreviews(page)
     await resumeToCheck(page)
@@ -503,11 +535,8 @@ test.describe("with less motion", () => {
     await expect(score).toContainText("Checking")
     expect(await animationsIn(score)).toBe(0)
 
-    const arcs = await watchArcs(score)
     await holdPreviews(page, false)
     await expect(score.getByText(/^\d+$/)).toBeVisible()
-    const [drawn] = await arcs()
-    expect(drawn).toBeGreaterThan(0)
     await expect(panel.getByRole("status")).toBeHidden()
 
     await holdPreviews(page, true)
@@ -515,6 +544,21 @@ test.describe("with less motion", () => {
     await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
     expect(await animationsIn(score)).toBe(0)
     await holdPreviews(page, false)
+    await expect(panel.getByRole("status")).toBeHidden()
+
+    expect(errors).toEqual([])
+  })
+
+  test("a perfect score's scale shows its gradient at once, with no light sweeping along it", async ({ page }) => {
+    const errors = pageErrors(page)
+    await openSample(page, "perfect")
+    await page.getByRole("tab", { name: /^Check/ }).click()
+    const panel = page.getByRole("tabpanel", { name: /^Check/ })
+    const score = panel.getByRole("region", { name: "Resume score" })
+    await expect(score.getByText(/^\d+$/)).toHaveText("100")
+    await expect(score).toContainText("Perfect")
+    expect(await perfectScaleShown(score)).toBe(true)
+    expect(await animationNamesIn(score)).toEqual([])
     await expect(panel.getByRole("status")).toBeHidden()
 
     expect(errors).toEqual([])
@@ -527,7 +571,7 @@ test.describe("on a phone", () => {
   test("the switch sits above the section tabs, and works with the Edit and Preview switch", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const modes = page.getByRole("tablist", { name: "Write or check" })
+    const modes = page.getByRole("tablist", { name: "Write, check or style" })
     const check = modes.getByRole("tab", { name: /^Check/ })
     const sections = page.getByRole("navigation", { name: "Sections" })
 
@@ -559,7 +603,7 @@ test.describe("on a phone", () => {
   test("tapping Check far down the form goes back up to what was found", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const check = page.getByRole("tablist", { name: "Write or check" }).getByRole("tab", { name: /^Check/ })
+    const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
 
     // The switch stays pinned while the form scrolls under it.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))

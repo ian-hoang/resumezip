@@ -164,11 +164,15 @@ describe("a JSON file", () => {
     expect(fromJson(toAttachment(resume))).toEqual([{ resume: fromAttachment(toAttachment(resume)) }])
   })
 
-  test("keeps only names and tags the dashboard can show, and checker state it can read", () => {
+  test("keeps only names and types the dashboard can show, and checker state it can read", () => {
     const file = (saved: Record<string, unknown>) =>
       JSON.stringify({ format: "resumezip", version: 2, resume: { extraSections: {}, ...saved } })
-    expect(fromJson(file({ resumeTitle: "   ", resumeTag: "secret" }))?.[0]).not.toHaveProperty("title")
-    expect(fromJson(file({ resumeTitle: 42, resumeTag: "secret" }))?.[0]).not.toHaveProperty("tag")
+    expect(fromJson(file({ resumeTitle: "   ", resumeTag: "   " }))?.[0]).not.toHaveProperty("title")
+    expect(fromJson(file({ resumeTitle: 42, resumeTag: 42 }))?.[0]).not.toHaveProperty("tag")
+    // A type of the person's own opens with it, cleaned as the dashboard saves it.
+    expect(fromJson(file({ resumeTag: "  Data   roles " }))?.[0].tag).toBe("Data roles")
+    expect(fromJson(file({ resumeTag: "x".repeat(100) }))?.[0].tag).toHaveLength(24)
+    expect(fromJson(file({ resumeTag: "ACADEMIC" }))?.[0].tag).toBe("academic")
     expect(fromJson(file({ check: { dismissed: [7, "kept"], words: "Lovelace", token: "x" } }))?.[0].resume.check).toEqual({
       dismissed: ["kept"],
       words: [],
@@ -210,6 +214,39 @@ describe("a JSON file", () => {
     expect(text).toHaveLength(MAX_LENGTH)
     expect(text).not.toContain("\n")
     expect(fromJson(text)?.[0].resume).toEqual({ ...resume, extraSections: {} })
+  })
+})
+
+describe("Fine-tune's settings", () => {
+  const tune = { size: 0.925, margin: 1.2, leading: 1.1, paper: "a4" as const, onePage: true }
+  const tuned = { ...editorResume({}), tune }
+
+  test("are in a downloaded PDF's attachment and a JSON file, and open again from both", () => {
+    expect(fromAttachment(toAttachment(tuned))).toEqual(tuned)
+    expect(fromJson(toJson(tuned))).toEqual([{ resume: { ...tuned, extraSections: {} } }])
+  })
+
+  test("don't change the attachment's version, so earlier versions of resumezip open it, and print it with the template's own", () => {
+    const { resume: withTune, ...file } = JSON.parse(toAttachment(tuned))
+    const { resume: without, ...plainFile } = JSON.parse(toAttachment(editorResume({})))
+    expect(file).toEqual(plainFile)
+    expect(file.version).toBe(1)
+    expect(withTune).toEqual({ ...without, tune })
+  })
+
+  test("aren't in a PDF or JSON file from before them, which open with the template's own", () => {
+    const old = JSON.stringify({ format: "resumezip", version: 1, resume: editorResume({}) })
+    expect(fromAttachment(old)).not.toHaveProperty("tune")
+    expect(fromJson(old)![0].resume).not.toHaveProperty("tune")
+  })
+
+  test("keep only what Fine-tune can set, in range", () => {
+    expect(cleanResume({ tune: { size: "big", margin: 9, paper: "legal", onePage: true, font: "Comic Sans" } }).tune).toEqual({
+      margin: 1.4,
+      onePage: true,
+    })
+    expect(cleanResume({ tune: "small" })).not.toHaveProperty("tune")
+    expect(cleanResume({ tune: { size: 1, paper: "letter" } })).not.toHaveProperty("tune")
   })
 })
 
