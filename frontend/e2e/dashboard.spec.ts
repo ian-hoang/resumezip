@@ -502,9 +502,13 @@ test("in use, the search lifts into the middle of the screen, and Escape or a pr
       const context = canvas.getContext("2d")!
       context.drawImage(image, 0, 0)
       const { data, width, height } = context.getImageData(0, 0, image.width, image.height)
+      // Chromium leaves a hard edge (steps of 70 or more) in the first and last few pixels of a
+      // clipped screenshot, where the backdrop blur meets the crop. It moves with the clip, so it's
+      // from taking the picture, not in the page: those pixels are left out.
+      const edge = 16
       let most = 0
       for (let y = 0; y < height; y++)
-        for (let x = 1; x < width; x++) most = Math.max(most, Math.abs(data[(y * width + x) * 4] - data[(y * width + x - 1) * 4]))
+        for (let x = edge; x < width - edge; x++) most = Math.max(most, Math.abs(data[(y * width + x) * 4] - data[(y * width + x - 1) * 4]))
       return most
     }, shot.toString("base64"))
     expect(sharpest).toBeLessThan(60)
