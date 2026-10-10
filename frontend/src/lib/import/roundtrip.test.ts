@@ -23,6 +23,19 @@ const KNOWN_GAPS: Record<string, string[]> = {
     "work[1].role",
     "work[2].role",
   ],
+  // Names of schools, employers, groups and projects, and skill categories,
+  // are printed in capitals, so their original case can't be read back.
+  deedy: [
+    "education[0].school",
+    "leadership[0].organization",
+    "projects[0].name",
+    "projects[1].name",
+    "skills[0].name",
+    "skills[1].name",
+    "skills[2].name",
+    "work[1].company",
+    "work[2].company",
+  ],
   ian: [],
   // A comma inside an award's name reads as the start of the organization.
   jake: ["awards[0].name", "awards[0].organization"],

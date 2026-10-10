@@ -7,6 +7,7 @@ import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import { fontsOf, templateById } from "@/lib/templates"
 import accent from "./templates/accent.typ"
 import common from "./templates/common.typ"
+import deedy from "./templates/deedy.typ"
 import ian from "./templates/ian.typ"
 import jake from "./templates/jake.typ"
 import levelsfyi from "./templates/levelsfyi.typ"
@@ -23,6 +24,7 @@ import { FONT_URLS, fontsFor, lazyFonts } from "./fontFiles"
 const SOURCES: Record<string, string> = {
   "/accent.typ": accent,
   "/common.typ": common,
+  "/deedy.typ": deedy,
   "/ian.typ": ian,
   "/jake.typ": jake,
   "/levelsfyi.typ": levelsfyi,

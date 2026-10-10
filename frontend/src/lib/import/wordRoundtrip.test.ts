@@ -21,6 +21,7 @@ const second = "22222222-2222-4222-8222-222222222222"
  */
 const KNOWN_GAPS: Record<string, string[]> = {
   accent: [],
+  deedy: [],
   ian: [],
   jake: [],
   levelsfyi: [],

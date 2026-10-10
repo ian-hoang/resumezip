@@ -53,9 +53,11 @@ server to build a PDF.
    page in `public/previews/<id>.webp` (1280 px wide, from the editor's
    preview), made from its own sample resume in `preview-samples/<id>.json`,
    and its `font`: the family its `#set text(font: ...)` names, which is
-   downloaded before its first PDF. A test checks the two match. When it
-   uses only some of its family's weights, name those as `weights`, so it
-   downloads no more than it prints with.
+   downloaded before its first PDF. A test checks the two match. Name any
+   other family it sets words in as `alsoFonts`, and, when it uses only some
+   of its family's weights, those as `weights`, so it downloads no more than
+   it prints with. A template with a column of sections on the left names
+   them as `firstColumn`, so the resume checker expects them first in the PDF.
    Every page that lists templates reads that list.
 
 Templates can only use the fonts in `fonts/`, listed in `fontFiles.ts`. They're
