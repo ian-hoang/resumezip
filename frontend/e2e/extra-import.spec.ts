@@ -58,6 +58,24 @@ test("review consolidates selected singletons and keeps repeated unknown groups 
   expect(errors).toEqual([])
 })
 
+test("a group that couldn't be placed has its choice beside its heading, not under a label repeating it", async ({ page }) => {
+  await page.goto("/create/dashboard")
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "Flexible.docx",
+    mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    buffer: wordFile(WORDS),
+  })
+  const unplaced = page.getByRole("dialog", { name: "Here's what we found" }).getByRole("region", { name: /^Couldn't place/ })
+  const choice = unplaced.getByRole("combobox", { name: "Keep Presentations, group 1" })
+  await expect(choice).toHaveValue("")
+  // The heading says which group it is, so the choice's name is for screen readers.
+  await expect(unplaced.getByText("Keep Presentations, group 1")).toHaveCount(0)
+  const heading = (await unplaced.getByText("Presentations", { exact: true }).first().boundingBox())!
+  const box = (await choice.boundingBox())!
+  expect(box.y + box.height / 2).toBeGreaterThan(heading.y)
+  expect(box.y + box.height / 2).toBeLessThan(heading.y + heading.height)
+})
+
 test("narrow PDF review retains uncertain and excluded text in its download", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/create/dashboard")

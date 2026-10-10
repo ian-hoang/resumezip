@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react"
 import type { PDFDocumentProxy } from "pdfjs-dist"
-import { ArrowLeftRight, Check, CircleAlert, Copy, Download } from "lucide-react"
+import { ArrowLeftRight, Check, ChevronDown, CircleAlert, Copy, Download } from "lucide-react"
 import { SECTIONS, type FieldKey, type FieldKeyOf, type SectionName } from "@/components/editor/sections"
 import type { Line, PageSize } from "@/lib/import/lines"
 import type { OpenedFile } from "@/lib/import/open"
@@ -375,28 +375,36 @@ export default function ImportReview({ file, onCancel, onCreate }: ImportReviewP
                 </p>
                 {parsed.unplaced.map((group, index) => (
                   <div key={unplacedKey(group, index)} className="mt-4" {...point(group.lines)}>
-                    <p className="label-mono text-ink-2">{group.heading}</p>
-                    <label className="mt-2 block text-sm text-ink-2">
-                      Keep {group.heading}, group {index + 1}
-                      <select
-                        value={keepAs[unplacedKey(group, index)] ?? ""}
-                        onChange={(event) => {
-                          const value = event.target.value
-                          setKeepAs((current) => {
-                            const next = { ...current }
-                            if (value === "text" || value === "list") next[unplacedKey(group, index)] = value
-                            else delete next[unplacedKey(group, index)]
-                            return next
-                          })
-                        }}
-                        className="ml-2 max-w-full rounded border border-rule bg-white px-2 py-1 text-ink"
-                      >
-                        <option value="">Do not include</option>
-                        <option value="text">Keep as text section</option>
-                        <option value="list">Keep as bullet list</option>
-                      </select>
-                    </label>
-                    <ul className="mt-1 flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <p className="label-mono text-ink-2">{group.heading}</p>
+                      <div className="relative">
+                        {/* Named for screen readers only: the heading beside it already says which group it is.
+                            16px on phones, as iOS zooms in on a smaller select. */}
+                        <select
+                          aria-label={`Keep ${group.heading}, group ${index + 1}`}
+                          value={keepAs[unplacedKey(group, index)] ?? ""}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            setKeepAs((current) => {
+                              const next = { ...current }
+                              if (value === "text" || value === "list") next[unplacedKey(group, index)] = value
+                              else delete next[unplacedKey(group, index)]
+                              return next
+                            })
+                          }}
+                          className="h-8 max-w-full cursor-pointer appearance-none rounded-[4px] border border-rule bg-white pl-2.5 pr-8 text-base text-ink transition-colors hover:border-ink-2 sm:text-sm"
+                        >
+                          <option value="">Leave out</option>
+                          <option value="text">Add as a text section</option>
+                          <option value="list">Add as a bullet list</option>
+                        </select>
+                        <ChevronDown
+                          aria-hidden="true"
+                          className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-2"
+                        />
+                      </div>
+                    </div>
+                    <ul className="mt-2 flex flex-col gap-1">
                       {group.text.map((text, i) => (
                         <li key={i} className="break-words text-sm leading-relaxed text-ink">
                           {text}
