@@ -110,7 +110,7 @@ test("Share PDF hands the share sheet the PDF, made as the menu opened, in the p
   const more = page.getByRole("button", { name: "More formats" })
   const share = page.getByRole("menuitem", { name: /^Share PDF/ })
   await more.click()
-  await expect(share).toContainText("Send it to Google Drive or another app")
+  await expect(share).toContainText("Send it to another app")
   await expect.poll(() => attachedPdfs(page)).toBe(1)
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
   await share.click()

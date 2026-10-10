@@ -53,6 +53,9 @@ npm run test:browser   # after a build; see below
   everything the PDF leaves out: the name and tag, what's left out, and what
   the checker was told. Download all, on the dashboard, holds every resume as
   a list under `resumes`. "Open a file" opens both.
+- Save to Google Drive, in the same ▾ menu, uploads the PDF straight from the
+  browser once Google's sign-in window hands back a token (`src/lib/googleDrive.ts`
+  explains how). `/google-drive` is the page that window comes back to.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's
   fields. Its README explains how.
 - `src/lib/check/` is the resume checker: fixed rules that say what to fix on

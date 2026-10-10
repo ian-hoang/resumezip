@@ -15,7 +15,7 @@ export interface PdfFile {
 
 /**
  * Makes the open resume's PDF, with the resume attached, to hand to another
- * app, as Share PDF does. The function it gives back
+ * app: Share PDF and Save to Google Drive share it. The function it gives back
  * returns the PDF of the resume as it is now, and starts making it unless it's
  * made or on its way, so the resume is compiled once per change.
  */
