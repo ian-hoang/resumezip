@@ -113,8 +113,9 @@ export default function SiteHeader({ variant = "light", starOnGitHub = false, on
       ref={headerRef}
       className={`relative font-system ${overlay ? "z-10 text-white" : "z-30 border-b border-rule bg-paper text-ink"}`}
     >
-      {/* With links, the outer columns are equal, so the links stay put whatever the button says. */}
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr] md:px-10">
+      {/* With links, the outer columns are equal, so the links stay put whatever the button says.
+          Below lg the gaps are tighter: at 768px, in wider system fonts, the links only just fit on one line. */}
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-6 px-5 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr] md:px-10 md:max-lg:gap-4">
         <Link
           href="/"
           className="flex items-center gap-2.5 justify-self-start font-logo text-[24px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
@@ -123,7 +124,7 @@ export default function SiteHeader({ variant = "light", starOnGitHub = false, on
           resumezip
         </Link>
 
-        <nav aria-label="Main" className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Main" className="hidden items-center gap-5 md:flex lg:gap-8">
           {LINKS.map((link) => (
             <Link
               key={link.href}

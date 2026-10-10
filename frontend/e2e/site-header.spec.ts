@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
@@ -25,20 +25,29 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
   )
 })
 
-// The home page's button is wider than the others', which mustn't push the links aside or onto two lines.
-for (const width of [768, 1440]) {
-  test(`at ${width}px the header's links are on one line, where they are on every page`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 800 })
-    const links = page.getByRole("navigation", { name: "Main" }).getByRole("link")
-    const boxes = async () => Promise.all((await links.all()).map((link) => link.boundingBox()))
+const headerLinks = (page: Page) => page.getByRole("navigation", { name: "Main" }).getByRole("link")
+const boxes = async (page: Page) => Promise.all((await headerLinks(page).all()).map((link) => link.boundingBox()))
 
+// 768px is the narrowest the links show at, and no page's button may push them onto two lines there.
+for (const path of ["/", "/about"]) {
+  test(`at 768px the header's links on ${path} are on one line`, async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 800 })
+    await page.goto(path)
+    await expect(headerLinks(page)).toHaveCount(3)
+    expect(new Set((await boxes(page)).map((box) => box!.height)).size).toBe(1)
+  })
+}
+
+// The home page's button is wider than the others', which mustn't move the links. Below lg,
+// wider system fonts can leave the header no room to spare, and they may move a pixel there.
+for (const width of [1024, 1440]) {
+  test(`at ${width}px the header's links are where they are on every page`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
     await page.goto("/about")
-    await expect(links).toHaveCount(3)
-    const elsewhere = await boxes()
+    await expect(headerLinks(page)).toHaveCount(3)
+    const elsewhere = await boxes(page)
     await page.goto("/")
-    await expect(links).toHaveCount(3)
-    const home = await boxes()
-    expect(home).toEqual(elsewhere)
-    expect(new Set(home.map((box) => box!.height)).size).toBe(1)
+    await expect(headerLinks(page)).toHaveCount(3)
+    expect(await boxes(page)).toEqual(elsewhere)
   })
 }
