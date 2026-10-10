@@ -2,7 +2,7 @@
 
 import type React from "react"
 import Link from "next/link"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import PageIntro from "@/components/site/PageIntro"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
@@ -89,6 +89,18 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
 export default function TermsAndPrivacy() {
   const [activeTab, setActiveTab] = useState<TabId>("terms")
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  // An address ending in a tab's id opens that tab, as /terms#privacy does
+  // from Google's sign-in for Save to Google Drive.
+  useEffect(() => {
+    const openFromAddress = () => {
+      const tab = TABS.find(({ id }) => window.location.hash === `#${id}`)
+      if (tab) setActiveTab(tab.id)
+    }
+    openFromAddress()
+    window.addEventListener("hashchange", openFromAddress)
+    return () => window.removeEventListener("hashchange", openFromAddress)
+  }, [])
 
   // Arrow keys, Home and End move between tabs (WAI-ARIA tabs pattern).
   const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
