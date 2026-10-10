@@ -9,10 +9,12 @@
 // every computer has, rather than the templates' fonts.
 //
 // A .docx is a zip of XML files (lib/zip.ts). Like the PDF, it carries its
-// resume as resumezip.json. Word drops files it doesn't know when it saves.
-// An app that kept the attachment but changed the text would bring back the
-// resume as it was before the change, so the attachment also has the CRC-32
-// of the text it was written with.
+// resume as resumezip.json, so resumezip can open it again exactly (see
+// wordFileResume in lib/import/open.ts). Word drops files it doesn't know
+// when it saves, and then it opens like any Word file. An app that kept the
+// attachment but changed the text would reopen as it was before the change,
+// so the attachment also has the CRC-32 of the text it was written with, and
+// is only read while the text still matches.
 
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"

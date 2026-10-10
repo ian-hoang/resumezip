@@ -44,7 +44,7 @@ export class TooLongError extends Error {}
 export class AttachmentError extends Error {}
 
 /** What a file is called in the messages about it. */
-type FileNoun = "PDF" | "file"
+type FileNoun = "PDF" | "Word file" | "file"
 
 const damaged = (noun: FileNoun) => new AttachmentError(`The resume data in this ${noun} is damaged. Try another saved ${noun}.`)
 
@@ -66,11 +66,19 @@ export function toAttachment(resume: Resume, { documentCrc32 }: { documentCrc32?
 
 /**
  * Reads an attachment back, or returns null if the text isn't one. Throws a
- * TooLongError if it's one too big to open (see MAX_LENGTH).
+ * TooLongError if it's one too big to open (see MAX_LENGTH). `noun` is what
+ * it was attached to, for the messages. A Word file's is read with the CRC-32
+ * of the document it's in now, and is null if that's changed since: another
+ * app changed the text, and the attachment would undo that.
  */
-export function fromAttachment(text: string): ResumeContent | null {
-  const file = readFormat(text, "PDF")
-  return file && readContent(file.version, file.resume, "PDF")
+export function fromAttachment(
+  text: string,
+  noun: "PDF" | "Word file" = "PDF",
+  { documentCrc32 }: { documentCrc32?: number } = {},
+): ResumeContent | null {
+  const file = readFormat(text, noun)
+  if (!file || file.documentCrc32 !== documentCrc32) return null
+  return readContent(file.version, file.resume, noun)
 }
 
 /** A resume from a JSON file, with its name and tag in the list when the file has them. */
@@ -139,7 +147,7 @@ function everything(resume: Resume): Record<string, unknown> {
 }
 
 /** The format and version of a resumezip file, or null if the text isn't one. Told apart by how it starts, so a long file isn't read in full. */
-function readFormat(text: string, noun: FileNoun): { version: 1 | 2; resume?: unknown; resumes?: unknown } | null {
+function readFormat(text: string, noun: FileNoun): { version: 1 | 2; resume?: unknown; resumes?: unknown; documentCrc32?: unknown } | null {
   if (text.length > MAX_LENGTH) {
     if (recognized(text)) throw new TooLongError()
     return null

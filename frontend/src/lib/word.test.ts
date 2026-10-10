@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest"
 import { linesFromDocx } from "@/lib/import/lines"
+import { wordFileResume } from "@/lib/import/open"
 import { samples } from "@/lib/import/testRender"
+import { fromAttachment, toAttachment } from "@/lib/resumeFile"
 import { asSaved } from "@/lib/testResume"
 import { toWordFile } from "./word"
-import { storedFile, zipDirectory } from "./zip"
+import { storedFile, zip, zipDirectory } from "./zip"
 
 const talks = "11111111-1111-4111-8111-111111111111"
 
@@ -14,7 +16,15 @@ function partsOf(file: Uint8Array<ArrayBuffer>): Record<string, string> {
   return Object.fromEntries(entries.map((entry) => [entry.name, new TextDecoder().decode(storedFile(file.buffer, entry)!)]))
 }
 
+/** The resume a Word file brings back when it's opened, or null if it brings none back. */
+const reopened = (file: Uint8Array<ArrayBuffer>) => wordFileResume(file.buffer)
+
 describe("a Word file", () => {
+  test("brings back its resume as the PDF does, for every template's sample", () => {
+    for (const sample of samples)
+      expect(reopened(toWordFile(sample)), sample.selectedTemplate).toEqual(fromAttachment(toAttachment(sample)))
+  })
+
   test("says what each file in it is, and has each file it points to", () => {
     const parts = partsOf(toWordFile(samples[0]))
     const types = parts["[Content_Types].xml"]
@@ -101,5 +111,28 @@ describe("a Word file", () => {
     const file = toWordFile(asSaved({}))
     expect(partsOf(file)["word/document.xml"]).toContain("<w:body><w:p/><w:sectPr>")
     expect(await linesFromDocx(file.buffer)).toEqual([])
+    expect(reopened(file)).toEqual(fromAttachment(toAttachment(asSaved({}))))
+  })
+})
+
+describe("opening a Word file again", () => {
+  const file = toWordFile(samples[0])
+
+  test("brings its resume back when it's only been zipped again", () => {
+    expect(reopened(zip(partsOf(file)))).toEqual(reopened(file))
+  })
+
+  test("doesn't once another app has changed its text, though the resume is still in it", () => {
+    const parts = partsOf(file)
+    const name = samples[0].profileSection.fullName
+    expect(parts["word/document.xml"]).toContain(name)
+    parts["word/document.xml"] = parts["word/document.xml"].replace(name, `${name} Jr.`)
+    expect(reopened(zip(parts))).toBeNull()
+  })
+
+  test("doesn't when the resume isn't in it any more, as after Word saves it", () => {
+    const { "resumezip.json": attached, ...parts } = partsOf(file)
+    expect(attached).toBeTruthy()
+    expect(reopened(zip(parts))).toBeNull()
   })
 })
