@@ -14,9 +14,11 @@ const typingIn = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
 
 /**
- * The templates page's list: a search, chips to filter by style, and a card
- * for each template that starts a resume with it. `newId` is the template
- * marked as new, if one is.
+ * The templates page's list: one glass bar with a search, chips to filter by
+ * style and how many are shown, which stays under the header as the page
+ * scrolls; and a card for each template that starts a resume with it. Pointed
+ * at, a card's page brings up a glass plate with its details and Use. `newId`
+ * is the template marked as new, if one is.
  */
 export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
   const [search, setSearch] = useState("")
@@ -59,8 +61,11 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
 
   return (
     <div className="flex flex-col gap-12">
-      <div className="flex flex-col items-center gap-6">
-        <div className="relative w-full max-w-[520px]">
+      {/* Under the header as the page scrolls (its strip is 76px tall, 84px from md), with a
+          thicker frost than the search's own, for the pages passing under it. On wide screens
+          it's one line; narrower, the chips go under the search and scroll sideways. */}
+      <div className="search-field sticky top-[76px] z-20 flex flex-col gap-1 rounded-[28px] p-2 [--search-blur:16px] [--search-fill:linear-gradient(180deg,rgb(255_255_255/0.72),rgb(255_255_255/0.52))] md:top-[84px] xl:flex-row xl:items-center xl:gap-2 xl:rounded-full">
+        <div className="relative w-full shrink-0 xl:w-[300px]">
           <label htmlFor={searchId} className="sr-only">
             Search templates
           </label>
@@ -83,10 +88,10 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                 setSearch("")
               }
             }}
-            placeholder="Search by name, font or style"
+            placeholder="Search templates"
             autoComplete="off"
             spellCheck={false}
-            className="peer h-12 w-full rounded-full bg-sheet/80 pl-12 pr-14 text-[16px] text-ink shadow-[0_12px_32px_-20px_rgb(30_40_90/0.45)] ring-1 ring-inset ring-ink/15 transition-[box-shadow,background-color] placeholder:text-ink-2 hover:ring-ink/40 focus:bg-sheet focus:shadow-[0_0_0_4px_rgb(46_91_230/0.15)] focus:outline-none focus:ring-accent [&::-webkit-search-cancel-button]:hidden"
+            className="peer h-12 w-full rounded-full bg-white/55 pl-12 pr-14 text-[16px] text-ink ring-1 ring-inset ring-ink/[0.06] transition-[box-shadow,background-color] placeholder:text-ink-2 focus:bg-white/80 focus:outline-none focus:ring-ink/20 [&::-webkit-search-cancel-button]:hidden"
           />
           {/* Only a hint for a keyboard; it goes once the search has focus. */}
           <kbd
@@ -97,7 +102,13 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
           </kbd>
         </div>
 
-        <div role="group" aria-label="Filter by style" className="flex max-w-[860px] flex-wrap justify-center gap-2">
+        <span aria-hidden="true" className="mx-1 hidden h-7 w-px shrink-0 bg-ink/15 xl:block" />
+
+        <div
+          role="group"
+          aria-label="Filter by style"
+          className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {[undefined, ...TEMPLATE_TAGS].map((option) => {
             const pressed = tag === option
             return (
@@ -106,8 +117,8 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                 type="button"
                 aria-pressed={pressed}
                 onClick={() => pick(option)}
-                className={`h-10 rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow] ${
-                  pressed ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40"
+                className={`h-10 shrink-0 whitespace-nowrap rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color] ${
+                  pressed ? "bg-ink text-white" : "text-ink hover:bg-ink/[0.06]"
                 }`}
               >
                 {option ?? "All"}
@@ -115,6 +126,11 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
             )
           })}
         </div>
+
+        {/* The status below says it to screen readers, once the list changes. */}
+        <span aria-hidden="true" className="label-mono hidden shrink-0 whitespace-nowrap pr-4 text-ink-2 xl:block">
+          {shown.length} shown
+        </span>
       </div>
 
       <p role="status" className="sr-only">
@@ -122,10 +138,10 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
       </p>
 
       {shown.length > 0 ? (
-        <div className="grid grid-cols-1 gap-x-8 gap-y-12 border-t border-ink/15 pt-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((template) => (
             <StartWritingLink key={template.id} template={template.id} className="template-card group flex flex-col gap-4">
-              <div className="template-page relative aspect-[8.5/11] w-full bg-sheet">
+              <div className="template-page relative aspect-[8.5/11] w-full overflow-hidden bg-sheet">
                 <Image
                   src={template.image}
                   alt={`${template.name} template`}
@@ -136,13 +152,22 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                 {template.id === newId && (
                   <span className="label-mono absolute right-3 top-3 rounded-full bg-accent px-2.5 py-1 text-white">New</span>
                 )}
-                <span aria-hidden="true" className="template-use absolute inset-x-0 bottom-5 flex justify-center">
-                  <span className="inline-flex h-11 items-center gap-2 rounded-full bg-ink px-[18px] text-[15px] font-medium tracking-[-0.01em] text-white shadow-[0_12px_28px_-12px_rgb(17_19_24/0.6)]">
-                    Use this template <ArrowUpRight className="h-4 w-4" />
+                {/* Frosted glass over the foot of the page: what it's set in, and Use. */}
+                <span
+                  aria-hidden="true"
+                  className="template-use search-field absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-[18px] py-2.5 pl-4 pr-2.5 [--search-blur:14px] [--search-fill:linear-gradient(180deg,rgb(255_255_255/0.66),rgb(255_255_255/0.46))]"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate font-serif text-[21px] leading-none tracking-[-0.015em]">{template.name}</span>
+                    <span className="label-mono truncate text-ink-2">{[template.font, ...template.tags].join(" · ")}</span>
+                  </span>
+                  <span className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-[14px] font-medium tracking-[-0.01em] text-white shadow-[0_10px_24px_-12px_rgb(17_19_24/0.6)]">
+                    Use <ArrowUpRight className="h-4 w-4" />
                   </span>
                 </span>
               </div>
-              <div className="flex items-baseline justify-between gap-3 pt-1">
+              {/* On touch screens the plate is always up and says this already. */}
+              <div className="flex items-baseline justify-between gap-3 pt-1 [@media(hover:none)]:hidden">
                 <span className="font-serif text-[22px] leading-tight tracking-[-0.015em]">{template.name}</span>
                 <span className="label-mono text-right text-ink-2">{template.font}</span>
               </div>
@@ -150,7 +175,7 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-start gap-4 border-t border-ink/15 pt-10">
+        <div className="flex flex-col items-start gap-4 pt-4">
           <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No template matches that.</p>
           <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
             Try a template’s name, a font like Garamond or Lato, or one of the styles above.
