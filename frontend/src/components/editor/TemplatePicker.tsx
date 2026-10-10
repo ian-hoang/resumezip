@@ -4,6 +4,10 @@ import Image from "next/image"
 import { memo, useEffect, useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { TEMPLATES, templateById, type TemplateId } from "@/lib/templates"
+import { reducedMotion } from "./layout"
+
+// How long the gallery takes to fade away, in milliseconds (matches its closing classes below), as a dialog does.
+const CLOSE_MS = 260
 
 interface TemplatePickerProps {
   value: unknown
@@ -16,17 +20,39 @@ interface TemplatePickerProps {
  * anywhere in the header, and a panel under the button on wider screens.
  */
 function TemplatePicker({ value, onChange }: TemplatePickerProps) {
-  const [open, setOpen] = useState(false)
+  // On the page while open and while it fades away.
+  const [shown, setShown] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const timer = useRef(0)
+  const open = shown && !closing
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const current = templateById(value)
 
-  // Closing from inside the gallery puts the keyboard back on the button.
-  const close = () => {
-    setOpen(false)
-    buttonRef.current?.focus()
+  const show = () => {
+    window.clearTimeout(timer.current)
+    setClosing(false)
+    setShown(true)
   }
+  // It fades away, then goes. `refocus` puts the keyboard back on the button,
+  // as it starts to fade: made inert with the focus in it, Safari would drop it.
+  const hide = (refocus = false) => {
+    if (refocus) buttonRef.current?.focus()
+    window.clearTimeout(timer.current)
+    if (reducedMotion()) return setShown(false)
+    setClosing(true)
+    timer.current = window.setTimeout(() => {
+      setShown(false)
+      setClosing(false)
+    }, CLOSE_MS)
+  }
+  const latestHide = useRef(hide)
+  latestHide.current = hide
+  // Closing from inside the gallery puts the keyboard back on the button.
+  const close = () => hide(true)
+
+  useEffect(() => () => window.clearTimeout(timer.current), [])
 
   useEffect(() => {
     if (!open) return
@@ -39,13 +65,10 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
     page.style.overflow = "hidden"
     // A click elsewhere on the page closes it, and what was clicked keeps the focus.
     const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+      if (!rootRef.current?.contains(event.target as Node)) latestHide.current()
     }
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false)
-        buttonRef.current?.focus()
-      }
+      if (event.key === "Escape") latestHide.current(true)
       // Tab goes round the gallery's buttons until it closes, in every
       // browser (Safari's own Tab skips buttons unless set not to).
       if (event.key !== "Tab" || !panelRef.current) return
@@ -71,7 +94,7 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen((isOpen) => !isOpen)}
+        onClick={() => (open ? hide() : show())}
         className="inline-flex h-10 items-center gap-2.5 rounded-full bg-sheet/70 pl-4 pr-3.5 text-sm text-ink ring-1 ring-ink/15 transition-shadow hover:ring-ink/40 aria-expanded:ring-ink/40"
       >
         {/* Said, but not shown, on phones, so the button fits beside Download PDF. */}
@@ -80,13 +103,16 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
-      {open && (
+      {shown && (
         // Below 1024px this covers the screen, over a light blur of the page,
         // and a click around the gallery closes it. It fades in (`starting:` is
         // CSS @starting-style): the dialog grows into place, and the panel on
-        // wider screens drops into it.
+        // wider screens drops into it. It fades away the same way, as a dialog does.
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity duration-200 ease-out motion-reduce:transition-none starting:opacity-0 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+          inert={closing}
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity motion-reduce:transition-none starting:opacity-0 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${
+            closing ? "opacity-0 duration-[260ms] ease-in-out" : "duration-200 ease-out"
+          }`}
           onClick={(event) => {
             if (event.target === event.currentTarget) close()
           }}
@@ -96,7 +122,13 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Choose a template"
-            className="glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] duration-200 ease-out motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-6rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100"
+            className={`glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-6rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100 ${
+              // Glass under a fading parent stops blurring, which would show the page through it as
+              // it goes: it fades as a nearly solid sheet instead.
+              closing
+                ? "scale-[0.98] duration-[260ms] ease-in-out [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))] lg:-translate-y-1 lg:scale-100"
+                : "duration-200 ease-out"
+            }`}
           >
             <div className="flex items-center justify-between gap-4 pl-6 pr-4 pt-4">
               <span className="label-mono text-ink-2">Templates</span>
