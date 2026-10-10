@@ -39,3 +39,48 @@ describe("keepDrawn", () => {
     expect(revoke).toHaveBeenCalledWith("blob:gone")
   })
 })
+
+describe("a picture being drawn when its resume is deleted", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    vi.doUnmock("@/lib/typst/compile")
+    vi.doUnmock("@/lib/import/open")
+  })
+
+  test("isn't stored once it's drawn, and its URL is let go of", async () => {
+    // The compile waits until the test lets it finish; pdf.js and the canvas are stand-ins.
+    let finishCompile = () => {}
+    vi.doMock("@/lib/typst/compile", () => ({
+      compileResume: () => new Promise<Uint8Array>((resolve) => (finishCompile = () => resolve(new Uint8Array()))),
+      failureOf: () => "compiler",
+      printedOf: (resume: object) => resume,
+    }))
+    const page = { getViewport: () => ({ width: 100, height: 130 }), render: () => ({ promise: Promise.resolve() }) }
+    vi.doMock("@/lib/import/open", () => ({
+      loadPdfjs: async () => ({
+        getDocument: () => ({ promise: Promise.resolve({ getPage: async () => page }), destroy: async () => {} }),
+        PDFWorker: class {
+          destroyed = false
+          destroy() {}
+        },
+      }),
+    }))
+    vi.stubGlobal("document", {
+      createElement: () => ({ getContext: () => ({}), toBlob: (done: (blob: Blob) => void) => done(new Blob()) }),
+    })
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:drawn")
+    const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined)
+    vi.resetModules()
+    const pictures = await import("./pagePictures")
+
+    pictures.keepPictures(["ada"])
+    pictures.startPictures()
+    pictures.want("ada", { resumeTitle: "Ada" })
+    // Deleted while it's drawn.
+    pictures.keepPictures([])
+    finishCompile()
+    await vi.waitFor(() => expect(revoke).toHaveBeenCalledWith("blob:drawn"))
+    expect(pictures.pictureOf("ada")).toBeUndefined()
+  })
+})

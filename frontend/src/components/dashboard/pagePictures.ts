@@ -179,6 +179,27 @@ async function draw(resume: Resume): Promise<string> {
   }
 }
 
+/** The object URL of a resume's picture, once one is drawn. */
+export const pictureOf = (id: string): string | undefined => pictures.get(id)?.url
+
+/**
+ * Asks for a resume's picture, as one of its places comes on screen, and
+ * starts drawing it if it's missing or out of date. Returns what to call as
+ * that place goes.
+ */
+export function want(id: string, resume: Resume): () => void {
+  const place = wanted.get(id)
+  if (place) {
+    place.resume = resume
+    place.places++
+  } else wanted.set(id, { resume, places: 1 })
+  void drawWanted()
+  return () => {
+    const place = wanted.get(id)
+    if (place && --place.places === 0) wanted.delete(id)
+  }
+}
+
 /**
  * The picture of a resume's first page, once it's drawn, while `element`,
  * its place on the page, is on screen or about to be. Undefined until then.
@@ -186,7 +207,7 @@ async function draw(resume: Resume): Promise<string> {
 export function usePagePicture(id: string, resume: Resume, element: RefObject<HTMLElement | null>): string | undefined {
   const url = useSyncExternalStore(
     subscribe,
-    () => pictures.get(id)?.url,
+    () => pictureOf(id),
     () => undefined,
   )
   const [onScreen, setOnScreen] = useState(false)
@@ -197,19 +218,7 @@ export function usePagePicture(id: string, resume: Resume, element: RefObject<HT
     observer.observe(target)
     return () => observer.disconnect()
   }, [element])
-  useEffect(() => {
-    if (!onScreen) return
-    const place = wanted.get(id)
-    if (place) {
-      place.resume = resume
-      place.places++
-    } else wanted.set(id, { resume, places: 1 })
-    void drawWanted()
-    return () => {
-      const place = wanted.get(id)
-      if (place && --place.places === 0) wanted.delete(id)
-    }
-  }, [id, resume, onScreen])
+  useEffect(() => (onScreen ? want(id, resume) : undefined), [id, resume, onScreen])
   return url
 }
 
