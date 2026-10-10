@@ -402,17 +402,14 @@ test("a deleted resume leaves the tags' counts at once, while its page crumples 
   expect(errors).toEqual([])
 })
 
-test("a resume the checker finds nothing to fix in is stamped Ready, and one without an email isn't", async ({ page }) => {
+test("a page shows the resume itself, with nothing stamped over it, even one the checker finds nothing to fix in", async ({ page }) => {
   const errors = pageErrors(page)
   const sample = JSON.parse(readFileSync("src/lib/typst/preview-samples/jake.json", "utf8"))
-  await dashboardWith(page, [
-    { ...sample, id: "ready", resumeTitle: "Ready one" },
-    { ...sample, id: "unready", resumeTitle: "No email", profileSection: { ...sample.profileSection, email: "" } },
-  ])
-  const stamp =
-    /^Ready, as edited .+: the checker finds nothing you must fix in what's written\. Spelling and the PDF are checked in the editor\.$/
-  await expect(tile(page, "Ready one").getByText(stamp)).toBeAttached()
-  await expect(tile(page, "No email").getByText(stamp)).toHaveCount(0)
+  await dashboardWith(page, [{ ...sample, id: "ready", resumeTitle: "Finished" }])
+  await expect(tile(page, "Finished")).toBeVisible()
+  // A fixed wait: proving nothing lands on it once the page has settled.
+  await page.waitForTimeout(3_000)
+  await expect(tile(page, "Finished").getByText(/^Ready/)).toHaveCount(0)
   expect(await seriousAccessibilityProblems(page)).toEqual([])
   expect(errors).toEqual([])
 })

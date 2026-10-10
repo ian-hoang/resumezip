@@ -17,7 +17,6 @@ import SearchBar, { matches } from "@/components/dashboard/SearchBar"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import { focusShown, nameOf, useListActions } from "@/components/dashboard/useListActions"
 import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
-import { useReadiness } from "@/components/dashboard/useReadiness"
 import DownloadFailed from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
 import PageIntro from "@/components/site/PageIntro"
@@ -329,14 +328,12 @@ export default function DashboardPage() {
   }, [loaded, lastTemplate])
 
   // The pictures of the resumes' first pages use that compiler, and start a
-  // moment later, so opening a resume straight away isn't kept waiting. The
-  // checker's stamps come once the page has settled too.
+  // moment later, so opening a resume straight away isn't kept waiting.
   const total = kept.length
   const settledWithResumes = useSettled(loaded && total > 0)
   useEffect(() => {
     if (settledWithResumes && !savingData()) startPictures()
   }, [settledWithResumes])
-  const ready = useReadiness(kept, settledWithResumes)
 
   // Dropping a file anywhere on the page opens it.
   const openFileRef = useRef(openFile)
@@ -514,7 +511,6 @@ export default function DashboardPage() {
                 resumes={shown}
                 actions={actions}
                 onDelete={remove}
-                ready={ready}
                 leaving={leaving}
                 returning={returning}
                 onChooseFile={chooseFile}

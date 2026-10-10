@@ -225,34 +225,7 @@
     }
   }
 
-  /* The checker's stamp: blue ink, set down at an angle. Site only; it's never in a PDF. */
-  .ready-stamp {
-    position: absolute;
-    right: 9%;
-    bottom: 18%;
-    padding: 5px 9px 4px;
-    border: 2px solid currentColor;
-    border-radius: 4px;
-    box-shadow:
-      inset 0 0 0 2px rgb(255 255 255 / 0.9),
-      inset 0 0 0 3px currentColor;
-    background: rgb(255 255 255 / 0.82);
-    color: var(--color-accent);
-    font-family: var(--font-geist-mono), ui-monospace, monospace;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    rotate: -8deg;
-    pointer-events: none;
-  }
   @media (max-width: 39.99rem) {
-    .ready-stamp {
-      padding: 3px 6px 2px;
-      font-size: 9px;
-      letter-spacing: 0.12em;
-    }
     .tile-tag {
       bottom: 6px;
       left: 6px;
@@ -260,10 +233,6 @@
       font-size: 9px;
     }
   }
-  .ready-stamp.is-landing {
-    animation: stamp-land 560ms cubic-bezier(0.2, 0.9, 0.25, 1.15) 120ms both;
-  }
-
   /* Deleting from the pages: the page crumples into a ball and is gone (480 ms, LEAVING_MS in the page). */
   .tile.is-crumpling .tile-page {
     animation: crumple 480ms cubic-bezier(0.55, 0, 0.45, 1) forwards;
@@ -470,7 +439,6 @@
     transition: none;
   }
   .search-panel,
-  .ready-stamp.is-landing,
   .tile.is-crumpling .tile-page,
   .tile.is-crumpling .tile-page::after,
   .tile.is-returning .tile-page,
@@ -497,19 +465,6 @@
   from {
     opacity: 0;
     transform: translateY(-10px) scale(0.96, 0.82);
-  }
-}
-@keyframes stamp-land {
-  from {
-    opacity: 0;
-    scale: 1.9;
-  }
-  55% {
-    opacity: 1;
-    scale: 0.94;
-  }
-  to {
-    scale: 1;
   }
 }
 @keyframes crumple {

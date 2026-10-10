@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
 import type { ResumeWithId } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import MoreMenu from "./MoreMenu"
@@ -27,30 +26,10 @@ export function editedAgo(value: string | undefined, now = new Date()): string {
   return (date.getFullYear() === now.getFullYear() ? dayFormat : yearFormat).format(date)
 }
 
-// Stamps that have landed on this visit, so one already seen doesn't land again on the way back.
-const landed = new Set<string>()
-
-/** A blue stamp on a resume's page once the checker finds nothing it must fix (readyCheck.ts). */
-function ReadyStamp({ resume }: { resume: ResumeWithId }) {
-  const [lands] = useState(() => !landed.has(resume.id))
-  useEffect(() => void landed.add(resume.id), [resume.id])
-  const date = new Date(resume.updatedAt ?? "")
-  const day = Number.isNaN(date.getTime()) ? "" : dayFormat.format(date)
-  const meaning = `Ready${day ? `, as edited ${day}` : ""}: the checker finds nothing you must fix in what's written. Spelling and the PDF are checked in the editor.`
-  return (
-    <span title={meaning} className={`ready-stamp ${lands ? "is-landing" : ""}`}>
-      <span aria-hidden="true">Ready{day && ` · ${day}`}</span>
-      <span className="sr-only">{meaning}</span>
-    </span>
-  )
-}
-
 interface ResumeGridProps {
   resumes: ResumeWithId[]
   actions: ListActions
   onDelete: (resume: ResumeWithId) => void
-  /** The ids of the resumes the checker finds ready (useReadiness). */
-  ready: ReadonlySet<string>
   /** Resumes being deleted, which crumple up and go. */
   leaving: ReadonlySet<string>
   /** A resume just put back, which smooths out again. */
@@ -66,7 +45,7 @@ interface ResumeGridProps {
  * done with it; on touch screens that's always showing, and on phones it's
  * under the name. The last tile takes a file to open.
  */
-export default function ResumeGrid({ resumes, actions, onDelete, ready, leaving, returning, onChooseFile, dragging }: ResumeGridProps) {
+export default function ResumeGrid({ resumes, actions, onDelete, leaving, returning, onChooseFile, dragging }: ResumeGridProps) {
   const { downloading, downloaded, renaming, setRenaming, finishRenaming, copied, duplicate, download } = actions
   const now = new Date()
 
@@ -99,7 +78,6 @@ export default function ResumeGrid({ resumes, actions, onDelete, ready, leaving,
                   {tagName(resume.resumeTag)}
                 </span>
               )}
-              {ready.has(resume.id) && <ReadyStamp resume={resume} />}
             </div>
 
             {renaming?.id === resume.id ? (
