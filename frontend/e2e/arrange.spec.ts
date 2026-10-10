@@ -353,7 +353,7 @@ test("the checker skips what's left out, and opens the right entry after it", as
   })
 
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
@@ -376,7 +376,7 @@ test("the checker skips what's left out, and opens the right entry after it", as
   await expect.poll(() => printedOrder(page, ["search index", "serving costs"])).toEqual(["search index"])
   await expect(field.getByRole("list", { name: BULLETS })).toBeVisible()
   // And as Write mode hides the finding, and Check shows it again.
-  const modes = page.getByRole("tablist", { name: "Write or check" })
+  const modes = page.getByRole("tablist", { name: "Write, check or style" })
   await modes.getByRole("tab", { name: "Write" }).click()
   await modes.getByRole("tab", { name: /^Check/ }).click()
   await expect(panel.getByRole("button", { name: weak("Google") })).toBeVisible()

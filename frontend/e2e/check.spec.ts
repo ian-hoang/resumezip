@@ -64,7 +64,7 @@ async function watchArcs(score: Locator): Promise<() => Promise<number[]>> {
 test("the left bar switches between writing and checking, and remembers which", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write or check" })
+  const modes = page.getByRole("tablist", { name: "Write, check or style" })
   const write = modes.getByRole("tab", { name: "Write" })
   const check = modes.getByRole("tab", { name: /^Check/ })
   const sections = page.getByRole("navigation", { name: "Sections" })
@@ -87,11 +87,12 @@ test("the left bar switches between writing and checking, and remembers which", 
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible()
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
-  // Arrow keys, Home and End move between the two, as in any set of tabs.
+  // Arrow keys, Home and End move between the three, as in any set of tabs.
+  const style = modes.getByRole("tab", { name: "Style" })
   await check.focus()
   for (const [key, tab] of [
     ["ArrowLeft", write],
-    ["End", check],
+    ["End", style],
     ["Home", write],
     ["ArrowRight", check],
   ] as const) {
@@ -225,7 +226,7 @@ test("the score goes up as a problem is fixed", async ({ page }) => {
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
 
@@ -327,7 +328,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
 }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write or check" })
+  const modes = page.getByRole("tablist", { name: "Write, check or style" })
   const check = modes.getByRole("tab", { name: /^Check/ })
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
 
@@ -392,8 +393,8 @@ const lineWidths = (paragraph: Locator) =>
 
 test("the note under a field doesn't leave a word or two on a line of their own, and sets its sentences apart", async ({ page }) => {
   const errors = pageErrors(page)
-  // At this width the email's reason runs a word past one line.
-  await page.setViewportSize({ width: 1440, height: 900 })
+  // At this width the email's reason runs a word or two past one line.
+  await page.setViewportSize({ width: 480, height: 900 })
   await newResume(page)
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email").fill("ada@example")
@@ -404,7 +405,7 @@ test("the note under a field doesn't leave a word or two on a line of their own,
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   await page
@@ -429,7 +430,7 @@ test("the note under a field doesn't leave a word or two on a line of their own,
 test("with Check open, the PDF is read too: a bullet that runs three lines is flagged and opens", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const check = page.getByRole("tablist", { name: "Write or check" }).getByRole("tab", { name: /^Check/ })
+  const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
 
   await page.getByLabel("Full name").fill("Ada Lovelace")
@@ -479,7 +480,7 @@ test("when the preview can't be built, the checker says its PDF checks are left 
   await page.getByLabel("Company").fill("Analytical Engines")
 
   await page
-    .getByRole("tablist", { name: "Write or check" })
+    .getByRole("tablist", { name: "Write, check or style" })
     .getByRole("tab", { name: /^Check/ })
     .click()
   const panel = page.getByRole("tabpanel", { name: /^Check/ })
@@ -527,7 +528,7 @@ test.describe("on a phone", () => {
   test("the switch sits above the section tabs, and works with the Edit and Preview switch", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const modes = page.getByRole("tablist", { name: "Write or check" })
+    const modes = page.getByRole("tablist", { name: "Write, check or style" })
     const check = modes.getByRole("tab", { name: /^Check/ })
     const sections = page.getByRole("navigation", { name: "Sections" })
 
@@ -559,7 +560,7 @@ test.describe("on a phone", () => {
   test("tapping Check far down the form goes back up to what was found", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const check = page.getByRole("tablist", { name: "Write or check" }).getByRole("tab", { name: /^Check/ })
+    const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
 
     // The switch stays pinned while the form scrolls under it.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))

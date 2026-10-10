@@ -95,7 +95,7 @@ test("the template gallery works from the keyboard, and closes every way", async
   expect(errors).toEqual([])
 })
 
-// From 1280px the editor's Style panel lists the templates instead (e2e/editor-stage.spec.ts).
+// From 1280px the editor's Style tab lists the templates instead (e2e/editor-panels.spec.ts).
 test("on a wider screen the gallery opens under its button, and a click elsewhere closes it", async ({ page }) => {
   const errors = pageErrors(page)
   await startWriting(page, 1024, 768)

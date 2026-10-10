@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import { pageErrors, seriousAccessibilityProblems } from "./helpers"
+import { pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // After a PDF downloads, a card says what the file is for: it carries the
 // resume, to open here again (components/editor/DownloadedCard.tsx).
@@ -36,6 +36,16 @@ test("a card after a download says the PDF opens here again, without taking the 
   for (const name of ["Got it", "Check it first"]) await expect(card.getByRole("button", { name })).not.toBeFocused()
   await expect(page.getByRole("status").filter({ hasText: "PDF downloaded" })).toContainText("carries your resume")
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+
+  // It's under Download PDF, at the top right, in the window.
+  await settled(card)
+  // The button says Downloaded for a moment.
+  const pressedButton = page.getByRole("button", { name: /^Download(ed| PDF)$/ })
+  const [shown, pressed] = [(await card.boundingBox())!, (await pressedButton.boundingBox())!]
+  expect(shown.y).toBeGreaterThanOrEqual(pressed.y + pressed.height)
+  expect(shown.y).toBeLessThan(pressed.y + pressed.height + 40)
+  expect(shown.x + shown.width).toBeGreaterThanOrEqual(pressed.x + pressed.width)
+  expect(shown.x + shown.width).toBeLessThanOrEqual(1440)
 
   // Check it first opens Check, with the keyboard on it.
   await card.getByRole("button", { name: "Check it first" }).click()

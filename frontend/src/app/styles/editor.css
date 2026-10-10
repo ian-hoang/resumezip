@@ -1,60 +1,21 @@
 /* Styles for the editor (components under src/components/editor and its pages). */
 
 @layer components {
-  /* The stage: on wide screens (Tailwind's `xl`, WIDE_SCREEN in
-     components/editor/layout.ts) the live page is the canvas in the middle, on
-     a soft blue field, with the form and the style panel floating as glass on
-     either side. The editor's parts are placed from these sizes. */
+  /* On wide screens (Tailwind's `xl`, WIDE_SCREEN in components/editor/layout.ts)
+     the pages scroll between the preview's label and its zoom pill, under soft
+     edges rather than being cut off (components/editor/PdfPreview.tsx). */
   @media (min-width: 80rem) {
-    .editor-stage {
-      /* The left panel's width, and the right one's. Below 1440px the right
-         one folds behind a Style button, so the page keeps its room. */
-      --stage-left: 340px;
-      --stage-right: 0px;
-      /* Where the canvas starts and ends, from the window's edges. */
-      --stage-canvas-left: calc(24px + var(--stage-left) + 8px);
-      --stage-canvas-right: 8px;
-      /* How far from the canvas's right edge the zoom bar keeps clear, for the
-         Download PDF pill in the corner. */
-      --stage-dock-clear: 400px;
-      background-color: #eef1f8;
-      background-image:
-        /* Faint grain, so the field reads as paper rather than a flat fill. */
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.07 0 0 0 0 0.09 0 0 0 0 0.16 0.16 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
-        radial-gradient(55% 60% at 6% 2%, rgb(168 185 242 / 0.75), transparent 70%),
-        radial-gradient(45% 55% at 98% 10%, rgb(46 91 230 / 0.26), transparent 70%),
-        radial-gradient(65% 60% at 84% 106%, rgb(46 91 230 / 0.38), transparent 72%),
-        radial-gradient(55% 55% at -6% 104%, rgb(168 185 242 / 0.8), transparent 70%),
-        radial-gradient(45% 45% at 50% 46%, rgb(255 255 255 / 0.6), transparent 80%);
-    }
-
-    /* The form keeps at least half the left panel; the section list above it
-       scrolls in what's left. In Check mode the findings get more of it. */
-    .stage-panel > main {
-      min-height: 50%;
-    }
-    .stage-panel:has(> aside[data-mode="check"]) > main {
-      min-height: 34%;
-    }
-
-    /* The pages scroll under soft edges rather than being cut off above the dock. */
-    .stage-canvas {
-      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 28px), transparent);
-      mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 28px), transparent);
-    }
-
-    /* Under the page, and clear of the Download PDF pill where the canvas runs under it. */
-    .stage-zoom {
-      left: min(50%, calc(100% - var(--stage-dock-clear) - 130px));
+    .preview-canvas {
+      -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 20px), transparent);
+      mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 20px), transparent);
     }
   }
 
-  @media (min-width: 90rem) {
-    .editor-stage {
-      --stage-left: 360px;
-      --stage-right: 280px;
-      --stage-canvas-right: calc(24px + var(--stage-right) + 8px);
-      --stage-dock-clear: 100px;
+  /* Narrower, Style takes the form's place: the left bar shows the templates
+     and Fine-tune where the form would be (components/editor/LeftBar.tsx). */
+  @media (width < 80rem) {
+    aside[data-mode="style"] ~ .editor-form {
+      display: none;
     }
   }
 

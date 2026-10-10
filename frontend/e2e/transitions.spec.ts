@@ -49,7 +49,7 @@ async function newResume(page: Page) {
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Reorder Experience" })).toBeVisible()
 }
 
-test("a section, Write or Check, the Style panel and the template gallery fade in as they're chosen", async ({ page }) => {
+test("a section, Write, Check or Style, and the template gallery fade in as they're chosen", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
   const sections = page.getByRole("navigation", { name: "Sections" })
@@ -62,17 +62,17 @@ test("a section, Write or Check, the Style panel and the template gallery fade i
   await expect(page.getByRole("heading", { name: "Experience" })).toBeVisible()
 
   const check = await fadingIn(
-    page.getByRole("tablist", { name: "Write or check" }).getByRole("tab", { name: /^Check/ }),
+    page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ }),
     page.getByRole("heading", { name: "Resume score" }),
   )
   expect(check.some((text) => text.includes("Resume score"))).toBe(true)
   const write = await fadingIn(page.getByRole("tab", { name: "Write" }), sections)
   expect(write.some((text) => text.includes("Profile"))).toBe(true)
 
-  // On the stage, below 1440px, the Style panel opens from its button.
-  const style = await fadingIn(page.getByRole("button", { name: /^Style/ }), page.getByRole("region", { name: "Style" }))
+  // The Style tab shows the templates and Fine-tune in the left panel.
+  const style = await fadingIn(page.getByRole("tab", { name: "Style" }), page.getByRole("region", { name: "Style" }))
   expect(style.some((text) => text.includes("Template"))).toBe(true)
-  await page.getByRole("button", { name: /^Style/ }).click()
+  await page.getByRole("tab", { name: "Write" }).click()
   await expect(page.getByRole("region", { name: "Style" })).toBeHidden()
 
   // Let the preview finish, so the compiler's download isn't cut off as the page closes.
@@ -116,7 +116,7 @@ test.describe("with less motion", () => {
       ),
     ).toEqual([])
     expect(await fadingIn(page.getByRole("tab", { name: /^Check/ }), page.getByRole("heading", { name: "Resume score" }))).toEqual([])
-    expect(await fadingIn(page.getByRole("button", { name: /^Style/ }), page.getByRole("region", { name: "Style" }))).toEqual([])
+    expect(await fadingIn(page.getByRole("tab", { name: "Style" }), page.getByRole("region", { name: "Style" }))).toEqual([])
     await expect(page.getByRole("region", { name: "Live preview" }).locator(".react-pdf__Page__canvas").first()).toBeVisible()
     await page.setViewportSize({ width: 1024, height: 768 })
     expect(

@@ -229,7 +229,7 @@ function ScoreHeader({
       </div>
       <p className="text-[13px] leading-relaxed text-ink-2">How well this resume follows the checks below.</p>
       {mustFix && (
-        <p className="bg-hatch flex items-start gap-2 rounded-[4px] border border-rule bg-sheet px-3 py-2.5 text-[13px] leading-snug text-ink">
+        <p className="bg-hatch flex items-start gap-2 rounded-panel border border-rule bg-sheet px-4 py-3 text-[13px] leading-snug text-ink">
           <Lock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {/* The count follows the cap (`shownFixes`); the wording without one is only a fallback. */}
           {fixes > 0
@@ -364,7 +364,7 @@ function CategoryRow({
 
   return (
     // Clipped to its corners, so its buttons' focus outlines are drawn inside them.
-    <section aria-labelledby={`${id}-name`} className="flex flex-col overflow-hidden rounded-[6px] border border-rule bg-sheet">
+    <section aria-labelledby={`${id}-name`} className="flex flex-col overflow-hidden rounded-panel bg-sheet ring-1 ring-ink/[0.08]">
       <h2>
         <button
           type="button"
@@ -372,9 +372,9 @@ function CategoryRow({
           aria-controls={`${id}-body`}
           aria-label={`${category.name}, ${status}`}
           onClick={() => setOpen(!open)}
-          className="flex w-full items-start gap-2.5 px-3 pb-2 pt-3 text-left transition-colors hover:bg-ink/[0.02] focus-visible:outline-offset-[-2px]"
+          className="flex w-full items-start gap-2.5 px-3.5 pb-2 pt-3.5 text-left transition-colors hover:bg-ink/[0.02] focus-visible:outline-offset-[-2px]"
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] bg-ink/[0.05] text-ink" aria-hidden="true">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink/[0.05] text-ink" aria-hidden="true">
             {checking ? (
               <LoaderCircle className="h-4 w-4 animate-spin text-ink-2 motion-reduce:animate-none" />
             ) : (
@@ -402,7 +402,7 @@ function CategoryRow({
           />
         </button>
       </h2>
-      <div className="pb-3 pl-[50px] pr-3">
+      <div className="pb-3.5 pl-[52px] pr-3.5">
         <Points name={category.name} score={score} checking={Boolean(checking)} />
       </div>
 
@@ -418,7 +418,7 @@ function CategoryRow({
       >
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col border-t border-rule">
-            <p className="px-3 pt-2.5 text-[12px] leading-snug text-ink-2">{category.about}</p>
+            <p className="px-3.5 pt-2.5 text-[12px] leading-snug text-ink-2">{category.about}</p>
             {fixes.length > 0 && (
               <Group title={`To fix · ${fixes.length}`}>
                 {fixes.map((finding, index) => (
@@ -475,7 +475,7 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   const id = useId()
   return (
     <section aria-labelledby={id} className="flex flex-col">
-      <h3 id={id} className="label-mono px-3 pb-1.5 pt-3 text-ink-2">
+      <h3 id={id} className="label-mono px-3.5 pb-1.5 pt-3 text-ink-2">
         {title}
       </h3>
       <ul className="flex flex-col">{children}</ul>
@@ -499,14 +499,14 @@ function FindingItem({ finding, view }: { finding: Finding; view: ResumeView }) 
       <button
         type="button"
         onClick={() => open(finding)}
-        className="flex flex-col items-start gap-1 px-3 py-2.5 text-left focus-visible:outline-offset-[-2px]"
+        className="flex flex-col items-start gap-1 px-3.5 py-2.5 text-left focus-visible:outline-offset-[-2px]"
       >
         <span className="w-full truncate font-mono text-[11px] text-ink-2">{describePlace(view, finding.place)}</span>
         <span className="text-sm leading-snug text-ink">{finding.message}</span>
         {finding.advisory && <span className="text-[11px] text-ink-2">Optional advice · no score impact</span>}
       </button>
       {(finding.level === "look" || finding.rule === TYPO_RULE) && (
-        <div className="-mt-0.5 flex gap-1.5 px-3 pb-2.5">
+        <div className="-mt-0.5 flex gap-1.5 px-3.5 pb-3">
           {finding.rule === TYPO_RULE && (
             <button type="button" onClick={() => addWord(finding.text)} aria-label={`Add word “${finding.text}”`} className={action}>
               Add word
@@ -527,7 +527,7 @@ function FindingItem({ finding, view }: { finding: Finding; view: ResumeView }) 
 function Folded({ summary, children }: { summary: string; children: React.ReactNode }) {
   return (
     <details>
-      <summary className="label-mono cursor-pointer select-none rounded-[4px] px-2 py-1 text-ink-2 transition-colors hover:text-ink">
+      <summary className="label-mono cursor-pointer select-none rounded-full px-2 py-1 text-ink-2 transition-colors hover:text-ink">
         {summary}
       </summary>
       <div className="pt-1">{children}</div>

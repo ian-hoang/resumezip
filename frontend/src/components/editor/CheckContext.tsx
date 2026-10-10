@@ -13,8 +13,10 @@ import { printedOf } from "@/lib/typst/compile"
 import type { ActiveSection } from "./SectionNav"
 import { usePausedResume, useResumeCheck } from "./useResumeCheck"
 
-/** What the left bar shows: the sections to write in, or what the checker found. */
-export type Mode = "write" | "check"
+/** What the left bar shows: the sections to write in, what the checker found, or the template and Fine-tune. */
+export type Mode = "write" | "check" | "style"
+
+const MODES: readonly Mode[] = ["write", "check", "style"]
 
 // The last mode is remembered for this visit, for every resume, so a reload
 // keeps it. A later visit opens in Write, with the sections in view.
@@ -22,7 +24,8 @@ const MODE_KEY = "editor-mode"
 
 function savedMode(): Mode {
   try {
-    return window.sessionStorage.getItem(MODE_KEY) === "check" ? "check" : "write"
+    const saved = window.sessionStorage.getItem(MODE_KEY)
+    return MODES.find((mode) => mode === saved) ?? "write"
   } catch {
     return "write"
   }
