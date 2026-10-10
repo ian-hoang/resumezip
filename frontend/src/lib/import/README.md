@@ -15,6 +15,10 @@ PDF or Word file. It all happens in the browser; nothing is uploaded.
   Attachments with flexible sections use version 2; files with only the original
   sections keep version 1. Recognized damaged data or a newer version stops
   opening with a useful message instead of silently guessing from its PDF text.
+- **resumezip Word files** carry the same attachment inside the .docx
+  (`src/lib/word.ts`), with the CRC-32 of the text it was written with, and
+  open the same way while that text is unchanged. Word drops it when it saves
+  the file; one saved or changed by another app is read like any Word file.
 - **Any other file** is read by `lines.ts` into lines of text with their position,
   size, style and links, then sorted into the editor's fields by `parse.ts`. The
   review dialog (`components/dashboard/ImportReview.tsx`) shows the result next to
@@ -86,7 +90,8 @@ Scanned PDFs have no text and can't be read.
 ## Testing changes
 
 `npm test` checks the parser field by field against resumes made from known
-data: every resumezip template (`roundtrip.test.ts`), and a test set of made-up
+data: every resumezip template (`roundtrip.test.ts`) and its Word file
+(`wordRoundtrip.test.ts`), and a test set of made-up
 people printed the way people really make resumes, with LaTeX, a word processor
 and browser-based builders (`corpus.test.ts`, see
 [`corpus/README.md`](corpus/README.md)). Each lists the fields it doesn't read
