@@ -15,7 +15,7 @@ import {
 } from "@/components/editor/sections"
 import type { CompleteContent, ResumeContent } from "@/lib/resume"
 import { extraKey, resolveSections, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
-import { SOFT_HYPHEN, type Line, type Part } from "./lines"
+import { SOFT_HYPHEN, toLine, type Line, type Part, type Run } from "./lines"
 
 /** An entry's values, keyed by its section's field names. */
 type Fields = Partial<Record<FieldKey, string>>
@@ -1738,7 +1738,9 @@ function bodySize(lines: Line[]): number {
 
 /**
  * Some layouts put each section's heading in a margin column, on the same
- * line as the section's first entry. Splits such lines in two.
+ * line as the section's first entry, set against either side of the margin.
+ * A heading too long for the margin wraps onto the lines below. Splits each
+ * heading off its lines.
  */
 export type SourceLine = Line & { sourceIndex: number }
 
@@ -1749,50 +1751,75 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
     lookupHeading(line.parts[0].text) !== undefined &&
     words(line.parts[0].text).length <= 4 &&
     line.parts[1].x - line.parts[0].x >= 40
-  // Only when the margin holds nothing but headings: a column of dates or
-  // skill categories ("Languages", "Tools") can look the same.
   const sides = lines.filter(candidate)
   if (sides.length < 2) return lines
-  const margin = sides[0].parts[0].x
-  const others = lines.filter((line) => line.parts.length > 1 && Math.abs(line.parts[0].x - margin) < 3 && !candidate(line))
-  if (others.length > 0 || sides.some((line) => Math.abs(line.parts[0].x - margin) >= 3)) return lines
+  // The text beside every heading starts at the same place.
+  const column = sides[0].parts[1].x
+  if (sides.some((line) => Math.abs(line.parts[1].x - column) >= 3)) return lines
+  const margin = Math.min(...sides.map((line) => line.parts[0].x))
+  const inMargin = (line: Line) => !line.bullet && line.parts[0].x >= margin - 3 && line.parts[0].x < column - 3
+  const beside = (line: Line) => line.parts.length > 1 && Math.abs(line.parts[1].x - column) < 3
+  // The rest of a wrapped heading: in the margin on the next line down, with
+  // the section's text beside it or nothing.
+  const baseline = (line: Line) => line.box![3] - 0.3 * line.size
+  const wrapsOnto = (above: Line, below: Line) =>
+    above.box !== undefined &&
+    below.box !== undefined &&
+    above.page === below.page &&
+    baseline(below) - baseline(above) <= 1.6 * Math.max(above.size, below.size) &&
+    inMargin(below) &&
+    (below.parts.length === 1 ? below.box[2] <= column - 3 : beside(below))
 
-  return lines.flatMap((line) => {
-    if (!candidate(line)) return [line]
-    const [first, ...rest] = line.parts
-    const restyle = (parts: Part[]) => {
-      const chars = (bold: boolean | null, italic: boolean | null) =>
-        parts.reduce(
-          (sum, part) =>
-            sum +
-            part.runs
-              .filter((run) => (bold === null || run.bold === bold) && (italic === null || run.italic === italic))
-              .reduce((n, run) => n + run.end - run.start, 0),
-          0,
-        )
-      const total = chars(null, null) || 1
-      return { bold: chars(true, null) / total > 0.6, italic: chars(null, true) / total > 0.6 }
+  // Only when the margin holds nothing but headings: a column of dates or
+  // skill categories ("Languages", "Tools") can look the same.
+  const headings = new Map<number, { text: string; count: number }>()
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].parts.length < 2 || !inMargin(lines[i])) continue
+    if (!beside(lines[i])) return lines
+    // The most lines, up to three, whose margin text together names a heading.
+    let found: { text: string; count: number } | null = null
+    let text = lines[i].parts[0].text
+    for (let count = 1; count <= 3; count++) {
+      if (lookupHeading(text) !== undefined) found = { text, count }
+      const next = lines[i + count]
+      if (!next || !wrapsOnto(lines[i + count - 1], next)) break
+      text = `${text} ${next.parts[0].text}`
     }
-    const box = line.box
-    const heading: SourceLine = {
-      ...line,
-      parts: [first],
-      text: first.text,
-      links: [],
-      ...restyle([first]),
-      box: box && [box[0], box[1], rest[0].x - 4, box[3]],
+    if (!found) return lines
+    headings.set(i, found)
+    i += found.count - 1
+  }
+
+  const split: SourceLine[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const heading = headings.get(i)
+    if (!heading) {
+      split.push(lines[i])
+      continue
     }
-    const entry: SourceLine = {
-      ...line,
-      parts: rest,
-      text: rest.map((part) => part.text).join(" "),
-      left: rest[0].x,
-      x: rest[0].x,
-      ...restyle(rest),
-      box: box && [rest[0].x, box[1], box[2], box[3]],
+    const wrapped = lines.slice(i, i + heading.count)
+    const first = wrapped[0]
+    const last = wrapped[wrapped.length - 1]
+    // The heading's words with their styles, then what's beside each of its lines.
+    const runs: Run[] = []
+    let offset = 0
+    for (const line of wrapped) {
+      runs.push(...line.parts[0].runs.map((run) => ({ ...run, start: run.start + offset, end: run.end + offset })))
+      offset += line.parts[0].text.length + 1
     }
-    return [heading, entry]
-  })
+    const box = first.box && last.box && ([first.box[0], first.box[1], column - 4, last.box[3]] as Line["box"])
+    const title = toLine([{ text: heading.text, x: first.parts[0].x, runs }], first.size, [], { page: first.page, box })
+    if (title) split.push({ ...title, sourceIndex: first.sourceIndex })
+    for (const line of wrapped) {
+      const rest = line.parts.slice(1)
+      const entry =
+        rest.length > 0 &&
+        toLine(rest, line.size, line.links, { page: line.page, box: line.box && ([rest[0].x, ...line.box.slice(1)] as Line["box"]) })
+      if (entry) split.push({ ...entry, sourceIndex: line.sourceIndex })
+    }
+    i += heading.count - 1
+  }
+  return split
 }
 
 /** "2", "Page 2", "2 of 3", "- 2 -". */

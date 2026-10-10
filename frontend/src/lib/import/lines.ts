@@ -108,7 +108,8 @@ export function cleanLink(url: string): string {
   return remote ? remote[1] : url
 }
 
-function toLine(parts: Part[], size: number, links: string[], extra: Partial<Line> = {}): Line | null {
+/** A line from its parts, with any bullet it starts with taken off. */
+export function toLine(parts: Part[], size: number, links: string[], extra: Partial<Line> = {}): Line | null {
   if (parts.length === 0) return null
   const left = parts[0].x
   let x = left

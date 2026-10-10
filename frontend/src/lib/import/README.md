@@ -85,8 +85,9 @@ text of sections a person added once it has matched them. A summary reads as
 one there too, so the checker doesn't count it as text it can't place.
 
 It handles single and two-column layouts (a narrow column too, when the file
-holds it whole before or after the other), headings in a margin column, dates in
-a column of their own, and Word files with or without heading styles and tables.
+holds it whole before or after the other), headings in a margin column (set
+against either side of it, and wrapped onto the lines below), dates in a column
+of their own, and Word files with or without heading styles and tables.
 Scanned PDFs have no text and can't be read.
 
 ## Testing changes

@@ -193,6 +193,57 @@ describe("publications", () => {
   })
 })
 
+describe("headings in a margin column", () => {
+  const text = (value: string, x: number, baseline: number, { size = 10, bold = false, italic = false } = {}) => ({
+    text: value,
+    x,
+    right: x + value.length * size * 0.5,
+    baseline,
+    size,
+    bold,
+    italic,
+  })
+  // Each heading ends where the text beside it starts, and one too long for
+  // the margin wraps onto the next line, a little higher than the text there.
+  const heading = (value: string, baseline: number) => text(value, 110 - value.length * 4, baseline, { size: 8 })
+  const page = {
+    width: 612,
+    height: 792,
+    links: [],
+    items: [
+      text("Dana Cole", 125, 740, { size: 22 }),
+      text("dana@example.com", 125, 722, { size: 9 }),
+      heading("EXPERIENCE", 690),
+      text("Acme Corp", 125, 690, { bold: true }),
+      text("2021 – Present", 500, 690),
+      text("Data Analyst", 125, 678, { italic: true }),
+      text("– Built the weekly sales report used by 40 managers", 125, 666),
+      heading("SKILLS", 640),
+      text("Languages: Python, SQL", 125, 640),
+      heading("AWARDS &", 610),
+      text("Dean's List, State University", 125, 610),
+      text("2019", 540, 610),
+      heading("CERTIFICATIONS", 600.5),
+      text("Tableau Desktop Specialist, Tableau", 125, 598),
+      text("2022", 540, 598),
+    ],
+  }
+
+  test("set against the text, and wrapped onto two lines, still start their sections", () => {
+    const parsed = parseResume(linesFromPages([page]))
+    const resume = toResumeContent(parsed)
+    expect(parsed.unplaced).toEqual([])
+    expect(resume.workExperienceSection).toMatchObject([
+      { companyName: "Acme Corp", workRole: "Data Analyst", workDescription: "• Built the weekly sales report used by 40 managers" },
+    ])
+    expect(resume.skillsSection).toMatchObject([{ skillName: "Languages", skillDetails: "Python, SQL" }])
+    expect(resume.awardsSection).toMatchObject([
+      { awardName: "Dean's List", awardOrg: "State University", awardDate: "2019" },
+      { awardName: "Tableau Desktop Specialist", awardOrg: "Tableau", awardDate: "2022" },
+    ])
+  })
+})
+
 describe("a heading it doesn't know by name", () => {
   const heading = (text: string) => line([[text, 36]], { size: 12, bold: true })
   const school = [line([["State University", 36], ["2016 – 2020", 480]], { bold: true }), line([["Bachelor of Science in Nursing", 36]], { italic: true })]
