@@ -9,7 +9,7 @@ import { describe, expect, test } from "vitest"
 import { readPdf, type PdfPage } from "@/lib/import/lines"
 import { readBack, render, samples } from "@/lib/import/testRender"
 import { TEMPLATES } from "@/lib/templates"
-import { fitOnePage, pageCount, type Tune } from "@/lib/tune"
+import { fitOnePage, pageCount, tighterSteps, type Fitted, type Tune } from "@/lib/tune"
 import { toTemplateData } from "./resumeData"
 
 const ids = TEMPLATES.map((template) => template.id)
@@ -41,7 +41,7 @@ const depth = ([page]: PdfPage[]) => page.height - Math.min(...page.items.map((i
 
 describe("the template data", () => {
   test("has every setting, the template's own without a tune", () => {
-    expect(toTemplateData({}).tune).toEqual({ size: 1, margin: 1, leading: 1, paper: "", onePage: false })
+    expect(toTemplateData({}).tune).toEqual({ size: 1, margin: 1, leading: 1, gap: 1, paper: "", onePage: false })
   })
 
   test("has the resume's tune, read defensively", () => {
@@ -49,6 +49,7 @@ describe("the template data", () => {
       size: 1.1,
       margin: 1,
       leading: 1,
+      gap: 1,
       paper: "a4",
       onePage: true,
     })
@@ -75,14 +76,22 @@ describe.each(ids)("%s", (id) => {
     expect(depth(tighter)).toBeLessThan(depth(plain))
   })
 
+  test("spaces sections out by the space between sections, without changing the text", async () => {
+    const [plain, wider, tighter] = await Promise.all([tuned(id), tuned(id, { gap: 1.7 }), tuned(id, { gap: 0.3 })])
+    expect(wider.length > plain.length || depth(wider) > depth(plain)).toBe(true)
+    expect(depth(tighter)).toBeLessThan(depth(plain))
+    // Only the space between sections: the text is the same size.
+    expect(body(tighter)).toBe(body(plain))
+  })
+
   test("prints on A4", async () => {
     const [page] = await tuned(id, { paper: "a4" })
     expect([page.width, page.height].map(Math.round)).toEqual([595, 842])
   })
 
   test.each<[string, Tune]>([
-    ["at the largest", { size: 1.15, margin: 1.4, leading: 1.3, paper: "a4" }],
-    ["at the smallest", { size: 0.85, margin: 0.6, leading: 0.8 }],
+    ["at the largest", { size: 1.15, margin: 1.4, leading: 1.3, gap: 1.7, paper: "a4" }],
+    ["at the smallest", { size: 0.85, margin: 0.6, leading: 0.8, gap: 0.3 }],
   ])("prints all its text, in reading order, tuned %s", async (_, tune) => {
     // What hiring software reads: the characters in order, wherever lines
     // wrap, and wherever a word is hyphenated across two.
@@ -97,30 +106,41 @@ describe.each(ids)("%s", (id) => {
 })
 
 describe("keeping to one page", () => {
-  test.each(["jake", "resumeworded"])("fits a resume two pages long in %s, at the largest size that does", async (id) => {
+  const own: Fitted = { size: 1, margin: 1, leading: 1, gap: 1 }
+  const printAt = (resume: Record<string, unknown>) => async (fitted: Fitted) => {
+    const pdf = await render({ ...resume, tune: { ...fitted, onePage: true } })
+    return { pages: pageCount(pdf), printed: pdf }
+  }
+
+  test.each(["jake", "resumeworded"])("fits a resume two pages long in %s, by the loosest settings that do", async (id) => {
     const resume = { ...twoPages, selectedTemplate: id }
     expect((await readBack(await render(resume))).pages).toHaveLength(2)
 
-    const printAt = async (size: number) => {
-      const pdf = await render({ ...resume, tune: { size, onePage: true } })
-      return { pages: pageCount(pdf), printed: pdf }
-    }
-    const { fit, printed } = await fitOnePage(1, printAt)
+    const { fit, printed } = await fitOnePage(own, printAt(resume))
     expect(fit.fits).toBe(true)
-    expect(fit.size).toBeLessThan(1)
     expect((await readBack(printed)).pages).toHaveLength(1)
-    // A step larger runs over.
-    expect((await printAt(fit.size + 0.025)).pages).toBe(2)
+    // The spacing gave way before the text did.
+    expect(fit.gap).toBeLessThan(1)
+    // A step looser, in the order it tightens in, runs over.
+    const steps = tighterSteps(own)
+    const index = steps.findIndex(
+      (step) => step.size === fit.size && step.margin === fit.margin && step.leading === fit.leading && step.gap === fit.gap,
+    )
+    expect((await printAt(resume)(steps[index - 1] ?? own)).pages).toBe(2)
   })
 
-  test("says when even the smallest size runs over", async () => {
+  test("keeps the text at the template's size when tighter spacing is enough", async () => {
+    // A resume a few lines over: with the gaps squeezed, it fits.
+    const resume = { ...twoPages, selectedTemplate: "jake" }
+    const { fit } = await fitOnePage(own, printAt(resume))
+    expect(fit.size).toBe(1)
+  })
+
+  test("says when even the tightest settings run over", async () => {
     const work = Array.from({ length: 12 }, (_, i) => ({ ...twoPages.workExperienceSection[0], id: i + 1 }))
     const resume = { ...twoPages, selectedTemplate: "jake", workExperienceSection: work }
-    const { fit, printed } = await fitOnePage(1, async (size) => {
-      const pdf = await render({ ...resume, tune: { size, onePage: true } })
-      return { pages: pageCount(pdf), printed: pdf }
-    })
-    expect(fit).toEqual({ size: 0.85, fits: false })
+    const { fit, printed } = await fitOnePage(own, printAt(resume))
+    expect(fit).toEqual({ size: 0.85, margin: 0.6, leading: 0.8, gap: 0.3, fits: false })
     expect((await readBack(printed)).pages.length).toBeGreaterThan(1)
   })
 

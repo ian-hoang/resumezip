@@ -37,8 +37,9 @@ server to build a PDF.
   only downloaded after the first PDF is made.
 - `typst.worker.ts` loads the WebAssembly compiler and the templates once, and
   compiles each request. A resume to keep to one page that runs over is
-  printed again with smaller text, a step at a time down to the smallest
-  (`fitOnePage` in `src/lib/tune.ts`), counting the pages each time; previews
+  printed again a step tighter at a time (`fitOnePage` in `src/lib/tune.ts`):
+  the space between sections first, then margins and line spacing, and the
+  text only after those are at their floors. It counts the pages each time; previews
   and downloads both do it, so they match. What it took comes back with the
   PDF, and `previewFit` tells the Fine-tune panel about the preview's. Before compiling, it downloads the fonts that resume
   needs (see [Fonts](#fonts)), alongside the compiler the first time. Downloads also attach a copy of the resume to the PDF
@@ -57,8 +58,9 @@ server to build a PDF.
 
 1. Add `templates/<id>.typ`, importing `common.typ` for the data and helpers.
    Set its page through `page-paper` and `page-margin`, its text sizes and the
-   spaces around headings and entries through `sized`, and the spaces between
-   lines through `spaced`, so Fine-tune can change them; add its own text
+   spaces around headings and entries through `sized`, the spaces between
+   lines through `spaced`, and the space above each section's heading through
+   `gapped`, so Fine-tune can change them; add its own text
    size, side margins and paper to `TEMPLATE_SETTINGS` in `src/lib/tune.ts`.
 2. Import it in `typst.worker.ts` and add it to `SOURCES`.
 3. Add it to `TEMPLATES` in `src/lib/templates.ts` with a picture of its first

@@ -321,7 +321,7 @@ test("changing Fine-tune's settings changes what a resume prints", () => {
 
 describe("what keeping the preview to one page took", () => {
   const onePage = (name: string) => printedOf({ profileSection: { fullName: name }, tune: { size: 1.1, onePage: true } })
-  const fitted = { size: 1.05, fits: true }
+  const fitted = { size: 1.1, margin: 1, leading: 1, gap: 0.6, fits: true }
 
   test("is told once the preview that did it is ready, with what it printed", async () => {
     FakeWorker.answer = ({ id, data }) => (data.tune.onePage ? { id, pdf: PDF, fit: fitted } : { id, pdf: PDF })
@@ -332,7 +332,11 @@ describe("what keeping the preview to one page took", () => {
     const preview = track(compilePreview(onePage("Ada")))
     await vi.advanceTimersByTimeAsync(10)
     expect(preview.value).toMatch(/^blob:/)
-    expect(previewFit()).toEqual({ template: "jake", tune: { size: 1.1, margin: 1, leading: 1, paper: "", onePage: true }, fit: fitted })
+    expect(previewFit()).toEqual({
+      template: "jake",
+      tune: { size: 1.1, margin: 1, leading: 1, gap: 1, paper: "", onePage: true },
+      fit: fitted,
+    })
     expect(heard).toHaveBeenCalledTimes(1)
 
     // A preview that isn't kept to one page has nothing to tell.

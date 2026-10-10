@@ -5,7 +5,7 @@ import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myr
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
 import { ATTACHMENT_NAME } from "@/lib/resumeFile"
 import { fontsOf, templateById } from "@/lib/templates"
-import { fitOnePage, pageCount } from "@/lib/tune"
+import { fitOnePage, pageCount, type Fitted } from "@/lib/tune"
 import accent from "./templates/accent.typ"
 import common from "./templates/common.typ"
 import deedy from "./templates/deedy.typ"
@@ -226,13 +226,13 @@ async function compile({ id, template, data, attachment }: CompileRequest) {
     // the template or the text needs ones that aren't here yet.
     ;[typst] = await Promise.all([getCompiler(), fetchFontsOf(template, json)])
     const compiler = typst
-    // Prints the resume with its text at `size` times the template's, and counts the pages.
-    const print = async (size: number) => {
+    // Prints the resume at `fitted` times the template's own sizes and spacing, and counts the pages.
+    const print = async (fitted: Fitted) => {
       // Compiling comes next.
       reportProgress(true)
       // Nothing is awaited between writing the data and compiling it, so
       // concurrent requests can't see each other's data.
-      compiler.mapShadow("/resume.json", new TextEncoder().encode(JSON.stringify({ ...data, tune: { ...data.tune, size } })))
+      compiler.mapShadow("/resume.json", new TextEncoder().encode(JSON.stringify({ ...data, tune: { ...data.tune, ...fitted } })))
       if (attachment !== undefined) {
         compiler.mapShadow(`/${ATTACHMENT_NAME}`, new TextEncoder().encode(attachment))
         compiler.addSource("/download.typ", withAttachment(template))
@@ -247,10 +247,10 @@ async function compile({ id, template, data, attachment }: CompileRequest) {
       return { pages: pageCount(result) || 1, printed: result }
     }
     if (data.tune.onePage) {
-      const { fit, printed } = await fitOnePage(data.tune.size, print)
+      const { fit, printed } = await fitOnePage(data.tune, print)
       response = { id, pdf: printed, fit }
     } else {
-      response = { id, pdf: (await print(data.tune.size)).printed }
+      response = { id, pdf: (await print(data.tune)).printed }
     }
   } catch (error) {
     // Without a compiler, it couldn't be downloaded. With one, the compiler
