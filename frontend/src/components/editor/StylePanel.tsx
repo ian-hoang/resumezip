@@ -35,7 +35,7 @@ function StylePanel({ value, onChange }: StylePanelProps) {
   return (
     <section
       aria-label="Style"
-      className="flex flex-col px-2 pb-5 pt-4 sm:grid sm:grid-cols-2 sm:items-start sm:gap-x-8 sm:px-3 xl:flex xl:p-0"
+      className="flex flex-col px-2 pb-5 pt-4 sm:grid sm:grid-cols-2 sm:items-start sm:gap-x-8 sm:px-3 xl:flex xl:items-stretch xl:p-0"
     >
       <div role="group" aria-labelledby={templatesId} className="flex flex-col gap-1">
         <span id={templatesId} className="label-mono mb-1.5 px-3 text-ink-2">

@@ -117,6 +117,11 @@ test("the Style tab lists the templates and Fine-tune, beside the form", async (
   await expect(sections).toBeHidden()
   await expect(style.getByRole("button", { pressed: true })).toHaveText(/^Jake's/)
   await expect(style.getByRole("heading", { name: "Fine-tune" })).toBeVisible()
+  // The templates and Fine-tune use the panel's whole width, as the section list does.
+  const panel = await boxOf(style)
+  for (const part of [style.getByRole("button", { pressed: true }), style.getByRole("slider", { name: /Text size/ })]) {
+    expect((await boxOf(part)).width).toBeGreaterThan(panel.width - 40)
+  }
   await style.getByRole("button", { name: "Harvard", exact: true }).click()
   await expect(style.getByRole("button", { pressed: true })).toHaveText(/^Harvard/)
   // Harvard prints the name in capitals.
