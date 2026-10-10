@@ -446,6 +446,46 @@ test("the search finds resumes by name or template, and opens one from the keybo
   expect(errors).toEqual([])
 })
 
+test("in use, the search lifts into the middle of the screen, and Escape or a press on the page puts it back", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  const search = page.getByRole("combobox", { name: "Search your resumes" })
+  // Whether it's in the middle of the screen, rather than at the start of the toolbar.
+  const middle = async () => {
+    const box = (await search.boundingBox())!
+    return Math.abs(box.x + box.width / 2 - 640) < 40
+  }
+  await expect(search).toBeVisible()
+  expect(await middle()).toBe(false)
+
+  await search.click()
+  await expect.poll(middle).toBe(true)
+  // The header, a pill the same shape, tucks away above the screen meanwhile.
+  await expect(page.getByRole("banner")).not.toBeInViewport()
+  await search.fill("ada")
+  await expect(page.getByRole("listbox", { name: "Matching resumes" })).toBeVisible()
+
+  // Escape starts again first, then puts it back and lets go of it; "/" lifts it again.
+  await search.press("Escape")
+  await expect(search).toHaveValue("")
+  expect(await middle()).toBe(true)
+  await search.press("Escape")
+  await expect.poll(middle).toBe(false)
+  await expect(search).not.toBeFocused()
+  await expect(page.getByRole("banner")).toBeInViewport()
+  await page.keyboard.press("/")
+  await expect(search).toBeFocused()
+  await expect.poll(middle).toBe(true)
+  await page.keyboard.type("g")
+
+  // A press on the softened page puts it back, keeping what was typed.
+  await page.mouse.click(1200, 700)
+  await expect.poll(middle).toBe(false)
+  await expect(search).toHaveValue("g")
+  expect(errors).toEqual([])
+})
+
 test("the tags show their resumes, with how many each has", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace", { resumeTag: "personal" }), resume("c", "Kestrel")])
