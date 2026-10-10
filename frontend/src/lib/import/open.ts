@@ -17,6 +17,7 @@ import {
   MAX_RESUMES,
   TooLongError,
   WORD_DOCUMENT,
+  WORD_RELATIONSHIPS,
   type FileResume,
 } from "@/lib/resumeFile"
 import { storedFile, zipDirectory } from "@/lib/zip"
@@ -224,16 +225,19 @@ function openJson(data: ArrayBuffer, title: string): OpenedFile {
 /**
  * The resume a resumezip Word file carries (see lib/word.ts), or null for a
  * Word file from anywhere else. Null too once another app has changed its
- * text, or zipped the file again compressed: resumezip leaves it uncompressed.
+ * text or where a link goes, or zipped the file again compressed: resumezip
+ * leaves the attachment uncompressed.
  */
 export function wordFileResume(data: ArrayBuffer): ResumeContent | null {
   const files = zipDirectory(data)
   if (!Array.isArray(files)) return null
   const document = files.find((file) => file.name === WORD_DOCUMENT)
+  const relationships = files.find((file) => file.name === WORD_RELATIONSHIPS)
   const attached = files.find((file) => file.name === ATTACHMENT_NAME)
   const contents = document && attached && storedFile(data, attached)
   if (!document || !contents) return null
-  return readSaved(() => fromAttachment(new TextDecoder().decode(contents), "Word file", { documentCrc32: document.crc }), "docx")
+  const crcs = { documentCrc32: document.crc, relationshipsCrc32: relationships?.crc }
+  return readSaved(() => fromAttachment(new TextDecoder().decode(contents), "Word file", crcs), "docx")
 }
 
 /** A Word file: resumezip's own is restored as it was; any other is read for its text. */

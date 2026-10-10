@@ -130,6 +130,23 @@ describe("opening a Word file again", () => {
     expect(reopened(zip(parts))).toBeNull()
   })
 
+  test("doesn't once another app has changed where a link goes, though the text is the same", () => {
+    const linked = toWordFile(
+      asSaved({
+        selectedTemplate: "jake",
+        projectLinks: "title",
+        projectsSection: [{ id: 1, projectName: "Atlas", projectGithub: "github.com/maralin/atlas" }],
+      }),
+    )
+    expect(reopened(linked)?.projectsSection?.[0].projectGithub).toBe("github.com/maralin/atlas")
+    // The project's name is its link, so its address is only in the document's relationships.
+    const parts = partsOf(linked)
+    expect(parts["word/document.xml"]).not.toContain("github.com")
+    const relationships = "word/_rels/document.xml.rels"
+    parts[relationships] = parts[relationships].replace("https://github.com/maralin/atlas", "https://github.com/maralin/atlas-v2")
+    expect(reopened(zip(parts))).toBeNull()
+  })
+
   test("doesn't when the resume isn't in it any more, as after Word saves it", () => {
     const { "resumezip.json": attached, ...parts } = partsOf(file)
     expect(attached).toBeTruthy()

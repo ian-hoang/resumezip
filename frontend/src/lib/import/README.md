@@ -16,9 +16,10 @@ PDF or Word file. It all happens in the browser; nothing is uploaded.
   sections keep version 1. Recognized damaged data or a newer version stops
   opening with a useful message instead of silently guessing from its PDF text.
 - **resumezip Word files** carry the same attachment inside the .docx
-  (`src/lib/word.ts`), with the CRC-32 of the text it was written with, and
-  open the same way while that text is unchanged. Word drops it when it saves
-  the file; one saved or changed by another app is read like any Word file.
+  (`src/lib/word.ts`), with CRC-32s of the text and the links' addresses it
+  was written with, and open the same way while both are unchanged. Word drops
+  it when it saves the file; one saved or changed by another app is read like
+  any Word file.
 - **Any other file** is read by `lines.ts` into lines of text with their position,
   size, style and links, then sorted into the editor's fields by `parse.ts`. The
   review dialog (`components/dashboard/ImportReview.tsx`) shows the result next to

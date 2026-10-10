@@ -12,15 +12,16 @@
 // resume as resumezip.json, so resumezip can open it again exactly (see
 // wordFileResume in lib/import/open.ts). Word drops files it doesn't know
 // when it saves, and then it opens like any Word file. An app that kept the
-// attachment but changed the text would reopen as it was before the change,
-// so the attachment also has the CRC-32 of the text it was written with, and
-// is only read while the text still matches.
+// attachment but changed the text, or where a link goes, would reopen as it
+// was before the change. So the attachment also has the CRC-32s of the text
+// and of the document's relationships, which have the links' addresses, and
+// is only read while both still match.
 //
 // The editor downloads this module when Word is first chosen.
 
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"
-import { ATTACHMENT_NAME, toAttachment, WORD_DOCUMENT } from "@/lib/resumeFile"
+import { ATTACHMENT_NAME, toAttachment, WORD_DOCUMENT, WORD_RELATIONSHIPS } from "@/lib/resumeFile"
 import { toTemplateData, type TemplateData } from "@/lib/typst/resumeData"
 import { crc32, zip } from "@/lib/zip"
 
@@ -374,16 +375,18 @@ const NUMBERING = `${XML}<w:numbering xmlns:w="${W}">\
 export function toWordFile(resume: Resume): Uint8Array<ArrayBuffer> {
   const data = toTemplateData(resume)
   const { xml, links } = documentOf(data)
-  const document = new TextEncoder().encode(xml)
+  const encoder = new TextEncoder()
+  const document = encoder.encode(xml)
+  const relationships = encoder.encode(documentRelationships(links))
   return zip({
     "[Content_Types].xml": CONTENT_TYPES,
     "_rels/.rels": PACKAGE_RELATIONSHIPS,
     "docProps/core.xml": coreProperties(data.profile.name || "Resume"),
     [WORD_DOCUMENT]: document,
-    "word/_rels/document.xml.rels": documentRelationships(links),
+    [WORD_RELATIONSHIPS]: relationships,
     "word/styles.xml": STYLES,
     "word/numbering.xml": NUMBERING,
     "word/settings.xml": SETTINGS,
-    [ATTACHMENT_NAME]: toAttachment(resume, { documentCrc32: crc32(document) }),
+    [ATTACHMENT_NAME]: toAttachment(resume, { documentCrc32: crc32(document), relationshipsCrc32: crc32(relationships) }),
   })
 }

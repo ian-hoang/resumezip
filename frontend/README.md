@@ -55,8 +55,9 @@ npm run test:browser   # after a build; see below
   a list under `resumes`. "Open a file" opens both.
 - `src/lib/word.ts` makes the Word file in the same menu: the PDF's words in
   one plain layout for every template, as a zip of XML files written without a
-  package (`src/lib/zip.ts`). It carries the PDF's attachment, with the CRC-32
-  of its text, so it opens again exactly until another app changes the text.
+  package (`src/lib/zip.ts`). It carries the PDF's attachment, with CRC-32s of
+  its text and its links' addresses, so it opens again exactly until another
+  app changes either.
   Word drops the attachment when it saves, and then the file opens like any
   Word file.
 - `src/lib/import/` opens PDF and Word files and sorts them into the editor's

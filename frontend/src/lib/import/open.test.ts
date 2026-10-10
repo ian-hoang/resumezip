@@ -330,12 +330,15 @@ test(`reading stops after ${TIME_LIMIT_MS / 1000} seconds`, async () => {
 describe("a Word file", () => {
   const docx = (data: Uint8Array) =>
     new File([new Uint8Array(data)], "Mara Lin.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" })
-  // A Word file from resumezip with `attachment` in it, its text unchanged since.
+  // A Word file from resumezip with `attachment` in it, its text and links unchanged since.
   const document = "<w:document/>"
+  const relationships = "<Relationships/>"
+  const crc = (text: string) => crc32(new TextEncoder().encode(text))
   const carrying = (attachment: object) =>
     zip({
       "word/document.xml": document,
-      [ATTACHMENT_NAME]: JSON.stringify({ ...attachment, documentCrc32: crc32(new TextEncoder().encode(document)) }),
+      "word/_rels/document.xml.rels": relationships,
+      [ATTACHMENT_NAME]: JSON.stringify({ ...attachment, documentCrc32: crc(document), relationshipsCrc32: crc(relationships) }),
     })
 
   test("that resumezip made restores its resume, without reading its text", async () => {
