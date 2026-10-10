@@ -85,8 +85,6 @@ interface PdfPreviewProps {
   updating?: boolean
   /** The template `pdfUrl` is printed in. */
   template?: string | null
-  /** Told how many pages the PDF on screen has, or null while there's none. */
-  onPages?: (pages: number | null) => void
 }
 
 /**
@@ -110,7 +108,7 @@ interface HeldAnchor {
   box: DOMRect
 }
 
-function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages }: PdfPreviewProps) {
+function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPreviewProps) {
   const [drawings, setDrawings] = useState<Drawing[]>([])
   const [zoom, setZoom] = useState(1)
   // Catches up with the zoom once it settles. Until then, the pages on screen
@@ -179,12 +177,6 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null, onPages 
   useLayoutEffect(() => {
     ratioRef.current = ratio
   })
-
-  // The pages of the PDF on screen, once it's drawn, for the Download PDF button to say.
-  const pagesShown = drawings.findLast((drawing) => drawing.ready)?.pages ?? null
-  useEffect(() => {
-    onPages?.(pagesShown)
-  }, [onPages, pagesShown])
 
   useEffect(() => {
     const timer = setTimeout(() => setDrawnZoom(zoom), SETTLE_MS)

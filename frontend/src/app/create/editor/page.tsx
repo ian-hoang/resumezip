@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
@@ -34,7 +34,6 @@ import { resumeOf } from "@/lib/resumeStore"
 import { uniqueTitle } from "@/lib/resumeTitles"
 import { fileNameOf, saveFile } from "@/lib/saveFile"
 import { compilePreview, loadCompiler, makeDownload, printedOf, Superseded } from "@/lib/typst/compile"
-import { printedTune, TEMPLATE_SETTINGS } from "@/lib/tune"
 import { templateIdOf } from "@/lib/typst/resumeData"
 import type { TemplateId } from "@/lib/templates"
 
@@ -101,7 +100,6 @@ function Editor({ id }: { id: string }) {
   // Whether this browser has the resume, once storage has loaded.
   const found = useResumeState((state) => state.loaded && resumeOf(state, id) !== undefined)
   const selectedTemplate = useResumeField("selectedTemplate")
-  const tune = useResumeField("tune")
   const savedOrder = useResumeField("sectionOrder")
   const headings = useResumeField("headings")
   const extraSections = useResumeField("extraSections")
@@ -122,8 +120,6 @@ function Editor({ id }: { id: string }) {
   const [failure, setFailure] = useState<Failure | null>(null)
   // The PDF just downloaded, while the card about it shows.
   const [savedPdf, setSavedPdf] = useState<{ file: string; at: number } | null>(null)
-  // How many pages the preview on screen has, for Download PDF to say.
-  const [pages, setPages] = useState<number | null>(null)
   // Said to screen readers once another format is downloaded, or the PDF is shared or saved to Google Drive.
   const [savedAs, setSavedAs] = useState("")
   // Said again, even when it's the same as last time.
@@ -143,7 +139,6 @@ function Editor({ id }: { id: string }) {
   const compileMs = useRef(MIN_WAIT_MS)
   const headerRef = useRef<HTMLElement>(null)
   const mainRef = useRef<HTMLElement>(null)
-  const pdfDetailsId = useId()
 
   // Resizing across the wide-screen width keeps the form where it was scrolled to.
   useKeepFormPlace(mainRef, found)
@@ -155,9 +150,6 @@ function Editor({ id }: { id: string }) {
   useEffect(() => {
     if (found) loadCompiler(template)
   }, [found, template])
-
-  // The paper it prints on, for Download PDF to say, as Fine-tune has it (printedTune reads the saved setting defensively).
-  const paper = (printedTune(tune).paper || TEMPLATE_SETTINGS[template].paper) === "a4" ? "A4" : "Letter"
 
   // The saved order, plus any sections missing from older resumes.
   // The optional sections with entries, which show even when the saved order lacks them. As
@@ -441,8 +433,6 @@ function Editor({ id }: { id: string }) {
   const total = sections.length + 1
   const position = (index: number) => `${pad(index)} / ${pad(total)}`
 
-  const pagesSaid = pages === null ? "" : pages === 1 ? "1 page" : `${pages} pages`
-
   return (
     // The editor is on the desk at every width. On wide screens (WIDE_SCREEN) it's a top bar over
     // three panels: the sections (or what Check found, or Style) on the left, the form in the
@@ -474,17 +464,13 @@ function Editor({ id }: { id: string }) {
               <div className="xl:hidden">
                 <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
               </div>
-              {/* Download PDF is the main way out; the ▾ beside it has the others. On wide
-                  screens it reads back the paper and how many pages the PDF has, and the card
-                  after a download drops in under it. */}
+              {/* Download PDF is the main way out; the ▾ beside it has the others. The note
+                  after a download drops in under it on wide screens. */}
               <div className="relative flex">
                 <button
                   type="button"
                   onClick={download}
                   disabled={downloading}
-                  // Named for what it does: the paper and pages it shows on wide screens are its description.
-                  aria-label={downloaded ? "Downloaded" : "Download PDF"}
-                  aria-describedby={pdfDetailsId}
                   className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full bg-ink pl-[18px] pr-4 text-sm font-medium text-white transition-colors hover:bg-black disabled:cursor-wait sm:min-w-[9.5rem] sm:text-[15px] [&_svg]:size-4 xl:h-11"
                 >
                   <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
@@ -512,10 +498,6 @@ function Editor({ id }: { id: string }) {
                       <span className="max-sm:sr-only">Download </span>PDF
                     </span>
                   )}
-                  <span className="label-mono hidden whitespace-nowrap text-white/65 xl:inline">
-                    · {paper}
-                    {pagesSaid && ` · ${pagesSaid}`}
-                  </span>
                 </button>
                 <DownloadMenu
                   choices={[
@@ -539,10 +521,6 @@ function Editor({ id }: { id: string }) {
                 />
                 {savedPdf && <DownloadedCard key={savedPdf.at} file={savedPdf.file} onClose={closeSavedPdf} />}
               </div>
-              <span id={pdfDetailsId} className="sr-only">
-                {paper === "A4" ? "A4" : "US Letter"}
-                {pagesSaid && `, ${pagesSaid}`}
-              </span>
               <span role="status" className="sr-only">
                 {downloaded ? "PDF downloaded. This PDF carries your resume. Open it here on any computer to keep editing." : ""}
               </span>
@@ -633,13 +611,7 @@ function Editor({ id }: { id: string }) {
             aria-label="Live preview"
             className={`mt-3 min-w-0 flex-col xl:mt-0 xl:flex xl:flex-1 xl:overflow-hidden ${view === "preview" ? "flex max-xl:flex-1" : "hidden"}`}
           >
-            <PdfPreview
-              pdfUrl={pdfUrl}
-              template={shownTemplate}
-              error={compileError}
-              updating={switchingTemplate && !compileError}
-              onPages={setPages}
-            />
+            <PdfPreview pdfUrl={pdfUrl} template={shownTemplate} error={compileError} updating={switchingTemplate && !compileError} />
           </section>
         </div>
       </CheckProvider>

@@ -30,6 +30,8 @@ test("a note after a download says the PDF opens here again, with nothing to pre
   await page.clock.install()
   await startWriting(page, 1440, 900)
 
+  // It says only what it does: no paper or page count to make it longer.
+  await expect(download(page)).toHaveText("Download PDF")
   await download(page).focus()
   await page.keyboard.press("Enter")
   await expect(note(page)).toBeVisible()
