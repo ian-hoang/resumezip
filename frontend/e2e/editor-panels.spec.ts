@@ -161,31 +161,41 @@ test("A4, chosen in the Style tab, prints the page on A4, and Download PDF still
   expect(errors).toEqual([])
 })
 
-test("Fit shows the whole page, from its top", async ({ page }) => {
-  const errors = pageErrors(page)
-  // Wide enough for the page to be taller than the room for it at first.
-  const preview = await startWriting(page, 1440, 800)
-  // At first the page fills the canvas's width, taller than what shows of it.
-  const panel = preview.locator("[tabindex='0']").first()
-  // The first page on screen: a new drawing of it waits out of sight until it's ready.
-  const firstPage = () =>
-    preview.evaluate((region) => {
-      const canvas = [...region.querySelectorAll("canvas")].find((canvas) => getComputedStyle(canvas).visibility === "visible")
-      return canvas ? canvas.getBoundingClientRect().toJSON() : null
-    })
-  expect((await firstPage())!.height).toBeGreaterThan((await boxOf(panel)).height)
+// On a short, wide window the whole page needs less than the 50% the zoom buttons stop at.
+for (const height of [800, 400]) {
+  test(`Fit shows the whole page, from its top, ${height}px tall`, async ({ page }) => {
+    const errors = pageErrors(page)
+    // Wide enough for the page to be taller than the room for it at first.
+    const preview = await startWriting(page, 1440, height)
+    // At first the page fills the canvas's width, taller than what shows of it.
+    const panel = preview.locator("[tabindex='0']").first()
+    // The first page on screen: a new drawing of it waits out of sight until it's ready.
+    const firstPage = () =>
+      preview.evaluate((region) => {
+        const canvas = [...region.querySelectorAll("canvas")].find((canvas) => getComputedStyle(canvas).visibility === "visible")
+        return canvas ? canvas.getBoundingClientRect().toJSON() : null
+      })
+    expect((await firstPage())!.height).toBeGreaterThan((await boxOf(panel)).height)
 
-  await preview.getByRole("button", { name: "Fit" }).click()
-  await expect(preview.getByRole("button", { name: /^\d+%$/ })).not.toHaveText("100%")
-  await expect
-    .poll(async () => {
-      const [shown, room] = [await firstPage(), await boxOf(panel)]
-      return !!shown && shown.y >= room.y && shown.y + shown.height <= room.y + room.height
-    })
-    .toBe(true)
+    await preview.getByRole("button", { name: "Fit" }).click()
+    const zoom = preview.getByRole("button", { name: /^\d+%$/ })
+    await expect(zoom).not.toHaveText("100%")
+    await expect
+      .poll(async () => {
+        const [shown, room] = [await firstPage(), await boxOf(panel)]
+        return !!shown && shown.y >= room.y && shown.y + shown.height <= room.y + room.height
+      })
+      .toBe(true)
 
-  expect(errors).toEqual([])
-})
+    if (height === 400) {
+      // Below the buttons' least, where Zoom out has nothing further to go.
+      expect(parseInt((await zoom.textContent())!)).toBeLessThan(50)
+      await expect(preview.getByRole("button", { name: "Zoom out" })).toHaveAttribute("aria-disabled", "true")
+    }
+
+    expect(errors).toEqual([])
+  })
+}
 
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })

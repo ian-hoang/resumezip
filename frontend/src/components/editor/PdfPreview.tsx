@@ -62,6 +62,8 @@ interface Drawing {
 const MAX_PAGE_WIDTH = 640
 const MIN_ZOOM = 0.5
 const MAX_ZOOM = 2.5
+// The least Fit goes to, below MIN_ZOOM: a short, wide window can need it to show the whole page.
+const MIN_FIT = 0.2
 // The most one Ctrl + scroll zooms by, as a factor: a mouse wheel's notch.
 const WHEEL_STEP = 1.1
 // Height over width of US Letter, which every template prints on unless the
@@ -231,7 +233,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
       const pages = pagesRef.current
       if (pages) anchorRef.current = anchorAt(pages, event.clientX, event.clientY, heldRef.current, ratioRef.current)
       const factor = wheelZoom(event)
-      setZoom((z) => clampZoom(z * factor))
+      setZoom((z) => clampZoom(z * factor, z))
     }
     scroller.addEventListener("wheel", onWheel, { passive: false })
     return () => scroller.removeEventListener("wheel", onWheel)
@@ -278,7 +280,7 @@ function PdfPreview({ pdfUrl, error, updating = false, template = null }: PdfPre
     if (!scroller) return
     const style = getComputedStyle(scroller)
     const room = scroller.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
-    const fitted = clampZoom(Math.min(1, room / (fitWidth * ratio)))
+    const fitted = Math.max(MIN_FIT, Math.min(1, room / (fitWidth * ratio)))
     // Scrolled to the top once the pages have their new size; at that size already, now.
     if (fitted !== zoom) {
       anchorRef.current = null
@@ -550,8 +552,12 @@ function copyPlainText(event: ClipboardEvent, pdfjs: ReactPdf["pdfjs"]) {
   event.preventDefault()
 }
 
-function clampZoom(zoom: number) {
-  return Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM)
+/**
+ * A zoom within the limits. `from`, the zoom it changes from, can be below
+ * MIN_ZOOM after Fit: zooming out from there stays put rather than jumping up to MIN_ZOOM.
+ */
+function clampZoom(zoom: number, from = MIN_ZOOM) {
+  return Math.min(Math.max(zoom, Math.min(MIN_ZOOM, from)), MAX_ZOOM)
 }
 
 /**
@@ -572,7 +578,7 @@ function wheelZoom({ deltaY, deltaMode }: WheelEvent) {
  */
 function stepZoom(zoom: number, direction: 1 | -1) {
   const tenths = Math.round(zoom * 100) / 10
-  return clampZoom((direction > 0 ? Math.floor(tenths) + 1 : Math.ceil(tenths) - 1) / 10)
+  return clampZoom((direction > 0 ? Math.floor(tenths) + 1 : Math.ceil(tenths) - 1) / 10, zoom)
 }
 
 // In whole pixels, as react-pdf sizes a page's canvas.
