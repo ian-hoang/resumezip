@@ -128,6 +128,53 @@
     }
   }
 
+  /* The phone menu (SiteHeader.tsx): a card that drops in below the pill with
+     a small spring, solid from its first frame (neither faded nor clipped, as
+     either stops glass blurring what's behind it), and its links fade and drop in a
+     beat apart, close behind it, so the last (Star on GitHub) isn't left waiting.
+     Closing, it all goes quickly. */
+  .menu-card {
+    visibility: hidden;
+    transform: translateY(-14px) scale(0.94);
+    transform-origin: top center;
+    transition:
+      transform 160ms ease-in,
+      visibility 0s 160ms;
+  }
+  .menu-card[data-open] {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform 460ms cubic-bezier(0.34, 1.4, 0.64, 1),
+      visibility 0s;
+  }
+  .menu-item {
+    opacity: 0;
+    translate: 0 -6px;
+    transition:
+      opacity 100ms ease-out,
+      translate 100ms ease-out;
+  }
+  [data-open] .menu-item {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+      opacity 260ms var(--ease-glide) calc(40ms + var(--i) * 30ms),
+      translate 260ms var(--ease-glide) calc(40ms + var(--i) * 30ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-card,
+    .menu-card[data-open] {
+      transform: none;
+      transition: visibility 0s;
+    }
+    .menu-item,
+    [data-open] .menu-item {
+      translate: none;
+      transition: none;
+    }
+  }
+
   /* The check is a tall section the panel pins in, and the clouds at its
      foot belong at its very bottom, not just after the panel's resting place
      (where they'd show through mid-scroll): a column, with them pushed down. */
