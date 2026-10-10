@@ -48,12 +48,16 @@ const STAGES = [
 // Laptops with a few toolbars open leave about 540px, so it still pins there.
 const STATIC_QUERY = "(prefers-reduced-motion: reduce), (max-height: 460px)"
 
+// How much of the pinned scroll the three stages take; the rest holds the finished check.
+const HOLD = 0.88
+
 const clamp = (value: number) => Math.min(1, Math.max(0, value))
 
 /**
  * One resume, scanned, read into its parts and scored as the page scrolls
  * past: the section pins to the screen and each third of its scroll is a
- * stage. The scroll sets --scan, --parse and --score (0 to 1) on the section,
+ * stage, a little more than a screen's worth of scrolling each, so a flick
+ * of the wheel doesn't skip one. The scroll sets --scan, --parse and --score (0 to 1) on the section,
  * and the overlays draw from them in CSS, so nothing re-renders as it moves.
  * With less motion, or a short screen, it shows the finished check, still.
  */
@@ -89,8 +93,9 @@ export default function CheckDemo() {
       const foot = parseFloat(getComputedStyle(section, "::after").height) || 0
       // At least 1, so a section no taller than the screen doesn't divide by 0.
       const scrollable = Math.max(1, section.offsetHeight - head - foot - window.innerHeight)
-      const progress = clamp((-section.getBoundingClientRect().top - head) / scrollable)
-      // Each stage gets a third of the scroll, with a little still time at the end of each.
+      // The stages share the first HOLD of the scroll, so the finished check stays still a while before it moves on.
+      const progress = clamp((-section.getBoundingClientRect().top - head) / (scrollable * HOLD))
+      // Each stage gets a third of that, with a little still time at the end of each.
       const at = progress * STAGES.length
       const part = (index: number) => clamp((at - index) / 0.85)
       section.style.setProperty("--scan", String(part(0)))
@@ -118,7 +123,7 @@ export default function CheckDemo() {
       aria-labelledby="check-demo"
       data-tone="blue"
       data-tick
-      className={`check-demo cloud-seam cloud-seam-top relative bg-accent text-white ${pinned ? "h-[320svh]" : ""}`}
+      className={`check-demo cloud-seam cloud-seam-top relative bg-accent text-white ${pinned ? "h-[520svh]" : ""}`}
     >
       <div // Unpinned, it still needs a height for the page to size itself in.
         className={pinned ? "sticky top-0 flex h-svh flex-col overflow-hidden" : "flex h-[max(640px,100svh)] flex-col"}
