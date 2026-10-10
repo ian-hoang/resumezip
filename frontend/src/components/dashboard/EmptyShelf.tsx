@@ -10,13 +10,13 @@ interface EmptyShelfProps {
 }
 
 /**
- * What the dashboard shows before there are any resumes: empty pages where
+ * What the dashboard shows under its toolbar before there are any resumes: empty pages where
  * they'll go, the first to start one and the second to open a file. The
  * rest are only outlines.
  */
 export default function EmptyShelf({ onNew, onChooseFile, dragging }: EmptyShelfProps) {
   return (
-    <div className="flex flex-col gap-8 border-t border-ink pt-8">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
         <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No resumes yet.</p>
         <p className="max-w-md text-[15px] leading-relaxed text-ink-2">

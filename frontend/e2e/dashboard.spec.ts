@@ -581,16 +581,20 @@ test("a page shows the resume itself, with nothing stamped over it, even one the
   expect(errors).toEqual([])
 })
 
-test("with no resumes, the empty pages start one or open a file", async ({ page }) => {
+test("with no resumes, the page keeps its toolbar and buttons, and the empty pages start one or open a file", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
   await expect(page.getByText("No resumes yet.")).toBeVisible()
-  await expect(page.getByRole("combobox", { name: "Search your resumes" })).toHaveCount(0)
+  // The same page as with resumes, so it doesn't change shape when the first arrives.
+  await expect(page.getByRole("combobox", { name: "Search your resumes" })).toBeVisible()
+  await expect(page.getByRole("group", { name: "View" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Open a file" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Download all" })).toBeDisabled()
 
   const choosing = page.waitForEvent("filechooser")
   await page.getByRole("button", { name: "Drop a PDF or Docx file Choose a file" }).click()
   await choosing
-  await page.getByRole("button", { name: "New resume" }).click()
+  await page.getByRole("button", { name: "New resume" }).first().click()
   await expect(page.getByRole("dialog", { name: "New resume" })).toBeVisible()
   expect(errors).toEqual([])
 })
