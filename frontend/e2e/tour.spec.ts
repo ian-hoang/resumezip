@@ -43,7 +43,7 @@ for (const [width, height] of [
     await tour.getByRole("button", { name: "Next: the preview" }).click()
     await expect(tour).toHaveAccessibleName("The page is the real PDF.")
     await tour.getByRole("button", { name: "Next step" }).click()
-    await expect(tour).toHaveAccessibleName("Check looks it over.")
+    await expect(tour).toHaveAccessibleName("Write, check, then style.")
     await tour.getByRole("button", { name: "Previous step" }).click()
     await expect(tour).toHaveAccessibleName("The page is the real PDF.")
     await tour.getByRole("button", { name: "Next step" }).click()
