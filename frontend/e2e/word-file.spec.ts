@@ -97,7 +97,14 @@ test("a Word file that can't be made says so, and trying again downloads it", as
   await page.getByRole("menuitem", { name: /^Word/ }).click()
   await expect(failed).toContainText("Couldn't make your Word file.")
 
+  // The PDF downloading meanwhile doesn't make the Word file, so its failure stays.
   await page.unroute("**/_next/static/chunks/**")
+  const pdf = page.waitForEvent("download")
+  await page.getByRole("button", { name: "Download PDF" }).click()
+  expect((await pdf).suggestedFilename()).toBe("Mara at Stripe.pdf")
+  await expect(page.getByRole("button", { name: "Downloaded" })).toBeVisible()
+  await expect(failed).toContainText("Couldn't make your Word file.")
+
   const downloading = page.waitForEvent("download")
   await failed.getByRole("button", { name: "Try again" }).click()
   expect((await downloading).suggestedFilename()).toBe("Mara at Stripe.docx")

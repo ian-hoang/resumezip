@@ -338,7 +338,8 @@ function Editor({ id }: { id: string }) {
       const save = await makeDownload({ ...resume, sectionOrder: resolveSections(resume) })
       await filled
       save()
-      setFailure(null)
+      // Only a failed PDF is put right; a failed Word file still is one.
+      setFailure((previous) => (previous?.of ? previous : null))
       setDownloadedAt(Date.now())
     } catch (error) {
       console.error("Error downloading resume:", error)
