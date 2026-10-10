@@ -27,7 +27,9 @@ test("contact shows the support address before and after opening a message", asy
 test("/terms#privacy opens the privacy policy, and a tab's address opens it from the page too", async ({ page }) => {
   await page.goto("/terms#privacy")
   await expect(page.getByRole("tab", { name: "Privacy policy" })).toHaveAttribute("aria-selected", "true")
-  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText("We don’t collect or store your resume")
+  await expect(page.getByRole("tabpanel", { name: "Privacy policy" })).toContainText(
+    "If you press Save to Google Drive, Google asks you first",
+  )
 
   await page.evaluate(() => (window.location.hash = "faq"))
   await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")

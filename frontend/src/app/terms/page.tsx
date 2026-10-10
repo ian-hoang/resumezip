@@ -42,7 +42,7 @@ const TABS: { id: TabId; label: string; items: { title: string; body: string }[]
     items: [
       {
         title: "What we collect",
-        body: "We don’t collect or store your resume. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up.",
+        body: "We don’t collect or store your resume. There are no ads or trackers. Our host keeps basic server logs, like which pages were visited, to keep the site running. The editor downloads its PDF engine, and once you open Check, its spelling and grammar checker, from jsDelivr, a public code host, which logs downloads the same way. Both run in your browser, so what you type isn't sent to it. If you add a paper from its DOI or link, only that DOI is sent to Crossref or doi.org, to look the paper up. If you press Save to Google Drive, Google asks you first, then your browser sends that resume’s PDF straight to your Drive. resumezip can only reach the files it saves there, and we never see them.",
       },
       {
         title: "How it’s used",
