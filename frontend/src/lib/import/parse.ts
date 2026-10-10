@@ -1753,6 +1753,20 @@ function bodySize(lines: Line[]): number {
  */
 export type SourceLine = Line & { sourceIndex: number }
 
+/** Where text set apart from a few words on its left starts on most lines, if on two or more. */
+function besideColumn(lines: Line[]): number | undefined {
+  const starts = new Map<number, { x: number; count: number }>()
+  for (const line of lines) {
+    if (line.bullet || line.parts.length < 2 || words(line.parts[0].text).length > 4) continue
+    const key = Math.round(line.parts[1].x / 3)
+    const start = starts.get(key) ?? { x: line.parts[1].x, count: 0 }
+    start.count++
+    starts.set(key, start)
+  }
+  const [most] = [...starts.values()].sort((a, b) => b.count - a.count)
+  return most && most.count >= 2 ? most.x : undefined
+}
+
 function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
   const candidate = (line: Line) =>
     line.parts.length > 1 &&
@@ -1761,10 +1775,11 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
     words(line.parts[0].text).length <= 4 &&
     line.parts[1].x - line.parts[0].x >= 40
   const sides = lines.filter(candidate)
-  if (sides.length === 0) return lines
-  // The text beside every heading starts at the same place.
-  const column = sides[0].parts[1].x
-  if (sides.some((line) => Math.abs(line.parts[1].x - column) >= 3)) return lines
+  // The text beside every heading starts at the same place: where it does
+  // beside a heading on one line, or, when every heading wraps, where most
+  // text set beside a few words on its left does.
+  const column = sides[0]?.parts[1].x ?? besideColumn(lines)
+  if (column === undefined || sides.some((line) => Math.abs(line.parts[1].x - column) >= 3)) return lines
   const beside = (line: Line) => line.parts.length > 1 && Math.abs(line.parts[1].x - column) < 3
   // The margin starts with the furthest left of the text beside the column,
   // which can be a heading that wraps rather than one of those found so far.

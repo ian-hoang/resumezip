@@ -304,6 +304,28 @@ describe("headings in a margin column", () => {
     expect(resume.workExperienceSection).toMatchObject([{ companyName: "Acme Corp", workRole: "Data Analyst" }])
     expect(resume.educationSection).toMatchObject([{ schoolName: "State University", degree: "B.S. in Statistics" }])
   })
+
+  test("are found when every one wraps, with no word of them a heading on its own", () => {
+    const items = [
+      text("Dana Cole", 125, 740, { size: 22 }),
+      text("dana@example.com", 125, 722, { size: 9 }),
+      heading("PROFESSIONAL", 690),
+      text("Acme Corp", 125, 690, { bold: true }),
+      text("2021 – Present", 500, 690),
+      heading("HISTORY", 680.5),
+      text("Data Analyst", 125, 678, { italic: true }),
+      heading("ACADEMIC", 650),
+      text("State University", 125, 650, { bold: true }),
+      text("2017 – 2021", 510, 650),
+      heading("BACKGROUND", 640.5),
+      text("B.S. in Statistics", 125, 638, { italic: true }),
+    ]
+    const parsed = parseResume(linesFromPages([{ ...page, items }]))
+    const resume = toResumeContent(parsed)
+    expect(parsed.unplaced).toEqual([])
+    expect(resume.workExperienceSection).toMatchObject([{ companyName: "Acme Corp", workRole: "Data Analyst" }])
+    expect(resume.educationSection).toMatchObject([{ schoolName: "State University", degree: "B.S. in Statistics" }])
+  })
 })
 
 describe("a heading it doesn't know by name", () => {
