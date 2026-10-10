@@ -4,7 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRef, useState } from "react"
 import PageIntro from "@/components/site/PageIntro"
-import { INK_PILL } from "@/components/site/pills"
+import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 

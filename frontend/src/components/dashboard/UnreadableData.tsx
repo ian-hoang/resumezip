@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useResumeContext } from "@/context/ResumeContext"
 import Modal from "./Modal"
-import { DANGER_PILL, OUTLINE_PILL } from "./pills"
+import { DANGER_PILL, OUTLINE_PILL } from "@/components/pills"
 
 /**
  * Saved data that couldn't be read is kept aside instead of being saved over

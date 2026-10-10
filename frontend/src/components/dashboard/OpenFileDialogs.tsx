@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react"
 import Modal from "./Modal"
-import { INK_PILL, OUTLINE_PILL } from "./pills"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 
 export function ReadingDialog({ fileName, onCancel }: { fileName: string; onCancel: () => void }) {
   return (

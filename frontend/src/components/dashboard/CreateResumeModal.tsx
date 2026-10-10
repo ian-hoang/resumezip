@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { RESUME_TAGS } from "@/lib/resume"
 import Modal from "./Modal"
-import { INK_PILL, OUTLINE_PILL } from "./pills"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 
 interface CreateResumeModalProps {
   onClose: () => void

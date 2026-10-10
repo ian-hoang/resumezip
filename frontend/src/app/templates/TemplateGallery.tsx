@@ -4,7 +4,7 @@ import Image from "next/image"
 import { useEffect, useId, useRef, useState } from "react"
 import { ArrowUpRight, Search } from "lucide-react"
 import { StartWritingLink } from "@/components/site/StartWriting"
-import { OUTLINE_PILL } from "@/components/site/pills"
+import { OUTLINE_PILL } from "@/components/pills"
 import { TEMPLATE_TAGS, TEMPLATES, templateMatches, type TemplateId, type TemplateTag } from "@/lib/templates"
 
 const names = new Intl.ListFormat("en", { type: "conjunction" })

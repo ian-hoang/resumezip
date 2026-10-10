@@ -19,7 +19,7 @@ import {
 } from "@/lib/import/parse"
 import type { ResumeContent } from "@/lib/resume"
 import Modal from "./Modal"
-import { INK_PILL, OUTLINE_PILL } from "./pills"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 
 type ParsedFile = Extract<OpenedFile, { kind: "parsed" }>
 

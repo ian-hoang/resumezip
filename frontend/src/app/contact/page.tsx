@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import PageIntro from "@/components/site/PageIntro"
-import { INK_PILL, OUTLINE_PILL } from "@/components/site/pills"
+import { INK_PILL, OUTLINE_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 

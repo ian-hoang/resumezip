@@ -3,7 +3,7 @@
 import { Check, ChevronDown, LayoutGrid, List } from "lucide-react"
 import { useId, type ReactNode } from "react"
 import { MENU_ITEM, MENU_PANEL, useMenu } from "./MoreMenu"
-import { SMALL_PILL } from "./pills"
+import { SMALL_PILL } from "@/components/pills"
 
 export type View = "pages" | "list"
 export type Sort = "edited" | "name"
