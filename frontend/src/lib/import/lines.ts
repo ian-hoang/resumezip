@@ -56,8 +56,9 @@ export const SOFT_HYPHEN = "\u00AD"
 /** Characters that start a bullet: the usual ones, symbols, and those Word puts in its own fonts. */
 export const BULLET_CHARS =
   "\u2022\u25CF\u25AA\u25A0\u25E6\u2023\u2219\u00B7\u25CB\u25C6\u25BA\u25B8\u27A2\u27A4\u2713\u2714\u2605\u2043\uF0B7\uF0A7\uF076\uF0D8\uF0FC\uF0A8\uF06C"
-// Symbol bullets may touch the text; dashes and asterisks need a space after them.
-const BULLET = new RegExp(`^(?:[${BULLET_CHARS}]\\s*|[-\\u2013\\u2014*]\\s+)`)
+// Symbol bullets may touch the text; dashes and asterisks need a space after
+// them, or a gap wide enough to set them apart from the text.
+const BULLET = new RegExp(`^(?:[${BULLET_CHARS}]\\s*|[-\\u2013\\u2014*](?:\\s+|$))`)
 const BULLET_ONLY = new RegExp(`^[${BULLET_CHARS}\\-\\u2013\\u2014*]$`)
 const BOLD_FONT = /bold|black|heavy|demi|cmbx|cmb\d|extrab|ultrab/i
 const ITALIC_FONT = /italic|oblique|cmti|cmsl|cmmi|-it\b/i

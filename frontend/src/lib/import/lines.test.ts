@@ -187,3 +187,27 @@ describe("hyphens", () => {
     })
   })
 })
+
+/** Text on a page, half its size wide a letter, as pdf.js gives it. */
+const item = (text: string, x: number, baseline: number, size = 10) => ({
+  text,
+  x,
+  right: x + text.length * size * 0.5,
+  baseline,
+  size,
+  bold: false,
+  italic: false,
+})
+const page = (items: ReturnType<typeof item>[]) => ({ width: 612, height: 792, items, links: [] })
+
+describe("bullets", () => {
+  test("a dash set apart from its text starts a bullet, as a dot does", () => {
+    const lines = linesFromPages([
+      page([item("-", 40, 700), item("Ran the storefront cache", 56, 700), item("-", 40, 688), item("Led incident reviews", 56, 688)]),
+    ])
+    expect(lines.map(({ bullet, text, x }) => ({ bullet, text, x }))).toEqual([
+      { bullet: true, text: "Ran the storefront cache", x: 56 },
+      { bullet: true, text: "Led incident reviews", x: 56 },
+    ])
+  })
+})
