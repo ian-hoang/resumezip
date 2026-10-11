@@ -12,6 +12,7 @@ import {
   colorOf,
   keepFixes,
   keepScores,
+  mustFixMax,
   scoreOf,
   shownFixes,
   shownScore,
@@ -21,7 +22,7 @@ import {
   type KeptScores,
   type Score,
 } from "./score"
-import { CATEGORIES, MUST_FIX_MAX, type CategoryId, type Level } from "./settings"
+import { CATEGORIES, CONTENT_FLOOR, CONTENT_FULL, MUST_FIX_MAX, MUST_FIX_STEP, type CategoryId, type Level } from "./settings"
 import { grammarTexts } from "./spelling"
 import { addWord, CHECK_FIELD, dismiss, readCheckState } from "./state"
 import { readingOf } from "./testHarper"
@@ -130,12 +131,12 @@ describe("the resume score", () => {
     expect(score.total).toBe(100)
   })
 
-  test("takes half a category's points for a must-fix it finds, and a fifth for a suggestion", () => {
+  test("takes half a category's points for a must-fix it finds, and about a third for a suggestion", () => {
     // Contact is worth 10: the broken email takes 5 of them.
     const score = scoreWith([...passing("contact"), rule("C2", "contact", "fix", found(1))])
-    expect(category(score, "contact")).toEqual({ id: "contact", points: 10, earned: 5, applies: true, mustFix: true })
+    expect(category(score, "contact")).toEqual({ id: "contact", points: 10, earned: 5, applies: true, mustFix: true, fixes: 1 })
     expect(score.total).toBe(50)
-    expect(category(scoreWith([...passing("contact"), rule("C3", "contact", "look", found(1))]), "contact").earned).toBe(8)
+    expect(category(scoreWith([...passing("contact"), rule("C3", "contact", "look", found(1))]), "contact").earned).toBe(6.5)
   })
 
   test("gives nothing for passing, so easy passes don't make up for a problem", () => {
@@ -145,11 +146,11 @@ describe("the resume score", () => {
   })
 
   test("takes at least half the penalty for finding anything, and the rest by how much of the resume fails", () => {
-    // 1 bullet in 4: half a fifth, and an eighth of the other half.
+    // 1 bullet in 4: half of 35%, and a quarter of the other half.
     const score = scoreWith([...passing("bullets"), rule("B1", "bullets", "look", found(4, 1))])
-    expect(category(score, "bullets").earned).toBe(26.25)
-    expect(score.total).toBe(87)
-    expect(category(scoreWith([...passing("bullets"), rule("B1", "bullets", "look", found(4))]), "bullets").earned).toBe(24)
+    expect(category(score, "bullets").earned).toBe(23.4375)
+    expect(score.total).toBe(78)
+    expect(category(scoreWith([...passing("bullets"), rule("B1", "bullets", "look", found(4))]), "bullets").earned).toBe(19.5)
   })
 
   test("earns no more than the share of a category's rules that pass, so one whose only rules fail earns nothing", () => {
@@ -175,7 +176,50 @@ describe("the resume score", () => {
     const typo = scoreWith([...elsewhere, rule("G1", "spelling", "fix", found(100, 1))])
     expect(typo.total).toBe(MUST_FIX_MAX)
     // A suggestion as small isn't held.
-    expect(scoreWith([...elsewhere, rule("G7", "spelling", "look", found(100, 1))]).total).toBe(98)
+    expect(scoreWith([...elsewhere, rule("G7", "spelling", "look", found(100, 1))]).total).toBe(97)
+  })
+
+  test("is never below 0, and fixing something on a new resume with no bullets still raises it", () => {
+    expect(mustFixMax(100)).toBe(0)
+    // A name, a broken email and a company: no description, no dates, nothing else yet.
+    const early = (email: Outcome) => [
+      rule("C1", "contact", "fix", passes),
+      rule("C2", "contact", "fix", () => email),
+      rule("S1", "sections", "fix", found(1)),
+      rule("S3", "sections", "look", found(1)),
+      rule("D1", "dates", "fix", found(1)),
+      rule("B8", "bullets", "look", found(1)),
+    ]
+    const before = scoreWith(early(found(1)())).total!
+    expect(before).toBeGreaterThan(0)
+    expect(scoreWith(early(passes())).total).toBeGreaterThan(before)
+  })
+
+  test("holds the score lower with each must-fix after the first", () => {
+    const elsewhere = CATEGORIES.filter(({ id }) => id !== "spelling").flatMap(({ id }) => passing(id, 1))
+    // Five typos in a hundred texts, each its own must-fix.
+    const typos = scoreWith([...elsewhere, rule("G1", "spelling", "fix", found(100, 5))])
+    expect(category(typos, "spelling").fixes).toBe(5)
+    expect(typos.total).toBe(mustFixMax(5))
+    expect(mustFixMax(1)).toBe(MUST_FIX_MAX)
+    expect(mustFixMax(5)).toBe(MUST_FIX_MAX - 4 * MUST_FIX_STEP)
+  })
+
+  test("is held down while the bullets earn little of their points, however well the rest does", () => {
+    const elsewhere = CATEGORIES.filter(({ id }) => id !== "bullets").flatMap(({ id }) => passing(id, 1))
+    // Every bullet fails two suggestions: Bullets earns 30% of its points, and the rest earn all of theirs.
+    const failing = [...passing("bullets"), rule("B1", "bullets", "look", found(4)), rule("B3", "bullets", "look", found(4))]
+    const weak = scoreWith([...elsewhere, ...failing])
+    expect(category(weak, "bullets").earned).toBeCloseTo(9)
+    const share = CONTENT_FLOOR + ((1 - CONTENT_FLOOR) * 0.3) / CONTENT_FULL
+    expect(weak.total).toBe(wholePoints((100 - 21) * share))
+    // A problem elsewhere still costs, and fixing it still raises the score.
+    const dates = [...passing("dates"), rule("D4", "dates", "look", found(1))]
+    const alsoDates = scoreWith([...elsewhere.filter((each) => each.category !== "dates"), ...dates, ...failing])
+    expect(alsoDates.total).toBe(wholePoints((100 - 21 - 3.5) * share))
+    // Bullets that earn most of their points cost only those points.
+    const strong = scoreWith([...elsewhere, rule("B3", "bullets", "look", found(100, 1))])
+    expect(strong.total).toBe(wholePoints(100 - 30 * 0.35 * 0.505))
   })
 
   test("leaves out rules that don't apply, broke, or are still waiting, and a category without any gives its points to the others", () => {
@@ -214,7 +258,7 @@ describe("the resume score", () => {
 
   test("is 100 only when everything passes", () => {
     // One problem in a thousand still costs points.
-    expect(scoreWith([rule("B3", "bullets", "look", found(1000, 1))]).total).toBe(89)
+    expect(scoreWith([rule("B3", "bullets", "look", found(1000, 1))]).total).toBe(82)
     // Points that come to a whole number, give or take how computers add, count as whole.
     expect(wholePoints(0.1 * 3 * 10)).toBe(3)
     expect(wholePoints(2.9999999999)).toBe(3)
@@ -266,6 +310,7 @@ describe("while checks are under way", () => {
       earned: 10,
       applies: true,
       mustFix: false,
+      fixes: 0,
     })
     expect(shown.total).toBe(50)
     expect(shown.mustFix).toBe(true)
@@ -388,13 +433,14 @@ describe("on real resumes", () => {
     expect(withDuties).toBeLessThanOrEqual(baseline - 8)
     const withTypo = (await scoreOfResume(duties(" and internal sofware")))!
     expect(withTypo).toBeLessThan(withDuties)
-    expect(bandOf(withTypo).name).toBe("Good")
+    // Duties with no results anywhere in the experience aren't a good resume, however tidy the rest is.
+    expect(bandOf(withDuties).name).toBe("Needs work")
   })
 
   test("each template's sample scores high, and a resume with obvious problems fails", async () => {
-    // A product's name the spelling checker doesn't know is added as a word, as a person would (see spelling.test.ts).
+    // Names the spelling checker doesn't know are added as words, as a person would (see spelling.test.ts).
     for (const sample of samples) {
-      const words = { ...sample, [CHECK_FIELD]: addWord(readCheckState(sample), "Powerwall") }
+      const words = { ...sample, [CHECK_FIELD]: addWord(addWord(readCheckState(sample), "Powerwall"), "Questrom") }
       expect(await scoreOfResume(words), sample.selectedTemplate).toBeGreaterThanOrEqual(95)
     }
 

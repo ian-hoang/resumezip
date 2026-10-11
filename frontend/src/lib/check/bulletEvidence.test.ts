@@ -31,6 +31,10 @@ describe("scope cues", () => {
     }
     expect(hasScope("Migrated Python 3 services for 40 teams")).toBe(true)
   })
+
+  test("a count of meetings or tasks says how busy, not how far the work reached", () => {
+    for (const text of ["Attended 5 meetings", "Helped with 4 weekly tasks", "Juggled 3 things"]) expect(hasScope(text), text).toBe(false)
+  })
 })
 
 describe("qualitative result cues", () => {
@@ -41,9 +45,30 @@ describe("qualitative result cues", () => {
       "Resolved keyboard navigation barriers in the checkout",
       "Built a dashboard used by the dispatch team",
       "Created training so volunteers could answer urgent calls",
+      "Helped a food bank forecast demand, so its volunteers could plan deliveries a month ahead",
+      "Built a scheduler that allowed the clinic's nurses to swap shifts",
     ])
       expect(hasOutcome(text), text).toBe(true)
     expect(hasOutcome("Built a dashboard")).toBe(false)
+  })
+
+  test("a change that doesn't say what changed isn't a result", () => {
+    for (const text of [
+      "Improved the code",
+      "Increased overall quality",
+      "Reduced bugs",
+      "Enabled the team",
+      "Used by people",
+      "Led to better results",
+    ])
+      expect(hasOutcome(text), text).toBe(false)
+    for (const text of [
+      "Improved page load speed",
+      "Reduced customer churn",
+      "Enabled support agents to close tickets",
+      "Led to faster releases",
+    ])
+      expect(hasOutcome(text), text).toBe(true)
   })
 })
 

@@ -31,6 +31,7 @@ import {
   SKILL_FIELDS,
   TECH_NAMES,
   TECH_WORDS,
+  TYPO_COST,
   US_STATES,
   VARIABLE_ACRONYMS,
   WORD_ACRONYMS,
@@ -228,8 +229,9 @@ const typos = grammarRule(
     level: "fix",
     title: "English spelling to review",
     why: "A typo is one of the first things a recruiter notices. The dictionary doesn't know every name or specialist term, so add those.",
+    each: TYPO_COST,
   },
-  (lint, _text, known, inSkills) => {
+  (lint, text, known, inSkills) => {
     if (!GRAMMAR_RULES.typos.includes(lint.rule)) return []
     // A slip in a tech name ("TypeScirpt") is a typo, though capitals inside make it look like a name.
     const name = slipOfTechName(lint.text, (word) => known().has(word))
@@ -239,7 +241,7 @@ const typos = grammarRule(
     if (!name && !capitals && !isTypo(lint.text, known())) return []
     // The skills are mostly names Harper doesn't know ("Redux", "Kanban"), so
     // unfamiliar names there do not need a dictionary warning.
-    const instead = name ?? slip
+    const instead = name ?? slip ?? (inSkills ? undefined : likelyTypo(lint, text))
     if (inSkills && !instead) return []
     if (instead) {
       return [
@@ -259,6 +261,9 @@ const typos = grammarRule(
       {
         text: lint.text,
         level: "look",
+        // Harper's split suggestions ("run books", "back filled") were wrong
+        // for every resume compound we tried, so they're only advice.
+        ...(lint.rule === "SplitWords" && { advisory: true }),
         message: `The English dictionary doesn't know “${lint.text}”`,
         suggestion: guess
           ? `Did you mean “${guess}”? If “${lint.text}” is a name or a specialist term, add the word.`
@@ -269,9 +274,30 @@ const typos = grammarRule(
   { readsSkills: true },
 )
 
+// Before the start of a text or a sentence, where any word is capitalized.
+const SENTENCE_START = /(?:^|[.!?]\s+)[^\p{L}\p{N}]*$/u
+
+/**
+ * What a word Harper doesn't know was meant to be, when it's almost surely a
+ * typo: one typing slip (`typedSlip`) from Harper's first guess, in lower
+ * case, like "sofware" or "teh". A name the dictionary lacks is capitalized,
+ * as "Pydantic" is, though it's one slip from "pedantic". At the start of a
+ * sentence every word is, so there the guess must be a verb ("Develped").
+ */
+function likelyTypo(lint: GrammarLint, text: string): string | undefined {
+  const guess = lint.suggestions[0]
+  if (!guess || lint.text.length < 3 || !typedSlip(lint.text, guess)) return undefined
+  if (/^\p{Ll}+$/u.test(lint.text)) return /^\p{Ll}+$/u.test(guess) ? guess : undefined
+  const capitalized = /^\p{Lu}\p{Ll}+$/u
+  return capitalized.test(lint.text) && capitalized.test(guess) && SENTENCE_START.test(text.slice(0, lint.start)) && verbOf(guess)
+    ? guess
+    : undefined
+}
+
 // Similar dictionary words are not proof: Pydantic/Pedantic and Polars/Polaris
-// are legitimate names. Only reviewed common errors are must-fixes; other
-// unknown words, including compounds such as metagenomics, are suggestions.
+// are legitimate names. Reviewed common errors and likely typing slips
+// (likelyTypo) are must-fixes; other unknown words, including terms such as
+// spintronics, are suggestions.
 const spellingSlip = (lint: GrammarLint) => {
   const correction = COMMON_MISSPELLINGS[lint.text.toLowerCase()]
   if (!correction) return undefined

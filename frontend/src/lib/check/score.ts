@@ -9,11 +9,23 @@
 // a real problem. Nor can a category earn more than the share of its rules
 // that pass, so one whose only rules that apply fail, as with no bullets at
 // all, earns nothing. While a must-fix is left, the score stays at
-// MUST_FIX_MAX or below.
+// MUST_FIX_MAX or below, MUST_FIX_STEP lower for each one after the first.
+// And it's scaled down while the bullets earn little of their points (CONTENT_FLOOR).
 
 import type { Finding, Report, Rule, RuleResult } from "./engine"
 import { hasEnoughToCheck } from "./labels"
-import { CATEGORIES, LEAST_PENALTY, LEVELS, MUST_FIX_MAX, SCORE_BANDS, SCORE_COLORS, type CategoryId } from "./settings"
+import {
+  CATEGORIES,
+  CONTENT_FLOOR,
+  CONTENT_FULL,
+  LEAST_PENALTY,
+  LEVELS,
+  MUST_FIX_MAX,
+  MUST_FIX_STEP,
+  SCORE_BANDS,
+  SCORE_COLORS,
+  type CategoryId,
+} from "./settings"
 
 /** How a category did. */
 export interface CategoryScore {
@@ -26,6 +38,8 @@ export interface CategoryScore {
   applies: boolean
   /** Whether a must-fix rule found something, which holds the total at MUST_FIX_MAX or below. */
   mustFix: boolean
+  /** How many must-fix problems its rules found, each after the first holding the total lower (`mustFixMax`). */
+  fixes: number
 }
 
 export interface Score {
@@ -79,7 +93,7 @@ const weight = (result: RuleResult) => LEVELS[result.rule.level].penalty
 export function categoryScore(id: CategoryId, results: readonly RuleResult[]): CategoryScore {
   const { points } = CATEGORIES.find((category) => category.id === id)!
   const ran = results.filter((result) => result.rule.category === id && counts(result))
-  if (ran.length === 0) return { id, points, earned: 0, applies: false, mustFix: false }
+  if (ran.length === 0) return { id, points, earned: 0, applies: false, mustFix: false, fixes: 0 }
   const left = Math.max(0, 1 - ran.reduce((sum, result) => sum + penaltyOf(result), 0))
   const passing =
     ran.reduce((sum, result) => sum + weight(result) * creditOf(result), 0) / ran.reduce((sum, result) => sum + weight(result), 0)
@@ -89,23 +103,46 @@ export function categoryScore(id: CategoryId, results: readonly RuleResult[]): C
     earned: points * Math.min(left, passing),
     applies: true,
     mustFix: ran.some((result) => failed(result) && levelOf(result) === "fix"),
+    fixes: ran.reduce((sum, result) => sum + result.findings.filter(isMustFix).length, 0),
   }
 }
+
+const isMustFix = (finding: Finding) => finding.level === "fix" && !finding.advisory && !finding.dismissed
+
+/** The most a resume can score with this many must-fixes left: MUST_FIX_MAX for one, MUST_FIX_STEP lower for each after it. */
+export const mustFixMax = (fixes: number) => Math.max(0, MUST_FIX_MAX - MUST_FIX_STEP * Math.max(0, fixes - 1))
+
+const fixesOf = (categories: readonly CategoryScore[]) =>
+  categories.reduce((sum, category) => sum + (category.applies ? category.fixes : 0), 0)
 
 /** Whether a must-fix problem is left in the categories that apply. */
 export const hasMustFix = (categories: readonly CategoryScore[]) => categories.some((category) => category.applies && category.mustFix)
 
 /**
  * Out of 100: what the categories that apply earned, of what they're worth,
- * and no more than MUST_FIX_MAX while a must-fix is left. Null when none apply.
+ * scaled down while the bullets earn little (`contentShare`), and no more
+ * than `mustFixMax` while a must-fix is left. Null when none apply.
  */
 export function totalOf(categories: readonly CategoryScore[]): number | null {
   const counted = categories.filter((category) => category.applies)
   const possible = counted.reduce((sum, category) => sum + category.points, 0)
   if (possible === 0) return null
-  const total = (100 * counted.reduce((sum, category) => sum + category.earned, 0)) / possible
-  return wholePoints(hasMustFix(counted) ? Math.min(total, MUST_FIX_MAX) : total)
+  const earned = (100 * counted.reduce((sum, category) => sum + category.earned, 0)) / possible
+  const bullets = counted.find((category) => category.id === "bullets")
+  const total = bullets ? earned * contentShare(bullets) : earned
+  return wholePoints(hasMustFix(counted) ? Math.min(total, mustFixMax(fixesOf(counted))) : total)
 }
+
+/**
+ * The share of the total a resume keeps for how its bullets did:
+ * CONTENT_FLOOR when they earn nothing, rising to all of it once they earn
+ * CONTENT_FULL of their points. A resume that passes everything but says
+ * little about the work isn't called good, while one weak role on a strong
+ * resume costs only its own points. Scaling rather than capping means fixing
+ * anything else still raises the score.
+ */
+const contentShare = (bullets: CategoryScore) =>
+  CONTENT_FLOOR + (1 - CONTENT_FLOOR) * Math.min(1, bullets.earned / bullets.points / CONTENT_FULL)
 
 /** The word for a score out of 100 (SCORE_BANDS). */
 export const bandOf = (total: number) => SCORE_BANDS.find((band) => total >= band.least) ?? SCORE_BANDS[SCORE_BANDS.length - 1]
@@ -206,5 +243,6 @@ export function shownScore(
   if (now.total === null) return { total: null, categories, mustFix: false }
   const mustFix = hasMustFix(shown) || hasMustFix(now.categories)
   const total = shown.length === categories.length ? totalOf(shown) : "checking"
-  return { total: typeof total === "number" && mustFix ? Math.min(total, MUST_FIX_MAX) : total, categories, mustFix }
+  const cap = mustFixMax(Math.max(fixesOf(shown), fixesOf(now.categories)))
+  return { total: typeof total === "number" && mustFix ? Math.min(total, cap) : total, categories, mustFix }
 }

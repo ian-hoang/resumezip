@@ -68,44 +68,61 @@ sent anywhere.
   words, degrees and verbs in `settings.ts` are spelled right, and so are
   names with capitals inside ("DuckDB"), words with digits, and initials,
   unless they're a clear slip ("RECIEVED") or one slip from a tech name
-  ("TypeScirpt"). Those clear slips are must-fixes. Any other unknown word
-  may be a typo ("sofware") or a name or term the dictionary lacks
-  ("Pydantic", "metagenomics"), so it's a suggestion: it costs a little until
-  it's added or dismissed, never holds the score at 89, and offers Harper's
-  guess as a question ("Did you mean…?"). The skills are mostly names Harper
-  doesn't know ("Redux", "Kanban"), so there G1 counts only reviewed common
-  misspellings ("Comunication") or typing slips in a known tech name. The
-  grammar rules leave skill lists alone.
+  ("TypeScirpt"). Those clear slips are must-fixes, and so is a lower-case
+  word one typing slip from Harper's guess ("sofware", "teh"), or a
+  capitalized one at the start of a sentence whose guess is a verb
+  ("Develped"). Any other unknown word may be a typo or a name or term the
+  dictionary lacks ("Litestar", "spintronics"), so it's a suggestion: it
+  costs points until it's added or dismissed, never caps the score, and
+  offers Harper's guess as a question ("Did you mean…?"). Harper's
+  suggestions to split a word ("run books") are only advice. Each typo
+  takes a share of G1's credit (`TYPO_COST`), so five cost more than one.
+  The skills are mostly names Harper doesn't know ("Zustand"), so there G1
+  counts only reviewed common misspellings ("Comunication") or typing slips
+  in a known tech name. The grammar rules leave skill lists alone.
 - Spelling and grammar are checked in English. A resume saved with another
   language chosen (`grammarLanguage: "other"` under `check`, which the Check
   panel used to offer) still skips G1–G7 and isn't checked with Harper.
 - Contact and writing preferences can be optional advice (`advisory: true`),
-  including missing social links, wording suggestions (B2, B4–B7) and all
+  including missing social links, wording suggestions (B2, B6, B7) and all
   polish rules, so Polish has no points. They are shown and can be
   dismissed, but never subtract points. Advice is for choices that are
   often right; a suggestion (`look`) is for what's usually a weakness but
   can be a false alarm, and dismissing it gives its points back. A rule can
   also mark individual problems as advisory or give them a contextual level:
   S3 treats missing work identity as a fix while keeping other entry details
-  as suggestions. B8 distinguishes missing or wholly generic descriptions
-  from optional bullet-count advice. B1 (a duty like "Responsible for"
-  instead of a contribution) is a suggestion. B3 asks each role for scope or
-  a result without a numeric quota: a count of anything plural ("1,500
-  robots"), a percentage or amount, or a change ("cut", "used by") counts.
-  It scores roles only, as a project's bullets often say what it is; there
-  it's advice. Its cues don't establish accomplishment quality.
+  as suggestions, and S2 and S5 treat a missing school or skills section as
+  a fix early in a career (`EARLY_CAREER_YEARS`). B8 counts a role with no
+  description, or with half or more of its bullets generic, and asks the
+  most recent job and any still going for two specific bullets; bullet
+  counts are advice. B1 (a duty like "Responsible for" instead of a
+  contribution), B4 ("I", "we") and B5 (buzzwords and vague words) are
+  suggestions. B3 asks half of each role's bullets for scope or a result: a
+  count of anything plural ("1,500 robots", but not "5 meetings"), a
+  percentage or amount, or a change ("cut deploy time", "used by the
+  dispatch team") that says what changed, in a bullet that isn't generic.
+  "Improved the code" doesn't. It scores roles only, as a project's bullets
+  often say what it is; there it's advice. Its cues don't establish
+  accomplishment quality.
 - `score.ts` works out the resume score (issue #67), out of 100: how well the
   resume follows these checks, not whether it gets anyone hired. Each
   category starts with all its points (`settings.ts`), and each rule that
   finds something takes some away: a must-fix up to half of them, a
-  suggestion up to a fifth. Finding anything at all takes at least half of
+  suggestion up to 35%. Finding anything at all takes at least half of
   that, so one typo in thirty fields still costs, and the rest grows with how
   much of the resume fails the rule. Passing earns nothing, so easy passes
   can't make up for a real problem, and dismissed suggestions count as
   passing. Advisory rules and findings are excluded from grading. Nor does a
   category earn more than the share of its scored rules that pass, so one
   whose only rules that apply fail, as with no bullets at all,
-  earns nothing. While a must-fix is left the score stays at 89 or below. Rules
+  earns nothing. While a must-fix is left the score stays at 89 or below,
+  3 lower for each must-fix after the first. The bullets are what a
+  recruiter reads, and the rest is easy to pass with a template, so until
+  they earn 90% of their points they take at least enough to keep the total
+  under a cap that runs from 30, for bullets that earn nothing, up to 100,
+  and other problems cost on top of that. `calibration.test.ts` holds
+  resumes of known quality, from trash to strong, to the scores they should
+  get, so tuning the weights in `settings.ts` can't drift. Rules
   that don't apply are left out, and a category none of whose rules apply
   gives its points to the others. Points are rounded down, so 100 means
   every scored check passed; optional advice may remain.
@@ -152,7 +169,9 @@ const realEmail: Rule = {
 - **Partial credit.** `checked` is how many things the rule looked at (fields,
   entries, bullets). Its credit is the share of them without a problem, unless
   it gives `credit` itself for a more specific measure.
-  A place with several problems, like a bullet with two typos, counts once.
+  A place with several problems, like a bullet with two typos, counts once,
+  unless the rule sets `each`: then each problem takes that share of its
+  credit, as each typo does.
 - **Point at the exact place:** a profile field, a section's title, a whole
   section, an entry, one of its fields, one bullet (`line`), or the PDF's
   pages. A place that isn't on the resume is a bug: it's logged and left out.

@@ -211,7 +211,7 @@ test("the checker asks for a name and an entry first, then scores the resume and
   // that the must-fixes hold it down.
   await expect(score).toContainText("Needs work")
   await expect(score).toContainText("How well this resume follows the checks below.")
-  await expect(score).toContainText("Capped at 89 until you fix 4 items.")
+  await expect(score).toContainText("Capped at 74 until you fix 6 items.")
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
   expect(errors).toEqual([])
