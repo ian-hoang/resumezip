@@ -49,6 +49,8 @@ interface Watched {
   started: number
   /** Each animation of the first view transition, by the part of it that moves, once it's under way. */
   running: Promise<{ part: string; ms: number }[]>
+  /** Whether something on the page itself was fading in, as opposed to a picture of it, once the first was under way. */
+  fadingIn: boolean
 }
 
 /** Counts the view transitions the page starts from here on, and keeps the first's animations. */
@@ -63,16 +65,20 @@ async function watchTransitions(page: Page) {
         const transition = start(update)
         // Ready once the browser has pictured both views and is animating between them; it fails if
         // the transition can't run, as when two parts of the page have the same name.
-        transition.ready.then(
-          () =>
-            resolve(
-              document.getAnimations().map((animation) => ({
-                part: (animation.effect as KeyframeEffect).pseudoElement ?? "",
-                ms: Number(animation.effect!.getComputedTiming().duration),
-              })),
-            ),
-          reject,
-        )
+        transition.ready.then(() => {
+          watched.fadingIn = document
+            .getAnimations()
+            .some(
+              (animation) =>
+                (animation as CSSTransition).transitionProperty === "opacity" && !(animation.effect as KeyframeEffect).pseudoElement,
+            )
+          resolve(
+            document.getAnimations().map((animation) => ({
+              part: (animation.effect as KeyframeEffect).pseudoElement ?? "",
+              ms: Number(animation.effect!.getComputedTiming().duration),
+            })),
+          )
+        }, reject)
         return transition
       }
     })
@@ -330,11 +336,13 @@ test("switching to the list moves each resume's page and name to its row, with f
   const moving = (await page.evaluate(() => (window as unknown as Watched).running)).filter(({ part }) =>
     part.startsWith("::view-transition"),
   )
-  // The rest of the page crossfades, and the two resumes' pages and names each move on their own,
-  // all in about a third of a second.
+  // The two resumes' pages and names each move on their own, in about a third of a second. The rest
+  // of the page isn't pictured: Safari shows such a picture of the whole page in slightly different
+  // colors, so the page would change shade until it ended. It stays live, and the new view fades in.
   const parts = moving.map(({ part }) => part)
-  expect(parts).toEqual(expect.arrayContaining(["::view-transition-old(root)", "::view-transition-new(root)"]))
-  expect(new Set(parts.filter((part) => /^::view-transition-group\((?!root\))/.test(part))).size).toBe(4)
+  expect(parts.filter((part) => part.endsWith("(root)"))).toEqual([])
+  expect(new Set(parts.filter((part) => part.startsWith("::view-transition-group("))).size).toBe(4)
+  expect(await page.evaluate(() => (window as unknown as Watched).fadingIn)).toBe(true)
   for (const { ms } of moving) {
     expect(ms).toBeGreaterThanOrEqual(250)
     expect(ms).toBeLessThanOrEqual(350)

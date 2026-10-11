@@ -9,9 +9,8 @@ const SWITCH_TYPE = "resume-view"
  * Switches between the pages and the list with `update`, a React state
  * change. Where the browser has view transitions, each resume's page and
  * name move from their place in one view to their place in the other (paired
- * by `morph`), and the rest crossfades. Returns "fade" where it doesn't, for
- * the new view to fade in instead (dashboard.css), and "instant" with less
- * motion, where nothing moves at all.
+ * by `morph`). Either way the new view fades in, unless this returns
+ * "instant": with less motion, where nothing moves at all (dashboard.css).
  */
 export function switchView(update: () => void): "morph" | "fade" | "instant" {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

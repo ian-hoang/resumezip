@@ -545,8 +545,8 @@
     animation: ball-land 560ms cubic-bezier(0.3, 1.4, 0.5, 1) 120ms both;
   }
 
-  /* Switching between the pages and the list, in a browser without view
-     transitions (viewSwitch.ts): the new view fades in. */
+  /* Switching between the pages and the list (viewSwitch.ts): the new view
+     fades in, under the moving pages where the browser has view transitions. */
   .view-fade {
     transition: opacity 240ms var(--ease-glide);
     @starting-style {
@@ -600,9 +600,15 @@
 }
 
 /* Switching between the pages and the list (viewSwitch.ts): each resume's page
-   and name glide from where they were to where they go, and the rest of the
-   page crossfades. Only for that switch, by its view transition type; with
-   less motion, the page doesn't start one. */
+   and name glide from where they were to where they go. Only for that switch,
+   by its view transition type; with less motion, the page doesn't start one.
+   The rest of the page isn't captured: iOS Safari draws a snapshot of the
+   whole page in slightly different colors, so the sky and the glass changed
+   shade for the length of the switch and snapped back. The page stays live
+   under the moving pictures instead, and the new view fades in (view-fade). */
+:root:active-view-transition-type(resume-view) {
+  view-transition-name: none;
+}
 :root:active-view-transition-type(resume-view)::view-transition-group(*),
 :root:active-view-transition-type(resume-view)::view-transition-old(*),
 :root:active-view-transition-type(resume-view)::view-transition-new(*) {
