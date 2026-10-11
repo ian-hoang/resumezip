@@ -24,6 +24,7 @@ import {
   checkingCategories,
   keepFixes,
   keepScores,
+  mustFixMax,
   scoreOf,
   shownFixes,
   shownScore,
@@ -266,7 +267,7 @@ function ScoreHeader({
           <Lock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {/* The count follows the cap (`shownFixes`); the wording without one is only a fallback. */}
           {fixes > 0
-            ? `Capped at ${MUST_FIX_MAX} until you fix ${fixes === 1 ? "1 item" : `${fixes} items`}.`
+            ? `Capped at ${mustFixMax(fixes)} until you fix ${fixes === 1 ? "1 item" : `${fixes} items`}.`
             : `Capped at ${MUST_FIX_MAX} while something's left to fix.`}
         </p>
       )}

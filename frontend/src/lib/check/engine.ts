@@ -97,6 +97,13 @@ interface RuleInfo {
   level: Level
   /** Optional coaching, shown with findings but excluded from grading. */
   advisory?: boolean
+  /**
+   * The share of the rule's credit each open finding takes, for a rule where
+   * how many problems there are matters more than how much of the resume
+   * they're in, as for typos. Without it, credit is the share of what it
+   * checked that had no problem.
+   */
+  each?: number
   /** What it checks, in a few words: "Your email address". */
   title: string
   /** Why it matters, in one line, shown with what it finds. */
@@ -277,13 +284,20 @@ function judge(rule: Rule, outcome: Outcome, view: ResumeView, dismissed: Readon
       ? 1
       : outcome.credit !== undefined
         ? clamp(outcome.credit)
-        : clamp((checked - failed) / checked)
+        : rule.each !== undefined
+          ? clamp(1 - rule.each * open.length)
+          : clamp((checked - failed) / checked)
   const scored = open.filter((finding) => !finding.advisory)
   const scoredPlaces = new Set(scored.map((finding) => placeId(finding.place))).size
   const scoring = rule.advisory
     ? null
     : {
-        credit: findings.some((finding) => finding.advisory) ? clamp((checked - scoredPlaces) / checked) : credit,
+        credit:
+          rule.each !== undefined
+            ? clamp(1 - rule.each * scored.length)
+            : findings.some((finding) => finding.advisory)
+              ? clamp((checked - scoredPlaces) / checked)
+              : credit,
         level: scored.some((finding) => finding.level === "fix") ? ("fix" as const) : scored.length ? ("look" as const) : rule.level,
         failed: scored.length > 0,
       }

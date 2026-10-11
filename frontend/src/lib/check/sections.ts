@@ -4,10 +4,12 @@
 import { SECTIONS, type FieldKey, type FieldKeyOf, type SectionName } from "@/components/editor/sections"
 import type { Problem, Rule } from "./engine"
 import { LOCATION_FIELDS, type Place } from "./places"
-import { textsOf, type Entry } from "./resume"
+import { datesOf } from "./readDate"
+import { textsOf, type Entry, type ResumeView } from "./resume"
 import {
   COLLEGE_DEGREE,
   COLLEGE_NAME,
+  EARLY_CAREER_YEARS,
   FRESHMAN_YEARS_LEFT,
   HIGH_SCHOOL_NAME,
   MAX_COURSES,
@@ -91,6 +93,20 @@ const experience: Rule = {
   },
 }
 
+/**
+ * Whether the person started working less than EARLY_CAREER_YEARS ago, or
+ * the resume doesn't say when: early in a career, a missing school or skills
+ * is a gap recruiters notice, while later the work can speak for itself.
+ */
+function earlyCareer(resume: ResumeView, today: Date): boolean {
+  const years = EXPERIENCE.flatMap((section) => resume.sections[section]).flatMap((entry) => {
+    const { start, end } = datesOf(entry)
+    const date = (start ?? end)?.date
+    return date && !date.present && date.year !== undefined ? [date.year] : []
+  })
+  return years.length === 0 || today.getFullYear() - Math.min(...years) < EARLY_CAREER_YEARS
+}
+
 const education: Rule = {
   id: "S2",
   category: "sections",
@@ -98,12 +114,18 @@ const education: Rule = {
   reads: "form",
   title: "Your education",
   why: "Most job posts ask for a degree or school, so recruiters look for it.",
-  check: ({ resume }) => ({
+  check: ({ resume, today }) => ({
     checked: 1,
     problems:
       filled(resume.sections.Education).length > 0
         ? []
-        : [{ place: { kind: "section", section: "Education" }, message: "Add your education" }],
+        : [
+            {
+              place: { kind: "section", section: "Education" },
+              message: "Add your education",
+              ...(earlyCareer(resume, today) && { level: "fix" as const }),
+            },
+          ],
   }),
 }
 
@@ -193,10 +215,14 @@ const skills: Rule = {
   reads: "form",
   title: "Your skills, in short lines, each listed once",
   why: "Recruiters and hiring software look for skills by name, and skim long lists.",
-  check: ({ resume }) => {
+  check: ({ resume, today }) => {
     const entries = filled(resume.sections.Skills)
     if (entries.length === 0) {
-      return { checked: 1, problems: [{ place: { kind: "section", section: "Skills" }, message: "Add your skills" }] }
+      const level = earlyCareer(resume, today) ? ("fix" as const) : undefined
+      return {
+        checked: 1,
+        problems: [{ place: { kind: "section", section: "Skills" }, message: "Add your skills", ...(level && { level }) }],
+      }
     }
     let checked = 0
     const problems: Problem[] = []

@@ -5,9 +5,18 @@ import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import type { Problem, Rule } from "./engine"
 import { hasEnded } from "./readDate"
 import type { Entry } from "./resume"
-import { BUZZWORDS, MAX_BULLETS, NEAR_DUPLICATE_LENGTH, SAME_START, VAGUE_WORDS, WEAK_STARTS } from "./settings"
+import {
+  BUZZWORDS,
+  IMPACT_SHARE,
+  MAX_BULLETS,
+  MIN_SPECIFIC_BULLETS,
+  NEAR_DUPLICATE_LENGTH,
+  SAME_START,
+  VAGUE_WORDS,
+  WEAK_STARTS,
+} from "./settings"
 import { bulletsIn, escaped, firstWord, opening } from "./text"
-import { hasOutcome, hasScope, isGenericBullet } from "./bulletEvidence"
+import { hasOutcome, hasScope, isGenericBullet, showsImpact } from "./bulletEvidence"
 import { alternativesTo, inTenseOf, verbAtStart, verbOf } from "./verbs"
 
 // Jobs and roles, whose bullets say what the person did. A project's bullets
@@ -106,28 +115,32 @@ const scopeAndResults: Rule = {
     return {
       // Only roles count toward the score; for a project it's advice (below).
       checked: entries.filter((entry) => ROLES.includes(entry.section)).length,
-      problems: entries.flatMap((entry) =>
-        entry.bullets.some(({ text }) => hasScope(text) || hasOutcome(text))
-          ? []
-          : [
-              {
-                place: { kind: "entry" as const, section: entry.section, entry: entry.index, field: entry.bullets[0].field },
-                // A role with no result anywhere in it counts, though dismissing
-                // gives the points back, as the cues can miss one. A project's
-                // bullets often say what it is instead, so there it's only advice.
-                advisory: !ROLES.includes(entry.section),
-                message: "Could you add the scope or result?",
-                suggestion: "Say who used the work, what changed, or how much it covered, where you can. A clear result needs no number.",
-              },
-            ],
-      ),
+      problems: entries.flatMap((entry) => {
+        // One number in a role shouldn't carry the rest of its bullets.
+        const shown = entry.bullets.filter(({ text }) => showsImpact(text)).length
+        const needed = Math.ceil(entry.bullets.length * IMPACT_SHARE)
+        if (shown >= needed) return []
+        return [
+          {
+            place: { kind: "entry" as const, section: entry.section, entry: entry.index, field: entry.bullets[0].field },
+            // A role without enough results counts, though dismissing gives
+            // the points back, as the cues can miss one. A project's
+            // bullets often say what it is instead, so there it's only advice.
+            advisory: !ROLES.includes(entry.section),
+            message:
+              shown === 0
+                ? "Could you add the scope or result?"
+                : `Only ${shown} of ${entry.bullets.length} bullets show a scope or result`,
+            suggestion: "Say who used the work, what changed, or how much it covered, where you can. A clear result needs no number.",
+          },
+        ]
+      }),
     }
   },
 }
 
 const pronouns: Rule = {
   id: "B4",
-  advisory: true,
   category: "bullets",
   level: "look",
   reads: "form",
@@ -151,7 +164,6 @@ const VAGUE = new RegExp(String.raw`(?<![\w-])(${VAGUE_WORDS.map(escaped).join("
 
 const buzzwords: Rule = {
   id: "B5",
-  advisory: true,
   category: "bullets",
   level: "look",
   reads: "form",
@@ -279,12 +291,27 @@ const descriptions: Rule = {
           ? [
               {
                 place: { ...place, line: generic[0].line },
-                advisory: generic.length < entry.bullets.length,
+                // One vague bullet among specific ones is advice; half or more is a pattern.
+                advisory: generic.length * 2 < entry.bullets.length,
                 message: "Name the work more specifically",
                 suggestion: "Which tools, reports or tasks? Say what you made or did and who it was for.",
               },
             ]
           : []
+        // A recent job is what a recruiter reads first, so one specific bullet
+        // there is too thin. Older jobs can be brief (above). Generic bullets
+        // that already count (above) aren't counted twice.
+        const specific = entry.bullets.length - generic.length
+        const peers = entries.filter((other) => other.section === entry.section)
+        const recent = entry.section === "Work" && (peers.indexOf(entry) === 0 || !hasEnded(entry, today))
+        const genericCounts = generic.length * 2 >= entry.bullets.length
+        if (resume.type !== "academic" && recent && !genericCounts && specific > 0 && specific < MIN_SPECIFIC_BULLETS) {
+          problems.push({
+            place,
+            message: "Only one specific bullet",
+            suggestion: "Add another bullet about what you did here, as recruiters read your most recent job first.",
+          })
+        }
         if (resume.type !== "academic" && entry.bullets.length > MAX_BULLETS) {
           problems.push({
             place,

@@ -62,38 +62,81 @@ describe("G1 typos", () => {
   })
 
   test("an unknown word is a suggestion that counts until it's dismissed or added, never a must-fix", async () => {
-    const resume = resumeWith([job(["Analyzed metagenomics samples", "Developed spintronics devices", "Recieved the team award"])])
+    const resume = resumeWith([job(["Analyzed electrophysiology recordings", "Developed spintronics devices", "Recieved the team award"])])
     const result = await check("G1", resume)
-    for (const text of ["metagenomics", "spintronics"]) {
+    for (const text of ["electrophysiology", "spintronics"]) {
       const finding = result.findings.find((finding) => finding.text === text)!
       expect(finding, text).toMatchObject({ level: "look" })
       expect(finding.advisory, text).toBeUndefined()
     }
     expect(result.findings.find((finding) => finding.text === "Recieved")).toEqual(expect.objectContaining({ level: "fix" }))
-    const term = result.findings.find((finding) => finding.text === "metagenomics")!
+    const term = result.findings.find((finding) => finding.text === "spintronics")!
     const dismissed = await check("G1", { ...resume, [CHECK_FIELD]: { dismissed: [term.key] } })
-    expect(dismissed.findings.some((finding) => finding.text === "metagenomics")).toBe(false)
+    expect(dismissed.findings.some((finding) => finding.text === "spintronics")).toBe(false)
 
     // On their own, unknown words cost a suggestion's points, without the must-fix cap.
-    const terms = resumeWith([job(["Analyzed metagenomics samples", "Developed spintronics devices"])])
+    const terms = resumeWith([job(["Analyzed electrophysiology recordings", "Developed spintronics devices"])])
     expect((await check("G1", terms)).scoring).toMatchObject({ failed: true, level: "look" })
     const keys = (await check("G1", terms)).findings.map((finding) => finding.key)
     expect((await check("G1", { ...terms, [CHECK_FIELD]: { dismissed: keys } })).scoring).toMatchObject({ failed: false, credit: 1 })
   })
 
   test("offers the dictionary's guess for an unknown word as a question", async () => {
-    const [finding] = (await check("G1", resumeWith([job(["Maintained internal sofware for the team"])]))).findings
-    expect(finding).toMatchObject({ text: "sofware", level: "look", message: "The English dictionary doesn't know “sofware”" })
-    expect(finding.suggestion).toMatch(/^Did you mean “\p{L}+”\? If “sofware” is a name or a specialist term, add the word\.$/u)
+    const [finding] = (await check("G1", resumeWith([job(["Analyzed electrophysiology recordings"])]))).findings
+    expect(finding).toMatchObject({
+      text: "electrophysiology",
+      level: "look",
+      message: "The English dictionary doesn't know “electrophysiology”",
+    })
+    expect(finding.suggestion).toMatch(/^Did you mean “\p{L}+”\? If “electrophysiology” is a name or a specialist term, add the word\.$/u)
+  })
+
+  test("a word one typing slip from the dictionary's guess, in lower case, is a must-fix", async () => {
+    const result = await check("G1", resumeWith([job(["Maintained internal sofware for the team", "Fixed teh billing export"])]))
+    expect(result.findings).toEqual([
+      expect.objectContaining({ text: "sofware", level: "fix", suggestion: "Try “software”. If it's spelled right, add the word." }),
+      expect.objectContaining({ text: "teh", level: "fix", suggestion: "Try “the”. If it's spelled right, add the word." }),
+    ])
+  })
+
+  test("at the start of a bullet, a slip is a must-fix only when it was meant to be a verb", async () => {
+    const result = await check("G1", resumeWith([job(["Develped the billing service", "Polars pipelines replaced pandas"])]))
+    expect(result.findings).toEqual([
+      expect.objectContaining({ text: "Develped", level: "fix", suggestion: "Try “Developed”. If it's spelled right, add the word." }),
+      expect.objectContaining({ text: "Polars", level: "look" }),
+    ])
   })
 
   test("a nearby dictionary word is not proof a specialist name is misspelled", async () => {
     const result = await check(
       "G1",
-      resumeWith([job(["Validated inputs with Pydantic", "Processed data with Polars", "Compiled services with Cython"])]),
+      resumeWith([job(["Built an API with Litestar", "Processed data with Polars", "Compiled services with Cython"])]),
     )
-    expect(result.findings.filter((finding) => ["Pydantic", "Polars"].includes(finding.text))).toHaveLength(2)
+    expect(result.findings.filter((finding) => ["Litestar", "Polars"].includes(finding.text))).toHaveLength(2)
     expect(result.findings.every((finding) => finding.level === "look")).toBe(true)
+  })
+
+  test("common tool names and compounds aren't taken for typos", async () => {
+    const resume = resumeWith([
+      job(["Validated inputs with Pydantic and Zod", "Wrote runbooks and backfilled multithreaded jobs", "Tracked work on a Kanban board"]),
+    ])
+    expect((await check("G1", resume)).status).toBe("passed")
+  })
+
+  test("Harper's suggestion to split a word in two is only advice", async () => {
+    const result = await check("G1", resumeWith([job(["Built semantic search with pgvector"])]))
+    expect(result.findings).toEqual([expect.objectContaining({ text: "pgvector", advisory: true })])
+    expect(result.scoring).toMatchObject({ failed: false })
+  })
+
+  test("each typo costs more of the rule's credit, wherever it is", async () => {
+    const one = await check("G1", resumeWith([job(["Maintained internal sofware", "Built a search index", "Wrote unit tests"])]))
+    const three = await check(
+      "G1",
+      resumeWith([job(["Maintained internal sofware and hardwre", "Built a serch index", "Wrote unit tests"])]),
+    )
+    expect(one.scoring!.credit).toBeCloseTo(0.8)
+    expect(three.scoring!.credit).toBeCloseTo(0.4)
   })
 
   test("capitalizing an ordinary typo doesn't hide it", async () => {

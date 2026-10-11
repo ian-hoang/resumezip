@@ -94,11 +94,20 @@ describe("S1 and S2 experience and education", () => {
     ).toBe("passed")
   })
 
-  test("S2 suggests adding education", () => {
+  test("S2 asks for education, as a must-fix early in a career", () => {
+    // No dates say how long the person has worked, so it's taken as early.
     expect(check("S2", { ...jake, educationSection: [] }).findings).toEqual([
-      expect.objectContaining({ level: "look", place: { kind: "section", section: "Education" }, message: "Add your education" }),
+      expect.objectContaining({ level: "fix", place: { kind: "section", section: "Education" }, message: "Add your education" }),
     ])
     expect(check("S2", { ...jake, educationSection: [{ id: 1 }] }).status).toBe("failed")
+    const since = (workStartDate: string) => ({
+      ...jake,
+      educationSection: [],
+      workExperienceSection: [{ ...jake.workExperienceSection[0], workStartDate, workEndDate: "Present" }],
+    })
+    expect(check("S2", since("Jun 2024")).findings).toEqual([expect.objectContaining({ level: "fix" })])
+    // Years into a career, the work can speak for itself, so it's a suggestion.
+    expect(check("S2", since("Jun 2015")).findings).toEqual([expect.objectContaining({ level: "look" })])
   })
 })
 
@@ -161,7 +170,15 @@ describe("S3 and S4 entries", () => {
 
 describe("S5 skills", () => {
   test("flags no skills", () => {
-    expect(check("S5", { ...jake, skillsSection: [] }).messages).toEqual(["Add your skills"])
+    expect(check("S5", { ...jake, skillsSection: [] }).findings).toEqual([
+      expect.objectContaining({ message: "Add your skills", level: "fix" }),
+    ])
+    const veteran = {
+      ...jake,
+      skillsSection: [],
+      workExperienceSection: [{ ...jake.workExperienceSection[0], workStartDate: "Jun 2015", workEndDate: "Present" }],
+    }
+    expect(check("S5", veteran).findings).toEqual([expect.objectContaining({ message: "Add your skills", level: "look" })])
   })
 
   test("flags a group with a category but no skills", () => {

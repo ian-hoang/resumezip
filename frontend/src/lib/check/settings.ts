@@ -32,7 +32,7 @@ export type CategoryId = (typeof CATEGORIES)[number]["id"]
  */
 export const LEVELS = {
   fix: { name: "Must fix", penalty: 0.5 },
-  look: { name: "Worth a look", penalty: 0.2 },
+  look: { name: "Worth a look", penalty: 0.35 },
 } as const
 
 export type Level = keyof typeof LEVELS
@@ -46,6 +46,20 @@ export const LEAST_PENALTY = 0.5
 
 /** The most a resume can score while a must-fix problem is left. */
 export const MUST_FIX_MAX = 89
+
+/** How much lower the most it can score goes with each must-fix after the first, so five typos hold it lower than one. */
+export const MUST_FIX_STEP = 3
+
+/**
+ * The share of its points a resume keeps when its bullets earn none of
+ * theirs. The bullets are what a recruiter reads, and the other categories
+ * are easy to pass with a template, so the total is scaled by how the
+ * bullets did, from this up to all of it (score.ts).
+ */
+export const CONTENT_FLOOR = 0.3
+
+/** The share of their points the bullets earn from which the total is no longer scaled down. */
+export const CONTENT_FULL = 0.75
 
 /**
  * The word shown beside a score: each band's lowest score, highest first.
@@ -157,6 +171,9 @@ export const PERSONAL_DETAILS = [
 export const SSN = /\b\d{3}[- ]\d{2}[- ]\d{4}\b|\b(ssn|social security(\s+(number|no\.?))?)\s*[:#]?\s*\d{9}\b/i
 
 // Sections & entries (S1–S10).
+
+/** Fewer years than this since the first job, and a missing school or skills section is a must-fix (S2, S5). */
+export const EARLY_CAREER_YEARS = 5
 
 /** A skills line with this many items or more reads as a list to skim past. */
 export const MAX_SKILLS_PER_LINE = 15
@@ -303,6 +320,12 @@ export const NUMBER_WORDS = [
   "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "dozen", "dozens",
   "hundred", "hundreds", "thousand", "thousands", "million", "millions", "billion", "billions", "doubled", "tripled", "halved",
 ]
+
+/** The share of a role's bullets, rounded up, that should show a scope or result (B3). */
+export const IMPACT_SHARE = 0.5
+
+/** A recent job with fewer specific bullets than this is too thin to show what was done (B8). */
+export const MIN_SPECIFIC_BULLETS = 2
 
 /** A job with more bullets than this buries the best of them. */
 export const MAX_BULLETS = 6
@@ -473,6 +496,12 @@ export const TECH_WORDS = [
   "malloc", "microservice", "microservices", "middleware", "monorepo", "onboarding", "pipelining", "preprocessing",
   "proptech", "quant", "refactor", "refactored", "refactoring", "repo", "repos", "runtime", "runtimes", "sharding",
   "startup", "startups", "tokenizer", "toolchain", "upskilling", "webhook", "webhooks", "ms", "ns",
+  // Compounds and tools Harper flagged in real resumes' bullets.
+  "backfill", "backfilled", "backfilling", "backfills", "codegen", "dashboarded", "dockerized", "finetuned", "hotfix",
+  "hotfixes", "metagenomics", "multithreaded", "offboarding", "protobuf", "protobufs", "runbook", "runbooks",
+  "wireframe", "wireframed", "wireframes", "wireframing",
+  "avro", "datadog", "fivetran", "flink", "istio", "kanban", "kibana", "plotly", "prisma", "pydantic", "redux",
+  "snowpipe", "splunk", "trino", "vitest", "zod",
   // Names one slip from a tech name above, which aren't slips of it (G1, G6).
   "openapi", "graphiql", "mssql", "mysqli", "youtuber", "youtubers",
 ]
@@ -488,8 +517,8 @@ export const FINE_TWICE = ["had", "that"]
  * other rule Harper has falls under G7, unless it's turned off below.
  */
 export const GRAMMAR_RULES = {
-  /** G1: words that aren't in the dictionary, or two words run together. */
-  typos: ["SpellCheck", "SplitWords"],
+  /** G1: words that aren't in the dictionary, or two words run together; "The" is Harper's own for "teh". */
+  typos: ["SpellCheck", "SplitWords", "The"],
   /** G2: "the the". */
   repeated: ["RepeatedWords"],
   /** G3: "a API", "an user". */
@@ -531,6 +560,12 @@ export const LEAD_OBJECTS = [
   "new", "key", "cross-functional", "company-wide", "global", "remote", "senior", "junior",
 ]
 
+/**
+ * How much of G1's credit each typo takes, so five typos cost more than one,
+ * even in five bullets of thirty. Coverage alone barely tells them apart.
+ */
+export const TYPO_COST = 0.2
+
 /** Tech names this long or longer are checked for slips ("TypeScirpt"): shorter ones are too close to other words ("CSS" and "CSV"). */
 export const MIN_TECH_SLIP = 6
 
@@ -544,9 +579,26 @@ export const BULLET_INTRO_ADVERBS = ["successfully", "independently", "jointly",
 export const BULLET_SCOPE_NOUNS = [
   "users", "customers", "clients", "patients", "students", "engineers", "employees", "volunteers", "teams", "partners",
   "locations", "sites", "branches", "countries", "departments", "records", "requests", "transactions", "orders", "applications",
-  "attendees", "participants", "people", "members", "reports", "tools", "tasks", "tests", "services", "servers", "devices",
+  "attendees", "participants", "people", "members", "reports", "tools", "tests", "services", "servers", "devices",
   "files", "documents", "events", "projects",
 ]
+/** Plurals a count before says how busy someone was, not how far the work reached: "Attended 5 meetings". */
+export const BULLET_FILLER_COUNTS = [
+  "meetings", "tasks", "things", "times", "items", "duties", "activities", "ways", "aspects", "areas", "stuff",
+]
+/**
+ * Words after a change or a result that don't say what changed, so "Improved
+ * the code" or "Used by people" isn't a result (bulletEvidence.ts). Generic
+ * words (BULLET_GENERIC_WORDS) don't count either.
+ */
+export const BULLET_VAGUE_RESULTS = [
+  "code", "quality", "performance", "efficiency", "productivity", "effectiveness", "experience", "workflow", "workflows",
+  "operations", "results", "outcomes", "bugs", "issues", "problems", "people", "others", "everyone", "users", "it",
+  "them", "this", "that", "better", "greater", "higher", "lower", "overall", "significantly", "greatly", "drastically",
+  "substantially", "considerably", "morale", "satisfaction", "engagement", "value", "growth",
+]
+/** How many words after a change or a result are read for what it was about. */
+export const OUTCOME_WORDS = 6
 export const BULLET_GENERIC_WORDS = [
   "a", "an", "the", "and", "or", "for", "of", "on", "in", "to", "with", "by", "at", "from", "our", "their", "my", "some",
   "various", "several", "multiple", "many", "different", "new", "useful", "important", "daily", "weekly", "monthly", "other",
@@ -554,6 +606,7 @@ export const BULLET_GENERIC_WORDS = [
   "processes", "project", "projects", "system", "systems", "service", "services", "activity", "activities", "duty", "duties",
   "team", "teams", "area", "areas", "business",
   "internal", "engineering", "using", "established", "methods", "implement", "requested", "features", "complete",
+  "software", "code", "bugs", "applications", "apps", "programs", "websites",
 ]
 export const WORD_ACRONYMS = ["NASA", "NATO", "NAFTA", "NOAA", "UNESCO", "UNICEF", "ASCII", "SCUBA", "RADAR", "LASER", "AIDS", "OPEC"]
 /** Repeated names stay names when written in capitals too. */

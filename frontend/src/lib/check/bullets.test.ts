@@ -103,10 +103,29 @@ describe("B2 action verbs", () => {
 })
 
 describe("B3 scope and results", () => {
-  test("accepts a useful result without imposing a percentage of numbered bullets", () => {
-    const bullets = ["Built the search index", "Led the redesign", "Wrote the API docs", "Cut query time by 40%"]
+  test("asks half of a role's bullets for a scope or result, and a result needs no number", () => {
+    const bullets = ["Built the search index", "Led the redesign", "Wrote the API docs for 30 partner teams", "Cut query time by 40%"]
     expect(check("B3", resumeWith(job(bullets))).status).toBe("passed")
     expect(check("B3", resumeWith(job(["Restored access to patient records during an outage"]))).status).toBe("passed")
+    // One number shouldn't carry a role of four bullets.
+    const one = check("B3", resumeWith(job(["Built the search index", "Led the redesign", "Wrote the API docs", "Cut query time by 40%"])))
+    expect(one.messages).toEqual(["Only 1 of 4 bullets show a scope or result"])
+    expect(one.scoring).toMatchObject({ failed: true, level: "look" })
+  })
+
+  test("a change or a result counts only when it says what changed", () => {
+    for (const bullet of ["Improved the code", "Increased quality", "Reduced bugs", "Enabled the team", "Built a tool used by people"]) {
+      expect(check("B3", resumeWith(job([bullet]))).status, bullet).toBe("failed")
+    }
+    for (const bullet of ["Cut deploy time for the mobile app", "Reduced customer churn", "Built a tool used by the dispatch team"]) {
+      expect(check("B3", resumeWith(job([bullet]))).status, bullet).toBe("passed")
+    }
+  })
+
+  test("a count of meetings or tasks, or a number in a generic bullet, isn't scope", () => {
+    for (const bullet of ["Attended 5 meetings", "Helped with 4 tasks", "Built 2 tools for the team"]) {
+      expect(check("B3", resumeWith(job([bullet]))).status, bullet).toBe("failed")
+    }
   })
 
   test("counts digits, %, $ and numbers written as words", () => {
@@ -164,6 +183,8 @@ describe("B4 “I” and “we”", () => {
       job(["I built the search index", "Grew our user base", "Led my team", "We shipped weekly", "Built it so i could test it"]),
     )
     expect(check("B4", resume).messages).toEqual(["Uses “I”", "Uses “our”", "Uses “my”", "Uses “We”", "Uses “i”"])
+    // A suggestion that counts, until it's dismissed.
+    expect(check("B4", resume).scoring).toMatchObject({ failed: true, level: "look", credit: 0 })
   })
 
   test("doesn't take other words for them", () => {
@@ -188,6 +209,7 @@ describe("B5 buzzwords and vague words", () => {
   test("flags them, saying which", () => {
     const resume = resumeWith(job(["Results-driven engineer who shipped fast", "Worked with various teams", "Built tools, scripts, etc."]))
     expect(check("B5", resume).messages).toEqual(["“Results-driven” says little on its own", "“various” is vague", "“etc.” is vague"])
+    expect(check("B5", resume).scoring).toMatchObject({ failed: true, level: "look", credit: 0 })
   })
 
   test("doesn't flag technical words that look like them", () => {
@@ -293,12 +315,35 @@ describe("B8 substantive descriptions", () => {
     expect(check("B8", resumeWith(job(seven))).scoring?.credit).toBe(1)
   })
 
-  test("one specific description is enough and an older additional role can be brief", () => {
-    const resume = resumeWith(job(["Built a searchable catalogue for the library"]), { ...job([], "Dec 2020", "Library"), id: 2 })
+  test("an older additional role can be brief", () => {
+    const resume = resumeWith(job(["Built a searchable catalogue for the library", "Trained 12 volunteers on the new catalogue"]), {
+      ...job([], "Dec 2020", "Library"),
+      id: 2,
+    })
     const result = check("B8", resume)
     expect(result.findings).toHaveLength(1)
     expect(result.findings[0]).toMatchObject({ message: "No description", advisory: true })
     expect(result.scoring?.credit).toBe(1)
+  })
+
+  test("asks the most recent job, and one still going, for two specific bullets", () => {
+    const older = { ...job(["Shelved returned books"], "Dec 2020", "Library"), id: 2 }
+    const result = check("B8", resumeWith(job(["Built a searchable catalogue for the library"]), older))
+    expect(result.findings).toEqual([
+      expect.objectContaining({
+        place: { kind: "entry", section: "Work", entry: 0, field: "workDescription" },
+        message: "Only one specific bullet",
+      }),
+    ])
+    expect(result.findings[0].advisory).toBeUndefined()
+    expect(result.scoring).toMatchObject({ failed: true, level: "look", credit: 0.5 })
+    // A generic bullet that already counts isn't counted again as a thin job.
+    const thin = check("B8", resumeWith(job(["Built various tools", "Built a searchable catalogue for the library"]), older))
+    expect(thin.messages).toEqual(["Name the work more specifically"])
+    // An academic CV lists roles briefly.
+    expect(check("B8", { ...resumeWith(job(["Built a searchable catalogue for the library"])), resumeTag: "academic" }).status).toBe(
+      "passed",
+    )
   })
 
   test("does not prescribe a bullet limit for an academic CV", () => {
@@ -330,10 +375,14 @@ describe("B8 substantive descriptions", () => {
     expect(result.scoring?.credit).toBe(0)
   })
 
-  test("a generic bullet among specific descriptions is coaching", () => {
-    const result = check("B8", resumeWith(job(["Built various tools", "Restored access to patient records during an outage"])))
-    expect(result.findings[0].advisory).toBe(true)
-    expect(result.scoring?.credit).toBe(1)
+  test("a generic bullet among specific descriptions is coaching, but half of them is a pattern", () => {
+    const specific = ["Restored access to patient records during an outage", "Built a searchable catalogue for the library"]
+    const one = check("B8", resumeWith(job(["Built various tools", ...specific])))
+    expect(one.findings[0].advisory).toBe(true)
+    expect(one.scoring?.credit).toBe(1)
+    const half = check("B8", resumeWith(job(["Built various tools", "Created various reports", ...specific])))
+    expect(half.findings[0].advisory).toBeUndefined()
+    expect(half.scoring).toMatchObject({ failed: true, credit: 0 })
   })
 
   test("does not score quoted product names as generic filler", () => {
