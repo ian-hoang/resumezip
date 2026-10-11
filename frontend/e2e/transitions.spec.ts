@@ -121,6 +121,47 @@ test("the template gallery fades away as it closes, rather than vanishing", asyn
   expect(errors).toEqual([])
 })
 
+test("the Add section menu grows in solid, and only what's in it fades in", async ({ page }) => {
+  const errors = pageErrors(page)
+  await newResume(page)
+  await transitionsDone(page)
+  // What fades as the menu opens: opacity transitions, and animations with opacity in their keyframes.
+  const recording = await page.evaluateHandle(() => {
+    const fading: Element[] = []
+    const onTransition = (event: TransitionEvent) => {
+      if (event.propertyName === "opacity" && event.target instanceof Element) fading.push(event.target)
+    }
+    const onAnimation = (event: AnimationEvent) => {
+      if (!(event.target instanceof Element)) return
+      const animation = event.target.getAnimations().find((each) => (each as CSSAnimation).animationName === event.animationName)
+      const keyframes = (animation?.effect as KeyframeEffect | undefined)?.getKeyframes() ?? []
+      if (keyframes.some((keyframe) => "opacity" in keyframe)) fading.push(event.target)
+    }
+    document.addEventListener("transitionrun", onTransition)
+    document.addEventListener("animationstart", onAnimation)
+    return { fading }
+  })
+
+  await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Add section", exact: true }).click()
+  const menu = page.getByRole("menu", { name: "Add section" })
+  await expect(menu.getByRole("menuitem", { name: "Custom section" })).toBeVisible()
+  await settled(menu)
+  // See-through glass doesn't blur what's behind it, so a menu fading in would
+  // show the page plainly through it, then frost over at once as it ended.
+  const { menuFaded, contentsFaded } = await menu.evaluate(
+    (menu, { fading }) => ({
+      menuFaded: fading.some((element) => element.contains(menu)),
+      contentsFaded: fading.some((element) => menu.contains(element) && element !== menu),
+    }),
+    recording,
+  )
+  expect(menuFaded).toBe(false)
+  expect(contentsFaded).toBe(true)
+  await page.keyboard.press("Escape")
+  await expect(menu).toBeHidden()
+  expect(errors).toEqual([])
+})
+
 test("the New resume dialog fades in", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
