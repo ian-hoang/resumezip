@@ -60,6 +60,12 @@ npm run test:browser   # after a build; see below
   app changes either.
   Word drops the attachment when it saves, and then the file opens like any
   Word file.
+- `src/lib/latex.ts` makes the LaTeX file in the same menu, to keep editing on
+  Overleaf: the PDF's words in the style of Jake's Resume, its packages and
+  commands, whatever the template. It compiles with pdfLaTeX, Overleaf's
+  default, unless the resume has letters pdfLaTeX's fonts don't (Cyrillic,
+  Greek, Vietnamese); then the file asks for XeLaTeX, and the editor says so.
+  It doesn't carry the resume, so "Open a file" doesn't read it.
 - Save to Google Drive, in the same ▾ menu, uploads the PDF straight from the
   browser once Google's sign-in window hands back a token (`src/lib/googleDrive.ts`
   explains how). `/google-drive` is the page that window comes back to.

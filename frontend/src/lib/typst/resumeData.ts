@@ -56,7 +56,7 @@ export type ExtraTemplateSection =
   { kind: "text"; heading: string; paragraphs: string[] } | { kind: "list"; heading: string; bullets: Run[][] }
 
 /** A stretch of a bullet's text: **bold**, *italic* or ***both*** where the user marked it. */
-interface Run {
+export interface Run {
   text: string
   bold: boolean
   italic: boolean

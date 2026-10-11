@@ -13,7 +13,7 @@ export interface Failure {
    */
   reason: PdfFailure | "share" | "popup" | DriveFailure
   count: number
-  of?: "Word file"
+  of?: "Word file" | "LaTeX file"
 }
 
 /**

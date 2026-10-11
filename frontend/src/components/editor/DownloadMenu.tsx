@@ -33,6 +33,8 @@ export interface MenuNotice {
   working?: boolean
   /** The file it's about, as "Ada's resume.pdf". */
   file?: string
+  /** What to do with it next, as the last line. */
+  detail?: string
   /** Its mark once it's done, as Drive's triangle; a tick otherwise. */
   icon?: React.ReactNode
   /** What was made, as the file in Drive: `label` is shown, and `name` is what it's called aloud. */
@@ -330,6 +332,7 @@ export default function DownloadMenu({ choices, busy = false, onOpen, notice = n
                 )}
               </p>
             )}
+            {notice.detail && <p className="mt-1 text-[13px] leading-snug text-ink">{notice.detail}</p>}
           </div>
           {!notice.working && (
             <button

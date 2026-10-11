@@ -7,8 +7,8 @@ import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
-import { DriveIcon, JsonIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
-import DownloadMenu from "@/components/editor/DownloadMenu"
+import { DriveIcon, JsonIcon, LatexIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
+import DownloadMenu, { type MenuNotice } from "@/components/editor/DownloadMenu"
 import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
 import Loader from "@/components/site/Loader"
@@ -132,6 +132,8 @@ function Editor({ id }: { id: string }) {
   const preparePdf = usePdfFile()
   const sharePdf = useSharePdf(preparePdf, () => announce("PDF shared"))
   const drive = useSaveToDrive(preparePdf, () => announce("PDF saved to Google Drive"))
+  // What to do with a LaTeX file pdfLaTeX can't compile, under the ▾ once it's downloaded.
+  const [latexNotice, setLatexNotice] = useState<MenuNotice | null>(null)
   // Small screens show the form or the preview, not both.
   const [view, setView] = useState<"edit" | "preview">("edit")
   const [typing, setTyping] = useState(false)
@@ -369,7 +371,7 @@ function Editor({ id }: { id: string }) {
       const save = await makeDownload({ ...resume, sectionOrder: resolveSections(resume) })
       await filled
       save()
-      // Only a failed PDF is put right; a failed Word file still is one.
+      // Only a failed PDF is put right; a failed Word or LaTeX file still is one.
       setFailure((previous) => (previous?.of ? previous : null))
       setDownloadedAt(Date.now())
     } catch (error) {
@@ -388,12 +390,39 @@ function Editor({ id }: { id: string }) {
     try {
       const { toWordFile, WORD_TYPE } = await import("@/lib/word")
       saveFile(toWordFile({ ...resume, sectionOrder: resolveSections(resume) }), fileNameOf(resume, "docx"), WORD_TYPE)
-      // Only a failed Word file is put right; a failed PDF still is one.
-      setFailure((previous) => (previous?.of ? null : previous))
+      // Only a failed Word file is put right; a failed PDF or LaTeX file still is one.
+      setFailure((previous) => (previous?.of === "Word file" ? null : previous))
       announce("Word file downloaded")
     } catch (error) {
       console.error("Error downloading the Word file:", error)
       setFailure((previous) => nextFailure(previous, error, { of: "Word file" }))
+    }
+  }
+
+  // The PDF's words as Jake's Resume in LaTeX, to keep editing on Overleaf.
+  // Its code downloads the first time it's chosen.
+  const downloadLatex = async () => {
+    const resume = read()
+    if (!resume) return
+    try {
+      const { toLatexFile, LATEX_TYPE } = await import("@/lib/latex")
+      const { text, beyondPdfLatex } = toLatexFile({ ...resume, sectionOrder: resolveSections(resume) })
+      const name = fileNameOf(resume, "tex")
+      saveFile(text, name, LATEX_TYPE)
+      // Only a failed LaTeX file is put right; a failed PDF or Word file still is one.
+      setFailure((previous) => (previous?.of === "LaTeX file" ? null : previous))
+      // Overleaf compiles with pdfLaTeX unless it's told otherwise, and the file can't tell it.
+      if (beyondPdfLatex.length) {
+        const detail = "It has letters pdfLaTeX can't print. On Overleaf, set Compiler to XeLaTeX in the project's settings."
+        drive.dismiss()
+        setLatexNotice({ title: "LaTeX file downloaded", file: name, detail })
+        announce(`LaTeX file downloaded. ${detail}`)
+      } else {
+        announce("LaTeX file downloaded")
+      }
+    } catch (error) {
+      console.error("Error downloading the LaTeX file:", error)
+      setFailure((previous) => nextFailure(previous, error, { of: "LaTeX file" }))
     }
   }
 
@@ -515,10 +544,19 @@ function Editor({ id }: { id: string }) {
                   choices={[
                     { title: "Word", hint: "To edit in Word, Google Docs or Pages", icon: <WordIcon />, onChoose: downloadWord },
                     {
+                      title: "LaTeX",
+                      hint: "To edit on Overleaf, in the style of Jake's Resume",
+                      icon: <LatexIcon />,
+                      onChoose: downloadLatex,
+                    },
+                    {
                       title: "Save to Google Drive",
                       hint: "Puts the PDF in your Drive. Google asks you first.",
                       icon: <DriveIcon />,
-                      onChoose: drive.save,
+                      onChoose: () => {
+                        setLatexNotice(null)
+                        drive.save()
+                      },
                     },
                     {
                       title: "JSON",
@@ -536,14 +574,19 @@ function Editor({ id }: { id: string }) {
                   notice={
                     drive.saving
                       ? { title: "Saving to Google Drive…", working: true }
-                      : drive.saved && {
-                          title: "Saved to Google Drive",
-                          file: drive.saved.name,
-                          icon: <DriveIcon />,
-                          link: { href: drive.saved.link, label: "Open it", name: "Open it in Google Drive" },
-                        }
+                      : drive.saved
+                        ? {
+                            title: "Saved to Google Drive",
+                            file: drive.saved.name,
+                            icon: <DriveIcon />,
+                            link: { href: drive.saved.link, label: "Open it", name: "Open it in Google Drive" },
+                          }
+                        : latexNotice
                   }
-                  onNoticeClose={drive.dismiss}
+                  onNoticeClose={() => {
+                    drive.dismiss()
+                    setLatexNotice(null)
+                  }}
                 />
               </div>
               <span role="status" className="sr-only">
@@ -561,7 +604,7 @@ function Editor({ id }: { id: string }) {
               key={failure.count}
               failure={failure}
               retrying={downloading}
-              onRetry={failure.of ? downloadWord : download}
+              onRetry={failure.of === "LaTeX file" ? downloadLatex : failure.of ? downloadWord : download}
               className={BANNER}
             />
           )}

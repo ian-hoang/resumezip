@@ -1,5 +1,6 @@
 // The ▾ menu's choices drawn as their own marks, so each is found at a glance:
-// Word's W, Google Drive's triangle, JSON's braces, and the share symbol.
+// Word's W, TeX's dropped E, Google Drive's triangle, JSON's braces, and the
+// share symbol.
 // Drawn here rather than loaded, as resumezip makes no calls it doesn't need.
 // Gradients are keyed with useId, as each mark can be on the page more than once.
 
@@ -82,6 +83,23 @@ export function JsonIcon({ className }: IconProps) {
         d="M9.6 6.5c-1.6 0-1.9.9-1.9 2.2v1.6c0 .9-.5 1.6-1.5 1.7 1 .1 1.5.8 1.5 1.7v1.6c0 1.3.3 2.2 1.9 2.2M14.4 6.5c1.6 0 1.9.9 1.9 2.2v1.6c0 .9.5 1.6 1.5 1.7-1 .1-1.5.8-1.5 1.7v1.6c0 1.3-.3 2.2-1.9 2.2"
         fill="none"
         stroke="#3b2a00"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** LaTeX: "TeX" with its E dropped below the line, as TeX writes its name, on a green tile. */
+export function LatexIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="4.5" fill="#138a3e" />
+      <path
+        d="M4.6 7.6h5.2M7.2 7.6v8.2M12.5 10.1H10v7.6h2.5M10 13.9h2.2M13.8 7.6l5.4 8.2M19.2 7.6l-5.4 8.2"
+        fill="none"
+        stroke="#fff"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"

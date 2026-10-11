@@ -73,11 +73,13 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
   await page.keyboard.press("ArrowDown")
   await expect(page.getByRole("menuitem", { name: /^Word/ })).toBeFocused()
   await page.keyboard.press("ArrowDown")
+  await expect(page.getByRole("menuitem", { name: /^LaTeX/ })).toBeFocused()
+  await page.keyboard.press("ArrowDown")
   await expect(page.getByRole("menuitem", { name: /^Save to Google Drive/ })).toBeFocused()
   await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()
   await expect(more).toHaveAttribute("aria-expanded", "true")
-  // Each choice shows its own mark (Word's W, Drive's triangle, JSON's braces), to find it at a glance.
+  // Each choice shows its own mark (Word's W, TeX's dropped E, Drive's triangle, JSON's braces), to find it at a glance.
   for (const item of await page.getByRole("menuitem").all()) await expect(item.locator("svg")).toHaveCount(1)
   // Its row is rounded to sit inside the menu's corners, not a pill bulging out of two lines.
   const corner = (element: Element) => parseFloat(getComputedStyle(element).borderTopLeftRadius)
@@ -89,6 +91,7 @@ test("a resume downloaded as JSON from the ▾ menu opens in another browser exa
 
   // Choosing JSON saves "<name>.json", and the keyboard goes back to the ▾.
   await more.click()
+  await page.keyboard.press("ArrowDown")
   await page.keyboard.press("ArrowDown")
   await page.keyboard.press("ArrowDown")
   await expect(json).toBeFocused()

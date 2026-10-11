@@ -1,0 +1,215 @@
+%-------------------------
+% Resume in LaTeX, from resumezip
+% Based on Jake's Resume: https://github.com/jakegut/resume
+% Author: Jake Gutierrez
+% License: MIT
+%-------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\else
+  % XeLaTeX or LuaLaTeX: New Computer Modern, as resumezip's Jake's is set in.
+  \usepackage{newcomputermodern}
+\fi
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\ifPDFTeX
+  \input{glyphtounicode}
+\fi
+
+\hypersetup{pdftitle={Rafael Conde}}
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that generated pdf is machine readable/ATS parsable
+\ifPDFTeX
+  \pdfgentounicode=1
+\fi
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+% A line with one part on the left and one on the right. Jake's uses
+% tabular*, where a long left part runs into the right one; here it wraps.
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabularx}{0.97\textwidth}[t]{L@{\hspace{0.8em}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabularx}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabularx}{0.97\textwidth}{L@{\hspace{0.8em}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabularx}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabularx}{0.97\textwidth}{L@{\hspace{0.8em}}r}
+      \small#1 & #2 \\
+    \end{tabularx}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+% Paragraphs, as the summary's, in from the margin as entries are.
+\newcommand{\resumeTextStart}{\begin{itemize}[leftmargin=0.15in, label={}, parsep=0.6em]\item\relax}
+\newcommand{\resumeTextEnd}{\end{itemize}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{center}
+    \textbf{\Huge \scshape Rafael Conde} \\ \vspace{1pt}
+    \small Austin, TX $|$
+    (555) 010-2299 $|$
+    \href{mailto:rafael@example.com}{\underline{rafael@example.com}} $|$
+    \href{https://linkedin.com/in/rconde}{\underline{linkedin.com/in/rconde}} $|$
+    \href{https://github.com/rconde}{\underline{github.com/rconde}}
+\end{center}
+
+\section{Summary}
+  \resumeTextStart
+    Backend engineer who likes fast, boring systems.
+  \resumeTextEnd
+
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {University of Texas at Austin}{Aug 2019 - May 2023}
+      {B.S. in Computer Science (GPA: 3.8)}{Austin, TX}
+      \resumeItemListStart
+        \resumeItem{\textbf{Relevant Coursework:} Operating Systems, Distributed Systems}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Experience}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Software Engineer}{Jun 2023 - Present}
+      {Cloudflare}{Austin, TX}
+      \resumeItemListStart
+        \resumeItem{Cut p99 latency of the \textbf{cache purge} API by \textit{40\%}}
+        \resumeItem{Owned on-call for R\&D's \textbf{\textit{edge}} fleet}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Projects}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading
+      {\textbf{tinykv} $|$ \emph{Rust, Raft} $|$ \href{https://github.com/rconde/tinykv}{\underline{github.com/rconde/tinykv}}}{2024}
+      \resumeItemListStart
+        \resumeItem{A key\_value store with \textbf{snapshots}}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Publications}
+  \begin{enumerate}[label={[\arabic*]}, widest=2, align=left, labelindent=0.15in, leftmargin=*, itemsep=2pt]
+    \small
+    \item \textbf{R. Conde}, J. Smith, and A. Lee, “Purging caches at the edge,” \textit{Proc. NSDI}, pp. 1-14, 2025, doi: \href{https://doi.org/10.1145/3580305}{\underline{10.1145/3580305}}.
+    \item “Notes on consistent hashing?” \href{https://rconde.dev/hashing}{\underline{rconde.dev/hashing}}.
+  \end{enumerate}
+
+\section{Skills}
+  \resumeTextStart\small
+    \textbf{Languages:} {Rust, Go, C++} \\
+    \textbf{Tools:} {Linux, eBPF}
+  \resumeTextEnd
+
+\section{Talks}
+  \resumeSubHeadingListStart
+    \item
+      \resumeItemListStart
+        \resumeItem{\textit{Boring} systems, \textbf{fast}}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Leadership}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Longhorn Developers}{2021 - 2022}
+      {President}{Austin, TX}
+      \resumeItemListStart
+        \resumeItem{Ran 12 workshops}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Volunteer}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Code2040}{}
+      {Mentor}{}
+      \resumeItemListStart
+        \resumeItem{Mentored 4 students}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+\section{Awards \& Certifications}
+  \resumeSubHeadingListStart
+    \resumeProjectHeading
+      {\textbf{Dean's List}, UT Austin}{2022}
+  \resumeSubHeadingListEnd
+
+\section{Interests}
+  \resumeTextStart
+    Climbing, film photography\newline
+    and bread.
+
+    Ask me about sourdough.
+  \resumeTextEnd
+
+\end{document}
