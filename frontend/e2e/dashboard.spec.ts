@@ -534,6 +534,35 @@ test("in use, the search lifts into the middle of the screen, and Escape or a pr
   expect(errors).toEqual([])
 })
 
+test("on a phone, the search stays in the toolbar, with its matches under it, and big enough text that Safari doesn't zoom in", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  const search = page.getByRole("combobox", { name: "Search your resumes" })
+  await expect(search).toBeVisible()
+  const before = (await search.boundingBox())!
+
+  await search.click()
+  await search.fill("ada")
+  const listbox = page.getByRole("listbox", { name: "Matching resumes" })
+  await expect(listbox).toBeVisible()
+  // Nothing lifted, nothing softened, the header still there.
+  expect(await search.boundingBox()).toMatchObject({ x: before.x, y: before.y })
+  await expect(page.locator("html")).not.toHaveAttribute("data-spotlight")
+  await expect(page.getByRole("banner")).toBeInViewport()
+  expect((await listbox.boundingBox())!.y).toBeGreaterThan(before.y + before.height)
+  // iOS zooms in to a focused field with text under 16px.
+  expect(await search.evaluate((input) => parseFloat(getComputedStyle(input).fontSize))).toBeGreaterThanOrEqual(16)
+
+  // A press on the page closes the matches and keeps what was typed.
+  await page.getByRole("banner").click({ position: { x: 5, y: 5 } })
+  await expect(listbox).toBeHidden()
+  await expect(search).toHaveValue("ada")
+  expect(errors).toEqual([])
+})
+
 test("the tags show their resumes, with how many each has", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace", { resumeTag: "personal" }), resume("c", "Kestrel")])

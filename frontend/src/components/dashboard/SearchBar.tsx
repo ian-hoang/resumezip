@@ -16,6 +16,10 @@ const LISTED = 5
 // How long the lifted search takes to fade back into the toolbar, in milliseconds (spot-out in dashboard.css).
 const LANDING_MS = 200
 
+// The phone layout's width (dashboard.css), where the search stays in the toolbar: the keyboard
+// takes half the screen, which leaves no room for it in the middle, and the matches under it.
+const PHONE = "(max-width: 39.99rem)"
+
 // Lower case, without accents, so "resume" finds "Résumé".
 const folded = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 
@@ -58,7 +62,7 @@ interface SearchBarProps {
  *
  * In use, it lifts out of the toolbar into the middle of the screen, over a
  * softened page, as Spotlight does on a Mac; a copy of it stays in the toolbar
- * underneath. Escape with nothing typed, a click on the page, or Tab out puts
+ * underneath. Not on a phone, where it stays where it is. Escape with nothing typed, a click on the page, or Tab out puts
  * it back, and lets go of the focus. It stays one input throughout, so focus
  * and typing carry over as it lifts.
  */
@@ -106,6 +110,7 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
 
   const lift = () => {
     window.clearTimeout(landing.current)
+    if (window.matchMedia(PHONE).matches) return setPlace("down")
     setPlace("up")
   }
   const land = () => {
@@ -227,7 +232,8 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
               if (query.trim()) setListing(true)
             }}
             onKeyDown={onKey}
-            className="peer min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-2 group-data-[landing]/spot:text-[19px] group-data-[lifted]/spot:text-[19px]"
+            // 16px on phones: Safari on an iPhone zooms the page in to a field with smaller text when it's focused.
+            className="peer min-w-0 flex-1 bg-transparent text-[15px] max-sm:text-base text-ink outline-none placeholder:text-ink-2 group-data-[landing]/spot:text-[19px] group-data-[lifted]/spot:text-[19px]"
           />
           {query ? (
             <button
