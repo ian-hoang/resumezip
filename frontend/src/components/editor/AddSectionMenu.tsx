@@ -229,9 +229,11 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
 
       {place &&
         createPortal(
-          // It fades and grows in from the button's side (`starting:` is CSS
-          // @starting-style), and fades back the same way. The glass is on the
-          // menu, which doesn't scroll, so it stays behind what scrolls inside it.
+          // It grows in from the button's side (`starting:` is CSS @starting-style),
+          // solid, and only what's in it fades in, as see-through glass stops
+          // blurring. Closing, it fades as a nearly solid sheet for the same reason.
+          // The glass is on the menu, which doesn't scroll, so it stays behind
+          // what scrolls inside it.
           <div
             ref={menu}
             id={menuId}
@@ -239,9 +241,13 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
             aria-label="Add section"
             onKeyDown={onKeyDown}
             style={{ left: place.left, width: place.width, top: place.top, bottom: place.bottom }}
-            className={`glass glass-frost fixed z-50 flex flex-col rounded-panel transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:scale-[0.97] starting:opacity-0 ${
+            className={`glass glass-frost fixed z-50 flex flex-col rounded-panel transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:scale-[0.97] [&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
               place.above ? "origin-bottom-left starting:translate-y-1" : "origin-top-left starting:-translate-y-1"
-            } ${closing ? `scale-[0.97] opacity-0 duration-150 ${place.above ? "translate-y-1" : "-translate-y-1"}` : "duration-200"}`}
+            } ${
+              closing
+                ? `scale-[0.97] opacity-0 duration-150 [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))] ${place.above ? "translate-y-1" : "-translate-y-1"}`
+                : "duration-200"
+            }`}
           >
             <div style={{ maxHeight: place.maxHeight }} className="overflow-y-auto overscroll-contain p-1.5">
               <div style={{ height }} className="overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none">

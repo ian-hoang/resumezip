@@ -121,6 +121,40 @@ test("the template gallery fades away as it closes, rather than vanishing", asyn
   expect(errors).toEqual([])
 })
 
+test("the Add section menu grows in solid, and only what's in it fades in", async ({ page }) => {
+  const errors = pageErrors(page)
+  await newResume(page)
+  await transitionsDone(page)
+  // Each frame from here on, the least opacity the menu and what's in it have shown. Read from
+  // their computed styles rather than animation events, which WebKit doesn't always deliver.
+  const lowest = await page.evaluateHandle(() => {
+    const seen = { menu: 1, contents: 1 }
+    const look = () => {
+      const menu = document.querySelector('[role="menu"][aria-label="Add section"]')
+      if (menu) {
+        seen.menu = Math.min(seen.menu, Number(getComputedStyle(menu).opacity))
+        for (const child of menu.children) seen.contents = Math.min(seen.contents, Number(getComputedStyle(child).opacity))
+      }
+      requestAnimationFrame(look)
+    }
+    requestAnimationFrame(look)
+    return seen
+  })
+
+  await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Add section", exact: true }).click()
+  const menu = page.getByRole("menu", { name: "Add section" })
+  await expect(menu.getByRole("menuitem", { name: "Custom section" })).toBeVisible()
+  await settled(menu)
+  // See-through glass doesn't blur what's behind it, so a menu fading in would
+  // show the page plainly through it, then frost over at once as it ended.
+  const seen = await lowest.jsonValue()
+  expect(seen.menu).toBe(1)
+  expect(seen.contents).toBeLessThan(1)
+  await page.keyboard.press("Escape")
+  await expect(menu).toBeHidden()
+  expect(errors).toEqual([])
+})
+
 test("the New resume dialog fades in", async ({ page }) => {
   const errors = pageErrors(page)
   await page.goto("/create/dashboard")
