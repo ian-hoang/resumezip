@@ -1,0 +1,88 @@
+{
+  "id": "about",
+  "resumeTitle": "resumezip",
+  "resumeTag": "personal",
+  "updatedAt": "2026-10-10T12:00:00.000Z",
+  "selectedTemplate": "jake",
+  "sectionOrder": [
+    "Work",
+    "Projects",
+    "Skills"
+  ],
+  "headings": {},
+  "profileSection": {
+    "fullName": "resumezip",
+    "email": "",
+    "phoneNumber": "",
+    "location": "",
+    "linkedin": "",
+    "profileGithub": "github.com/ian-hoang/resumezip",
+    "personalWebsite": "tryresumezip.com"
+  },
+  "educationSection": [],
+  "workExperienceSection": [
+    {
+      "id": 1,
+      "workRole": "Resume builder",
+      "companyName": "Your own browser",
+      "workLocation": "No account",
+      "workStartDate": "Mar 2025",
+      "workEndDate": "Present",
+      "workDescription": "• Turned what people write into a PDF on their own device, with every template free\n• Kept 0 copies of anyone’s resume, by having no server to keep them on\n• Opened its own PDFs again on any computer, each carrying its resume"
+    }
+  ],
+  "projectsSection": [
+    {
+      "id": 1,
+      "projectName": "Resume checker",
+      "projectDate": "Oct 2026",
+      "techStack": "TypeScript",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Scores a resume out of 100 against the rules hiring software reads by, and points to each line to fix"
+    },
+    {
+      "id": 2,
+      "projectName": "Open any resume",
+      "projectDate": "Oct 2026",
+      "techStack": "PDF.js",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Reads PDF and Word resumes from other builders into the editor, with a review before anything is saved"
+    },
+    {
+      "id": 3,
+      "projectName": "Word and Google Drive",
+      "projectDate": "Oct 2026",
+      "techStack": "",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Downloads a resume as a Word file, or saves its PDF to the person’s own Google Drive"
+    },
+    {
+      "id": 4,
+      "projectName": "Paper lookup",
+      "projectDate": "Oct 2026",
+      "techStack": "Crossref, arXiv",
+      "projectGithub": "",
+      "additionalLink": "",
+      "projectDescription": "• Fills in a publication from its DOI or arXiv link, only when asked"
+    }
+  ],
+  "publicationsSection": [],
+  "skillsSection": [
+    {
+      "id": 1,
+      "skillName": "Promises",
+      "skillDetails": "Free, Private, Open source (MIT license)"
+    },
+    {
+      "id": 2,
+      "skillName": "Reads",
+      "skillDetails": "PDF, Word and its own JSON backups"
+    }
+  ],
+  "leadershipExperienceSection": [],
+  "volunteerExperienceSection": [],
+  "awardsSection": []
+}

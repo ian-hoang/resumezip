@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import { Star } from "lucide-react"
 import EmailContact from "@/components/site/EmailContact"
 import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 import { SHEET } from "@/components/site/sheet"
-import { TEMPLATES } from "@/lib/templates"
 
 export const metadata: Metadata = { title: "About" }
 
@@ -52,47 +52,24 @@ function Wordmark() {
   return <span className="font-logo font-medium tracking-[-0.02em] text-ink">resumezip</span>
 }
 
-// The resume's section headings and its lines with a date at the right, as Jake's lays them out.
-const RESUME_HEADING = "mt-5 border-b border-ink pb-0.5 text-[12px] font-semibold uppercase tracking-[0.08em] md:text-[13px]"
-const RESUME_ROW = "flex justify-between gap-4"
-
 /**
- * resumezip introduced as it'd introduce anyone: a one-page resume, in the
- * look of Jake's template, saying what it's done. Each line has to stay true
- * of the app, as the promises do; the number of templates is counted.
+ * resumezip introduced as it'd introduce anyone: its own resume, in Jake's
+ * template. The picture is a real render of `own-resume.json`, cropped under
+ * its last line, so print it again when a line changes. Each line has to stay
+ * true of the app, as the promises do.
  */
 function OwnResume() {
   return (
-    <figure
-      aria-label="resumezip’s own resume"
-      className="w-full max-w-[600px] bg-white xl:max-w-[480px] 2xl:max-w-[600px] px-6 py-8 font-serif text-[13px] leading-normal text-ink shadow-[0_1px_0_rgb(17_19_24/0.06),0_30px_60px_-30px_rgb(30_40_90/0.5)] md:rotate-1 md:px-12 md:py-10 md:text-[14.5px]"
-    >
-      <div className="text-center">
-        <p className="text-[28px] leading-tight tracking-[-0.01em] md:text-[32px]">resumezip</p>
-        <p className="mt-1 text-[12px] md:text-[12.5px]">tryresumezip.com | github.com/ian-hoang/resumezip | MIT license</p>
-      </div>
-      <p className={RESUME_HEADING}>Experience</p>
-      <p className={`${RESUME_ROW} mt-2`}>
-        <b>Resume builder</b>
-        <span>Mar 2025 – Present</span>
-      </p>
-      <p className={`${RESUME_ROW} italic`}>
-        <span>Your own browser</span>
-        <span>No account</span>
-      </p>
-      <ul className="mt-1.5 list-disc pl-5">
-        <li>Turned what people write into a PDF on their own device, in {TEMPLATES.length} templates</li>
-        <li>
-          Kept <b>0</b> copies of anyone’s resume, by having no server to keep them on
-        </li>
-        <li>Opened its own PDFs again on any computer, each carrying its resume</li>
-      </ul>
-      <p className={RESUME_HEADING}>Skills</p>
-      <p className="mt-2">
-        <b>Promises:</b> Free, Private, Open source
-        <br />
-        <b>Reads:</b> PDF, Word and its own JSON backups
-      </p>
+    <figure className="w-full max-w-[640px] xl:max-w-[520px] 2xl:max-w-[640px]">
+      <Image
+        src="/about/own-resume.webp"
+        width={1280}
+        height={904}
+        sizes="(min-width: 1536px) 640px, (min-width: 1280px) 520px, (min-width: 640px) 640px, 100vw"
+        alt="resumezip’s own resume, in Jake’s template: a resume builder in your own browser since March 2025, with no account, that has kept 0 copies of anyone’s resume."
+        className="h-auto w-full bg-white shadow-[0_1px_0_rgb(17_19_24/0.06),0_30px_60px_-30px_rgb(30_40_90/0.5)]"
+        priority
+      />
     </figure>
   )
 }
