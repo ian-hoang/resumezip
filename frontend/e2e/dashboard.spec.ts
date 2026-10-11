@@ -553,6 +553,15 @@ test("on a phone, the search stays in the toolbar, with its matches under it, an
   await expect(page.locator("html")).not.toHaveAttribute("data-spotlight")
   await expect(page.getByRole("banner")).toBeInViewport()
   expect((await listbox.boundingBox())!.y).toBeGreaterThan(before.y + before.height)
+  // The matches' panel lines up with the search field, edge to edge.
+  const field = (await search.locator("..").boundingBox())!
+  // Polled, as the panel grows in from its corner.
+  await expect
+    .poll(async () => {
+      const panel = (await listbox.locator("..").boundingBox())!
+      return [panel.x, panel.width]
+    })
+    .toEqual([field.x, field.width])
   // iOS zooms in to a focused field with text under 16px.
   expect(await search.evaluate((input) => parseFloat(getComputedStyle(input).fontSize))).toBeGreaterThanOrEqual(16)
 
