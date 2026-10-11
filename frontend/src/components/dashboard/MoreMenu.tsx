@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 import { MoreIcon, RowAction } from "./RowActions"
 
 export interface MenuItem {
@@ -14,6 +14,9 @@ export interface MenuItem {
 export const MENU_PANEL = "menu-panel glass glass-frost absolute z-30 flex min-w-[168px] flex-col gap-0.5 rounded-panel p-1.5"
 export const MENU_ITEM =
   "row-action flex h-10 items-center gap-2.5 rounded-row px-3.5 text-left text-sm transition-colors hover:bg-ink/[0.06] focus-visible:bg-ink/[0.06] focus-visible:outline-none"
+
+// The least room between a More menu and the window's left edge.
+const MARGIN = 16
 
 const itemsIn = (menu: HTMLElement | null) => [...(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])]
 
@@ -81,6 +84,15 @@ interface MoreMenuProps {
 export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
   const { open, setOpen, button, menu, close, onKeyDown } = useMenu()
   const id = useId()
+  // It opens leftward from its button, over the page it's on. A phone's
+  // left-hand page has too little room left of the button, so there it opens
+  // rightward. Measured before it's painted, and by its layout width, since it
+  // grows in with a transform.
+  const [fromStart, setFromStart] = useState(false)
+  useLayoutEffect(() => {
+    if (!open || !menu.current?.parentElement) return
+    setFromStart(menu.current.parentElement.getBoundingClientRect().right - menu.current.offsetWidth < MARGIN)
+  }, [open, menu])
 
   return (
     <div className="relative">
@@ -103,7 +115,7 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
           role="menu"
           aria-label={label}
           onKeyDown={onKeyDown}
-          className={`${MENU_PANEL} more-menu bottom-full right-0 mb-2`}
+          className={`${MENU_PANEL} more-menu bottom-full mb-2 ${fromStart ? "is-start left-0" : "right-0"}`}
         >
           {items.map((item) => (
             <button
