@@ -125,21 +125,20 @@ test("the Add section menu grows in solid, and only what's in it fades in", asyn
   const errors = pageErrors(page)
   await newResume(page)
   await transitionsDone(page)
-  // What fades as the menu opens: opacity transitions, and animations with opacity in their keyframes.
-  const recording = await page.evaluateHandle(() => {
-    const fading: Element[] = []
-    const onTransition = (event: TransitionEvent) => {
-      if (event.propertyName === "opacity" && event.target instanceof Element) fading.push(event.target)
+  // Each frame from here on, the least opacity the menu and what's in it have shown. Read from
+  // their computed styles rather than animation events, which WebKit doesn't always deliver.
+  const lowest = await page.evaluateHandle(() => {
+    const seen = { menu: 1, contents: 1 }
+    const look = () => {
+      const menu = document.querySelector('[role="menu"][aria-label="Add section"]')
+      if (menu) {
+        seen.menu = Math.min(seen.menu, Number(getComputedStyle(menu).opacity))
+        for (const child of menu.children) seen.contents = Math.min(seen.contents, Number(getComputedStyle(child).opacity))
+      }
+      requestAnimationFrame(look)
     }
-    const onAnimation = (event: AnimationEvent) => {
-      if (!(event.target instanceof Element)) return
-      const animation = event.target.getAnimations().find((each) => (each as CSSAnimation).animationName === event.animationName)
-      const keyframes = (animation?.effect as KeyframeEffect | undefined)?.getKeyframes() ?? []
-      if (keyframes.some((keyframe) => "opacity" in keyframe)) fading.push(event.target)
-    }
-    document.addEventListener("transitionrun", onTransition)
-    document.addEventListener("animationstart", onAnimation)
-    return { fading }
+    requestAnimationFrame(look)
+    return seen
   })
 
   await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Add section", exact: true }).click()
@@ -148,15 +147,9 @@ test("the Add section menu grows in solid, and only what's in it fades in", asyn
   await settled(menu)
   // See-through glass doesn't blur what's behind it, so a menu fading in would
   // show the page plainly through it, then frost over at once as it ended.
-  const { menuFaded, contentsFaded } = await menu.evaluate(
-    (menu, { fading }) => ({
-      menuFaded: fading.some((element) => element.contains(menu)),
-      contentsFaded: fading.some((element) => menu.contains(element) && element !== menu),
-    }),
-    recording,
-  )
-  expect(menuFaded).toBe(false)
-  expect(contentsFaded).toBe(true)
+  const seen = await lowest.jsonValue()
+  expect(seen.menu).toBe(1)
+  expect(seen.contents).toBeLessThan(1)
   await page.keyboard.press("Escape")
   await expect(menu).toBeHidden()
   expect(errors).toEqual([])
