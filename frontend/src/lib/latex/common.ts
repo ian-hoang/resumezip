@@ -19,7 +19,8 @@ export interface LatexTemplate {
    * \documentclass and everything up to \begin{document}. `title` is the PDF's
    * title, escaped. `fallbacks` is the set-up of fonts for letters the
    * template's fonts lack (`fallbackFonts`), for XeLaTeX and LuaLaTeX, or
-   * nothing for a file pdfLaTeX can compile; it goes before the fonts.
+   * nothing for a file with none of those letters (`hasFallbackLetter`) and
+   * none pdfLaTeX can't print; it goes before the fonts.
    */
   preamble: (units: Units, title: string, fallbacks: string) => string
   /** Where letters the template's fonts lack print, as in its PDF. */
@@ -554,9 +555,22 @@ const FACES = ["regular", "bold", "italic", "bolditalic"] as const
 type Face = (typeof FACES)[number]
 
 /**
+ * Whether `text` has any of the letters `fallbacks` print in another family.
+ * Some of them pdfLaTeX prints with textcomp, though the template's OpenType
+ * font lacks them: TeX Live's Raleway, in Deedy, has no → or ₫.
+ */
+export function hasFallbackLetter(text: string, { letters }: Fallbacks): boolean {
+  const ranges = letters.flatMap(([{ ranges }]) => ranges)
+  return [...new Set(text)].some((character) => {
+    const point = character.codePointAt(0)!
+    return ranges.some(([first, last]) => point >= first && point <= last)
+  })
+}
+
+/**
  * The set-up that prints letters a template's fonts lack in its fallback
- * fonts, for a file that asks for XeLaTeX: lines indented to sit in an
- * \ifPDFTeX's \else, before the template loads its fonts.
+ * fonts, for XeLaTeX and LuaLaTeX: lines indented to sit in an \ifPDFTeX's
+ * \else, before the template loads its fonts.
  *
  * XeLaTeX switches fonts by character class (XETEX_CLASSES). LuaLaTeX uses
  * luaotfload's fallback feature, which takes a letter a font lacks from the

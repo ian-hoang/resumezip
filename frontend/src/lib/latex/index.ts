@@ -11,8 +11,10 @@
 // Latin letters, so a resume with others (Иван, Nguyễn) gets a file that asks
 // for XeLaTeX, where the template's fonts print what the PDF prints, and the
 // PDF's fallback fonts the letters they lack (fallbackFonts in common.ts).
-// Every file works with both engines, and with LuaLaTeX; iftex tells them
-// apart.
+// A file pdfLaTeX can compile gets those fallbacks too when it has a sign
+// pdfLaTeX prints but the template's OpenType font lacks, as → in Deedy's
+// roles, so XeLaTeX and LuaLaTeX print it as well. Every file works with both
+// engines, and with LuaLaTeX; iftex tells them apart.
 //
 // Unlike the PDF and the Word file, it doesn't carry its resume, so
 // resumezip can't open it again.
@@ -22,7 +24,7 @@
 import type { Resume } from "@/lib/resume"
 import type { TemplateId } from "@/lib/templates"
 import { templateIdOf, toTemplateData } from "@/lib/typst/resumeData"
-import { beyondPdfLatex, fallbackFonts, latex, unitsOf, type LatexTemplate } from "./common"
+import { beyondPdfLatex, fallbackFonts, hasFallbackLetter, latex, unitsOf, type LatexTemplate } from "./common"
 import { accent } from "./templates/accent"
 import { deedy } from "./templates/deedy"
 import { ian } from "./templates/ian"
@@ -74,6 +76,9 @@ export function toLatexFile(resume: Resume): LatexFile {
   // An empty resume is an empty page, as its PDF is, rather than no PDF at all.
   const document = template.body(data, units) || "\\mbox{}"
   const letters = beyondPdfLatex(document + title)
+  // Letters pdfLaTeX can't print, or ones it can that the template's OpenType
+  // fonts may lack. A file with neither doesn't load fonts it doesn't use.
+  const fallbacks = letters.length || hasFallbackLetter(document + title, template.fallbacks) ? fallbackFonts(template.fallbacks) : ""
 
   const named = letters.slice(0, NAMED).join(" ") + (letters.length > NAMED ? " ..." : "")
   // Editors that read the first line (TeXShop, TeXworks, VS Code) switch to
@@ -110,7 +115,7 @@ export function toLatexFile(resume: Resume): LatexFile {
 ${template.credit.map((line) => `% ${line}`).join("\n")}
 %-------------------------
 
-${template.preamble(units, title, letters.length ? fallbackFonts(template.fallbacks) : "").trimEnd()}
+${template.preamble(units, title, fallbacks).trimEnd()}
 ${ohm}${stop}
 %-------------------------------------------
 %%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%

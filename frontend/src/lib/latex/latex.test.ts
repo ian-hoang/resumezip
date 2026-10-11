@@ -638,3 +638,34 @@ describe("letters pdfLaTeX can't print", () => {
     expect(text).toContain("% This resume has letters pdfLaTeX can't print: Α λ έ ξ α ν δ ρ ο ς ...\n")
   })
 })
+
+describe("signs pdfLaTeX prints, but a template's font lacks", () => {
+  // pdfLaTeX prints → and ₫ with textcomp. TeX Live's Raleway, which Deedy's
+  // roles, dates and places are in, has neither, so XeLaTeX and LuaLaTeX
+  // would leave them out ("Missing character") without the fallbacks.
+  test.each([
+    { sign: "→", field: "role", job: { workRole: "Intern → Software Engineer" } },
+    { sign: "→", field: "place", job: { workLocation: "Hanoi → Remote" } },
+    { sign: "₫", field: "role", job: { workRole: "Engineer, 20.000.000₫" } },
+    { sign: "₫", field: "place", job: { workLocation: "20.000.000₫" } },
+  ])("give $sign in a Deedy $field a fallback, Lato, and still compile with pdfLaTeX", ({ sign, job }) => {
+    const { text, beyondPdfLatex } = toLatexFile(
+      asSaved({ selectedTemplate: "deedy", sectionOrder: ["Work"], workExperienceSection: [{ id: 1, companyName: "Viettel", ...job }] }),
+    )
+    expect(text).toContain(sign)
+    expect(xelatexFallback(text, sign)).toBe("Lato")
+    expect(lualatexFallbacks(text).fallbacks).toEqual(["Lato", "CharisSIL"])
+    expect(beyondPdfLatex).toEqual([])
+    expect(text).not.toContain("xelatex")
+    expect(text).not.toContain("PackageError")
+    expect(balanced(text)).toBe(true)
+  })
+
+  test("get no fallbacks where the template's fonts have them", () => {
+    // TeX Gyre Heros has the arrow, so Swiss's file is as it was.
+    const text = latexOf({ selectedTemplate: "swiss", workExperienceSection: [{ id: 1, workRole: "Intern → Software Engineer" }] })
+    expect(text).toContain("Intern → Software Engineer")
+    expect(text).not.toContain("\\resumeLetters")
+    expect(text).not.toContain("luaotfload")
+  })
+})
