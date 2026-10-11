@@ -218,6 +218,15 @@
   .menu-panel {
     --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.88), rgb(255 255 255 / 0.78));
   }
+  /* On a phone the search stays in the toolbar (SearchBar.tsx), with no veil under its
+     matches: they're as wide as it, and nearly solid, so the dark tag chip right below
+     doesn't show through. */
+  @media (max-width: 39.99rem) {
+    .search-panel {
+      width: 100%;
+      --glass-fill: rgb(255 255 255 / 0.96);
+    }
+  }
 
   /* Behind a dialog, and a file dragged over the page: the page pales and blurs. */
   .dialog-backdrop {
