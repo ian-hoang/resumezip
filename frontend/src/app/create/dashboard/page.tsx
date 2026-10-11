@@ -116,7 +116,7 @@ export default function DashboardPage() {
   const [announcement, setAnnouncement] = useState("")
   const [dragging, setDragging] = useState(false)
   const [view, setView] = useState<View>("pages")
-  // Set once a switch has had to fade the new view in, without view transitions.
+  // Set once a switch fades the new view in: off until then, so the first view doesn't fade in on load.
   const [fadeIn, setFadeIn] = useState(false)
   const [sort, setSort] = useState<Sort>("edited")
   const [tag, setTag] = useState(EVERY_TYPE)
@@ -148,7 +148,7 @@ export default function DashboardPage() {
   useLayoutEffect(() => setView(savedView()), [])
   const chooseView = (next: View) => {
     if (next === view) return
-    if (switchView(() => setView(next)) === "fade") setFadeIn(true)
+    if (switchView(() => setView(next)) !== "instant") setFadeIn(true)
     try {
       window.localStorage.setItem(VIEW_KEY, next)
     } catch {
