@@ -51,36 +51,21 @@ test("the poster shows while the video loads", async ({ page }) => {
   expect(await opacity(page)).toBe("0")
 })
 
-test("the video fades in over the poster, plays once, stays on its last frame, and stops while scrolled away", async ({
-  page,
-  browserName,
-}) => {
+test("the video fades in over the poster, dips to it around the loop, and stops while scrolled away", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "The stand-in clip is VP9, which Chromium plays")
   const errors = pageErrors(page)
   await page.route(CLIP, (route) => route.fulfill({ path: "e2e/files/clip-vp9.mp4" }))
-  // Slowed down before it starts, so the 2-second stand-in is still playing while the page scrolls.
-  await page.addInitScript(() => {
-    const play = HTMLMediaElement.prototype.play
-    HTMLMediaElement.prototype.play = function () {
-      this.playbackRate = 0.25
-      return play.call(this)
-    }
-  })
   await page.goto("/")
-  await expect.poll(() => opacity(page)).toBe("1")
+  // Looked at often: the stand-in is only shown for about a second of each loop.
+  const often = { intervals: [50] }
+  await expect.poll(() => opacity(page), often).toBe("1")
+  await expect.poll(() => opacity(page), often).toBe("0")
+  await expect.poll(() => opacity(page), often).toBe("1")
 
   await page.getByRole("contentinfo").scrollIntoViewIfNeeded()
   await expect.poll(() => paused(page)).toBe(true)
   await page.getByRole("heading", { level: 1 }).scrollIntoViewIfNeeded()
   await expect.poll(() => paused(page)).toBe(false)
-
-  await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.ended), { timeout: 15_000 }).toBe(true)
-  // Scrolled away and back, it stays on the last frame instead of playing again.
-  await page.getByRole("contentinfo").scrollIntoViewIfNeeded()
-  await page.getByRole("heading", { level: 1 }).scrollIntoViewIfNeeded()
-  await page.waitForTimeout(500)
-  expect(await paused(page)).toBe(true)
-  expect(await opacity(page)).toBe("1")
   expect(errors).toEqual([])
 })
 

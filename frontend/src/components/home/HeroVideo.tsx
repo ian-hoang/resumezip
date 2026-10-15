@@ -4,8 +4,17 @@ import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { savingData } from "@/lib/typst/compile"
 
+// How long to show the poster, the clip's first frame, at each end of the
+// clip. It doesn't loop seamlessly, so the video fades out to the poster and
+// back in around the loop point instead of jumping.
+const FADE_OUT_BEFORE_END = 0.45
+const FADE_IN_AFTER_START = 0.12
+// timeupdate comes up to 250 ms apart, so the fade out starts up to that much
+// early, to be over before the loop.
+const TIMEUPDATE_GAP = 0.25
+
 /**
- * The home page's background clip: muted, played once, decorative. The poster
+ * The home page's background clip: muted, looping, decorative. The poster
  * shows until the video plays, and instead of it for visitors who prefer
  * less motion or are saving data.
  *
@@ -33,19 +42,20 @@ export default function HeroVideo() {
     if (!sources || !video) return
     // React doesn't reliably set the muted attribute, which autoplay requires.
     video.muted = true
-    // The poster is the clip's first frame, so the video can show as soon as it plays.
-    const show = () => setVisible(true)
-    // Plays once, only while on screen, and stays on its last frame. If autoplay is blocked, the poster stays.
+    const fade = () => {
+      const t = video.currentTime
+      setVisible(t > FADE_IN_AFTER_START && t < video.duration - FADE_OUT_BEFORE_END - TIMEUPDATE_GAP)
+    }
+    // Plays only while on screen. If autoplay is blocked, the poster stays.
     const observer = new IntersectionObserver((entries) => {
-      if (video.ended) return
       if (entries[entries.length - 1].isIntersecting) video.play().catch(() => {})
       else video.pause()
     })
-    video.addEventListener("playing", show)
+    video.addEventListener("timeupdate", fade)
     observer.observe(video)
     return () => {
       observer.disconnect()
-      video.removeEventListener("playing", show)
+      video.removeEventListener("timeupdate", fade)
     }
   }, [sources])
 
@@ -55,6 +65,7 @@ export default function HeroVideo() {
       <video
         ref={videoRef}
         muted
+        loop
         playsInline
         preload="none"
         className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
