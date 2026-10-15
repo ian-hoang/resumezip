@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { pageErrors } from "./helpers"
 
 // The home page's background video (components/home/HeroVideo.tsx). Chromium

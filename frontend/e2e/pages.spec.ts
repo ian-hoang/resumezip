@@ -1,4 +1,4 @@
-import { type APIRequestContext, expect, test } from "@playwright/test"
+import { type APIRequestContext, expect, test } from "./variant"
 import { TEMPLATES, templateImageAlt, templatePath } from "../src/lib/templates"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 

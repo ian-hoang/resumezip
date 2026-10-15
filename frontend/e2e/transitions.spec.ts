@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { editorHeading, pageErrors, settled, transitionsDone } from "./helpers"
 
 // What a click brings up fades in, rather than appearing all at once, unless

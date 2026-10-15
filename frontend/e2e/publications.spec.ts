@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
-import { expect, test, type Page, type Route } from "@playwright/test"
+import { expect, test, type Page, type Route } from "./variant"
 import { editorHeading, pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 // Adding publications from their DOIs or links. Crossref and doi.org are

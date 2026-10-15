@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { WIDE_SCREEN } from "../src/components/editor/layout"
 import { editorHeading, pageErrors } from "./helpers"
 

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 import { pageErrors } from "./helpers"
 
 // Spelling and grammar (issue #66): the grammar checker loads once Check is

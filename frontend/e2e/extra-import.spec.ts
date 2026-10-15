@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 import { wordFile, textPdf } from "../src/lib/import/testFiles"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 

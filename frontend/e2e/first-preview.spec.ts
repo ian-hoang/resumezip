@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { chooseTemplate, editorHeading, instantScrolling, pageErrors } from "./helpers"
 
 // The first preview waits for the PDF compiler to download. A stand-in page

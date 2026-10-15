@@ -16,7 +16,8 @@ export default defineConfig({
   // One retry in CI, recording a trace of the retry, so a failure can be
   // replayed from the run's "browser-test-report-<browser>-<part>" artifact.
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
+  // The experiment's timings: every test's duration, kept from each job (ci.yml).
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }], ["json", { outputFile: "test-timings.json" }]] : "list",
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",

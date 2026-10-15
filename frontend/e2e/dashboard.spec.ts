@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { countThumbSlides, pageErrors, seriousAccessibilityProblems, settled, thumbCovers } from "./helpers"
 
 const resume = (id: string, resumeTitle: string, more: { resumeTag?: string; selectedTemplate?: string; updatedAt?: string } = {}) => ({

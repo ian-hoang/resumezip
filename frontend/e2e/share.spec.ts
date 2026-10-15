@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 declare global {

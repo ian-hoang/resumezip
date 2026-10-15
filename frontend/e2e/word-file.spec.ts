@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { pageErrors } from "./helpers"
 
 /** A resume with a job, a bullet and an entry left out of the PDF. */

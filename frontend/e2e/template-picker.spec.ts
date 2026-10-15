@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { pageErrors, settled } from "./helpers"
 
 /** Starts a new resume with a name in it, then makes the window `width` × `height`. */

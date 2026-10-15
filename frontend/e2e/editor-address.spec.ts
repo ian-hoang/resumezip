@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 import { editorHeading, pageErrors, templateChosen } from "./helpers"
 
 declare global {

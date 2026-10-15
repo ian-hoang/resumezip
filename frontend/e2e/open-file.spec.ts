@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { MAX_PAGES, MAX_UNZIPPED_BYTES } from "../src/lib/import/limits"
 import { textPdf, wordFile } from "../src/lib/import/testFiles"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"

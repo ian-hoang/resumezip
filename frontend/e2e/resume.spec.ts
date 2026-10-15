@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 import { boxText, pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 test("a new visitor writes a resume, sees it, downloads it and opens it again", async ({ page, browser }, testInfo) => {

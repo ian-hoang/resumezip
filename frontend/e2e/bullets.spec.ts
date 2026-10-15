@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { boxText, cursorInBox, pageErrors, selectInBox } from "./helpers"
 
 // The bullets box shows bold and italic words as they print, without their

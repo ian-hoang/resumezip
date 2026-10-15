@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { editorHeading, holdablePreviews, holdPreviews, pageErrors, seriousAccessibilityProblems, settled } from "./helpers"
 
 // The editor's left bar switches between the sections (Write) and what the

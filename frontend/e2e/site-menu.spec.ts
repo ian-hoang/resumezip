@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 
 // Below 768px the header's links fold into a menu, which drops over the page
 // rather than pushing it down.

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 import { pageErrors } from "./helpers"
 
 test("the footer is a wordmark and its links to a screen reader: the zipper is only a picture", async ({ page }) => {

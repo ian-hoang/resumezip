@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 const HOBBIES = "00000000-0000-4000-8000-000000000001"

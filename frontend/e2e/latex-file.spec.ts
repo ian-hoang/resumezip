@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises"
-import { expect, test, type Download, type Page } from "@playwright/test"
+import { expect, test, type Download, type Page } from "./variant"
 import { chooseTemplate, pageErrors } from "./helpers"
 
 /** A resume with a job, a bullet and an entry left out of the PDF. */

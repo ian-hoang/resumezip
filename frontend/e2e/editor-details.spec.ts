@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { pageErrors } from "./helpers"
 
 // Small things in the editor's form and checker: the glow on the field being

@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test"
+import { expect, test, type BrowserContext, type Page } from "./variant"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 // Save to Google Drive. Google's sign-in and Drive are stood in for, so these

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test"
+import { expect, test } from "./variant"
 
 test("pages preload one file per font, with its Latin letters", async ({ page }) => {
   await page.goto("/")

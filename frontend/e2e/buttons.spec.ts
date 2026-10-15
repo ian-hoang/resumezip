@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test"
+import { expect, test, type Locator } from "./variant"
 import { settled } from "./helpers"
 
 // The header's main button, Star on GitHub, is ink glass on a light page

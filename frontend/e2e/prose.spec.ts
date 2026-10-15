@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { boxText, pageErrors, selectInBox } from "./helpers"
 
 // The summary and a text section show bold and italic words as they print,

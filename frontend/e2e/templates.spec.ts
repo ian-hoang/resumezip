@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { countThumbSlides, instantScrolling, pageErrors, seriousAccessibilityProblems, templateChosen, thumbCovers } from "./helpers"
 import { TEMPLATES } from "../src/lib/templates"
 

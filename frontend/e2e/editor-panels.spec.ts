@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "@playwright/test"
+import { expect, test, type Locator, type Page } from "./variant"
 import { chooseTemplate, pageErrors, seriousAccessibilityProblems, templateShown } from "./helpers"
 
 // From 1280px wide the editor is three columns on one sheet, under a top bar

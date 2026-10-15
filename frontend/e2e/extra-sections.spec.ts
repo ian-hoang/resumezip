@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page } from "./variant"
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 import { editorHeading, pageErrors, seriousAccessibilityProblems } from "./helpers"
 

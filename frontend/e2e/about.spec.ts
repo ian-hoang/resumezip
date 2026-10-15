@@ -1,4 +1,4 @@
-import { type Locator, type Page, expect, test } from "@playwright/test"
+import { type Locator, type Page, expect, test } from "./variant"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
 // The About page is a story the scroll plays (src/components/about): the first screen, our own
