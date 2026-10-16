@@ -268,7 +268,9 @@ describe("S7 high school next to college", () => {
   test("knows a college by its degree or its name, and a high school by its name", () => {
     const byDegree = { id: 1, schoolName: "Questrom School of Business", degree: "BS in Business Administration", schoolEndDate: "2027" }
     const byName = { id: 1, schoolName: "Santa Monica College", schoolEndDate: "2027" }
-    for (const school of [byDegree, byName]) {
+    const byFrenchName = { id: 1, schoolName: "Université de Montréal", schoolEndDate: "2027" }
+    const byCapitals = { id: 1, schoolName: "UNIVERSITÉ LAVAL", schoolEndDate: "2027" }
+    for (const school of [byDegree, byName, byFrenchName, byCapitals]) {
       expect(check("S7", { ...jake, educationSection: [school, highSchool] }).status, school.schoolName).toBe("failed")
     }
     const twoHighSchools = [highSchool, { id: 3, schoolName: "College Park High School", schoolEndDate: "2022" }]

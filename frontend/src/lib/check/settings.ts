@@ -195,7 +195,8 @@ export const COLLEGE_DEGREE =
   /\b(bachelor|master|doctor|associate|ph\.?\s?d|mba|b\.?\s?(s|a|sc|eng|s\.?e|com|f\.?a|b\.?a)|m\.?\s?(s|a|sc|eng|b\.?a|phil|f\.?a)|a\.?\s?(a|s))\b\.?/i
 
 /** How a college's name usually reads. */
-export const COLLEGE_NAME = /\b(university|college|institute|polytechnic|universidad|université|universität)\b/i
+// Not \b, which takes "é" for the end of a word, so "Université de Montréal" never matched.
+export const COLLEGE_NAME = /(?<![\p{L}\p{M}\p{N}_])(university|college|institute|polytechnic|universidad|université|universität)(?![\p{L}\p{M}\p{N}_])/iu
 
 /** How a high school's name usually reads. */
 export const HIGH_SCHOOL_NAME = /\bhigh school\b/i

@@ -30,7 +30,8 @@ const WEAK = new RegExp(`^(${WEAK_STARTS.map(escaped).join("|")})\\b`, "i")
 export function pronounIn(text: string): string | null {
   // Product handles, links and quoted names are not narrative pronouns.
   text = text.replace(/(?:https?:\/\/|www\.)\S+|\S+@\S+|["“][^"”]+["”]/g, (value) => " ".repeat(value.length))
-  for (const match of text.matchAll(/\b(I|i|me|my|we|our|Me|My|We|Our)\b/g)) {
+  // Not \b, which only knows ASCII letters: it would find "i" at the end of "Nội" and "me" in "Jérôme".
+  for (const match of text.matchAll(/(?<![\p{L}\p{M}\p{N}_])(I|i|me|my|we|our|Me|My|We|Our)(?![\p{L}\p{M}\p{N}_])/gu)) {
     const word = match[0]
     const before = text.slice(0, match.index)
     const after = text.slice(match.index + word.length)

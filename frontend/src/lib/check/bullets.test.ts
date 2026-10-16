@@ -203,6 +203,23 @@ describe("B4 “I” and “we”", () => {
       expect(pronounIn(text), text).toBeNull()
     }
   })
+
+  test("doesn't take the end of an accented name or place for them", () => {
+    const texts = [
+      "Led a team in Hà Nội",
+      "Worked with Jérôme on billing",
+      "Paired with Rémy and Jérémy",
+      "Mentored Bùi Tuấn",
+      "Studied at Đại học Bách Khoa",
+      "Opened an office in Iași",
+      "Shipped to Hawaiʻi",
+    ]
+    for (const text of [...texts, ...texts.map((text) => text.normalize("NFD"))]) {
+      expect(pronounIn(text), text).toBeNull()
+    }
+    expect(pronounIn("Led my team in Hà Nội")).toBe("my")
+    expect(pronounIn("I opened an office in Iași")).toBe("I")
+  })
 })
 
 describe("B5 buzzwords and vague words", () => {
