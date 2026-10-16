@@ -61,6 +61,28 @@ describe("reading one date", () => {
     expect(read("Class of 2027")).toEqual({ year: 2027, month: undefined, style: "year" })
   })
 
+  test("leaves out several of those words, and a “Date” after them", () => {
+    for (const text of [
+      "Expected Graduation: May 2027",
+      "Anticipated Graduation: May 2027",
+      "Graduation Date: May 2027",
+      "Expected Graduation Date: May 2027",
+      "expected graduation may 2027",
+    ]) {
+      expect(read(text), text).toEqual({ year: 2027, month: 5, style: "name" })
+    }
+    expect(read("Expected Graduation: Spring 2027")).toEqual({ year: 2027, month: 3, style: "season" })
+    expect(readDate("Date: May 2027")).toBeNull()
+  })
+
+  test("reads a day before the month, as much of the world writes it", () => {
+    for (const text of ["15 May 2023", "15th May 2023", "1 Sept. 2023", "15 May, 2023"]) {
+      expect(read(text), text).toMatchObject({ year: 2023, style: "name" })
+    }
+    expect(read("15 May 2023")).toEqual({ year: 2023, month: 5, style: "name" })
+    expect(readDate("15 2023")).toBeNull()
+  })
+
   test("reads a year written with an apostrophe, and says so", () => {
     expect(readDate("Jan '21")).toMatchObject({ year: 2021, month: 1, shortYear: true })
     expect(readDate("Jan ’21")).toMatchObject({ year: 2021, shortYear: true })

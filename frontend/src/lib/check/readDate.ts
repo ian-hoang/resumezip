@@ -6,6 +6,7 @@
 import type { FieldKey, FieldKeyOf, SectionName } from "@/components/editor/sections"
 import type { Entry } from "./resume"
 import { DATE_PREFIXES, PRESENT_WORDS } from "./settings"
+import { escaped } from "./text"
 
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 
@@ -56,14 +57,18 @@ function monthOf(word: string): { month: number; spelling: string; dotted: boole
 const fullYear = (short: number) => (short >= 69 ? 1900 : 2000) + short
 const yearOf = (text: string) => (/^['’‘]/.test(text) ? fullYear(Number(text.slice(1))) : Number(text))
 
-// "Expected May 2027", "May 2027 (Expected)", "Graduated: May 2023": the date in it.
-const escaped = DATE_PREFIXES.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")
-const PREFIX = new RegExp(String.raw`^(?:${escaped})\s*:?\s*(?=\S)`, "i")
-const SUFFIX = new RegExp(String.raw`\s*\((?:${escaped})\)$`, "i")
+// "Expected May 2027", "Expected Graduation Date: May 2027", "May 2027 (Expected)": the date in it.
+const PREFIX_WORDS = DATE_PREFIXES.map(escaped).join("|")
+const PREFIX = new RegExp(String.raw`^(?:(?:${PREFIX_WORDS})(?:\s+date)?\s*:?\s*)+(?=\S)`, "i")
+const SUFFIX = new RegExp(String.raw`\s*\((?:${PREFIX_WORDS})\)$`, "i")
 const withoutWords = (text: string) => text.trim().replace(PREFIX, "").replace(SUFFIX, "").trim()
 
 const PRESENT = new RegExp(String.raw`^(?:${PRESENT_WORDS.join("|")})$`, "i")
-const MONTH_YEAR = new RegExp(String.raw`^([a-z]+\.?)(?:\s+\d{1,2}(?:st|nd|rd|th)?)?\s*,?\s*(${YEAR}|${SHORT_YEAR})$`, "i")
+// "May 2023", "May 15, 2023" and "15 May 2023".
+const MONTH_YEAR = new RegExp(
+  String.raw`^(?:\d{1,2}(?:st|nd|rd|th)?\s+)?([a-z]+\.?)(?:\s+\d{1,2}(?:st|nd|rd|th)?)?\s*,?\s*(${YEAR}|${SHORT_YEAR})$`,
+  "i",
+)
 const NUMBERS = new RegExp(String.raw`^(\d{1,2})\s*[/.-]\s*(?:\d{1,2}\s*[/.-]\s*)?(${YEAR})$`)
 // "01/24": a month and a two-digit year, which the resume reader in lib/import takes too.
 const NUMBERS_SHORT_YEAR = /^(\d{1,2})\s*\/\s*(\d{2})$/

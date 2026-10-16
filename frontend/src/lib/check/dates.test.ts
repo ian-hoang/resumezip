@@ -345,8 +345,15 @@ describe("D9 month and year on your graduation date", () => {
     expect(check("D9", studentAt("Aug 2023", "Present"), today).messages).toEqual(["No graduation date"])
   })
 
+  test("reads graduation dates written with more than one word before them (D3)", () => {
+    for (const end of ["Expected Graduation: May 2027", "Graduation Date: May 2027", "Expected Graduation: Spring 2027"]) {
+      expect(check("D3", studentAt("15 Aug 2023", end), today).status, end).toBe("passed")
+    }
+  })
+
   test("flags an expected date that has passed, for anyone", () => {
     expect(check("D9", studentAt("Aug 2020", "Expected May 2024"), today).messages).toEqual(["This date has passed"])
+    expect(check("D9", studentAt("Aug 2020", "Expected Graduation: May 2024"), today).messages).toEqual(["This date has passed"])
     const experienced = {
       ...jake,
       educationSection: [
