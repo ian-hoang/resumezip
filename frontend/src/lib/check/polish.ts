@@ -208,12 +208,13 @@ const spacing: Rule = {
     return {
       checked: texts.length,
       // Each kind of spacing problem in a text, so all of them show at once.
-      problems: texts.flatMap(({ place, text }) =>
-        SPACING.flatMap(({ pattern, message, suggestion }) => {
-          const found = pattern.exec(proseOf(text))
+      problems: texts.flatMap(({ place, text }) => {
+        const prose = proseOf(text)
+        return SPACING.flatMap(({ pattern, message, suggestion }) => {
+          const found = pattern.exec(prose)
           return found ? [{ place, message, suggestion: suggestion(found) }] : []
-        }),
-      ),
+        })
+      }),
     }
   },
 }
@@ -289,8 +290,8 @@ const shorthand: Rule = {
     return {
       checked: texts.length,
       problems: texts.flatMap(({ place, text }) => {
+        const prose = proseOf(text)
         for (const { word, pattern } of SHORTHANDS) {
-          const prose = proseOf(text)
           const match = pattern.exec(prose)
           const found = match?.[0].trim()
           if (!found) continue

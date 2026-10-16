@@ -2,11 +2,24 @@
 // and how each bullet wraps.
 
 import { yearsOfWork } from "./career"
-import type { Rule } from "./engine"
+import type { PdfReading, Rule } from "./engine"
 import { printedLayoutBullets } from "./pdf"
+import type { ResumeView } from "./resume"
 import { LONG_BULLET_LINES, MIN_PAGE_FULL, SHORT_LAST_LINE, SPILL_LINES, TWO_PAGE_YEARS } from "./settings"
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`
+
+// L3 and L4 read the same bullets' layout, so it's worked out once for each
+// reading of the PDF and the resume it's of.
+const layouts = new WeakMap<PdfReading, { resume: ResumeView; bullets: ReturnType<typeof printedLayoutBullets> }>()
+
+function laidOut(resume: ResumeView, pdf: PdfReading) {
+  const known = layouts.get(pdf)
+  if (known?.resume === resume) return known.bullets
+  const bullets = printedLayoutBullets(resume, pdf)
+  layouts.set(pdf, { resume, bullets })
+  return bullets
+}
 
 // The words on a line, not counting stray punctuation.
 const wordsOn = (text: string) => text.split(/\s+/).filter((word) => /[\p{L}\p{N}]/u.test(word)).length
@@ -85,7 +98,7 @@ const shortLastLine: Rule = {
   title: "No bullet ending with a few words on a line of their own",
   why: "A short last line takes a whole line of space for a few words.",
   check: ({ resume, pdf }) => {
-    const bullets = printedLayoutBullets(resume, pdf)
+    const bullets = laidOut(resume, pdf)
     if (bullets.length === 0) return null
     return {
       checked: bullets.length,
@@ -112,7 +125,7 @@ const longBullets: Rule = {
   title: "No bullet longer than two lines",
   why: "Long bullets get skimmed past.",
   check: ({ resume, pdf }) => {
-    const bullets = printedLayoutBullets(resume, pdf)
+    const bullets = laidOut(resume, pdf)
     if (bullets.length === 0) return null
     return {
       checked: bullets.length,
