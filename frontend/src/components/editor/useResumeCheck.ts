@@ -2,7 +2,7 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useOpenResume, useResumeActions } from "@/context/ResumeContext"
-import { runChecks, type Finding, type GrammarReading, type PdfReading } from "@/lib/check/engine"
+import { runChecks, type Finding, type GrammarReading, type PdfReading, type Report } from "@/lib/check/engine"
 import { addWord, CHECK_FIELD, changeCheck, dismiss, restore, type CheckState } from "@/lib/check/state"
 import { hasLeftOut } from "@/lib/leftOut"
 import type { Resume } from "@/lib/resume"
@@ -57,13 +57,15 @@ export function useResumeCheck(resume: Resume, watching: boolean, pdf?: PdfReadi
   // run the checks again on the old resume before the new.
   const latestInput = useMemo(() => ({ resume, pdf, grammar }), [resume, pdf, grammar])
   const input = useDeferredValue(latestInput)
+  // The last report, for dismissing, and so that when a reading of the PDF
+  // or the text comes in, only the rules that read it run again.
+  const latestReport = useRef<Report | undefined>(undefined)
   const report = useMemo(
-    () => (watching ? runChecks(input.resume, { pdf: input.pdf, grammar: input.grammar }) : undefined),
+    () => (watching ? runChecks(input.resume, { pdf: input.pdf, grammar: input.grammar, previous: latestReport.current }) : undefined),
     [input, watching],
   )
-
-  const latestReport = useRef(report)
   latestReport.current = report
+
   // Changes start from the resume as it is now, not as last checked.
   const change = useCallback(
     (next: (state: CheckState) => CheckState) => {

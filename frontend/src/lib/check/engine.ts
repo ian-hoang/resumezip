@@ -181,6 +181,13 @@ export interface CheckOptions {
   /** What the grammar checker found so far, once it has loaded; grammar rules wait for it. */
   grammar?: GrammarReading
   today?: Date
+  /**
+   * An earlier report, to keep what its rules found where they'd read
+   * nothing new: on the same resume and day, the form rules' results, and the
+   * PDF or grammar rules' while their reading is the same. So a new reading
+   * of the PDF or the text runs only the rules that read it.
+   */
+  previous?: Report
 }
 
 const clamp = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0)
@@ -188,13 +195,25 @@ const clamp = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(
 const LEVEL_ORDER: Record<Level, number> = { fix: 0, look: 1 }
 const CATEGORY_ORDER = new Map<string, number>(CATEGORIES.map((category, index) => [category.id, index]))
 
+// What each report was made from, so a later run can tell what's new since (`CheckOptions.previous`).
+const madeFrom = new WeakMap<Report, { resume: Resume; day: string; pdf?: PdfReading; grammar?: GrammarReading }>()
+
 /** Runs the rules over a resume, as the editor saves it, and says what they found. */
-export function runChecks(resume: Resume, { rules = RULES, pdf, grammar, today = new Date() }: CheckOptions = {}): Report {
-  const view = viewOf(resume)
+export function runChecks(resume: Resume, { rules = RULES, pdf, grammar, today = new Date(), previous }: CheckOptions = {}): Report {
+  const made = { resume, day: today.toDateString(), pdf, grammar }
+  const before = previous && madeFrom.get(previous)
+  // Rules read dates to the month at most, so a report from earlier today on the same resume still stands.
+  const earlier = before?.resume === resume && before.day === made.day ? previous : undefined
+  const kept = new Map(
+    (earlier?.results ?? [])
+      .filter(({ rule }) => rule.reads === "form" || (rule.reads === "pdf" ? before?.pdf === pdf : before?.grammar === grammar))
+      .map((result) => [result.rule, result]),
+  )
+  const view = earlier?.view ?? viewOf(resume)
   const state = readCheckState(resume)
   const dismissed = new Set(state.dismissed)
   const input: CheckInput = { resume: view, today, words: new Set(state.words.map((word) => word.toLowerCase())) }
-  const results = rules.map((rule) => run(rule, input, dismissed, pdf, grammar))
+  const results = rules.map((rule) => kept.get(rule) ?? run(rule, input, dismissed, pdf, grammar))
   // A stable sort, so rules and the resume's own order break ties.
   const findings = results
     .flatMap((result) => result.findings)
@@ -202,12 +221,14 @@ export function runChecks(resume: Resume, { rules = RULES, pdf, grammar, today =
       (a, b) =>
         LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level] || (CATEGORY_ORDER.get(a.category) ?? 0) - (CATEGORY_ORDER.get(b.category) ?? 0),
     )
-  return {
+  const report: Report = {
     findings: findings.filter((finding) => !finding.dismissed),
     dismissed: findings.filter((finding) => finding.dismissed),
     results,
     view,
   }
+  madeFrom.set(report, made)
+  return report
 }
 
 // One rule over the resume. A rule that breaks, gives back something that

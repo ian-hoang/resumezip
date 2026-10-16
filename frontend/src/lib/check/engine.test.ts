@@ -4,7 +4,16 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import { SECTION_NAMES } from "@/components/editor/sections"
 import type { Resume } from "@/lib/resume"
 import { asSaved } from "@/lib/testResume"
-import { runChecks, type CheckInput, type Finding, type Outcome, type PdfReading, type Problem, type Rule } from "./engine"
+import {
+  runChecks,
+  type CheckInput,
+  type Finding,
+  type GrammarReading,
+  type Outcome,
+  type PdfReading,
+  type Problem,
+  type Rule,
+} from "./engine"
 import type { Place } from "./places"
 import { textsOf } from "./resume"
 import { RULES } from "./rules"
@@ -218,6 +227,50 @@ describe("running the rules", () => {
       expect(report.findings.length).toBeGreaterThan(SECTION_NAMES.length * 2)
     },
   )
+})
+
+describe("running the rules again", () => {
+  const TODAY = new Date(2026, 9, 7)
+  const here: Problem = { place: { kind: "profile", field: "fullName" }, message: "Here" }
+
+  // A rule of each kind, and how many times each has run.
+  function counted() {
+    const form = vi.fn((): Outcome => ({ checked: 1, problems: [here] }))
+    const pdf = vi.fn((): Outcome => ({ checked: 1, problems: [{ place: { kind: "page", page: 1 }, message: "On the page" }] }))
+    const grammar = vi.fn((): Outcome => ({ checked: 1, problems: [here] }))
+    const rules: Rule[] = [
+      formRule("B1", form),
+      { ...formRule("L1", () => null, { category: "length" }), reads: "pdf", check: pdf },
+      { ...formRule("G1", () => null, { category: "spelling" }), reads: "grammar", check: grammar },
+    ]
+    return { rules, runs: () => [form, pdf, grammar].map((check) => check.mock.calls.length) }
+  }
+
+  test("with a new reading of the PDF or the text, runs only the rules that read it", () => {
+    const { rules, runs } = counted()
+    const typed = runChecks(ada, { rules, today: TODAY })
+    expect(runs()).toEqual([1, 0, 0])
+    const pdf = reading(1)
+    const read = runChecks(ada, { rules, pdf, today: TODAY, previous: typed })
+    expect(runs()).toEqual([1, 1, 0])
+    const grammar: GrammarReading = new Map()
+    const checked = runChecks(ada, { rules, pdf, grammar, today: TODAY, previous: read })
+    expect(runs()).toEqual([1, 1, 1])
+    // What it keeps is what running them all finds.
+    expect(checked).toEqual(runChecks(ada, { rules, pdf, grammar, today: TODAY }))
+  })
+
+  test("runs them all on another resume, or on another day", () => {
+    const { rules, runs } = counted()
+    const pdf = reading(1)
+    const grammar: GrammarReading = new Map()
+    const first = runChecks(ada, { rules, pdf, grammar, today: TODAY })
+    // Each change, a dismissal too, makes another resume, even with the same words.
+    runChecks({ ...ada }, { rules, pdf, grammar, today: TODAY, previous: first })
+    expect(runs()).toEqual([2, 2, 2])
+    runChecks(ada, { rules, pdf, grammar, today: new Date(2026, 9, 8), previous: first })
+    expect(runs()).toEqual([3, 3, 3])
+  })
 })
 
 describe("dismissing", () => {

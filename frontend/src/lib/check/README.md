@@ -5,7 +5,9 @@ what to fix and where. It all happens in the browser: no AI, and nothing is
 sent anywhere.
 
 - `engine.ts` runs the rules and collects what they found:
-  `runChecks(resume, { pdf })`.
+  `runChecks(resume, { pdf })`. Given the last report (`previous`), it keeps
+  what the rules that read nothing new found, so a new reading of the PDF or
+  the text runs only the rules that read it.
 - `rules.ts` lists every rule. Each group of rules (contact, dates, bullets…)
   lives in a file of its own.
 - `resume.ts` reads the resume for the rules: each field as trimmed text, each
