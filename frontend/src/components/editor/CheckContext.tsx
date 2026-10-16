@@ -53,8 +53,6 @@ interface CheckValue {
   report: Report
   /** The resume as last checked, which `report` is of. */
   checked: Resume
-  /** What the left bar shows. */
-  mode: Mode
   /**
    * Where the PDF rules stand: "reading" the current preview, "read",
    * "unreadable", or "unbuilt" when the preview itself couldn't be made.
@@ -90,9 +88,12 @@ export interface Preview {
   checkerResume?: Resume
 }
 
-// Three contexts, so each part of the editor re-renders only with what it
-// shows: the left bar with each new report, the forms only with the finding
-// being fixed, and what just acts on the checker, never.
+// Four contexts, so each part of the editor re-renders only with what it
+// shows: the left bar with its mode, the Check panel with each new report,
+// the forms only with the finding being fixed, and what just acts on the
+// checker, never.
+const CheckModeContext = createContext<Mode | null>(null)
+// Null outside a CheckProvider, and until Check has been opened, as there's no report before.
 const CheckContext = createContext<CheckValue | null>(null)
 const CheckActionsContext = createContext<CheckActions | null>(null)
 // Null while no finding is being fixed, so undefined is outside a CheckProvider.
@@ -152,15 +153,32 @@ interface CheckProviderProps {
 }
 
 /**
- * Checks the open resume for the editor, once typing pauses: the left bar
- * lists what's found, and the forms point at the finding the person chose to
- * fix. Once Check has been opened, each new preview is read for the PDF
- * rules, while the page is idle; they wait while the preview is behind the
- * resume being checked. Text that's new since it was last checked goes to the
- * grammar checker then too.
+ * Once Check has been opened, checks the open resume for the editor each
+ * time typing pauses: the left bar lists what's found, and the forms point at
+ * the finding the person chose to fix. Each new preview is read for the PDF
+ * rules then too, while the page is idle; they wait while the preview is
+ * behind the resume being checked. Text that's new since it was last checked
+ * goes to the grammar checker.
  */
 export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckProviderProps) {
   const resume = usePausedResume(CHECK_DELAY_MS)
+  // A resume with nothing to check yet opens in Write, so its sections aren't
+  // hidden behind a request to fill them in.
+  const [mode, setMode] = useState<Mode>(() => (hasEnoughToCheck(viewOf(resume)) ? savedMode() : "write"))
+  const chooseMode = useCallback((next: Mode) => {
+    setMode(next)
+    saveMode(next)
+  }, [])
+  // Once Check has been opened, the resume, the preview and the text are
+  // checked from then on, starting with the render that opens it, so the
+  // panel never shows without a report. Not before: nothing shows what's
+  // found in Write or Style, and checking a long resume takes tens of
+  // milliseconds a pause, more on a phone.
+  const [opened, setOpened] = useState(false)
+  const watching = opened || mode === "check"
+  useEffect(() => {
+    if (mode === "check") setOpened(true)
+  }, [mode])
   // What the resume being checked prints; a preview of anything else is out of date.
   const printed = useMemo(() => JSON.stringify(printedOf(resume)), [resume])
   // The resume the preview was made from, to find each section's text in the
@@ -168,7 +186,10 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   // move that text in the editor, so while the resume being checked prints the
   // same as the preview, it's that one.
   const pdfResume = preview && preview.printed === printed ? resume : preview?.checkerResume
-  const layoutJSON = useMemo(() => (pdfResume ? JSON.stringify(pdfLayoutOf(viewOf(pdfResume))) : undefined), [pdfResume])
+  const layoutJSON = useMemo(
+    () => (watching && pdfResume ? JSON.stringify(pdfLayoutOf(viewOf(pdfResume))) : undefined),
+    [watching, pdfResume],
+  )
   const layout = useMemo<PdfSectionLayout[] | undefined>(
     () => (layoutJSON === undefined ? undefined : JSON.parse(layoutJSON)),
     [layoutJSON],
@@ -178,18 +199,6 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   // Private omitted-line edits can keep the PDF identical while moving an
   // editor target. Include source addresses in the reading cache key.
   const readingKey = previewPrinted ? `${previewPrinted}\n${layoutJSON}` : ""
-  // A resume with nothing to check yet opens in Write, so its sections aren't
-  // hidden behind a request to fill them in.
-  const [mode, setMode] = useState<Mode>(() => (hasEnoughToCheck(viewOf(resume)) ? savedMode() : "write"))
-  const chooseMode = useCallback((next: Mode) => {
-    setMode(next)
-    saveMode(next)
-  }, [])
-  // Once Check has been opened, the preview and the text are checked from then on.
-  const [watching, setWatching] = useState(false)
-  useEffect(() => {
-    if (mode === "check") setWatching(true)
-  }, [mode])
   // The latest preview as read, and what it prints; null if it couldn't be read.
   const [read, setRead] = useState<{ printed: string; key: string; pdf: PdfReading | null } | null>(null)
   const readings = useRef(new Map<string, PdfReading | null>())
@@ -232,10 +241,12 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   const grammarChecking = useRef(new Set<string>())
   const current = read?.printed === printed && read.key === readingKey ? read : null
   const pdf: CheckValue["pdf"] = current ? (current.pdf ? "read" : "unreadable") : unbuilt === printed ? "unbuilt" : "reading"
-  const check = useResumeCheck(resume, current?.pdf ?? undefined, grammarRead)
+  const check = useResumeCheck(resume, watching, current?.pdf ?? undefined, grammarRead)
+  const { report, checked } = check
   // The text the grammar checker reads, from the resume as last checked, so
   // working it out never holds up typing.
-  const texts = useMemo(() => (watching ? grammarTexts(check.report.view).map(({ text }) => text) : []), [watching, check.report.view])
+  const view = report?.view
+  const texts = useMemo(() => (view ? grammarTexts(view).map(({ text }) => text) : []), [view])
   const textsNow = useRef(texts)
   textsNow.current = texts
   useEffect(() => {
@@ -299,30 +310,43 @@ export function CheckProvider({ onSelect, preview, unbuilt, children }: CheckPro
   // The same finding while it's there, or else the same problem as its text
   // changes while it's being fixed: one rule can find more than one thing at
   // a place, as two typos in a bullet.
-  const live = chosen
-    ? (check.report.findings.find((finding) => finding.key === chosen.finding.key) ??
-      check.report.findings.find((finding) => sameIssue(finding, chosen.finding)))
-    : undefined
+  const live =
+    chosen && report
+      ? (report.findings.find((finding) => finding.key === chosen.finding.key) ??
+        report.findings.find((finding) => sameIssue(finding, chosen.finding)))
+      : undefined
   const target = useMemo(
     () => (chosen && live && mode === "check" ? { finding: live, request: chosen.request } : null),
     [chosen, live, mode],
   )
-  const { report, checked } = check
-  const value = useMemo(() => ({ report, checked, mode, pdf, grammar }), [report, checked, mode, pdf, grammar])
+  const value = useMemo(() => (report ? { report, checked, pdf, grammar } : null), [report, checked, pdf, grammar])
   const actions = useMemo(() => ({ ...check.actions, chooseMode, open, pending, claim }), [check.actions, chooseMode, open, pending, claim])
   return (
     <CheckActionsContext.Provider value={actions}>
-      <CheckContext.Provider value={value}>
-        <CheckTargetContext.Provider value={target}>{children}</CheckTargetContext.Provider>
-      </CheckContext.Provider>
+      <CheckModeContext.Provider value={mode}>
+        <CheckContext.Provider value={value}>
+          <CheckTargetContext.Provider value={target}>{children}</CheckTargetContext.Provider>
+        </CheckContext.Provider>
+      </CheckModeContext.Provider>
     </CheckActionsContext.Provider>
   )
 }
 
-/** What the checker found, and where it stands. A component using this re-renders each time the resume is checked. */
+/** What the left bar shows. A component using this re-renders only when it changes. */
+export function useCheckMode(): Mode {
+  const mode = useContext(CheckModeContext)
+  if (!mode) throw new Error("useCheckMode must be used inside CheckProvider")
+  return mode
+}
+
+/**
+ * What the checker found, and where it stands, for the Check panel: there's
+ * only a report once Check has been opened. A component using this
+ * re-renders each time the resume is checked.
+ */
 export function useCheck(): CheckValue {
   const check = useContext(CheckContext)
-  if (!check) throw new Error("useCheck must be used inside CheckProvider")
+  if (!check) throw new Error("useCheck must be used inside CheckProvider, once Check has been opened")
   return check
 }
 

@@ -42,21 +42,25 @@ export function usePausedResume(delay: number): Resume {
 }
 
 /**
- * Checks `resume` as it changes. The checks run on a deferred copy of it, so
+ * Checks `resume` as it changes, while `watching`; until then there's no
+ * report, as nothing shows one. The checks run on a deferred copy of it, so
  * what's typed shows first and the findings follow. PDF rules run once `pdf`
  * (the preview of `resume`, as the resume reader read it) is given, and
  * grammar rules once `grammar` (what the grammar checker found in each piece
  * of text) is. The changes it gives, like dismissing a finding, are made to
  * the open resume as it is now.
  */
-export function useResumeCheck(resume: Resume, pdf?: PdfReading, grammar?: GrammarReading) {
+export function useResumeCheck(resume: Resume, watching: boolean, pdf?: PdfReading, grammar?: GrammarReading) {
   const { read, update } = useOpenResume()
   // `pdf` is of `resume`, so the two are deferred together: the PDF rules
   // never compare a resume with a PDF of another version, and a change doesn't
   // run the checks again on the old resume before the new.
   const latestInput = useMemo(() => ({ resume, pdf, grammar }), [resume, pdf, grammar])
   const input = useDeferredValue(latestInput)
-  const report = useMemo(() => runChecks(input.resume, { pdf: input.pdf, grammar: input.grammar }), [input])
+  const report = useMemo(
+    () => (watching ? runChecks(input.resume, { pdf: input.pdf, grammar: input.grammar }) : undefined),
+    [input, watching],
+  )
 
   const latestReport = useRef(report)
   latestReport.current = report
@@ -91,6 +95,6 @@ export function useResumeCheck(resume: Resume, pdf?: PdfReading, grammar?: Gramm
     () => ({ dismiss: dismissFinding, restore: restoreFinding, addWord: addKnownWord }),
     [dismissFinding, restoreFinding, addKnownWord],
   )
-  /** The report, and the resume it's of. */
+  /** The report, once watching, and the resume it's of. */
   return { report, checked: input.resume, actions }
 }

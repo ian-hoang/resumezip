@@ -5,7 +5,7 @@ import { memo, useRef } from "react"
 import { PenLine, ShieldCheck, SlidersHorizontal, type LucideIcon } from "lucide-react"
 import { SEGMENT, SEGMENTS } from "@/components/pills"
 import { useThumb } from "@/components/useThumb"
-import { useCheck, useCheckActions, type Mode } from "./CheckContext"
+import { useCheckActions, useCheckMode, type Mode } from "./CheckContext"
 import CheckPanel from "./CheckPanel"
 import { WIDE_SCREEN } from "./layout"
 
@@ -27,7 +27,7 @@ const PANEL_ID = "editor-mode-panel"
  * it's at the top of the left bar, and on a phone its tabs share the width.
  */
 export function ModeTabs({ stretch = false }: { stretch?: boolean }) {
-  const { mode } = useCheck()
+  const mode = useCheckMode()
   const { chooseMode } = useCheckActions()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const thumb = useThumb(mode)
@@ -120,7 +120,7 @@ interface LeftBarProps {
  * it takes the form's place (styles/editor.css).
  */
 function LeftBar({ hidden, tabs, children, style }: LeftBarProps) {
-  const { mode } = useCheck()
+  const mode = useCheckMode()
 
   return (
     <aside

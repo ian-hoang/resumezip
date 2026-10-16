@@ -142,7 +142,8 @@ sent anywhere.
   Word lists and thresholds go there too, so tuning is a change to one file.
 - `labels.ts` says where a finding is in a few words ("Experience → Google ·
   bullet 2"), and whether there's enough of a resume to check yet.
-- `components/editor/useResumeCheck.ts` checks the open resume as it changes.
+- `components/editor/useResumeCheck.ts` checks the open resume as it changes,
+  once Check has been opened: nothing shows what it finds before.
   `CheckContext.tsx` shares that, and whether the left bar is on Write or
   Check, with the Check panel (`CheckPanel.tsx`) and the forms. The panel
   shows the score, then only the categories with something to fix or review,
