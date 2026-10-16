@@ -337,20 +337,31 @@ const comparable = (text: string) =>
     .trim()
 
 // How many letters two texts differ by (adding, removing or changing one),
-// or `limit + 1` once it's more than `limit`.
+// or `limit + 1` once it's more than `limit`. A cell further than `limit`
+// from the diagonal holds more than `limit`, so only the band within it is
+// worked out, in two rows that take turns; the cells outside it stay
+// `limit + 1`.
 function distance(a: string, b: string, limit: number): number {
-  if (Math.abs(a.length - b.length) > limit) return limit + 1
-  let previous = Array.from({ length: b.length + 1 }, (_, j) => j)
+  const over = limit + 1
+  if (Math.abs(a.length - b.length) > limit) return over
+  // Filled, then set in a loop: Array.from({ length }, …) takes longer than all the rest.
+  let previous = new Array<number>(b.length + 1).fill(over)
+  for (let j = 0; j <= limit && j <= b.length; j++) previous[j] = j
+  let current = new Array<number>(b.length + 1).fill(over)
   for (let i = 1; i <= a.length; i++) {
-    const current = [i]
-    for (let j = 1; j <= b.length; j++) {
+    const from = Math.max(1, i - limit)
+    const to = Math.min(b.length, i + limit)
+    current[from - 1] = from === 1 ? i : over
+    let best = current[from - 1]
+    for (let j = from; j <= to; j++) {
       current[j] = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+      if (current[j] < best) best = current[j]
     }
     // No row gets better than the best in the one above it.
-    if (Math.min(...current) > limit) return limit + 1
-    previous = current
+    if (best > limit) return over
+    ;[previous, current] = [current, previous]
   }
-  return previous[b.length]
+  return Math.min(previous[b.length], over)
 }
 
 const repeated: Rule = {
@@ -363,32 +374,36 @@ const repeated: Rule = {
   check: ({ resume }) => {
     const bullets = bulletsIn(resume)
     if (bullets.length < 2) return null
-    const seen: { text: string; where: string }[] = []
+    // Each text as compared, and where it was first written, in the order they're printed.
+    const seen = new Map<string, string>()
     const problems: Problem[] = []
     for (const { bullet, place, entry } of bullets) {
       const text = comparable(bullet.text)
       if (!text) continue
       // A small edit may be an accidental copy, or genuinely different work.
       const limit = Math.floor(text.length / NEAR_DUPLICATE_LENGTH)
-      let match: (typeof seen)[number] | undefined
-      let closest = limit + 1
-      for (const other of seen) {
-        const difference = distance(text, other.text, limit)
-        if (difference < closest) {
-          match = other
-          closest = difference
+      // The same text is the closest there is. Otherwise it's the text the
+      // fewest letters away, and of those, the one written first.
+      let match = seen.get(text)
+      let closest = match === undefined ? limit + 1 : 0
+      if (match === undefined && limit > 0) {
+        for (const [other, where] of seen) {
+          const difference = distance(text, other, limit)
+          if (difference < closest) {
+            match = where
+            closest = difference
+          }
         }
-        if (closest === 0) break
       }
-      if (closest <= limit) {
+      if (match !== undefined) {
         problems.push({
           place,
           message: closest === 0 ? "Same as another bullet" : "Almost the same as another bullet",
           advisory: closest !== 0,
-          suggestion: `Compare with ${match!.where}. Keep both if they describe different work.`,
+          suggestion: `Compare with ${match}. Keep both if they describe different work.`,
         })
       }
-      seen.push({ text, where: `${SECTIONS[entry.section].title}, entry ${entry.index + 1}, bullet ${bullet.number}` })
+      if (!seen.has(text)) seen.set(text, `${SECTIONS[entry.section].title}, entry ${entry.index + 1}, bullet ${bullet.number}`)
     }
     return { checked: bullets.length, problems }
   },

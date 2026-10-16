@@ -1,8 +1,13 @@
+import { readdirSync, readFileSync } from "node:fs"
+import path from "node:path"
 import { describe, expect, test } from "vitest"
 import type { Resume } from "@/lib/resume"
 import { pronounIn } from "./bullets"
 import { runChecks } from "./engine"
+import { viewOf } from "./resume"
 import { RULES } from "./rules"
+import { NEAR_DUPLICATE_LENGTH } from "./settings"
+import { bulletsIn } from "./text"
 
 const job = (bullets: string[], workEndDate = "Present", companyName = "Google") => ({
   id: 1,
@@ -418,5 +423,108 @@ describe("B9 repeated bullets", () => {
     expect(check("B9", resume).findings).toEqual([expect.objectContaining({ place: bulletAt(1, 1), message: "Same as another bullet" })])
     expect(check("B9", resume).findings[0].advisory).toBeUndefined()
     expect(check("B9", resume).scoring?.credit).toBeLessThan(1)
+  })
+
+  test("flags a bullet with a letter in 25 added or dropped at its start or end, but not one more", () => {
+    // 40 letters, so one can differ, and 132, so five can, with that many added or dropped too.
+    for (const text of [
+      "Wrote the onboarding guide for new staff",
+      "Implemented the scheduling service that books every room and vehicle for three hundred staff across nine regional offices nationwide",
+    ]) {
+      const limit = Math.floor(text.length / NEAR_DUPLICATE_LENGTH)
+      const changed = (count: number) => {
+        const letters = "abcdef".slice(0, count)
+        return [letters + text, text + letters, text.slice(count), text.slice(0, -count)]
+      }
+      for (const near of changed(limit)) {
+        expect(check("B9", resumeWith(job([text, near]))).messages, near).toEqual(["Almost the same as another bullet"])
+      }
+      for (const far of changed(limit + 1)) expect(check("B9", resumeWith(job([text, far]))).messages, far).toEqual([])
+    }
+  })
+
+  test("finds in many bullets what comparing every pair of them in full finds", () => {
+    // The samples' bullets, written as B9 compares them, so they can be
+    // compared here as they are: lower case, without punctuation.
+    const plain = (text: string) =>
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+    const folder = path.resolve("src/lib/typst/preview-samples")
+    const samples = readdirSync(folder).flatMap((file) =>
+      bulletsIn(viewOf(JSON.parse(readFileSync(path.join(folder, file), "utf8")))).map(({ bullet }) => plain(bullet.text)),
+    )
+    // A seeded random generator, so a failure can be seen again.
+    let seed = 3
+    const random = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      return seed / 2147483648
+    }
+    // Letters added, changed or dropped, anywhere in the text.
+    const edited = (text: string, count: number) => {
+      for (let edit = 0; edit < count; edit++) {
+        const at = Math.floor(random() * text.length)
+        const letter = String.fromCharCode(97 + Math.floor(random() * 26))
+        const [before, after] = [text.slice(0, at), text.slice(at + 1)]
+        text = [before + letter + text.slice(at), before + letter + after, before + after][Math.floor(random() * 3)]
+      }
+      return plain(text)
+    }
+    // After about half of them, a copy of one so far: the same, a letter
+    // in 25 from it or less, or further.
+    const bullets: string[] = []
+    for (const text of samples) {
+      bullets.push(text)
+      if (random() < 0.5) continue
+      const copied = bullets[Math.floor(random() * bullets.length)]
+      bullets.push(edited(copied, Math.floor(random() * (copied.length / NEAR_DUPLICATE_LENGTH + 3))))
+    }
+    const perJob = 5
+    const jobs = Array.from({ length: Math.ceil(bullets.length / perJob) }, (_, index) => ({
+      ...job(bullets.slice(index * perJob, (index + 1) * perJob)),
+      id: index + 1,
+    }))
+
+    // How many letters apart two texts are, with every pair of letters compared.
+    const distance = (a: string, b: string) => {
+      let previous = Array.from({ length: b.length + 1 }, (_, j) => j)
+      for (let i = 1; i <= a.length; i++) {
+        const current = [i]
+        for (let j = 1; j <= b.length; j++)
+          current.push(Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)))
+        previous = current
+      }
+      return previous[b.length]
+    }
+    // Each bullet a letter in 25 or less from an earlier one, with the
+    // closest of those, or the first written if two are as close.
+    const expected = bullets.flatMap((text, index) => {
+      const limit = Math.floor(text.length / NEAR_DUPLICATE_LENGTH)
+      let match: number | undefined
+      let closest = limit + 1
+      for (let other = 0; other < index; other++) {
+        // Two texts are at least as many letters apart as their lengths differ by.
+        if (Math.abs(text.length - bullets[other].length) > limit) continue
+        const apart = distance(text, bullets[other])
+        if (apart < closest) [match, closest] = [other, apart]
+      }
+      if (match === undefined) return []
+      return [
+        {
+          place: bulletAt(index % perJob, Math.floor(index / perJob)),
+          message: closest === 0 ? "Same as another bullet" : "Almost the same as another bullet",
+          advisory: closest === 0 ? undefined : true,
+          suggestion: `Compare with Experience, entry ${Math.floor(match / perJob) + 1}, bullet ${(match % perJob) + 1}. Keep both if they describe different work.`,
+        },
+      ]
+    })
+
+    const found = check("B9", resumeWith(...jobs)).findings
+    expect(found.map(({ place, message, advisory, suggestion }) => ({ place, message, advisory, suggestion }))).toEqual(expected)
+    // Both kinds, so neither is left untested.
+    expect(bullets.length).toBeGreaterThan(250)
+    expect(expected.filter(({ advisory }) => advisory).length).toBeGreaterThan(10)
+    expect(expected.filter(({ advisory }) => !advisory).length).toBeGreaterThan(10)
   })
 })
