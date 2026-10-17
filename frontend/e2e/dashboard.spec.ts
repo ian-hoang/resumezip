@@ -770,7 +770,7 @@ test("each card says its resume's type over its name, and one without a type kee
 
 test("the header's Dashboard opens the dashboard, which the tab calls Dashboard", async ({ page }) => {
   const errors = pageErrors(page)
-  await page.goto("/about")
+  await page.goto("/terms")
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Dashboard" }).click()
   await expect(page).toHaveURL(/\/create\/dashboard$/)
   await expect(page).toHaveTitle(/^Dashboard/)

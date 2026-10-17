@@ -5,8 +5,7 @@ import { expect, test } from "./test"
 
 const PHONE = { width: 390, height: 844 }
 
-// The home page's header sits on its video; every other page's, at the top of the page.
-for (const path of ["/", "/about"]) {
+for (const path of ["/", "/terms"]) {
   test(`the menu on ${path} opens over the page without moving it`, async ({ page }) => {
     await page.setViewportSize(PHONE)
     await page.goto(path)
@@ -14,14 +13,14 @@ for (const path of ["/", "/about"]) {
     const before = await heading.boundingBox()
 
     await page.getByRole("button", { name: "Open menu" }).click()
-    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "About" })).toBeVisible()
+    await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Templates" })).toBeVisible()
     expect(await heading.boundingBox()).toEqual(before)
   })
 }
 
 test("the menu closes on Escape or a tap elsewhere, and Tab skips it while it fades out", async ({ page }) => {
   await page.setViewportSize(PHONE)
-  await page.goto("/about")
+  await page.goto("/terms")
   const button = page.getByRole("button", { name: "Open menu" })
   const menu = page.getByRole("navigation", { name: "Main" })
 
@@ -46,7 +45,7 @@ test("the menu closes on Escape or a tap elsewhere, and Tab skips it while it fa
 
 test("the menu is shut after the phone turns sideways and back", async ({ page }) => {
   await page.setViewportSize(PHONE)
-  await page.goto("/about")
+  await page.goto("/terms")
   await page.getByRole("button", { name: "Open menu" }).click()
   await expect(page.getByRole("button", { name: "Close menu" })).toBeVisible()
 

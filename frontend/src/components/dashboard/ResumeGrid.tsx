@@ -129,7 +129,7 @@ export default function ResumeGrid({ resumes, actions, onDelete, onRetype, leavi
 
             <div className="tile-actions">
               <div className="tile-bar glass glass-float">
-                <Link href={href} onClick={open} tabIndex={-1} aria-hidden="true" className="tile-open ink-glass">
+                <Link href={href} onClick={open} tabIndex={-1} aria-hidden="true" className="tile-open blue-button">
                   Open
                 </Link>
                 <RowAction label="Duplicate" onClick={() => duplicate(resume)}>

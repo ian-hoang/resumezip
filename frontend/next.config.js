@@ -93,12 +93,15 @@ module.exports = {
   async rewrites() {
     return [{ source: "/create/new/:id+", destination: "/create/editor" }]
   },
-  // Contact is part of About now. Old links, and messages already sent with
-  // this address, still land on its form. Here rather than in a page, whose
-  // redirect() answers 307 (temporary), so search engines list About instead.
+  // The About page and the contact page are part of the home page now. Old
+  // links, and messages already sent with these addresses, still land there:
+  // /about#contact keeps its #contact, which the home page's story takes to
+  // its end, where the address is. Here rather than in a page, whose
+  // redirect() answers 307 (temporary), so search engines list the home page instead.
   async redirects() {
     return [
-      { source: "/contact", destination: "/about#contact", permanent: true },
+      { source: "/about", destination: "/", permanent: true },
+      { source: "/contact", destination: "/#contact", permanent: true },
       ...Object.entries(RENAMED_PICTURES).map(([id, page]) => ({
         source: `/previews/${id}.webp`,
         destination: `/previews/${page}-resume-template.webp`,
@@ -116,7 +119,7 @@ module.exports = {
       // they're shown. These keep their names when they change (e.g. a
       // template's new picture), so browsers keep them for a day rather than
       // for good.
-      ...["/previews/:file*", "/video/:file*", "/how-it-works/:file*", "/backgrounds/:file*"].map((source) => ({
+      ...["/previews/:file*", "/home/:file*", "/backgrounds/:file*"].map((source) => ({
         source,
         headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
       })),

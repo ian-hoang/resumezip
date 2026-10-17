@@ -2,7 +2,7 @@ import { expect, test, type Page } from "./test"
 
 const REPO_URL = "https://github.com/ian-hoang/resumezip"
 
-// One header on every page: the home page's is the same pill as the others', over its video.
+// One header on every page, the home page's too.
 // Its one button asks for a star on GitHub; people start writing from the page itself.
 for (const path of ["/", "/templates"]) {
   test(`the header on ${path} asks for a star on GitHub, and nothing else`, async ({ page }) => {
@@ -23,23 +23,6 @@ test("on a phone, the home page's menu asks for the star", async ({ page }) => {
   )
 })
 
-// Over the video, the header and its phone menu are flat ink, as the black buttons are, not
-// dark glass, whose shine reads as grey. ::before draws the fill (glass.css).
-test("on a phone, the home page's header and its menu are ink over the video", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto("/")
-  await page.getByRole("button", { name: "Open menu" }).click()
-  const menu = page.getByRole("navigation", { name: "Main" })
-  await expect(menu.getByRole("link", { name: "Templates" })).toBeVisible()
-  const fill = (element: Element) => getComputedStyle(element, "::before").backgroundColor
-  expect(await menu.evaluate(fill)).toBe("rgb(17, 19, 24)")
-  const bar = await page
-    .getByRole("banner")
-    .getByRole("link", { name: "resumezip" })
-    .evaluate((logo) => getComputedStyle(logo.parentElement!, "::before").backgroundColor)
-  expect(bar).toBe("rgb(17, 19, 24)")
-})
-
 // Every page's header starts where the home page's does, so it doesn't jump from page to page.
 // Scrolled, it stays where it is at the top of the screen, and the page starts under it rather than behind it.
 const pillTop = async (page: Page) => (await page.getByRole("banner").boundingBox())!.y
@@ -51,7 +34,7 @@ for (const width of [390, 1440]) {
     await page.goto("/")
     const top = await pillTop(page)
 
-    for (const path of ["/templates", "/about", "/create/dashboard"]) {
+    for (const path of ["/templates", "/terms", "/create/dashboard"]) {
       await page.goto(path)
       expect(await pillTop(page), path).toBe(top)
       const header = (await page.getByRole("banner").boundingBox())!
@@ -70,36 +53,23 @@ const headerLinks = (page: Page) => page.getByRole("navigation", { name: "Main" 
 const boxes = async (page: Page) => Promise.all((await headerLinks(page).all()).map((link) => link.boundingBox()))
 
 // 768px is the narrowest the links show at, and no page's button may push them onto two lines there.
-for (const path of ["/", "/about"]) {
+for (const path of ["/", "/terms"]) {
   test(`at 768px the header's links on ${path} are on one line`, async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 800 })
     await page.goto(path)
-    await expect(headerLinks(page)).toHaveCount(3)
+    await expect(headerLinks(page)).toHaveCount(2)
     expect(new Set((await boxes(page)).map((box) => box!.height)).size).toBe(1)
   })
 }
 
-// The home page's header is a glass pill floating over the video, in the middle whatever its button says.
+// The header is a glass pill in the middle of the page, whatever its button says.
 for (const width of [1024, 1440]) {
   test(`at ${width}px the home page's header is in the middle of the page`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
     await page.goto("/")
-    await expect(headerLinks(page)).toHaveCount(3)
+    await expect(headerLinks(page)).toHaveCount(2)
     const pill = (await page.getByRole("banner").boundingBox())!
     expect(Math.abs(pill.x + pill.width / 2 - width / 2)).toBeLessThanOrEqual(1)
     expect(new Set((await boxes(page)).map((box) => box!.y)).size).toBe(1)
   })
 }
-
-// Over the video the pill is ink; over the page's paper it turns light, to stay readable.
-test("the home page's header turns light once it's over the page rather than the video", async ({ page }) => {
-  await page.goto("/")
-  const logo = page.getByRole("banner").getByRole("link", { name: "resumezip" })
-  const color = () => logo.evaluate((element) => getComputedStyle(element).color)
-  await expect.poll(color).toBe("rgb(255, 255, 255)")
-  await page.getByRole("heading", { name: "How it works" }).scrollIntoViewIfNeeded()
-  // Scrolled up a little, which brings the header back.
-  await page.mouse.wheel(0, -200)
-  await expect(page.getByRole("banner")).toBeInViewport()
-  await expect.poll(color).not.toBe("rgb(255, 255, 255)")
-})

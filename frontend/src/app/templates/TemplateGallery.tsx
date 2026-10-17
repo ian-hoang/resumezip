@@ -188,10 +188,10 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                       </span>
                     )}
                     {/* Frosted glass over the foot of the page: what it's set in, and Use, which starts a resume with it.
-                        The whole plate is the Use link, so pointed at, it whitens and is outlined in ink, and its Use
-                        lightens and grows, its arrow nudged on: apart from the picture above it, which opens the
-                        template's page. The plate's own fade is in styles/home.css. Use lets the pointer through to
-                        the plate, or ink-glass's own hover, a lesser lightening, would take over when it's on Use. */}
+                        The whole plate is the Use link, so pointed at, it whitens and is outlined in ink, and its Use,
+                        the sheet's blue main button, brightens and grows, its arrow nudged on: apart from the picture
+                        above it, which opens the template's page. The plate's own fade is in styles/home.css. Use lets
+                        the pointer through to the plate, so pointing at Use is pointing at the plate. */}
                     <StartWritingLink
                       template={template.id}
                       // Without a pointer to point with, the button under the name is Use instead.
@@ -204,7 +204,7 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                       </span>
                       <span
                         aria-hidden="true"
-                        className="ink-glass pointer-events-none inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-medium tracking-[-0.01em] transition-[filter,scale] duration-200 group-hover/use:scale-[1.04] group-hover/use:brightness-[1.75] group-active/use:scale-[0.97] motion-reduce:group-hover/use:scale-100"
+                        className="blue-button pointer-events-none inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-medium tracking-[-0.01em] transition-[filter,scale] duration-200 group-hover/use:scale-[1.04] group-hover/use:brightness-[1.06] group-active/use:scale-[0.97] motion-reduce:group-hover/use:scale-100"
                       >
                         Use{" "}
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-200 ease-glide group-hover/use:-translate-y-[3px] group-hover/use:translate-x-[3px] motion-reduce:transition-none motion-reduce:group-hover/use:translate-x-0 motion-reduce:group-hover/use:translate-y-0" />

@@ -7,7 +7,7 @@ import PageIntro from "@/components/site/PageIntro"
 import { INK_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
-import { SHEET } from "@/components/site/sheet"
+import { PAPER_FRAME, SHEET } from "@/components/site/sheet"
 
 type TabId = "terms" | "privacy" | "faq"
 
@@ -121,67 +121,69 @@ export default function TermsAndPrivacy() {
   }
 
   return (
-    <div className="desk flex min-h-screen flex-col">
+    <div className="desk desk-bright flex min-h-screen flex-col">
       <SiteHeader />
-      <main className={SHEET}>
-        <PageIntro label="Legal" title="Terms & privacy">
-          The short version: your resume is saved in your browser, and we don’t store it.
-        </PageIntro>
+      <div className={PAPER_FRAME}>
+        <main className={SHEET}>
+          <PageIntro label="Legal" title="Terms & privacy">
+            The short version: your resume is saved in your browser, and we don’t store it.
+          </PageIntro>
 
-        <div role="tablist" aria-label="Terms, privacy and FAQ" className="mt-14 flex flex-wrap gap-2">
-          {TABS.map((tab, index) => {
-            const selected = tab.id === activeTab
-            return (
-              <button
-                key={tab.id}
-                ref={(element) => {
-                  tabRefs.current[index] = element
-                }}
-                type="button"
-                role="tab"
-                id={`${tab.id}-tab`}
-                aria-selected={selected}
-                aria-controls={tab.id}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={(event) => handleTabKeyDown(event, index)}
-                className={`h-10 rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow] ${
-                  selected ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40"
-                }`}
-              >
-                {tab.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {TABS.map((tab) => (
-          <div key={tab.id} id={tab.id} role="tabpanel" aria-labelledby={`${tab.id}-tab`} hidden={tab.id !== activeTab} tabIndex={0}>
-            <h2 className="sr-only">{tab.label}</h2>
-            <ol className="divide-y divide-rule">
-              {tab.items.map((item, index) => (
-                <li key={item.title} className="grid gap-3 py-7 md:grid-cols-3 md:gap-12">
-                  <h3 className="flex items-baseline gap-4 font-serif text-[22px] leading-snug tracking-[-0.02em]">
-                    <span className="label-mono shrink-0 text-ink-2">{String(index + 1).padStart(2, "0")}</span>
-                    {item.title}
-                  </h3>
-                  <p className="max-w-2xl text-base leading-relaxed text-ink-2 md:col-span-2">{item.body}</p>
-                </li>
-              ))}
-            </ol>
+          <div role="tablist" aria-label="Terms, privacy and FAQ" className="mt-14 flex flex-wrap gap-2">
+            {TABS.map((tab, index) => {
+              const selected = tab.id === activeTab
+              return (
+                <button
+                  key={tab.id}
+                  ref={(element) => {
+                    tabRefs.current[index] = element
+                  }}
+                  type="button"
+                  role="tab"
+                  id={`${tab.id}-tab`}
+                  aria-selected={selected}
+                  aria-controls={tab.id}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(event) => handleTabKeyDown(event, index)}
+                  className={`h-10 rounded-full px-4 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow] ${
+                    selected ? "bg-ink text-white" : "bg-sheet/70 text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
-        ))}
 
-        <section className="mt-16 grid gap-6 border-t border-ink pt-6 md:grid-cols-3 md:gap-12">
-          <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
-          <div className="md:col-span-2">
-            <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">Ask us anything about these terms or your privacy.</p>
-            <Link href="/about#contact" className={`${INK_PILL} mt-6`}>
-              Contact us
-            </Link>
-          </div>
-        </section>
-      </main>
+          {TABS.map((tab) => (
+            <div key={tab.id} id={tab.id} role="tabpanel" aria-labelledby={`${tab.id}-tab`} hidden={tab.id !== activeTab} tabIndex={0}>
+              <h2 className="sr-only">{tab.label}</h2>
+              <ol className="divide-y divide-rule">
+                {tab.items.map((item, index) => (
+                  <li key={item.title} className="grid gap-3 py-7 md:grid-cols-3 md:gap-12">
+                    <h3 className="flex items-baseline gap-4 font-serif text-[22px] leading-snug tracking-[-0.02em]">
+                      <span className="label-mono shrink-0 text-ink-2">{String(index + 1).padStart(2, "0")}</span>
+                      {item.title}
+                    </h3>
+                    <p className="max-w-2xl text-base leading-relaxed text-ink-2 md:col-span-2">{item.body}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+
+          <section className="mt-16 grid gap-6 border-t border-ink pt-6 md:grid-cols-3 md:gap-12">
+            <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.02em] md:text-[32px]">Questions?</h2>
+            <div className="md:col-span-2">
+              <p className="max-w-2xl text-[17px] leading-relaxed text-ink-2">Ask us anything about these terms or your privacy.</p>
+              <Link href="/#contact" className={`${INK_PILL} mt-6`}>
+                Contact us
+              </Link>
+            </div>
+          </section>
+        </main>
+      </div>
       <SiteFooter />
     </div>
   )

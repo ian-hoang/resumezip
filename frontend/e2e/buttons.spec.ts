@@ -23,3 +23,33 @@ test("the header's Star on GitHub is ink glass with a gold star, and gets lighte
   await button.hover()
   expect(await brightness(button)).toBeGreaterThan(resting)
 })
+
+// A page's main button is ink on the pages about resumezip, and blue glass on
+// the app's white sheet (blue-button in styles/sheet.css).
+const INK = "rgb(17, 19, 24)"
+// blue-button's gradient, lighter at its top, starts from this blue.
+const GLASS_BLUE = /^linear-gradient\(rgb\(91, 151, 251\)/
+
+async function background(button: Locator) {
+  await settled(button)
+  return button.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { color: style.backgroundColor, image: style.backgroundImage }
+  })
+}
+
+test("a main button is ink on the pages about resumezip, and blue glass in the app", async ({ page }) => {
+  await page.goto("/")
+  // The hero's: Start writing is a button there too, not words beside a blue square.
+  expect(await background(page.getByRole("link", { name: "Start writing", exact: true }).first())).toEqual({ color: INK, image: "none" })
+  await page.goto("/does-not-exist")
+  expect(await background(page.getByRole("link", { name: "Back to home" }))).toEqual({ color: INK, image: "none" })
+
+  await page.goto("/templates")
+  expect((await background(page.getByRole("link", { name: "Start blank" }))).image).toMatch(GLASS_BLUE)
+  // The Use on a card, which shows as the card is pointed at, is blue too, not ink.
+  const use = page.getByRole("link", { name: "Use Jake's", exact: true }).getByText("Use", { exact: true })
+  expect((await background(use)).image).toMatch(GLASS_BLUE)
+  await page.goto("/create/dashboard")
+  expect((await background(page.getByRole("button", { name: "New resume" }).first())).image).toMatch(GLASS_BLUE)
+})

@@ -33,9 +33,9 @@ test.describe("security headers", () => {
 
   test("are on files, alongside the time browsers keep them for", async ({ request }) => {
     await expectSecurityHeaders(await request.get("/logo.svg"), "/logo.svg")
-    const poster = await request.get("/video/printer-poster.jpg")
-    await expectSecurityHeaders(poster, "the video's poster")
-    expect(poster.headers()["cache-control"]).toBe("public, max-age=86400")
+    const meadow = await request.get("/home/meadow.webp")
+    await expectSecurityHeaders(meadow, "the home page's meadow")
+    expect(meadow.headers()["cache-control"]).toBe("public, max-age=86400")
   })
 
   test("are on the scripts the PDF engine's, pdf.js's, the grammar checker's and the resume reader's workers start from", async ({

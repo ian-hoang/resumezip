@@ -1,5 +1,5 @@
-// The blue marker on the About page's resume (AboutStory.tsx): loops round
-// words, a line under them, arrows to the notes beside the page. Each stroke is
+// The blue marker on the home page's editor (HomeStory.tsx): loops round
+// what a note is about, a line under it, arrows from the notes. Each stroke is
 // a filled outline whose width swells in the middle and thins where the pen
 // lands and lifts, as a felt tip does, and the line down its middle, which a
 // mask draws along to make it look written.

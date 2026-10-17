@@ -2,21 +2,12 @@ import { type APIRequestContext, expect, test } from "./test"
 import { TEMPLATES, templateImageAlt, templatePath } from "../src/lib/templates"
 import { pageErrors, seriousAccessibilityProblems } from "./helpers"
 
-const PAGES = [
-  "/",
-  "/templates",
-  "/templates/jakes",
-  "/templates/how-they-read",
-  "/about",
-  "/terms",
-  "/create/dashboard",
-  "/does-not-exist",
-]
+const PAGES = ["/", "/templates", "/templates/jakes", "/templates/how-they-read", "/terms", "/create/dashboard", "/does-not-exist"]
 
-test("contact, on the about page, gives the support address to write to or copy", async ({ page, context, browserName }) => {
-  // Contact is part of About now; its old address still leads to it.
+test("contact, at the end of the home page, gives the support address to write to or copy", async ({ page, context, browserName }) => {
+  // Contact is part of the home page now; its old address still leads to it.
   await page.goto("/contact")
-  await expect(page).toHaveURL(/\/about#contact$/)
+  await expect(page).toHaveURL(/\/#contact$/)
   const email = page.getByRole("link", { name: "hello@tryresumezip.com", exact: true })
   await expect(email).toHaveAttribute("href", "mailto:hello@tryresumezip.com")
 
@@ -32,7 +23,7 @@ test("contact, on the about page, gives the support address to write to or copy"
 // Copy email, and has to show above it there rather than under it.
 test("the Email bubble shows above Copy email where they meet", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto("/about#contact")
+  await page.goto("/#contact")
   const email = page.getByRole("link", { name: "hello@tryresumezip.com", exact: true })
   const copy = page.getByRole("button", { name: "Copy email" })
   // Hovered at its right end, once the page has stopped scrolling to it.
@@ -64,6 +55,18 @@ test("/terms#privacy opens the privacy policy, and a tab's address opens it from
   await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")
 })
 
+test("the pages that are mostly words are on the sheet the templates are on", async ({ page }) => {
+  // The rounded corners of the page's main part, and of the frame round it.
+  const sheet = async (path: string) => {
+    await page.goto(path)
+    return page
+      .getByRole("main")
+      .evaluate((main) => [getComputedStyle(main).borderRadius, getComputedStyle(main.parentElement!).borderRadius])
+  }
+  const templates = await sheet("/templates")
+  for (const path of ["/terms", "/templates/how-they-read", "/does-not-exist"]) expect(await sheet(path), path).toEqual(templates)
+})
+
 // What a search engine reads: the HTML as served, before any script runs. The
 // same in every browser, so it's read once.
 test.describe("search engines", () => {
@@ -84,7 +87,7 @@ test.describe("search engines", () => {
   test("find every page in the sitemap, each with its own description", async ({ request }) => {
     expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap: https://www.tryresumezip.com/sitemap.xml")
     const paths = (await sitemapUrls(request)).map((url) => new URL(url).pathname)
-    expect(paths).toEqual(expect.arrayContaining(["/", "/templates", "/about", "/terms"]))
+    expect(paths).toEqual(expect.arrayContaining(["/", "/templates", "/terms"]))
 
     const descriptions = new Map<string, string>()
     for (const path of paths) {
@@ -130,10 +133,13 @@ test.describe("search engines", () => {
     }
   })
 
-  test("are sent from the old contact address to About for good", async ({ request }) => {
-    const response = await request.get("/contact", { maxRedirects: 0 })
-    expect(response.status()).toBe(308)
-    expect(response.headers().location).toBe("/about#contact")
+  test("are sent from the old About and contact addresses to the home page for good", async ({ request }) => {
+    const about = await request.get("/about", { maxRedirects: 0 })
+    expect(about.status()).toBe(308)
+    expect(about.headers().location).toBe("/")
+    const contact = await request.get("/contact", { maxRedirects: 0 })
+    expect(contact.status()).toBe(308)
+    expect(contact.headers().location).toBe("/#contact")
   })
 
   // Named by id, before they were named after their pages. A template added
@@ -196,8 +202,7 @@ for (const path of PAGES) {
   test(`${path} loads without errors and passes accessibility checks`, async ({ page }) => {
     const errors = pageErrors(page)
     await page.goto(path)
-    // The home page's looping video can keep streaming in Safari. Readiness
-    // for this layout/accessibility check is visible content with fonts loaded.
+    // Ready for the check once the page's content shows, with its fonts loaded.
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
     await page.evaluate(() => document.fonts.ready.then(() => undefined))
 
