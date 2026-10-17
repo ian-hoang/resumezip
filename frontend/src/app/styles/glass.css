@@ -129,8 +129,8 @@
   }
   /* An etched pane: frosted glass laid on the sky, nearly square, with no
      shadow, only a lit top edge and a white hairline round it. For the
-     check's score on the home page and the sheet pages sit on (site/sheet.ts). The blur is on ::before, so the
-     pane doesn't become the box its fixed descendants are placed in. */
+     check's score on the home page. The blur is on ::before, so the pane
+     doesn't become the box its fixed descendants are placed in. */
   .pane-etched {
     position: relative;
     isolation: isolate;
