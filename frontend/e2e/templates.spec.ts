@@ -175,13 +175,12 @@ test("pointed at, a card's Use plate whitens gradually, and its Use stays lit wi
   expect(top).toBeGreaterThan(0.66)
   expect(top).toBeLessThan(0.9)
 
-  // Lit as the plate's pointed at, Use stays as lit with the pointer on it: ink-glass's own hover,
-  // a lesser lightening, used to take over there.
-  await expect(use).toHaveCSS("filter", "brightness(1.75)")
+  // Lit as the plate's pointed at, Use stays as lit with the pointer on it: the pointer is still on the plate.
+  await expect(use).toHaveCSS("filter", "brightness(1.06)")
   const box = (await use.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.waitForTimeout(400)
-  await expect(use).toHaveCSS("filter", "brightness(1.75)")
+  await expect(use).toHaveCSS("filter", "brightness(1.06)")
 
   // The pointer passes through Use to the plate, which is the link.
   await page.mouse.down()

@@ -16,9 +16,14 @@ import { HOME_DATA } from "@/lib/structuredData"
 
 export const metadata = pageMetadata({ path: "/", description: SITE_DESCRIPTION })
 
-// An outline pill on the video and the blue, which fills with white from the bottom as it's pointed at (home.css).
-const OUTLINE_PILL =
-  "ink-fill inline-flex h-11 items-center self-start rounded-full border px-[18px] text-[15px] font-medium tracking-[-0.01em]"
+const PILL = "inline-flex h-11 items-center gap-2.5 self-start rounded-full px-[18px] text-[15px] font-medium tracking-[-0.01em]"
+
+// Start writing, the page's main action, as it is across the site: an ink pill on white, a white one on the blue.
+const MAIN_PILL = `${PILL} ink-button lift-button`
+const MAIN_PILL_ON_BLUE = `${PILL} bg-white text-ink transition-colors duration-150 hover:bg-white/85`
+
+// Anything else on the video: an outline pill, which fills with white from the bottom as it's pointed at (home.css).
+const OUTLINE_PILL = `${PILL} ink-fill border`
 
 // Sections say what they're drawn on (data-tone), for the header's tint, and
 // data-tick gives them a tick at the side of the page (HomeChrome.tsx).
@@ -47,18 +52,12 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[1440px] flex-1 flex-wrap items-end justify-between gap-8 px-5 pb-6 pt-12 md:px-10 md:pb-10">
-          {/* The square box: the sentence, a rule, and Start writing in capitals beside a blue square arrow. */}
-          <div className="flex w-full max-w-[420px] flex-col gap-7 bg-white px-7 pb-5 pt-7 text-ink">
+          <div className="flex w-full max-w-[420px] flex-col gap-6 bg-white p-7 text-ink">
             <p className="text-xl leading-[1.35] tracking-[-0.015em]">
               resumezip is a free, open-source resume builder that runs in your browser. Pick a template, write, and download the PDF.
             </p>
-            <StartWritingLink className="group flex items-center justify-between gap-4 border-t border-ink pt-4" preloadOnHover>
-              <span className="text-[13px] font-semibold uppercase tracking-[0.1em] decoration-2 underline-offset-4 group-hover:underline">
-                Start writing
-              </span>
-              <span className="inline-flex h-7 w-7 items-center justify-center bg-accent text-white transition duration-200 group-hover:bg-[#2550d4] motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5">
-                <ArrowUpRight />
-              </span>
+            <StartWritingLink className={MAIN_PILL} preloadOnHover>
+              Start writing <ArrowUpRight />
             </StartWritingLink>
           </div>
           <div className="flex max-w-[340px] flex-col gap-4">
@@ -99,10 +98,8 @@ export default function Home() {
                 },
               ]}
             >
-              <StartWritingLink className={`${OUTLINE_PILL} border-white`} preloadOnHover>
-                <span className="ink-fill-label inline-flex items-center gap-2.5">
-                  Start writing <ArrowUpRight />
-                </span>
+              <StartWritingLink className={MAIN_PILL_ON_BLUE} preloadOnHover>
+                Start writing <ArrowUpRight />
               </StartWritingLink>
             </FocusWords>
           </div>
