@@ -1,29 +1,11 @@
-/* Styles for the home page and the site-wide header (src/components/home, src/components/site)
-   and the templates page (src/app/templates). The About page's are in about.css. */
+/* Styles for the home page (src/components/home), the site-wide header and footer (src/components/site)
+   and the templates page (src/app/templates). */
 @layer components {
-  /* The hero starts under the header's strip. */
-  .home-hero {
-    padding-top: 84px;
-  }
-  @media (min-width: 48rem) {
-    .home-hero {
-      padding-top: 104px;
-    }
-  }
-
-  /* How far down the page is (HomeChrome.tsx sets --read, from 0 to 1). */
-  .reading-line {
-    transform-origin: left;
-    transform: scaleX(var(--read, 0));
-  }
-
-  /* The home page's glass header, tucked away above the top of the screen as
-     the page scrolls down. With the keyboard in it, it's always in sight. */
+  /* The site's glass header. On every page, while the dashboard's search is lifted into the middle
+     of the screen (SearchBar.tsx), it slides up out of the way; with the keyboard in it, it's always in sight. */
   .site-pill {
     transition: transform 360ms var(--ease-glide);
   }
-  .site-pill[data-tucked]:not(:focus-within),
-  /* And on every page, while the dashboard's search is lifted into the middle of the screen (SearchBar.tsx). */
   [data-spotlight="up"] .site-pill:not(:focus-within) {
     transform: translateY(calc(-100% - 3rem));
   }
@@ -36,142 +18,356 @@
       background-size 420ms var(--ease-glide),
       color 150ms;
   }
-  .site-pill-dark .nav-underline {
-    --underline: var(--color-accent-soft);
-  }
   .nav-underline:hover,
   .nav-underline:focus-visible {
     background-size: 100% 1.5px;
   }
 
-  /* An outline button that fills with ink from the bottom. The label is drawn
-     in difference with what's under it, inside the button only (isolation),
-     so the part the ink has reached turns dark as the ink passes it. */
-  .ink-fill {
+  /* The home page's story (components/home/HomeStory.tsx): a stage pinned to the screen that
+     the scroll plays. The first screen lifts away as the editor rises out of the grass, and its
+     notes slide in beside it one by one. Positions are set from script (stage.ts); these are the
+     looks. The story starts behind the header's strip, so the meadow runs to the top of the screen. */
+  .home-story,
+  .home-still {
     position: relative;
-    isolation: isolate;
-    overflow: hidden;
+    margin-top: -76px;
   }
-  .ink-fill::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -15%;
-    right: -15%;
-    height: 150%;
-    z-index: -1;
-    background: #fff;
-    border-radius: 50% 50% 0 0 / 40% 40% 0 0;
-    transform: translateY(70%);
-    transition:
-      transform 360ms var(--ease-glide),
-      border-radius 360ms var(--ease-glide);
-  }
-  .ink-fill:hover::before,
-  .ink-fill:focus-visible::before {
-    transform: translateY(-15%);
-    border-radius: 0;
-  }
-  .ink-fill-label {
-    color: #fff;
-    mix-blend-mode: difference;
+  @media (min-width: 48rem) {
+    .home-story,
+    .home-still {
+      margin-top: -84px;
+    }
   }
 
-  /* How it works' rows (HowItWorks.tsx): pointed at, blue rises from the
-     bottom as the outline buttons' white does, and the row's words turn white. */
-  .step-row {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    transition: color 300ms;
-  }
-  .step-row::before {
-    content: "";
+  /* Where /#contact lands: a screen above the story's foot, so scrolled to the top of the screen
+     it shows the story's last screen, the way in with the address on it. */
+  .home-story-end {
     position: absolute;
+    left: 0;
+    top: calc(100% - 100svh);
+    height: 1px;
+    width: 1px;
+  }
+
+  /* The stage: pinned to the screen for the story's length, layers stacked in order. Nothing
+     sets opacity or filter on an ancestor of the glass, or the glass loses what's behind it. */
+  .home-stage {
+    position: sticky;
     top: 0;
-    left: -15%;
-    right: -15%;
-    height: 150%;
-    z-index: -1;
-    background: var(--color-accent);
-    border-radius: 50% 50% 0 0 / 40% 40% 0 0;
-    transform: translateY(70%);
+    z-index: 0;
+    height: 100svh;
+    overflow: hidden;
+    contain: strict;
+    pointer-events: none;
+    background: #7fbff7;
+  }
+  /* Each part is a layer of its own from the start, and is faded, never hidden: Chrome rebuilt
+     the stage's layers whenever a part was hidden or shown, and drew a frame before they were
+     painted again, so pictures flickered out as the story played. What the first screen shows
+     is there before the script runs. */
+  .home-stage > * {
+    position: absolute;
+    left: 0;
+    top: 0;
     opacity: 0;
-    transition:
-      transform 420ms var(--ease-glide),
-      border-radius 420ms var(--ease-glide),
-      opacity 200ms;
+    will-change: transform, opacity;
   }
-  .step-row:focus-visible,
-  .step-row:hover {
-    color: #fff;
-  }
-  .step-row:focus-visible::before,
-  .step-row:hover::before {
-    transform: translateY(-15%);
-    border-radius: 0;
+  .home-stage > .home-meadow,
+  .home-stage > .home-hero,
+  .home-stage > .home-grass,
+  .home-stage > .home-ink-layer {
     opacity: 1;
   }
-  /* A touch doesn't hover: no blue left behind on the row tapped. */
-  @media (hover: none) {
-    .step-row:hover:not(:focus-visible) {
-      color: inherit;
+  .home-meadow {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center bottom;
+    transform-origin: 50% 100%;
+  }
+
+  /* The first screen: the name, what it is, the way in, and Microsoft for Startups. Clear of the
+     grass at the screen's foot. */
+  .home-hero {
+    position: relative;
+    z-index: 2;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 96px 16px 16svh;
+    text-align: center;
+  }
+  .home-stage > .home-hero {
+    inset: 0;
+    pointer-events: auto;
+    transform-origin: 50% 40%;
+  }
+  .home-wordmark {
+    margin: 0;
+    font-family: var(--font-logo);
+    font-weight: 500;
+    font-size: clamp(76px, 12.8vw, 184px);
+    line-height: 1;
+    letter-spacing: -0.055em;
+    color: #fff;
+    text-shadow: 0 20px 70px rgb(20 50 150 / 0.2);
+  }
+  .home-definition {
+    margin: 18px 0 0;
+    max-width: 880px;
+    font-family: var(--font-serif);
+    font-size: clamp(22px, 2.3vw, 33px);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  /* A slim pill of the site's frosted glass, nearly white, so the sky doesn't tint it. */
+  .home-hero .home-partner {
+    margin-top: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 18px 0 16px;
+    border-radius: 999px;
+  }
+
+  /* The editor, rising out of the grass. */
+  .home-editor {
+    margin: 0;
+    overflow: hidden;
+    border-radius: clamp(12px, 1.7vw, 24px);
+    transform-origin: 50% 100%;
+    box-shadow:
+      0 60px 110px -50px rgb(22 34 96 / 0.55),
+      0 20px 40px -24px rgb(22 34 96 / 0.35);
+  }
+  .home-editor img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+  /* What's laid over the editor's picture where it lies on it, set by its box (HomeStory.tsx):
+     a menu open, its button pressed. */
+  .home-editor .home-overlay {
+    position: absolute;
+  }
+  /* The camera on the editor (HomeStory.tsx): its picture and the marks on it, moved and scaled
+     together. The editor's own box is the frame it's seen through. Not marked will-change: Chrome
+     then draws it once at its first size and only stretches that, and zoomed in, it blurs. */
+  .home-lens {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+  }
+  .home-lens svg,
+  .home-still-marks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* A menu the story clicks open: its pictures and its mark, which close together. It opens down
+     from its button, at the top right. */
+  .home-menu {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .home-menu .home-overlay {
+    opacity: 0;
+    transform-origin: 100% 0;
+  }
+  /* The pointer that clicks it, sized to the editor (HomeStory.tsx), pressing about its tip. */
+  .home-lens .home-pointer {
+    inset: auto;
+    left: 0;
+    top: 0;
+    height: auto;
+    opacity: 0;
+    overflow: visible;
+    transform-origin: 21% 12.5%;
+    filter: drop-shadow(0 2px 3px rgb(17 19 24 / 0.35));
+  }
+  .home-pointer path {
+    fill: #fff;
+    stroke: var(--color-ink);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+  /* The grass, in front of the editor's foot. It's as wide as the screen (wider on a phone, so the
+     blades keep their size), its foot sunk 8.5% of its height below the screen's, and it sways
+     about the line where the stage cuts it off, so that line stays still and meets the footer's
+     grass after the story (.footer-ground). */
+  .home-stage,
+  .home-still,
+  .footer-ground {
+    --grass-width: 100vw;
+  }
+  @media (width < 43.75rem) {
+    .home-stage,
+    .home-still,
+    .footer-ground {
+      --grass-width: 760px;
     }
-    .step-row:hover:not(:focus-visible)::before {
-      opacity: 0;
+  }
+  .home-grass {
+    width: var(--grass-width);
+  }
+  .home-stage > .home-grass,
+  .home-still > .home-grass {
+    left: calc((100vw - var(--grass-width)) / 2);
+    top: auto;
+    bottom: calc(var(--grass-width) * -0.085 * 941 / 1672);
+  }
+  .home-grass img {
+    display: block;
+    width: 100%;
+    max-width: none;
+    transform-origin: 50% 91.5%;
+    animation: home-sway 7s ease-in-out infinite alternate;
+  }
+
+  /* A soft white mist where the notes are written, over the editor (HomeStory.tsx sets how far
+     down), so the blue ink reads on the sky. */
+  .home-stage > .home-mist {
+    inset: 0;
+  }
+  .home-mist {
+    background: radial-gradient(ellipse min(620px, 72vw) 86px at 50% var(--notes, 20%), rgb(255 255 255 / 0.82), rgb(255 255 255 / 0) 74%);
+  }
+
+  /* The marker: loops, lines and arrows, and the notes written by hand, in the one blue. */
+  .home-stage > .home-ink-layer {
+    inset: 0;
+  }
+  .home-ink-layer svg {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+  .home-mark {
+    fill: var(--color-accent);
+  }
+  .home-hand {
+    position: absolute;
+    margin: 0;
+    font-family: var(--font-caveat), "Bradley Hand", "Segoe Print", cursive;
+    font-weight: 600;
+    line-height: 1.02;
+    color: var(--color-accent);
+    white-space: nowrap;
+    transform-origin: 0 50%;
+  }
+  .home-hand span {
+    display: block;
+  }
+
+  /* The way in, over the editor: glass that fades in by its own layers (--glass-in), as fading
+     the whole box would stop its frost seeing what's behind it until it's done. */
+  .home-cta {
+    border-radius: 28px;
+  }
+  /* Not faded, nor marked as to be: an ancestor that fades, or may, stops the frost seeing
+     what's behind it. */
+  .home-stage > .home-cta {
+    position: absolute;
+    opacity: 1;
+    will-change: transform;
+    width: var(--cta-width, 560px);
+    --glass-in: 0;
+    box-shadow: none;
+  }
+  .home-cta::before,
+  .home-cta::after,
+  .home-cta .liquid-lens,
+  .home-cta-shadow {
+    opacity: var(--glass-in);
+  }
+  .home-cta-shadow {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    border-radius: inherit;
+    box-shadow:
+      0 36px 70px -30px rgb(22 34 96 / 0.5),
+      0 12px 26px -14px rgb(22 34 96 / 0.3);
+  }
+  .home-cta-copy {
+    position: relative;
+    padding: 34px 38px 36px;
+  }
+  @media (max-width: 40rem) {
+    .home-cta-copy {
+      padding: 24px 24px 26px;
     }
   }
 
-  /* Words that sharpen from a blur as the page scrolls (FocusWords.tsx). --focus
-     is how far the scroll has got, from 0 to 1. Each line takes its share of
-     that, from --from to --to, as --t, and each of its --n words in turn
-     (--i) takes its share of --t, as --s: 0 blurred and --faint, 1 sharp. */
-  .focus-line {
-    --t: clamp(0, (var(--focus, 1) - var(--from)) / (var(--to) - var(--from)), 1);
-  }
-  .focus-word {
-    --s: clamp(0, var(--t) * (var(--n) + 1) - var(--i), 1);
-    /* Filters don't apply to inline boxes in every browser. */
-    display: inline-block;
-    filter: blur(calc((1 - var(--s)) * 0.14em));
-    opacity: calc(var(--faint) + (1 - var(--faint)) * var(--s));
-  }
-  /* The head of the blue section after the hero: black, as the video ends,
-     deepening into the blue. */
-  .fade-from-black::before {
-    content: "";
-    display: block;
-    height: 120px;
-    background: linear-gradient(180deg, #000, rgb(23 46 115) 45%, var(--color-accent));
-  }
-  @media (min-width: 48rem) {
-    .fade-from-black::before {
-      height: 180px;
-    }
-  }
-
-  /* The head of a blue section after the sky: the sky deepens into the blue,
-     the other way to .cloud-seam. */
-  .cloud-seam-top::before {
-    content: "";
-    display: block;
-    height: 140px;
+  /* The footer after the story (SiteFooter's `ground`): the story's grass carries on past its last
+     screen, and the page lifts off the footer from it. It's the same picture, as wide and as far left
+     as on the stage, and starts where the stage cuts it off, so the two meet without a seam. Under
+     its foot, the colour of its last row. It ends a little after the picture's foot, where its
+     blades give way to flat colour: the page's rounded corners, as it lifts off the footer, are cut
+     from the grass. */
+  .footer-ground {
+    --grass-foot: calc(var(--grass-width) * 0.085 * 941 / 1672);
+    height: calc(var(--grass-foot) + 8px);
     background:
-      linear-gradient(0deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
-      linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
-      url("/backgrounds/sky-wide.webp") center bottom / cover fixed;
+      url("/home/grass.webp") calc((100vw - var(--grass-width)) / 2) calc(var(--grass-width) * -0.915 * 941 / 1672) / var(--grass-width)
+        auto no-repeat,
+      #3c6f07;
   }
-  @media (min-width: 48rem) {
-    .cloud-seam-top::before {
-      height: 220px;
-    }
+
+  /* With less motion: the story as still sections on the meadow. */
+  .home-still {
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 0 16px calc(var(--grass-width) * 0.3);
+    background: #7fbff7 url("/home/meadow.webp") center top / cover no-repeat;
   }
-  @media (max-aspect-ratio: 4/5) {
-    .cloud-seam-top::before {
-      background:
-        linear-gradient(0deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
-        linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
-        url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
+  .home-still > .home-hero {
+    min-height: 90svh;
+    padding-bottom: 40px;
+  }
+  .home-still > .home-editor {
+    position: relative;
+    width: min(1040px, 100%);
+    aspect-ratio: 2088 / 1278;
+  }
+  /* Every note at once, written on a pane of the mist. */
+  .home-still-notes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+    gap: 18px 28px;
+    width: min(1040px, 100%);
+    padding: 24px 28px;
+    border-radius: 28px;
+    background: rgb(255 255 255 / 0.8);
+  }
+  .home-still-notes .home-hand {
+    position: static;
+    font-size: 26px;
+  }
+  .home-still > .home-cta {
+    position: relative;
+    width: min(560px, 100%);
+  }
+  .home-still > .home-grass {
+    position: absolute;
+    z-index: -1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home-grass img {
+      animation: none;
     }
   }
 
@@ -220,126 +416,6 @@
       translate: none;
       transition: none;
     }
-  }
-
-  /* The check is a tall section the panel pins in, and the clouds at its
-     foot belong at its very bottom, not just after the panel's resting place
-     (where they'd show through mid-scroll): a column, with them pushed down. */
-  .check-demo {
-    display: flex;
-    flex-direction: column;
-  }
-  .check-demo::after {
-    margin-top: auto;
-  }
-
-  /* The check on the home page (CheckDemo.tsx). The scroll sets --scan,
-     --parse and --score, each 0 to 1, and these draw from them: the page is
-     tinted as it's read under a moving bar of light, each part is boxed in
-     turn (--i of --n), then the lines with notes are marked, and the notes and
-     the score come in. */
-  .check-scanned {
-    height: calc(var(--scan, 0) * 100%);
-    background: linear-gradient(180deg, rgb(46 91 230 / 0.04), rgb(46 91 230 / 0.1));
-    opacity: calc(1 - var(--parse, 0));
-  }
-  .check-scan-line {
-    top: calc(var(--scan, 0) * 100%);
-    height: 3px;
-    background: var(--color-accent);
-    box-shadow: 0 0 22px 6px rgb(46 91 230 / 0.45);
-    opacity: calc(1 - var(--parse, 0) * 4);
-  }
-  .check-part {
-    --t: clamp(0, calc(var(--parse, 0) * (var(--n) + 1) - var(--i)), 1);
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    background: rgb(46 91 230 / 0.06);
-    opacity: calc(var(--t) * (1 - var(--score, 0) * 0.75));
-    scale: calc(0.97 + 0.03 * var(--t));
-  }
-  .check-part-label {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 2px 6px;
-    background: var(--color-accent);
-    color: #fff;
-    font-family: var(--font-geist-mono), ui-monospace, monospace;
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  /* What's read, flying off the page into the list: each row as its part is
-     boxed, the rows of one part a beat apart (--row). */
-  .check-field {
-    --t: clamp(0, calc(var(--parse, 0) * (var(--n) + 1) - var(--i) - var(--row) * 0.04), 1);
-    opacity: var(--t);
-    translate: calc((1 - var(--t)) * 180px) 0;
-  }
-  .check-mark {
-    --t: clamp(0, calc(var(--score, 0) * 3 - var(--i) * 0.7 - 0.5), 1);
-    background: rgb(46 91 230 / 0.16);
-    border-bottom: 2px solid var(--color-accent);
-    transform-origin: left;
-    scale: var(--t) 1;
-  }
-  .check-note {
-    --t: clamp(0, calc(var(--score, 0) * 3 - var(--i) * 0.7 - 0.8), 1);
-    opacity: var(--t);
-    translate: calc((1 - var(--t)) * 18px) 0;
-  }
-  .check-score {
-    --t: clamp(0, calc(var(--score, 0) * 2.5), 1);
-    opacity: var(--t);
-    translate: 0 calc((1 - var(--t)) * 18px);
-  }
-
-  /* The foot of a blue section: the blue thins out into the sky of the
-     section after it. The band is that same sky, fixed in place as the desk's
-     is (styles/glass.css), so the two meet without a line between them. */
-  .cloud-seam::after {
-    content: "";
-    display: block;
-    height: 140px;
-    background:
-      linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
-      linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
-      url("/backgrounds/sky-wide.webp") center bottom / cover fixed;
-  }
-  @media (min-width: 48rem) {
-    .cloud-seam::after {
-      height: 220px;
-    }
-  }
-  @media (max-aspect-ratio: 4/5) {
-    .cloud-seam::after {
-      background:
-        linear-gradient(180deg, var(--color-accent), rgb(46 91 230 / 0.6) 35%, rgb(46 91 230 / 0)),
-        linear-gradient(rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.16)),
-        url("/backgrounds/sky-tall.webp") center bottom / cover fixed;
-    }
-  }
-
-  /* The questions' plus, which turns into a minus as its answer opens. */
-  .question-sign::before,
-  .question-sign::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    right: 0;
-    left: 0;
-    height: 1.5px;
-    margin-top: -0.75px;
-    background: currentColor;
-    transition: transform 300ms var(--ease-glide);
-  }
-  .question-sign::after {
-    transform: rotate(90deg);
-  }
-  .question-sign[data-open]::after {
-    transform: rotate(0deg);
   }
 
   /* Under the floating "Start writing": a blur that thickens toward the bottom
@@ -421,11 +497,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .site-pill,
-    .ink-fill::before,
-    .question-sign::before,
-    .step-row::before,
-    .question-sign::after {
+    .site-pill {
       transition: none;
     }
     /* It still whitens gradually: a fade isn't motion. */
@@ -438,10 +510,6 @@
     .nav-underline {
       transition: color 150ms;
     }
-    .focus-word {
-      filter: none;
-      opacity: 1;
-    }
   }
 
   /* Some people ask for less see-through UI. */
@@ -449,6 +517,15 @@
     .floating-blur {
       display: none;
     }
+  }
+}
+
+@keyframes home-sway {
+  from {
+    transform: skewX(-0.7deg);
+  }
+  to {
+    transform: skewX(0.9deg);
   }
 }
 

@@ -19,20 +19,22 @@ describe("the story's easings", () => {
 })
 
 describe("the story's beats", () => {
-  it("raise our page only once the clouds have gathered", () => {
-    expect(BEATS.pageIn[0]).toBeGreaterThan(BEATS.gathered)
+  it("lift the first screen away while the editor rises, and start the notes once it has settled", () => {
+    expect(BEATS.editor[0]).toBeLessThan(BEATS.hero[1])
+    expect(BEATS.notes[0][0]).toBeGreaterThanOrEqual(BEATS.editor[1])
   })
 
-  it("mark the promises one after another, after the page is in and before it floats away", () => {
-    const [first, , last] = BEATS.marks
-    expect(first[0]).toBeGreaterThanOrEqual(BEATS.pageIn[1])
-    BEATS.marks.slice(1).forEach((mark, i) => expect(mark[0]).toBeGreaterThanOrEqual(BEATS.marks[i][1]))
-    expect(BEATS.away[0]).toBeGreaterThan(last[1])
+  // Each note gets close to half a screen of scrolling to itself, so a flick of the wheel doesn't skip one.
+  it("bring the notes in one after another, each a while after the last", () => {
+    BEATS.notes.slice(1).forEach((note, i) => {
+      expect(note[0]).toBeGreaterThanOrEqual(BEATS.notes[i][1])
+      expect(note[0] - BEATS.notes[i][0]).toBeGreaterThanOrEqual(40)
+    })
   })
 
-  it("bring the editor up out of the grass, and the way in last, within the story", () => {
-    expect(BEATS.editor[0]).toBeGreaterThan(BEATS.grass[0])
-    expect(BEATS.cta[0]).toBeGreaterThanOrEqual(BEATS.editor[1])
+  it("bring the way in last, once every note is in, within the story", () => {
+    expect(BEATS.wrap[0]).toBeGreaterThan(BEATS.notes[BEATS.notes.length - 1][1])
+    expect(BEATS.cta[0]).toBeGreaterThanOrEqual(BEATS.wrap[0])
     expect(BEATS.cta[1]).toBeLessThanOrEqual(STORY_LENGTH)
   })
 })

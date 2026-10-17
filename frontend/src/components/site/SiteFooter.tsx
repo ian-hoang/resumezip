@@ -1,29 +1,28 @@
 import Link from "next/link"
 
 const LINKS = [
-  { href: "/about", label: "About" },
   { href: "/terms", label: "Terms & privacy" },
-  { href: "/about#contact", label: "Contact" },
+  { href: "/#contact", label: "Contact" },
 ]
 
 /**
  * The page's end: a strip of the sky, then the page lifts off the footer, its
  * bottom corners rounded over a shadow (`zip-footer` in globals.css). Under
  * it, the links, the wordmark, and the logo's key at full width, as on the
- * social card. It sits shut and doesn't move. The strip is the sky itself (desk), so it's the same on every page, whatever's above; a page
- * that ends on the ground, as the About page's story does in its meadow, ends
- * on its grass instead (`ground`), rather than sky under grass. data-tone is
- * for the home page's header tint (HomeChrome.tsx).
+ * social card. It sits shut and doesn't move. The strip is the sky itself
+ * (desk), so it's the same on every page, whatever's above; the home page,
+ * whose story ends on the ground in its meadow, ends on its grass instead
+ * (`ground`, .footer-ground in home.css), rather than sky under grass.
  */
 export default function SiteFooter({ ground = false }: { ground?: boolean }) {
   return (
     <>
       {ground ? (
-        <div aria-hidden="true" data-tone="light" className="footer-ground relative" />
+        <div aria-hidden="true" className="footer-ground relative" />
       ) : (
-        <div aria-hidden="true" data-tone="light" className="desk relative h-16 md:h-20" />
+        <div aria-hidden="true" className="desk relative h-16 md:h-20" />
       )}
-      <footer data-tone="dark" className="zip-footer text-white">
+      <footer className="zip-footer text-white">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 pt-6 md:px-10 md:pt-7">
           <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3">
             {LINKS.map((link) => (

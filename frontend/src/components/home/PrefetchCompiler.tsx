@@ -8,7 +8,7 @@ const SETTLE_MS = 1_000
 
 /**
  * On a computer, downloads the PDF compiler once the home page has loaded and
- * settled, so it doesn't hold up the page's own pictures and video, and the
+ * settled, so it doesn't hold up the page's own pictures, and the
  * editor's first preview needn't wait for it. Computers are rarely on metered
  * data; phones and tablets may be, and iPhones don't tell the page, so they
  * and visitors saving data only download it as they start writing (see

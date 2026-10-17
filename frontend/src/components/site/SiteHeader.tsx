@@ -10,24 +10,16 @@ import Logo from "./Logo"
 const LINKS = [
   { href: "/templates", label: "Templates" },
   { href: "/create/dashboard", label: "Dashboard" },
-  { href: "/about", label: "About" },
 ]
 
 // Tailwind's `md`, where the header's links replace the menu; in rem like Tailwind's, so the two agree.
 const WIDE_HEADER = "(min-width: 48rem)"
 
-// The light phone menu's fill: nearly solid, so the page's words don't show through its links.
-const MENU_FILL_LIGHT = "[--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))]"
+// The phone menu's fill: nearly solid, so the page's words don't show through its links.
+const MENU_FILL = "[--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))]"
 
 // No display of its own: beside the logo these show from sm up, and in the menu below that.
 const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em]"
-
-interface SitePillProps {
-  /** Ink over the home page's video and footer; light glass everywhere else. */
-  tone?: "dark" | "light"
-  /** Slides the pill up out of the way, as the page scrolls down. Keyboard focus brings it back. */
-  tucked?: boolean
-}
 
 /**
  * A link to the page that's already open scrolls back to its top smoothly,
@@ -42,16 +34,11 @@ function toTopIfHere(pathname: string, href: string) {
   }
 }
 
-/**
- * The site's header: a glass pill with the logo, the links and one button,
- * Star on GitHub, glass with a gold star. The home page places it itself
- * (components/home/HomeChrome.tsx); every other page has it in SiteHeader's strip.
- */
-export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
+/** The site's header: a glass pill with the logo, the links and one button, Star on GitHub, glass with a gold star. */
+function SitePill() {
   const [menuOpen, setMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const dark = tone === "dark"
   const pathname = usePathname()
 
   useEffect(() => {
@@ -81,8 +68,7 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
     }
   }, [menuOpen])
 
-  // Ink glass on light glass; on the ink header over the video, white glass: the opposite of what's behind it.
-  const primary = `${PILL} gap-2 px-[18px] ${dark ? "white-glass" : "ink-glass"}`
+  const primary = `${PILL} gap-2 px-[18px] ink-glass`
 
   const star = (className: string, inMenu = false) => (
     <a
@@ -100,14 +86,8 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
   )
 
   return (
-    <header
-      ref={headerRef}
-      data-tucked={tucked && !menuOpen ? "" : undefined}
-      className={`site-pill relative w-full md:w-auto ${dark ? "site-pill-dark text-white" : "text-ink"}`}
-    >
-      <div
-        className={`glass ${dark ? "glass-ink" : "glass-frost"} flex h-[52px] items-center justify-between gap-4 rounded-full pl-5 pr-1.5 md:gap-7 lg:gap-10`}
-      >
+    <header ref={headerRef} className="site-pill relative w-full text-ink md:w-auto">
+      <div className="glass glass-frost flex h-[52px] items-center justify-between gap-4 rounded-full pl-5 pr-1.5 md:gap-7 lg:gap-10">
         <Link
           href="/"
           onClick={toTopIfHere(pathname, "/")}
@@ -123,9 +103,7 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
               key={link.href}
               href={link.href}
               onClick={toTopIfHere(pathname, link.href)}
-              className={`nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] ${
-                dark ? "text-white/85 hover:text-white" : "text-ink-2 hover:text-ink"
-              }`}
+              className="nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] text-ink-2 hover:text-ink"
             >
               {link.label}
             </Link>
@@ -159,9 +137,7 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
         aria-label="Main"
         inert={!menuOpen}
         data-open={menuOpen || undefined}
-        className={`menu-card glass ${
-          dark ? "glass-ink" : `glass-frost ${MENU_FILL_LIGHT}`
-        } absolute inset-x-0 top-full mt-2 flex flex-col rounded-panel px-5 pb-4 pt-2 md:hidden`}
+        className={`menu-card glass glass-frost ${MENU_FILL} absolute inset-x-0 top-full mt-2 flex flex-col rounded-panel px-5 pb-4 pt-2 md:hidden`}
       >
         {LINKS.map((link, index) => (
           <Link
@@ -186,8 +162,7 @@ export function SitePill({ tone = "light", tucked = false }: SitePillProps) {
 }
 
 /**
- * Every page's header but the home page's: the pill, in a strip that stays at
- * the top of the screen. The strip keeps room for the pill, so the page starts
+ * Every page's header: the pill, in a strip that stays at the top of the screen. The strip keeps room for the pill, so the page starts
  * under it; around the pill, clicks go through to the page scrolling under it.
  */
 export default function SiteHeader() {

@@ -11,6 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...["/", "/templates"].map((path) => ({ url: url(path) })),
     ...TEMPLATES.map((template) => ({ url: url(templatePath(template)), images: [url(template.image)] })),
-    ...["/templates/how-they-read", "/about", "/terms"].map((path) => ({ url: url(path) })),
+    ...["/templates/how-they-read", "/terms"].map((path) => ({ url: url(path) })),
   ]
 }

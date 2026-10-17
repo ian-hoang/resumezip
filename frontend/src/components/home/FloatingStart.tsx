@@ -1,42 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { StartWritingLink } from "@/components/site/StartWriting"
 
 /**
- * A small "Start writing" that follows the page down, over a blur that
- * thickens toward the bottom of the screen. It keeps out of the way where
- * there's one already: over the hero, which has its own, and the footer.
- * It's last in the page, so the hero's link comes first to the keyboard.
+ * A small "Start writing" at the foot of the screen, over a blur that thickens
+ * toward the bottom of the screen. The story (HomeStory.tsx) shows it while
+ * there's no other on screen: between the first screen's and the way in's.
+ * It's last in the story, so the first screen's link comes first to the keyboard.
  */
-export default function FloatingStart() {
-  const [shown, setShown] = useState(false)
-
-  useEffect(() => {
-    const hero = document.querySelector("[data-hero]")
-    const footer = document.querySelector("footer")
-    if (!hero || !footer) return
-    const over = { hero: true, footer: false }
-    // The hero counts until its bottom is in the screen's top half; the footer from its first line in sight.
-    const heroWatch = new IntersectionObserver(
-      ([entry]) => {
-        over.hero = entry.isIntersecting
-        setShown(!over.hero && !over.footer)
-      },
-      { rootMargin: "0px 0px -50% 0px" },
-    )
-    const footerWatch = new IntersectionObserver(([entry]) => {
-      over.footer = entry.isIntersecting
-      setShown(!over.hero && !over.footer)
-    })
-    heroWatch.observe(hero)
-    footerWatch.observe(footer)
-    return () => {
-      heroWatch.disconnect()
-      footerWatch.disconnect()
-    }
-  }, [])
-
+export default function FloatingStart({ shown }: { shown: boolean }) {
   return (
     <>
       <div aria-hidden="true" className="floating-blur" data-shown={shown || undefined}>
