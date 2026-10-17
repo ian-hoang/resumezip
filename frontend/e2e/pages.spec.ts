@@ -64,6 +64,18 @@ test("/terms#privacy opens the privacy policy, and a tab's address opens it from
   await expect(page.getByRole("tab", { name: "FAQ" })).toHaveAttribute("aria-selected", "true")
 })
 
+test("the pages that are mostly words are on the sheet the templates are on", async ({ page }) => {
+  // The rounded corners of the page's main part, and of the frame round it.
+  const sheet = async (path: string) => {
+    await page.goto(path)
+    return page
+      .getByRole("main")
+      .evaluate((main) => [getComputedStyle(main).borderRadius, getComputedStyle(main.parentElement!).borderRadius])
+  }
+  const templates = await sheet("/templates")
+  for (const path of ["/terms", "/templates/how-they-read", "/does-not-exist"]) expect(await sheet(path), path).toEqual(templates)
+})
+
 // What a search engine reads: the HTML as served, before any script runs. The
 // same in every browser, so it's read once.
 test.describe("search engines", () => {
