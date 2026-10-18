@@ -136,18 +136,18 @@
    the top of the new page isn't abrupt. What's in `main` fades, not `main`
    itself: it's often the glass sheet, and glass can't blur what's behind it
    while it's see-through, so it would look clear, then frost over as the fade
-   ended. A fade and no more: moving it as well could move what's under a click. */
+   ended. Glass in `main` itself, as the search bar on the templates and the
+   dashboard, doesn't fade, for the same reason: it's there from the first
+   frame, with what's around it fading in. A fade and no more: moving it as
+   well could move what's under a click. */
 @keyframes page-in {
   from {
     opacity: 0;
   }
 }
-main > * {
-  animation: page-in 450ms var(--ease-glide) backwards;
-}
-@media (prefers-reduced-motion: reduce) {
-  main > * {
-    animation: none;
+@media (prefers-reduced-motion: no-preference) {
+  main > :where(:not(.glass)) {
+    animation: page-in 450ms var(--ease-glide) backwards;
   }
 }
 

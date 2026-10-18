@@ -558,9 +558,13 @@ export default function DashboardPage() {
             {announcement}
           </p>
 
+          {/* The bar is straight in main, not in the block with the resumes, which fades in (page-in in
+              globals.css): glass in a fading block can't blur what's behind it, so the bar would change color
+              as the fade ended. */}
           {loaded && (
-            <div className="mt-8 flex flex-col gap-5 md:mt-[34px] md:gap-[22px]">
+            <>
               <Filters
+                className="mt-8 md:mt-[34px]"
                 search={<SearchBar resumes={kept} query={query} onQuery={setQuery} />}
                 tags={tags}
                 tag={tag}
@@ -570,56 +574,58 @@ export default function DashboardPage() {
                 view={view}
                 onView={chooseView}
               />
-              {showing.length === 0 ? (
-                <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />
-              ) : shown.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 py-16 text-center">
-                  <p className="text-[22px] font-medium leading-tight tracking-[-0.02em]">
-                    {query.trim() ? (
-                      <>
-                        No resumes match &ldquo;{query.trim()}&rdquo;{tag !== EVERY_TYPE && ` in ${tagName(tag)}`}.
-                      </>
+              <div className="mt-5 flex flex-col md:mt-[22px]">
+                {showing.length === 0 ? (
+                  <EmptyShelf onNew={() => setCreating(true)} onChooseFile={chooseFile} dragging={dragging} />
+                ) : shown.length === 0 ? (
+                  <div className="flex flex-col items-center gap-4 py-16 text-center">
+                    <p className="text-[22px] font-medium leading-tight tracking-[-0.02em]">
+                      {query.trim() ? (
+                        <>
+                          No resumes match &ldquo;{query.trim()}&rdquo;{tag !== EVERY_TYPE && ` in ${tagName(tag)}`}.
+                        </>
+                      ) : (
+                        "None here."
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("")
+                        setTag(EVERY_TYPE)
+                      }}
+                      className={WHITE_PILL}
+                    >
+                      Show all
+                    </button>
+                  </div>
+                ) : (
+                  // A new one for each view, so the fade starts from nothing.
+                  <div key={view} ref={viewRef} className={fadeIn ? "view-fade" : undefined}>
+                    {view === "pages" ? (
+                      <ResumeGrid
+                        resumes={shown}
+                        actions={actions}
+                        onDelete={remove}
+                        onRetype={setRetyping}
+                        leaving={leaving}
+                        returning={returning}
+                        onNew={() => setCreating(true)}
+                      />
                     ) : (
-                      "None here."
+                      <ResumeTable
+                        resumes={shown}
+                        actions={actions}
+                        onDelete={remove}
+                        onRetype={setRetyping}
+                        leaving={leaving}
+                        returning={returning}
+                      />
                     )}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery("")
-                      setTag(EVERY_TYPE)
-                    }}
-                    className={WHITE_PILL}
-                  >
-                    Show all
-                  </button>
-                </div>
-              ) : (
-                // A new one for each view, so the fade starts from nothing.
-                <div key={view} ref={viewRef} className={fadeIn ? "view-fade" : undefined}>
-                  {view === "pages" ? (
-                    <ResumeGrid
-                      resumes={shown}
-                      actions={actions}
-                      onDelete={remove}
-                      onRetype={setRetyping}
-                      leaving={leaving}
-                      returning={returning}
-                      onNew={() => setCreating(true)}
-                    />
-                  ) : (
-                    <ResumeTable
-                      resumes={shown}
-                      actions={actions}
-                      onDelete={remove}
-                      onRetype={setRetyping}
-                      leaving={leaving}
-                      returning={returning}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </main>
       </div>

@@ -26,6 +26,8 @@ interface FiltersProps {
   onSort: (sort: Sort) => void
   view: View
   onView: (view: View) => void
+  /** Its place on the page, as its margin above. */
+  className?: string
 }
 
 /**
@@ -33,11 +35,11 @@ interface FiltersProps {
  * tag, how they're sorted, and pages or a list. Where it's too narrow for one
  * line, the chips go under the rest (dashboard.css).
  */
-export default function Filters({ search, tags, tag, onTag, sort, onSort, view, onView }: FiltersProps) {
+export default function Filters({ search, tags, tag, onTag, sort, onSort, view, onView, className = "" }: FiltersProps) {
   const chips = useThumb(tag, tags.map((option) => `${option.id} ${option.count}`).join("\n"))
   const views = useThumb(view)
   return (
-    <div className="dash-toolbar glass glass-liquid">
+    <div className={`dash-toolbar glass glass-liquid ${className}`}>
       <LiquidLens bevel={26} strength={1.25} />
       <div className="dash-toolbar-search">{search}</div>
       <div className="dash-toolbar-chips">

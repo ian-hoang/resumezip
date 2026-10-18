@@ -83,9 +83,11 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-5 md:mt-[34px] md:gap-[22px]">
-      {/* The dashboard's bar (styles/dashboard.css), with nothing after the chips. */}
-      <div className="dash-toolbar dash-toolbar-plain glass glass-liquid">
+    <>
+      {/* The dashboard's bar (styles/dashboard.css), with nothing after the chips. Straight in the page's
+          main, not in a block with the templates, which fades in (page-in in globals.css): glass in a fading
+          block can't blur what's behind it, so the bar would change color as the fade ended. */}
+      <div className="dash-toolbar dash-toolbar-plain glass glass-liquid mt-8 md:mt-[34px]">
         <LiquidLens bevel={26} strength={1.25} />
         <div className="dash-toolbar-search">
           {/* A press anywhere on the field goes to its box. */}
@@ -161,97 +163,99 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
         </div>
       </div>
 
-      <p role="status" className="sr-only">
-        {announcement}
-      </p>
+      <div className="mt-5 flex flex-col md:mt-[22px]">
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
 
-      {shown.length > 0 ? (
-        <ul className="resume-grid">
-          {shown.map((template) => {
-            const tags: readonly string[] = template.tags
-            return (
-              <li key={template.id} className="tile template-card relative min-w-0">
-                <div className="tile-stage">
-                  <div className="tile-page">
-                    <Link href={templatePath(template)} className="absolute inset-0">
-                      <Image
-                        src={template.image}
-                        alt={templateImageAlt(template)}
-                        fill
-                        sizes="(min-width: 640px) 300px, 50vw"
-                        className="object-cover object-top"
-                      />
-                    </Link>
-                    {template.id === newId && (
-                      <span className="label-mono pointer-events-none absolute right-3 top-3 rounded-full bg-accent px-2.5 py-1 text-white">
-                        New
-                      </span>
-                    )}
-                    {/* Frosted glass over the foot of the page: what it's set in, and Use, which starts a resume with it.
+        {shown.length > 0 ? (
+          <ul className="resume-grid">
+            {shown.map((template) => {
+              const tags: readonly string[] = template.tags
+              return (
+                <li key={template.id} className="tile template-card relative min-w-0">
+                  <div className="tile-stage">
+                    <div className="tile-page">
+                      <Link href={templatePath(template)} className="absolute inset-0">
+                        <Image
+                          src={template.image}
+                          alt={templateImageAlt(template)}
+                          fill
+                          sizes="(min-width: 640px) 300px, 50vw"
+                          className="object-cover object-top"
+                        />
+                      </Link>
+                      {template.id === newId && (
+                        <span className="label-mono pointer-events-none absolute right-3 top-3 rounded-full bg-accent px-2.5 py-1 text-white">
+                          New
+                        </span>
+                      )}
+                      {/* Frosted glass over the foot of the page: what it's set in, and Use, which starts a resume with it.
                         The whole plate is the Use link, so pointed at, it whitens and is outlined in ink, and its Use,
                         the sheet's blue main button, brightens and grows, its arrow nudged on: apart from the picture
                         above it, which opens the template's page. The plate's own fade is in styles/home.css. Use lets
                         the pointer through to the plate, so pointing at Use is pointing at the plate. */}
-                    <StartWritingLink
-                      template={template.id}
-                      // Without a pointer to point with, the button under the name is Use instead.
-                      className="template-use search-field group/use absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-[18px] py-2.5 pl-4 pr-2.5 [--search-blur:14px] [@media(hover:none)]:hidden"
-                    >
-                      <span className="sr-only">Use {template.name}</span>
-                      <span aria-hidden="true" className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="truncate font-serif text-[21px] leading-none tracking-[-0.015em]">{template.name}</span>
-                        <span className="label-mono truncate text-ink-2">{[template.font, ...tags].join(" · ")}</span>
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="blue-button pointer-events-none inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-medium tracking-[-0.01em] transition-[filter,scale] duration-200 group-hover/use:scale-[1.04] group-hover/use:brightness-[1.06] group-active/use:scale-[0.97] motion-reduce:group-hover/use:scale-100"
+                      <StartWritingLink
+                        template={template.id}
+                        // Without a pointer to point with, the button under the name is Use instead.
+                        className="template-use search-field group/use absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-[18px] py-2.5 pl-4 pr-2.5 [--search-blur:14px] [@media(hover:none)]:hidden"
                       >
-                        Use{" "}
-                        <ArrowUpRight className="h-4 w-4 transition-transform duration-200 ease-glide group-hover/use:-translate-y-[3px] group-hover/use:translate-x-[3px] motion-reduce:transition-none motion-reduce:group-hover/use:translate-x-0 motion-reduce:group-hover/use:translate-y-0" />
-                      </span>
+                        <span className="sr-only">Use {template.name}</span>
+                        <span aria-hidden="true" className="flex min-w-0 flex-1 flex-col gap-1">
+                          <span className="truncate font-serif text-[21px] leading-none tracking-[-0.015em]">{template.name}</span>
+                          <span className="label-mono truncate text-ink-2">{[template.font, ...tags].join(" · ")}</span>
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="blue-button pointer-events-none inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-medium tracking-[-0.01em] transition-[filter,scale] duration-200 group-hover/use:scale-[1.04] group-hover/use:brightness-[1.06] group-active/use:scale-[0.97] motion-reduce:group-hover/use:scale-100"
+                        >
+                          Use{" "}
+                          <ArrowUpRight className="h-4 w-4 transition-transform duration-200 ease-glide group-hover/use:-translate-y-[3px] group-hover/use:translate-x-[3px] motion-reduce:transition-none motion-reduce:group-hover/use:translate-x-0 motion-reduce:group-hover/use:translate-y-0" />
+                        </span>
+                      </StartWritingLink>
+                    </div>
+                  </div>
+
+                  <div className="tile-text flex min-w-0 flex-col gap-1 px-4 pb-3.5 pt-3 max-sm:px-3 max-sm:pb-1.5 max-sm:pt-2.5">
+                    {/* Its styles, over its name. One without a style keeps the line, so the names in a row line up. */}
+                    <span className="label-mono mb-[3px] truncate leading-[14px] text-ink-3">{tags.join(" · ") || " "}</span>
+                    {/* The picture's link is the one announced, so this one's skipped. */}
+                    <Link
+                      href={templatePath(template)}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="truncate text-[16px] font-medium leading-[1.3] tracking-[-0.02em] hover:underline hover:underline-offset-4 sm:text-[18px]"
+                    >
+                      {template.name}
+                    </Link>
+                    <p className="truncate text-[13px] leading-5 text-ink-3 sm:text-[14px]">{template.font}</p>
+                  </div>
+
+                  {/* With nothing to point with, Use is a button here instead of the plate, which leaves the
+                    page in full on a phone's narrow cards. */}
+                  <div className="hidden px-2.5 pb-2.5 pt-1 [@media(hover:none)]:block">
+                    <StartWritingLink template={template.id} className={sheetPill("blue", "h-9 w-full text-[14px] font-medium")}>
+                      <span className="sr-only">Use {template.name}</span>
+                      <span aria-hidden="true">Use</span>
+                      <ArrowUpRight aria-hidden="true" />
                     </StartWritingLink>
                   </div>
-                </div>
-
-                <div className="tile-text flex min-w-0 flex-col gap-1 px-4 pb-3.5 pt-3 max-sm:px-3 max-sm:pb-1.5 max-sm:pt-2.5">
-                  {/* Its styles, over its name. One without a style keeps the line, so the names in a row line up. */}
-                  <span className="label-mono mb-[3px] truncate leading-[14px] text-ink-3">{tags.join(" · ") || " "}</span>
-                  {/* The picture's link is the one announced, so this one's skipped. */}
-                  <Link
-                    href={templatePath(template)}
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className="truncate text-[16px] font-medium leading-[1.3] tracking-[-0.02em] hover:underline hover:underline-offset-4 sm:text-[18px]"
-                  >
-                    {template.name}
-                  </Link>
-                  <p className="truncate text-[13px] leading-5 text-ink-3 sm:text-[14px]">{template.font}</p>
-                </div>
-
-                {/* With nothing to point with, Use is a button here instead of the plate, which leaves the
-                    page in full on a phone's narrow cards. */}
-                <div className="hidden px-2.5 pb-2.5 pt-1 [@media(hover:none)]:block">
-                  <StartWritingLink template={template.id} className={sheetPill("blue", "h-9 w-full text-[14px] font-medium")}>
-                    <span className="sr-only">Use {template.name}</span>
-                    <span aria-hidden="true">Use</span>
-                    <ArrowUpRight aria-hidden="true" />
-                  </StartWritingLink>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <div className="flex flex-col items-start gap-4 pt-4">
-          <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No template matches that.</p>
-          <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-            Try a template’s name, a font like Garamond or Lato, or one of the styles above.
-          </p>
-          <button type="button" onClick={clear} className={WHITE_PILL}>
-            Show every template
-          </button>
-        </div>
-      )}
-    </div>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <div className="flex flex-col items-start gap-4 pt-4">
+            <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No template matches that.</p>
+            <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
+              Try a template’s name, a font like Garamond or Lato, or one of the styles above.
+            </p>
+            <button type="button" onClick={clear} className={WHITE_PILL}>
+              Show every template
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
