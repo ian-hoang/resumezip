@@ -30,18 +30,21 @@ const OPENAI = "api.openai.com"
 const AZURE = "example.openai.azure.com"
 const GEMINI = "generativelanguage.googleapis.com"
 
+const claudeMessage = (content: unknown[], stopReason: string) =>
+  Response.json({
+    id: "msg_1",
+    type: "message",
+    role: "assistant",
+    model: "claude-sonnet-5-5",
+    content,
+    stop_reason: stopReason,
+    usage: { input_tokens: 1, output_tokens: 1 },
+  })
+
 // Each service's answer: Claude's Messages API, or the chat completions API OpenAI and Azure share.
 const answered = (url: string, content: unknown) =>
   new URL(url).host === CLAUDE
-    ? Response.json({
-        id: "msg_1",
-        type: "message",
-        role: "assistant",
-        model: "claude-sonnet-5-5",
-        content: [{ type: "text", text: JSON.stringify(content) }],
-        stop_reason: "end_turn",
-        usage: { input_tokens: 1, output_tokens: 1 },
-      })
+    ? claudeMessage([{ type: "text", text: JSON.stringify(content) }], "end_turn")
     : Response.json({
         choices: [{ message: { content: JSON.stringify(content) }, finish_reason: "stop" }],
         usage: { prompt_tokens: 1, completion_tokens: 1 },
@@ -86,6 +89,22 @@ test("asks Claude first, with the lines and the answer schema, and hands back it
   expect(sent.model).toBe("claude-sonnet-5-5")
   expect(sent.output_config).toMatchObject({ effort: "low", format: { type: "json_schema" } })
   expect(sent.messages[0].content).toContain("[u2] • Responsible for working on backend services")
+})
+
+test.each([
+  ["a refusal", () => claudeMessage([], "refusal")],
+  [
+    "an answer cut off by its token limit, even one that parses",
+    () => claudeMessage([{ type: "text", text: JSON.stringify(NOTES) }], "max_tokens"),
+  ],
+  ["an answer that isn't JSON", () => claudeMessage([{ type: "text", text: "Here are your notes:" }], "end_turn")],
+  ["an answer with no text", () => claudeMessage([{ type: "thinking", thinking: "", signature: "x" }], "end_turn")],
+])("asks OpenAI when Claude sends %s", async (_, reply) => {
+  fetched.mockResolvedValueOnce(reply()).mockImplementation(answering())
+  const response = await post()
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ notes: NOTES.notes })
+  expect(asked()).toEqual([CLAUDE, OPENAI])
 })
 
 test("asks OpenAI and then Azure when the ones before are busy, and passes a busy one over for a minute", async () => {
