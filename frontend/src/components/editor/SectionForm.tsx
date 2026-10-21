@@ -125,6 +125,8 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
   openRef.current = openId
   // A drop that hasn't lit up yet: which entry moved.
   const moving = useRef<{ id: number; frame?: number } | null>(null)
+  // Pointing at a finding's field, waiting for its entry to open.
+  const pointing = useRef<{ id: number; point: () => void } | null>(null)
   const [dnd, setDnd] = useState(loadedDragAndDrop)
 
   // The first field is the card's name: an open card's name is where it's
@@ -177,30 +179,47 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     if (!pending(target.request)) return
     const entry = place.kind === "entry" ? latest.current[place.entry] : undefined
     if (place.kind === "entry" && !entry) return
-    const sliding = entry !== undefined && entry.id !== openRef.current && !reducedMotion()
+    const opening = entry !== undefined && entry.id !== openRef.current
+    const sliding = opening && !reducedMotion()
     if (entry) {
       setConfirmingId(null)
-      if (entry.id !== openRef.current) setOpened((count) => count + 1)
+      if (opening) setOpened((count) => count + 1)
       setOpenId(entry.id)
       setShownId(entry.id)
     }
-    const timer = setTimeout(
-      () => {
-        if (!claim(target.request)) return
-        if (place.kind === "heading") {
-          pointAt(heading.current?.querySelector<HTMLElement>('button[aria-label="Rename section"]'), undefined, heading.current)
-        } else if (place.kind === "section") {
-          pointAt(addButton.current, undefined, heading.current)
-        } else if (entry) {
-          const card = elements.current.get(entry.id)
-          const selector = place.field ? `[data-field="${place.field}"] ${TYPED}` : FIRST_FIELD
-          pointAt(card?.querySelector<HTMLElement>(selector), place.line)
-        }
-      },
-      sliding ? SLIDE_MS : 0,
-    )
+    const point = () => {
+      if (!claim(target.request)) return
+      if (place.kind === "heading") {
+        pointAt(heading.current?.querySelector<HTMLElement>('button[aria-label="Rename section"]'), undefined, heading.current)
+      } else if (place.kind === "section") {
+        pointAt(addButton.current, undefined, heading.current)
+      } else if (entry) {
+        const card = elements.current.get(entry.id)
+        const selector = place.field ? `[data-field="${place.field}"] ${TYPED}` : FIRST_FIELD
+        pointAt(card?.querySelector<HTMLElement>(selector), place.line)
+      }
+    }
+    // Opening at once (motion reduced), it waits for the open entry to be on the page, below.
+    if (opening && !sliding) {
+      const waiting = { id: entry.id, point }
+      pointing.current = waiting
+      return () => {
+        if (pointing.current === waiting) pointing.current = null
+      }
+    }
+    const timer = setTimeout(point, sliding ? SLIDE_MS : 0)
     return () => clearTimeout(timer)
   }, [target, pending, claim, section.name])
+
+  // Opening an entry gives its fields new keys, so the folded ones are replaced. A finding in
+  // an entry that opens at once is pointed at once they are: a timer can run before React puts
+  // them on the page (in Safari), and the cursor would go to a field about to be thrown away.
+  useEffect(() => {
+    const waiting = pointing.current
+    if (!waiting || waiting.id !== openId) return
+    pointing.current = null
+    waiting.point()
+  }, [openId, opened])
 
   // Asking to confirm a delete moves focus to Keep, so Escape or Enter backs out.
   useEffect(() => {

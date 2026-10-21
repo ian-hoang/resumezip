@@ -419,6 +419,40 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
   expect(errors).toEqual([])
 })
 
+test("with motion reduced, choosing a finding in a closed entry puts the cursor in its field", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await saveResumes(page, [
+    {
+      id: "closed-entry",
+      resumeTitle: "Closed entry",
+      selectedTemplate: "jake",
+      sectionOrder: ["Work"],
+      sectionsChosen: true,
+      profileSection: { fullName: "Ada Lovelace", email: "ada@example.com" },
+      workExperienceSection: [1, 2, 3].map((id) => ({
+        id,
+        workRole: "Engineer",
+        companyName: `Company ${id}`,
+        workStartDate: "Jun 2020",
+        workEndDate: "Present",
+        workDescription: `• Built a payments service used by ${id * 10} teams`,
+      })),
+    },
+  ])
+  await page.goto("/create/new/closed-entry")
+  await page
+    .getByRole("tablist", { name: "Write, check or style" })
+    .getByRole("tab", { name: /^Check/ })
+    .click()
+
+  await page
+    .getByRole("tabpanel", { name: /^Check/ })
+    .getByRole("button", { name: /Experience → Company 3 · Location/ })
+    .click()
+  await expect(page.getByRole("button", { name: "Done editing entry 3" })).toBeVisible()
+  await expect(page.getByRole("textbox", { name: "Location" }).last()).toBeFocused()
+})
+
 test("with Check open, the PDF is read too: a bullet that runs three lines is flagged and opens", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
