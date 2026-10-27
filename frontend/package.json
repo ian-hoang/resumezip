@@ -15,35 +15,35 @@
     "test:browser": "playwright test"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
+    "@anthropic-ai/sdk": "^0.137.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
     "@myriaddreamin/typst.ts": "^0.7.0",
     "@noble/hashes": "^2.4.0",
-    "harper.js": "2.10.0",
+    "harper.js": "2.13.0",
     "lucide-react": "^0.577.0",
     "mammoth": "^1.13.0",
-    "next": "15.5.27",
+    "next": "15.5.28",
     "pdfjs-dist": "4.8.69",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-pdf": "^9.2.1",
     "sharp": "^0.35.5"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/eslintrc": "^3",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.27",
+    "eslint-config-next": "15.5.28",
     "prettier": "3.9.10",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "next": {
