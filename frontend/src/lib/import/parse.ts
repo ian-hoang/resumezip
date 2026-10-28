@@ -1983,10 +1983,14 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
       split.push(line)
       return
     }
+    // The section's text at its own size: the line's is the heading's, set
+    // bigger, which would make a short entry title, like an undated
+    // project's, look like a heading too.
     const rest = line.parts.slice(1)
+    const size = Math.max(...rest.map((part) => part.size ?? line.size))
     const entry =
       rest.length > 0 &&
-      toLine(rest, line.size, line.links, { page: line.page, box: line.box && ([rest[0].x, ...line.box.slice(1)] as Line["box"]) })
+      toLine(rest, size, line.links, { page: line.page, box: line.box && ([rest[0].x, ...line.box.slice(1)] as Line["box"]) })
     if (entry) split.push({ ...entry, sourceIndex: line.sourceIndex })
   })
   return split

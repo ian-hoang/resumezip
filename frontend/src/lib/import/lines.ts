@@ -20,6 +20,8 @@ export interface Part {
   text: string
   x: number
   runs: Run[]
+  /** Its biggest text's size, in a PDF. The line's is the biggest on it, which can be a heading's set in a margin beside it. */
+  size?: number
 }
 
 export interface Line {
@@ -78,7 +80,7 @@ export interface Piece {
 }
 
 /** Joins pieces of text into parts, starting a new part at each tab or run of spaces. */
-function toParts(pieces: Piece[], x: number): Part[] {
+function toParts(pieces: Piece[], x: number, size?: number): Part[] {
   const parts: Part[] = []
   let part: Part = { text: "", x, runs: [] }
   const finish = () => {
@@ -88,7 +90,7 @@ function toParts(pieces: Piece[], x: number): Part[] {
     const runs = part.runs
       .map((run) => ({ ...run, start: Math.max(0, run.start - lead), end: Math.min(text.length, run.end - lead) }))
       .filter((run) => run.end > run.start)
-    parts.push({ text, x: part.x, runs })
+    parts.push({ text, x: part.x, runs, ...(size !== undefined && { size }) })
   }
   for (const piece of pieces) {
     piece.text.split(/\t+| {3,}/).forEach((chunk, i) => {
@@ -507,14 +509,16 @@ export function linesFromPages(pages: PdfPage[]): Line[] {
       const parts: Part[] = []
       let pieces: Piece[] = []
       let partX = group[0].x
+      let partSize = 0
       let previous: Item | null = null
       for (const [index, item] of group.entries()) {
         if (previous) {
           const gap = item.x - previous.right
           if (gap > apart) {
-            parts.push(...toParts(pieces, partX))
+            parts.push(...toParts(pieces, partX, partSize))
             pieces = []
             partX = item.x
+            partSize = 0
           } else if (gap > Math.max(0.12 * size, letterGap) && !/\s$/.test(previous.text) && !/^\s/.test(item.text)) {
             pieces.push({ text: " ", bold: item.bold, italic: item.italic })
           }
@@ -531,9 +535,10 @@ export function linesFromPages(pages: PdfPage[]): Line[] {
         const next = group[index + 1]
         const hidden = item.broken && (!next || next.x - item.right > apart)
         pieces.push({ text: soft ? SOFT_HYPHEN : hidden ? item.text + SOFT_HYPHEN : item.text, bold: item.bold, italic: item.italic })
+        partSize = Math.max(partSize, item.size)
         previous = item
       }
-      parts.push(...toParts(pieces, partX))
+      parts.push(...toParts(pieces, partX, partSize))
 
       const left = group[0].x
       const right = Math.max(...group.map((item) => item.right))
