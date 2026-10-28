@@ -6,7 +6,7 @@
 // bullet ("• ", or "○ " when left out), as plain text, and follow arrange.ts's
 // rules for Enter, pasting and typing; a box for prose has no bullets.
 
-import { markedPieces } from "@/lib/typst/resumeData"
+import { markedPieces, typedPieces } from "@/lib/marks"
 import { cursorWithBullets, lineStartOf, newBullet, pastedList, sameEnd, typedList, withBullets } from "./arrange"
 
 export const BOLD = 1
@@ -151,7 +151,7 @@ function readTyped(line: Styled, kind: Kind): { line: Styled; at: number[] } {
     let end = start + 1
     while (end < line.text.length && line.styles[end] === line.styles[start]) end++
     const style = line.styles[start]
-    for (const piece of markedPieces(line.text.slice(start, end), (style & BOLD) > 0, (style & ITALIC) > 0)) {
+    for (const piece of typedPieces(line.text.slice(start, end), (style & BOLD) > 0, (style & ITALIC) > 0)) {
       out.text += piece.text
       for (let index = 0; index < piece.text.length; index++) {
         out.styles.push((piece.bold ? BOLD : 0) + (piece.italic ? ITALIC : 0))

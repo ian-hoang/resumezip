@@ -6,6 +6,7 @@
 
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
 import { printedResume } from "@/lib/leftOut"
+import { markedPieces, sameStyle } from "@/lib/marks"
 import type { Entry, Resume } from "@/lib/resume"
 import { extraHeading, extrasOf, resolveSections } from "@/lib/resumeSections"
 import { templateById, type TemplateId } from "@/lib/templates"
@@ -56,11 +57,17 @@ export interface TemplateData {
 export type ExtraTemplateSection =
   { kind: "text"; heading: string; paragraphs: Paragraph[] } | { kind: "list"; heading: string; bullets: Run[][] }
 
-/** A stretch of a bullet's or a paragraph's text: **bold**, *italic* or ***both*** where the user marked it. */
+/**
+ * A stretch of a bullet's or a paragraph's text, styled as the user marked it
+ * (lib/marks.ts). `underline` and `link` are only there when set, and a link
+ * is a full address (https:// or mailto:), printed on its words alone.
+ */
 export interface Run {
   text: string
   bold: boolean
   italic: boolean
+  underline?: true
+  link?: string
 }
 
 /** A paragraph of prose (a summary's, or a text section's): its lines, each in runs. */
@@ -146,56 +153,24 @@ const bullets = (value: unknown) =>
     .filter(Boolean)
     .map((line) => runs(line))
 
-// ***both***, **bold** or *italic*. A marker has to touch its words, so the
-// one in "2 * 3", or one without a pair, stays as typed. Each mark ends at
-// the first marker that can close it, so "**C** and **Go**" is two bold words.
-const MARKED = /\*\*\*(\S(?:[\s\S]*?\S)??)\*\*\*|\*\*(\S(?:[\s\S]*?\S)??)\*\*|\*([^\s*](?:[^*]*?[^\s*])?)\*/g
-
-/** A stretch of a line's printed text, and where it starts in the line as typed, marks and all. */
-export interface MarkedPiece extends Run {
-  at: number
-}
-
-/**
- * "Optimized a **Rust** engine for *low latency*" in plain, bold and italic
- * pieces, each a stretch of the line as typed. Marks can sit inside each
- * other: "**bold with *italic* inside**". The bullets box reads lines with
- * this too, so it shows them as they print.
- */
-export function markedPieces(line: string, bold = false, italic = false, offset = 0): MarkedPiece[] {
-  const out: MarkedPiece[] = []
-  let at = 0
-  for (const match of line.matchAll(MARKED)) {
-    if (match.index > at) out.push({ text: line.slice(at, match.index), bold, italic, at: offset + at })
-    const [, both, strong, emph] = match
-    const start = offset + match.index + (both !== undefined ? 3 : strong !== undefined ? 2 : 1)
-    if (both !== undefined) out.push(...markedPieces(both, true, true, start))
-    else if (strong !== undefined) out.push(...markedPieces(strong, true, italic, start))
-    else out.push(...markedPieces(emph, bold, true, start))
-    at = match.index + match[0].length
-  }
-  if (at < line.length) out.push({ text: line.slice(at), bold, italic, at: offset + at })
-  return out
-}
-
 // The pieces of a line, with neighbours in the same style joined.
 function runs(line: string): Run[] {
   const out: Run[] = []
-  for (const { text, bold, italic } of markedPieces(line)) {
+  for (const { at, ...piece } of markedPieces(line)) {
     const last = out[out.length - 1]
-    if (last && last.bold === bold && last.italic === italic) last.text += text
-    else out.push({ text, bold, italic })
+    if (last && sameStyle(last, piece)) last.text += piece.text
+    else out.push(piece)
   }
   return out
 }
 
-/** A bullet's words as printed, without its bold and italic marks. */
+/** A bullet's words as printed, without its marks. */
 export const plainText = (line: string) =>
   runs(line)
     .map((run) => run.text)
     .join("")
 
-/** Prose (a summary, a text section) as printed, line by line, without its bold and italic marks. */
+/** Prose (a summary, a text section) as printed, line by line, without its marks. */
 export const plainProse = (value: string) => value.split("\n").map(plainText).join("\n")
 
 // For matching names: lower case, without accents.

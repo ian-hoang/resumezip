@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
 import { onMac, shortcut } from "@/lib/keys"
-import { markedPieces } from "@/lib/typst/resumeData"
+import { plainText } from "@/lib/typst/resumeData"
 import { bulletLines, withBullets } from "./arrange"
 import { selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
@@ -230,11 +230,9 @@ const PREVIEW_CHARACTERS = 70
 /** How many bullets an open card shows until its box is used. */
 const PREVIEW_BULLETS = 2
 
-/** A bullet's words without their bold and italic marks, cut short at a word, with "…" where they were cut. */
+/** A bullet's words without their marks, cut short at a word, with "…" where they were cut. */
 function previewOf(words: string): string {
-  const plain = markedPieces(words)
-    .map((piece) => piece.text)
-    .join("")
+  const plain = plainText(words)
   if (plain.length <= PREVIEW_CHARACTERS) return plain
   const cut = plain.slice(0, PREVIEW_CHARACTERS + 1)
   const space = cut.lastIndexOf(" ")

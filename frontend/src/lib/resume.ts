@@ -11,6 +11,7 @@
 
 import type { ChoiceKey, DataKey, FieldKey, HeadingKey, ProfileKey } from "@/components/editor/sections"
 import type { CHECK_FIELD, SavedCheck } from "@/lib/check/state"
+import type { MARKS_VERSION } from "@/lib/marks"
 import type { ExtraSections } from "@/lib/resumeSections"
 import type { Tune } from "@/lib/tune"
 
@@ -67,6 +68,12 @@ export type Resume = {
   extraSections?: ExtraSections
   /** Adjustments to the template's sizes and page, from Fine-tune (lib/tune.ts). */
   tune?: Tune | null
+  /**
+   * MARKS_VERSION once its styled text can hold underline and links, with a
+   * "_" or "[" typed as a word escaped (lib/marks.ts). Resumes from before
+   * then are escaped as they're read (withMarks).
+   */
+  marks?: typeof MARKS_VERSION
 } & { [Key in DataKey]?: Entry[] | null } & { [Key in ChoiceKey]?: string } & {
   /** What the person told the checker, read with readCheckState (lib/check/state.ts). */
   [Key in typeof CHECK_FIELD]?: SavedCheck | null

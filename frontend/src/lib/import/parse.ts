@@ -17,7 +17,7 @@ import { EXPECTED_WORDS, PRESENT_WORDS, US_STATES } from "@/lib/check/settings"
 import { escaped } from "@/lib/check/text"
 import type { CompleteContent, ResumeContent } from "@/lib/resume"
 import { extraKey, extraRef, resolveSections, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
-import { plainText } from "@/lib/typst/resumeData"
+import { typedPieces } from "@/lib/marks"
 import { PAGE_NUMBER, SOFT_HYPHEN, toLine, type Line, type Part, type Piece, type Run } from "./lines"
 
 /** An entry's values, keyed by its section's field names. */
@@ -614,7 +614,11 @@ function summaryLines(lines: ParseLine[]): { text: string[]; marked: string[] } 
     .map((line) => {
       const text = tidy(line.text)
       const withMarks = tidy(marked(trimmedPieces(line.pieces), whole))
-      return { text, marked: plainText(withMarks) === text ? withMarks : text }
+      // Read as bold and italic alone: what's imported is escaped for underline and links as it's added (withMarks).
+      const printed = typedPieces(withMarks)
+        .map((piece) => piece.text)
+        .join("")
+      return { text, marked: printed === text ? withMarks : text }
     })
     .filter((line) => line.text)
   return { text: kept.map((line) => line.text), marked: kept.map((line) => line.marked) }
