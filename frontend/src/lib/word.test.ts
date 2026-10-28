@@ -113,6 +113,25 @@ describe("a Word file", () => {
     expect(paragraph).toContain('<w:r><w:rPr><w:i/><w:iCs/></w:rPr><w:t xml:space="preserve">Rust</w:t></w:r>')
   })
 
+  test("sets underlined and linked words as they print: a link is underlined only where its words are", () => {
+    const resume = asSaved({
+      selectedTemplate: "jake",
+      marks: 2,
+      workExperienceSection: [
+        { id: 1, companyName: "Google", workDescription: "• Shipped [__the__ dashboard](https://example.com/dash) on __time__" },
+      ],
+    })
+    const { "word/document.xml": document, "word/_rels/document.xml.rels": relationships } = partsOf(toWordFile(resume))
+    const id = relationships.match(/Id="(rId\d+)"[^>]*Target="https:\/\/example\.com\/dash"/)?.[1]
+    expect(id).toBeDefined()
+    expect(document).toContain(
+      `<w:hyperlink r:id="${id}"><w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">the</w:t></w:r></w:hyperlink>`,
+    )
+    // Not underlined, so not in Word's Hyperlink style, which is.
+    expect(document).toMatch(/<w:hyperlink r:id="rId\d+"><w:r><w:t xml:space="preserve"> dashboard<\/w:t><\/w:r><\/w:hyperlink>/)
+    expect(document).toContain('<w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">time</w:t></w:r>')
+  })
+
   test("drops what XML can't hold, and keeps everything else as typed", async () => {
     const name = `Ada <Lovelace> & "Co" 🎉`
     const file = toWordFile(asSaved({ selectedTemplate: "jake", profileSection: { fullName: `${name}\u0001\uD800` } }))
