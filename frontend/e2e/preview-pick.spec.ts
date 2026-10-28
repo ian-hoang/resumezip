@@ -110,35 +110,53 @@ const selectedInForm = (page: Page) =>
     return getSelection()?.toString() ?? null
   })
 
-test("double-clicking a word on the preview opens its field with the word selected", async ({ page }) => {
+/** The words lit up in the form, and the label of the box they're in; null when none are. */
+const lit = (page: Page) =>
+  page.evaluate(() => {
+    const [range] = CSS.highlights.get("picked") ?? []
+    if (!range) return null
+    const box = range.startContainer.parentElement?.closest("[contenteditable]")
+    const label = box && document.getElementById(box.getAttribute("aria-labelledby") ?? "")
+    return { words: range.toString(), field: label?.textContent?.trim() ?? null }
+  })
+
+/** What's selected on the page: on the preview, it stays selected to copy. */
+const selected = (page: Page) => page.evaluate(() => getSelection()?.toString())
+
+test("double-clicking a word on the preview lights it up in its field, and keeps it selected", async ({ page }) => {
   const errors = pageErrors(page)
   await open(page)
 
   // A bullet, in a section that isn't open.
   await doubleClick(page, "published")
-  await expect(focused(page)).toHaveAccessibleName("What you did")
-  await expect.poll(() => selectedInForm(page)).toBe("published")
+  await expect.poll(() => lit(page)).toEqual({ words: "published", field: "What you did" })
+  expect(await selected(page)).toBe("published")
+  expect(await selectedInForm(page)).toBeNull()
 
-  // The summary.
+  // Triple-clicking selects the line, which stays selected too.
+  const { first } = await wordsOnPreview(page, "published")
+  await page.mouse.click(first.x, first.y, { clickCount: 3 })
+  await expect
+    .poll(() => lit(page))
+    .toMatchObject({ words: expect.stringContaining("Wrote the first published program"), field: "What you did" })
+  expect(await selected(page)).toContain("published program")
+
+  // The summary, and a text section, where "Italian" is printed by a bullet too.
   await doubleClick(page, "analytical")
-  await expect(focused(page)).toHaveAccessibleName("Summary")
-  await expect.poll(() => selectedInForm(page)).toBe("analytical")
-
-  // A text section, where "Italian" is printed by a bullet too.
+  await expect.poll(() => lit(page)).toEqual({ words: "analytical", field: "Summary" })
   await doubleClick(page, "French")
-  await expect(focused(page)).toHaveAccessibleName("Text")
-  await expect.poll(() => selectedInForm(page)).toBe("French")
+  await expect.poll(() => lit(page)).toEqual({ words: "French", field: "Text" })
+  expect(await selected(page)).toBe("French")
 
-  // A title, a company, and a date of the second job, which opens.
+  // A title, a company and a date of the second job, which opens: inputs light up as a whole.
   await doubleClick(page, "Tutor")
-  await expect(focused(page)).toHaveAccessibleName("Role")
-  await expect.poll(() => selectedInForm(page)).toBe("Tutor")
+  await expect(page.getByRole("textbox", { name: "Role" }).last()).toHaveAttribute("data-picked", "")
   await doubleClick(page, "Somerville")
-  await expect(focused(page)).toHaveAccessibleName("Company")
-  await expect.poll(() => selectedInForm(page)).toBe("Somerville")
+  await expect(page.getByRole("textbox", { name: "Company" }).last()).toHaveAttribute("data-picked", "")
   await doubleClick(page, "2021")
-  await expect.poll(() => selectedInForm(page)).toBe("2021")
-  await expect(focused(page)).toHaveAccessibleName("Start")
+  await expect(page.getByRole("textbox", { name: "Start" }).last()).toHaveAttribute("data-picked", "")
+  await expect(page.locator("[data-picked]")).toHaveCount(1)
+  expect(await selected(page)).toBe("2021")
 
   expect(errors).toEqual([])
 })
@@ -149,7 +167,7 @@ test("selecting words on the preview keeps them selected to copy, and lights the
   await dragOver(page, "lecture notes from")
 
   // They stay selected on the preview, and copy from there as plain text.
-  await expect.poll(() => page.evaluate(() => getSelection()?.toString())).toBe("lecture notes from")
+  await expect.poll(() => selected(page)).toBe("lecture notes from")
   const copied = await preview(page)
     .locator(".textLayer")
     .first()
@@ -161,22 +179,14 @@ test("selecting words on the preview keeps them selected to copy, and lights the
   expect(copied).toBe("lecture notes from")
 
   // Their field opens with them lit up, and the cursor stays out of the form.
-  const lit = () =>
-    page.evaluate(() => {
-      const [range] = CSS.highlights.get("picked") ?? []
-      const box = range?.startContainer.parentElement?.closest("[contenteditable]")
-      return range ? { words: range.toString(), field: box?.getAttribute("aria-labelledby") ?? null } : null
-    })
-  await expect.poll(lit).toMatchObject({ words: "lecture notes from" })
-  const box = page.getByRole("textbox", { name: "What you did" }).first()
-  expect((await lit())?.field).toBe(await box.getAttribute("aria-labelledby"))
-  await expect(box).toBeInViewport()
+  await expect.poll(() => lit(page)).toEqual({ words: "lecture notes from", field: "What you did" })
+  await expect(page.getByRole("textbox", { name: "What you did" }).first()).toBeInViewport()
   expect(await selectedInForm(page)).toBeNull()
 
   // An input can't light up its words, so it lights up as a whole. A click anywhere puts the light out.
   await dragOver(page, "Somerville House")
   await expect(page.getByRole("textbox", { name: "Company" }).last()).toHaveAttribute("data-picked", "")
-  await expect.poll(lit).toBeNull()
+  await expect.poll(() => lit(page)).toBeNull()
   await page.getByLabel("Live preview").click({ position: { x: 5, y: 5 } })
   await expect(page.locator("[data-picked]")).toHaveCount(0)
 

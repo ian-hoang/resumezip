@@ -92,10 +92,12 @@ type CheckActions = ReturnType<typeof useResumeCheck>["actions"] & {
   open: (finding: Finding) => void
   /**
    * Opens the field that printed characters `start` to `end` of the
-   * preview's text, with those words selected, in any mode, or with `look`,
-   * lit up. False if no field printed them.
+   * preview's text, in any mode, with those words lit up while they stay
+   * selected on the preview, to copy. Where the form and the preview are
+   * shown in turn, a word picked to `edit` shows the form instead, with the
+   * word selected there. False if no field printed them.
    */
-  pick: (printed: string, start: number, end: number, look?: boolean) => boolean
+  pick: (printed: string, start: number, end: number, edit?: boolean) => boolean
   /** Whether a request hasn't been taken yet. */
   pending: (request: number) => boolean
   /**
@@ -335,14 +337,15 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
   const latest = useRef({ resume: preview?.checkerResume ?? resume, mode })
   latest.current = { resume: preview?.checkerResume ?? resume, mode }
   const pick = useCallback(
-    (printed: string, start: number, end: number, look = false) => {
+    (printed: string, start: number, end: number, edit = false) => {
       const found = pickedIn(textsOf(viewOf(latest.current.resume)), printed, start, end)
       if (!found) return false
       const section = sectionOf(found.place)
       if (section) select.current(section)
+      const wide = window.matchMedia(WIDE_SCREEN).matches
       // Narrower, Style takes the form's place.
-      if (latest.current.mode === "style" && !window.matchMedia(WIDE_SCREEN).matches) chooseMode("write")
-      // Where the form and the preview are shown in turn, words selected to copy keep the preview.
+      if (latest.current.mode === "style" && !wide) chooseMode("write")
+      const look = wide || !edit
       if (!look) showForm.current()
       setPicked({ place: found.place, request: ++requests.current, words: found, look })
       return true
