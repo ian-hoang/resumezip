@@ -94,6 +94,24 @@ describe("an entry's date", () => {
   })
 })
 
+describe("projects without dates", () => {
+  test("a name set like the one above, with no bullets between, is the next project; a line under a name set apart from it is that project's", () => {
+    const { resume } = read("Projects", [
+      line([["Inkwell | React, Node.js", 36]], { bold: true }),
+      line([["Built a notes app with offline sync", 54]], { bullet: true }),
+      line([["Ferry | Go", 36]], { bold: true }),
+      line([["Tally", 36]], { bold: true }),
+      line([["Python, Flask", 36]], { italic: true }),
+      line([["Built a budget tracker for shared flats", 54]], { bullet: true }),
+    ])
+    expect(resume.projectsSection.map(({ projectName, techStack }) => [projectName, techStack])).toEqual([
+      ["Inkwell", "React, Node.js"],
+      ["Ferry", "Go"],
+      ["Tally", "Python, Flask"],
+    ])
+  })
+})
+
 describe("a date that hasn't come yet", () => {
   test.each([
     ["Est. May 2027", "", "Est. May 2027"],
