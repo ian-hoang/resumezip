@@ -12,6 +12,7 @@ import { PDFJS_WORKER_URL } from "@/lib/pdfjsWorker"
 import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 import { scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
+import { useCheckActions } from "./CheckContext"
 import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
 
@@ -376,6 +377,32 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     })
   }, [])
 
+  // Double-clicking a word on the page selects it, and dragging selects more:
+  // either opens the field that printed them in the form, with them selected.
+  // Only once the button's up, so a drag isn't cut short; a click selects nothing.
+  const { pick } = useCheckActions()
+  function pickSelected(event: MouseEvent) {
+    if (event.button !== 0) return
+    const selection = window.getSelection()
+    if (!selection?.rangeCount || selection.isCollapsed) return
+    const range = selection.getRangeAt(0)
+    const layers = [...(pagesRef.current?.querySelectorAll<HTMLElement>(".textLayer") ?? [])]
+    const layer = layers.find((layer) => layer.contains(range.startContainer))
+    if (!layer) return
+    // Offsets in all the pages' text, as one string. A range's text is its
+    // text nodes' as textContent joins them, so the two line up.
+    const texts = layers.map((layer) => layer.textContent)
+    const before = texts.slice(0, layers.indexOf(layer)).join("").length
+    const offset = (node: Node, at: number) => {
+      const upTo = document.createRange()
+      upTo.setStart(layer, 0)
+      upTo.setEnd(node, at)
+      return before + upTo.toString().length
+    }
+    const end = layer.contains(range.endContainer) ? offset(range.endContainer, range.endOffset) : before + layer.textContent.length
+    pick(texts.join(""), offset(range.startContainer, range.startOffset), end)
+  }
+
   function onLoadError(file: string) {
     setDrawings((drawings) => drawings.filter((drawing) => drawing.file !== file))
     if (file === pdfUrl) setLoadError(true)
@@ -407,6 +434,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
         ref={scrollerRef}
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
+        onMouseUp={(event) => pickSelected(event.nativeEvent)}
         className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-4 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (

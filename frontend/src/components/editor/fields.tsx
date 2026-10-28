@@ -7,9 +7,11 @@ import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
 import { onMac, shortcut } from "@/lib/keys"
 import { markedPieces } from "@/lib/typst/resumeData"
-import { bulletLines, withBullets } from "./arrange"
-import { selectLineIn } from "./boxDom"
+import { bulletLines, offsetOfLine, withBullets } from "./arrange"
+import { readBox, selectIn, selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
+import { wordsIn, type PickedWords } from "./previewPick"
+import { bulletLength } from "./styledText"
 import { StyledBox } from "./StyledBox"
 
 interface FieldProps {
@@ -190,11 +192,46 @@ function selectLine(field: HTMLElement, line: number) {
   if (field.isContentEditable) selectLineIn(field, line)
 }
 
-/** Moves the cursor to what the checker points at (one bullet, if `line` is given) and scrolls it into view. */
-export function pointAt(target: HTMLElement | null | undefined, line?: number, view: HTMLElement | null | undefined = target) {
+/**
+ * Selects words picked on the preview in a field: in the line `line` of a
+ * bullets box, or anywhere in another field. The whole bullet, or nothing,
+ * if they aren't there any more.
+ */
+function selectWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
+  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    const found = wordsIn(field.value, words)
+    if (found) field.setSelectionRange(found.start, found.end)
+    return
+  }
+  if (!field.isContentEditable) return
+  const text = readBox(field).styled.text
+  if (line === undefined) {
+    const found = wordsIn(text, words)
+    if (found) selectIn(field, found.start, found.end)
+    return
+  }
+  const lines = text.split("\n")
+  if (line < 0 || line >= lines.length) return
+  const start = offsetOfLine(lines, line) + bulletLength(lines[line])
+  const found = wordsIn(lines[line].slice(bulletLength(lines[line])), words)
+  if (found) selectIn(field, start + found.start, start + found.end)
+  else selectLine(field, line)
+}
+
+/**
+ * Moves the cursor to what the checker points at (one bullet, if `line` is
+ * given), or selects `words` picked on the preview, and scrolls it into view.
+ */
+export function pointAt(
+  target: HTMLElement | null | undefined,
+  line?: number,
+  view: HTMLElement | null | undefined = target,
+  words?: PickedWords,
+) {
   if (!target) return
   target.focus({ preventScroll: true })
-  if (line !== undefined) selectLine(target, line)
+  if (words) selectWords(target, line, words)
+  else if (line !== undefined) selectLine(target, line)
   view?.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" })
 }
 
