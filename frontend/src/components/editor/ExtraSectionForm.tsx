@@ -32,7 +32,7 @@ export default function ExtraSectionForm({ sectionId, onDelete }: { sectionId: s
       const selector =
         there.kind === "extra-heading" ? 'button[aria-label="Rename section"]' : `[data-field="${there.field}"] [contenteditable="true"]`
       const field = root.current?.querySelector<HTMLElement>(selector)
-      pointAt(field, there.kind === "extra-text" ? there.line : undefined, field, pointer.words)
+      pointAt(field, there.kind === "extra-text" ? there.line : undefined, field, pointer.words, pointer.look)
     }, 0)
     return () => clearTimeout(timer)
   }, [pointer, there, pending, claim])

@@ -197,7 +197,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
           const card = elements.current.get(entry.id)
           const selector = place.field ? `[data-field="${place.field}"] ${TYPED}` : FIRST_FIELD
           const field = card?.querySelector<HTMLElement>(selector)
-          pointAt(field, place.line, field, pointer.words)
+          pointAt(field, place.line, field, pointer.words, pointer.look)
         }
       },
       sliding ? SLIDE_MS : 0,

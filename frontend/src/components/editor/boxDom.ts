@@ -222,6 +222,16 @@ function pointAt(root: HTMLElement, offset: number): Point {
   return { node: root, offset: 0 }
 }
 
+/** The text from `start` to `end` in the box, as a range. */
+export function rangeIn(root: HTMLElement, start: number, end: number): Range {
+  const from = pointAt(root, start)
+  const to = pointAt(root, end)
+  const range = root.ownerDocument.createRange()
+  range.setStart(from.node, from.offset)
+  range.setEnd(to.node, to.offset)
+  return range
+}
+
 /** Selects from `start` to `end` in the box, or puts the cursor at `start`. */
 export function selectIn(root: HTMLElement, start: number, end: number) {
   const from = pointAt(root, start)

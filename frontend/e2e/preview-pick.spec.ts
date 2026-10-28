@@ -143,12 +143,42 @@ test("double-clicking a word on the preview opens its field with the word select
   expect(errors).toEqual([])
 })
 
-test("selecting words on the preview opens their field with them selected", async ({ page }) => {
+test("selecting words on the preview keeps them selected to copy, and lights them up in their field", async ({ page }) => {
   const errors = pageErrors(page)
   await open(page)
   await dragOver(page, "lecture notes from")
-  await expect(focused(page)).toHaveAccessibleName("What you did")
-  await expect.poll(() => selectedInForm(page)).toBe("lecture notes from")
+
+  // They stay selected on the preview, and copy from there as plain text.
+  await expect.poll(() => page.evaluate(() => getSelection()?.toString())).toBe("lecture notes from")
+  const copied = await preview(page)
+    .locator(".textLayer")
+    .first()
+    .evaluate((layer) => {
+      const clipboardData = new DataTransfer()
+      layer.dispatchEvent(new ClipboardEvent("copy", { clipboardData, bubbles: true, cancelable: true }))
+      return clipboardData.getData("text/plain")
+    })
+  expect(copied).toBe("lecture notes from")
+
+  // Their field opens with them lit up, and the cursor stays out of the form.
+  const lit = () =>
+    page.evaluate(() => {
+      const [range] = CSS.highlights.get("picked") ?? []
+      const box = range?.startContainer.parentElement?.closest("[contenteditable]")
+      return range ? { words: range.toString(), field: box?.getAttribute("aria-labelledby") ?? null } : null
+    })
+  await expect.poll(lit).toMatchObject({ words: "lecture notes from" })
+  const box = page.getByRole("textbox", { name: "What you did" }).first()
+  expect((await lit())?.field).toBe(await box.getAttribute("aria-labelledby"))
+  await expect(box).toBeInViewport()
+  expect(await selectedInForm(page)).toBeNull()
+
+  // An input can't light up its words, so it lights up as a whole. A click anywhere puts the light out.
+  await dragOver(page, "Somerville House")
+  await expect(page.getByRole("textbox", { name: "Company" }).last()).toHaveAttribute("data-picked", "")
+  await expect.poll(lit).toBeNull()
+  await page.getByLabel("Live preview").click({ position: { x: 5, y: 5 } })
+  await expect(page.locator("[data-picked]")).toHaveCount(0)
 
   // A single click selects nothing, so it opens nothing.
   await page.getByRole("button", { name: "Profile" }).first().click()

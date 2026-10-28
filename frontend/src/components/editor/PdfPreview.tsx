@@ -377,9 +377,10 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     })
   }, [])
 
-  // Double-clicking a word on the page selects it, and dragging selects more:
-  // either opens the field that printed them in the form, with them selected.
-  // Only once the button's up, so a drag isn't cut short; a click selects nothing.
+  // Double-clicking a word on the page opens the field that printed it in the
+  // form, with the word selected, to edit. Dragging over words opens their
+  // field with them lit up, and leaves them selected here, to copy. Only once
+  // the button's up, so a drag isn't cut short; a click selects nothing.
   const { pick } = useCheckActions()
   function pickSelected(event: MouseEvent) {
     if (event.button !== 0) return
@@ -400,7 +401,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
       return before + upTo.toString().length
     }
     const end = layer.contains(range.endContainer) ? offset(range.endContainer, range.endOffset) : before + layer.textContent.length
-    pick(texts.join(""), offset(range.startContainer, range.startOffset), end)
+    pick(texts.join(""), offset(range.startContainer, range.startOffset), end, event.detail < 2)
   }
 
   function onLoadError(file: string) {

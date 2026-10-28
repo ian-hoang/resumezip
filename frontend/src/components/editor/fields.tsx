@@ -8,7 +8,7 @@ import type { Finding } from "@/lib/check/engine"
 import { onMac, shortcut } from "@/lib/keys"
 import { markedPieces } from "@/lib/typst/resumeData"
 import { bulletLines, offsetOfLine, withBullets } from "./arrange"
-import { readBox, selectIn, selectLineIn } from "./boxDom"
+import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
 import { wordsIn, type PickedWords } from "./previewPick"
 import { bulletLength } from "./styledText"
@@ -193,45 +193,78 @@ function selectLine(field: HTMLElement, line: number) {
 }
 
 /**
- * Selects words picked on the preview in a field: in the line `line` of a
- * bullets box, or anywhere in another field. The whole bullet, or nothing,
- * if they aren't there any more.
+ * Where words picked on the preview are in a field: in its value, or in its
+ * box's text, in the line `line` of a bullets box. Null if they aren't there
+ * any more.
  */
-function selectWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
-  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-    const found = wordsIn(field.value, words)
-    if (found) field.setSelectionRange(found.start, found.end)
-    return
-  }
-  if (!field.isContentEditable) return
+function wordsAt(field: HTMLElement, line: number | undefined, words: PickedWords): { start: number; end: number } | null {
+  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) return wordsIn(field.value, words)
+  if (!field.isContentEditable) return null
   const text = readBox(field).styled.text
-  if (line === undefined) {
-    const found = wordsIn(text, words)
-    if (found) selectIn(field, found.start, found.end)
-    return
-  }
+  if (line === undefined) return wordsIn(text, words)
   const lines = text.split("\n")
-  if (line < 0 || line >= lines.length) return
+  if (line < 0 || line >= lines.length) return null
   const start = offsetOfLine(lines, line) + bulletLength(lines[line])
   const found = wordsIn(lines[line].slice(bulletLength(lines[line])), words)
-  if (found) selectIn(field, start + found.start, start + found.end)
-  else selectLine(field, line)
+  return found && { start: start + found.start, end: start + found.end }
+}
+
+/** Selects words picked on the preview in a field, or else the whole bullet. */
+function selectWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
+  const found = wordsAt(field, line, words)
+  if (!found) {
+    if (line !== undefined) selectLine(field, line)
+  } else if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    field.setSelectionRange(found.start, found.end)
+  } else selectIn(field, found.start, found.end)
+}
+
+// The CSS highlight (::highlight(picked) in globals.css) on words selected on
+// the preview, or the field they're in, until the next click anywhere.
+const PICKED = "picked"
+let unshow = () => {}
+
+/**
+ * Lights up words selected on the preview in their field, without moving the
+ * cursor, so they stay selected there to copy. A text box lights up the
+ * words; an input, whose value a highlight can't reach, lights up as a whole.
+ */
+function showWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
+  unshow()
+  const found = wordsAt(field, line, words)
+  // Safari before 17.2 has no CSS highlights.
+  const highlights = typeof CSS.highlights === "undefined" ? null : CSS.highlights
+  if (found && field.isContentEditable && highlights) highlights.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  else field.dataset.picked = ""
+  const clear = () => {
+    highlights?.delete(PICKED)
+    delete field.dataset.picked
+    document.removeEventListener("pointerdown", clear, true)
+  }
+  document.addEventListener("pointerdown", clear, true)
+  unshow = clear
 }
 
 /**
  * Moves the cursor to what the checker points at (one bullet, if `line` is
  * given), or selects `words` picked on the preview, and scrolls it into view.
+ * With `look`, the words are lit up rather than selected, and the cursor stays
+ * where it is.
  */
 export function pointAt(
   target: HTMLElement | null | undefined,
   line?: number,
   view: HTMLElement | null | undefined = target,
   words?: PickedWords,
+  look = false,
 ) {
   if (!target) return
-  target.focus({ preventScroll: true })
-  if (words) selectWords(target, line, words)
-  else if (line !== undefined) selectLine(target, line)
+  if (words && look) showWords(target, line, words)
+  else {
+    target.focus({ preventScroll: true })
+    if (words) selectWords(target, line, words)
+    else if (line !== undefined) selectLine(target, line)
+  }
   view?.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" })
 }
 

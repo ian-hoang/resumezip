@@ -24,7 +24,7 @@ function ProfileForm() {
     const timer = setTimeout(() => {
       if (!claim(pointer.request)) return
       const field = form.current?.querySelector<HTMLElement>(`[data-field="${place.field}"] :is(input, [contenteditable="true"])`)
-      pointAt(field, undefined, field, pointer.words)
+      pointAt(field, undefined, field, pointer.words, pointer.look)
     })
     return () => clearTimeout(timer)
   }, [pointer, pending, claim])

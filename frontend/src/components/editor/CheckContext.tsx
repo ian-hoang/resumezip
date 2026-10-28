@@ -63,6 +63,8 @@ export interface Pointer {
   place: Place
   request: number
   words?: PickedWords
+  /** Words selected on the preview are lit up in the form, not selected there, so they stay selected on the preview to copy. */
+  look?: boolean
 }
 
 /** What the checker found, and where it stands. It changes as the resume is checked again, once typing pauses. */
@@ -90,10 +92,10 @@ type CheckActions = ReturnType<typeof useResumeCheck>["actions"] & {
   open: (finding: Finding) => void
   /**
    * Opens the field that printed characters `start` to `end` of the
-   * preview's text, with those words selected, in any mode. False if no
-   * field printed them.
+   * preview's text, with those words selected, in any mode, or with `look`,
+   * lit up. False if no field printed them.
    */
-  pick: (printed: string, start: number, end: number) => boolean
+  pick: (printed: string, start: number, end: number, look?: boolean) => boolean
   /** Whether a request hasn't been taken yet. */
   pending: (request: number) => boolean
   /**
@@ -333,15 +335,16 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
   const latest = useRef({ resume: preview?.checkerResume ?? resume, mode })
   latest.current = { resume: preview?.checkerResume ?? resume, mode }
   const pick = useCallback(
-    (printed: string, start: number, end: number) => {
+    (printed: string, start: number, end: number, look = false) => {
       const found = pickedIn(textsOf(viewOf(latest.current.resume)), printed, start, end)
       if (!found) return false
       const section = sectionOf(found.place)
       if (section) select.current(section)
       // Narrower, Style takes the form's place.
       if (latest.current.mode === "style" && !window.matchMedia(WIDE_SCREEN).matches) chooseMode("write")
-      showForm.current()
-      setPicked({ place: found.place, request: ++requests.current, words: found })
+      // Where the form and the preview are shown in turn, words selected to copy keep the preview.
+      if (!look) showForm.current()
+      setPicked({ place: found.place, request: ++requests.current, words: found, look })
       return true
     },
     [chooseMode],
