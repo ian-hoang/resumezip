@@ -1320,7 +1320,11 @@ function readEducation(lines: ParseLine[]): SectionResult {
 
 function readProjects(lines: ParseLine[]): SectionResult {
   const leftover: SectionResult["leftover"] = { lines: [], text: [] }
-  const entries = groupEntries(lines).map((group) => {
+  // A project needs no date or bullets, so with neither, the next one's name
+  // comes straight after its own. The lines under a name (its tech, its
+  // links) are set apart from it; one set like it is the next project's.
+  const anotherProject = (header: ParseLine[], line: ParseLine) => sameStyle(header[0], line)
+  const entries = groupEntries(lines, undefined, anotherProject).map((group) => {
     const fields = blankEntry("Projects")
     const header = readHeader(group.header)
     const texts = header.texts.map((fragment) => fragment.text)

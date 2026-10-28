@@ -220,7 +220,10 @@ const entriesRead: Rule = {
         problems.push({
           place: { kind: "section", section },
           message: `Hiring software reads ${count(found.entries.length, "entry", "entries")} here, not ${typed.length}`,
-          suggestion: "An entry may be running into the next one. Check each has its own role, place and dates.",
+          suggestion:
+            section === "Projects"
+              ? "A project may be running into the next one. Check each has its own name."
+              : "An entry may be running into the next one. Check each has its own role, place and dates.",
         })
         continue
       }

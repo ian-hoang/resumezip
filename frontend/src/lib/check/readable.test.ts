@@ -248,6 +248,27 @@ describe("R3 entries read as typed", () => {
       expect.objectContaining({ place: { kind: "section", section: "Work" }, message: "Hiring software reads 0 entries here, not 1" }),
     ])
   })
+
+  test("asks only for a name on each project, which has no role or place and needn't have a date", () => {
+    const resume = {
+      ...jake,
+      projectsSection: [
+        { id: 1, projectName: "Inkwell" },
+        { id: 2, projectName: "Ferry" },
+      ],
+    }
+    const merged = {
+      ...found,
+      sections: [...found.sections, { name: "Projects" as const, entries: [{ fields: { projectName: "Inkwell" }, lines: [] }] }],
+    }
+    expect(check("R3", resume, reading([], merged)).findings).toEqual([
+      expect.objectContaining({
+        place: { kind: "section", section: "Projects" },
+        message: "Hiring software reads 1 entry here, not 2",
+        suggestion: "A project may be running into the next one. Check each has its own name.",
+      }),
+    ])
+  })
 })
 
 describe("R4 text the reader can't place", () => {
