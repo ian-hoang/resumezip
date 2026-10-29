@@ -260,6 +260,10 @@ test("words selected on the preview get the bold, italic, underline and link but
   await page.keyboard.press("Escape")
   await expect(toolbar).toBeHidden()
   await expect.poll(() => lit(page)).toBeNull()
+  // The PDF with the link, on screen alone, so the next words aren't selected
+  // on a page it replaces mid-drag, as on a slow machine.
+  await expect(preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com"]')).toHaveCount(1)
+  await expect(preview(page).locator(".react-pdf__Document")).toHaveCount(1)
   await dragOver(page, "younger students")
   await expect(toolbar).toBeVisible()
   await page.getByRole("heading", { level: 1 }).first().click()
