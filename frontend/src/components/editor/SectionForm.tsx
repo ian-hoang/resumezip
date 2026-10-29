@@ -586,7 +586,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
             </div>
           </div>
 
-          {/* The fields slide open and closed, on a line down from the card's grip. */}
+          {/* The fields slide open and closed under the card, as far in from its left edge as its right, on a line near its left edge. */}
           <div
             className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
               entry.id === shownId && isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
@@ -601,7 +601,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
               }`}
               inert={!isOpen || confirming}
             >
-              <div className="mb-3 ml-[22px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[25px] pt-3">
+              <div className="mb-3 ml-[10px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[13px] pr-6 pt-3">
                 {/* Its eye puts it back too; this says what leaving out means. */}
                 {leftOut && (
                   <p className="text-[13px] leading-normal text-ink-3">
