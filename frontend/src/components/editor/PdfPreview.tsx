@@ -1,6 +1,7 @@
 "use client"
 
-import type { PDFDocumentProxy, PDFWorker } from "pdfjs-dist"
+import type { PDFDocumentProxy, PDFPageProxy, PDFWorker } from "pdfjs-dist"
+import type { TextItem } from "pdfjs-dist/types/src/display/api"
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ClipboardEvent } from "react"
 // react-pdf's styles are in the page's first download, though its code isn't
 // (see below). Next loads a later chunk's CSS as a React stylesheet resource,
@@ -17,6 +18,7 @@ import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
 import { PickedToolbar } from "./PickedToolbar"
 import type { SelectedWords } from "./SelectionToolbar"
+import { newWords, wordsIn, type Word } from "./changedWords"
 
 type ReactPdf = typeof import("./reactPdf")
 
@@ -75,9 +77,10 @@ const PAGE_GAP = 16
 const FADE_MS = 300
 // How long the zoom stays put before the pages are drawn again at its size.
 const SETTLE_MS = 150
-// The most runs of text a new preview lights up on a page. Typing changes one
-// or two (a line, and the next if it wraps); more is a new template, a file
-// opened over the resume or an undo, where lighting up the page is just noise.
+// The most stretches of words a new preview lights up, each within one run of
+// text on the page. Typing or styling changes one or two (part of a line, and
+// the next if it wraps); more is a new template, a file opened over the resume
+// or an undo, where lighting up the page is just noise.
 const MAX_LIT = 6
 
 interface PdfPreviewProps {
@@ -127,18 +130,21 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
   // Set by Fit, which shows the first page from its top rather than keeping a point in place.
   const toTopRef = useRef(false)
   const heldRef = useRef<HeldAnchor | null>(null)
-  // The drawing on screen and its pages, and the text each PDF printed, page
-  // by page, to light up what the next one changes (lightUpChanges).
+  // The drawing on screen and its pages, each PDF loaded, and the words the
+  // shown one printed, page by page, to light up what the next one changes
+  // (lightUpChanges).
   const shownRef = useRef<Drawing | null>(null)
   const shownPagesRef = useRef<(HTMLDivElement | null)[]>([])
+  const loadedRef = useRef(new Map<string, PDFDocumentProxy>())
   const printedRef = useRef<{
     file: string
     template: string | null
-    pages: Map<number, string[]>
-    /** How many of each run of text the PDF before printed that this one's pages haven't matched yet. */
-    unmatched: Map<string, number>
+    pages: number
+    /** Each page's words once they're read, and null while they are. */
+    words: Map<number, PrintedWord[] | null>
   } | null>(null)
-  const beforeRef = useRef<{ template: string | null; text: string[] } | null>(null)
+  /** The words of the last PDF read in full, to compare the next with. */
+  const beforeRef = useRef<{ template: string | null; words: string[] } | null>(null)
 
   // react-pdf and pdf.js are a third of the editor's code, so they aren't in
   // the page's first download: the form can be used sooner, and the stand-in
@@ -305,6 +311,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
   }, [waiting])
 
   function onLoadSuccess(file: string, loaded: PDFDocumentProxy) {
+    loadedRef.current.set(file, loaded)
     const pages = loaded.numPages
     setDrawings((drawings) => drawings.map((drawing) => (drawing.file === file ? { ...drawing, pages } : drawing)))
     pageRatioOf(loaded).then(
@@ -333,49 +340,46 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
   })
 
   /**
-   * Lights up the runs of text that the PDF before didn't print, so the line
-   * just typed in stands out for a moment (`[data-changed]` in globals.css).
-   * Runs are matched one for one, so a second copy of a line the PDF already
-   * had lights up too.
-   * It's called as each page's text layer is drawn, and looks at every page
-   * drawn since. The first preview has nothing to compare with, the same PDF
-   * drawn again at another zoom lit up already, and a new template moves and
-   * restyles everything rather than changing it. One function for every
-   * page, made once: react-pdf draws a text layer again whenever it's given a
-   * new one, which would also put out the light.
+   * Lights up the words that the PDF before didn't print, so what was just
+   * typed or styled stands out for a moment (`[data-changed]` in globals.css).
+   * Words are compared in order, each with its font, so bolding a word lights
+   * up that word alone, and a word moved to the next line isn't new.
+   * It's called as each page's text layer is drawn, and reads every page drawn
+   * since; once all of them are read, it compares. The first preview has
+   * nothing to compare with, the same PDF drawn again at another zoom lit up
+   * already, and a new template moves and restyles everything rather than
+   * changing it. One function for every page, made once: react-pdf draws a
+   * text layer again whenever it's given a new one, which would also put out
+   * the light.
    */
   const lightUpChanges = useCallback(() => {
     const shown = shownRef.current
-    if (!shown) return
+    const loaded = shown && loadedRef.current.get(shown.file)
+    if (!shown || !loaded) return
     let printed = printedRef.current
     if (printed?.file !== shown.file) {
-      // If none of the last PDF's text was drawn (it was replaced first), the one before it is still what to compare with.
-      if (printed?.pages.size) beforeRef.current = { template: printed.template, text: [...printed.pages.values()].flat() }
-      const unmatched = new Map<string, number>()
-      for (const text of beforeRef.current?.text ?? []) unmatched.set(text, (unmatched.get(text) ?? 0) + 1)
-      printed = printedRef.current = { file: shown.file, template: shown.template, pages: new Map(), unmatched }
+      printed = printedRef.current = { file: shown.file, template: shown.template, pages: loaded.numPages, words: new Map() }
     }
-    const { pages, template, unmatched } = printed
-    shownPagesRef.current.forEach((box, page) => {
+    const { words } = printed
+    shownPagesRef.current.forEach((box, index) => {
       const layer = box?.querySelector(".textLayer")
       // react-pdf ends a text layer with this once it's all drawn.
-      if (!layer?.querySelector(":scope > .endOfContent") || pages.has(page)) return
-      // Runs of text, not the empty spans pdf.js wraps some of them in.
-      const runs = [...layer.querySelectorAll<HTMLElement>("span")].filter(
-        (span) => span.childElementCount === 0 && span.textContent.trim(),
+      if (!layer?.querySelector(":scope > .endOfContent") || words.has(index)) return
+      words.set(index, null)
+      wordsOnPage(loaded, index + 1, layer).then(
+        (read) => {
+          if (printedRef.current !== printed) return
+          words.set(index, read)
+          const pages = Array.from({ length: printed.pages }, (_, page) => words.get(page))
+          if (pages.some((page) => !page)) return
+          const all = pages.flatMap((page) => page ?? [])
+          const before = beforeRef.current
+          beforeRef.current = { template: printed.template, words: all.map((word) => word.key) }
+          if (before?.template === printed.template) lightUp(all, before.words)
+        },
+        // The PDF closed first, as when a newer one replaced it.
+        () => {},
       )
-      pages.set(
-        page,
-        runs.map((run) => run.textContent),
-      )
-      if (beforeRef.current?.template !== template) return
-      const changed = runs.filter((run) => {
-        const text = run.textContent
-        const left = unmatched.get(text) ?? 0
-        if (left > 0) unmatched.set(text, left - 1)
-        return left === 0
-      })
-      if (changed.length <= MAX_LIT) for (const run of changed) run.dataset.changed = ""
     })
   }, [])
 
@@ -392,10 +396,11 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     if (event.button !== 0) return
     const selection = window.getSelection()
     if (!selection?.rangeCount || selection.isCollapsed) return
-    const range = selection.getRangeAt(0)
     const layers = [...(pagesRef.current?.querySelectorAll<HTMLElement>(".textLayer") ?? [])]
-    const layer = layers.find((layer) => layer.contains(range.startContainer))
+    const layer = layers.find((layer) => layer.contains(selection.getRangeAt(0).startContainer))
     if (!layer) return
+    if (event.detail === 3) selectLine(selection, layer)
+    const range = selection.getRangeAt(0)
     // Offsets in all the pages' text, as one string. A range's text is its
     // text nodes' as textContent joins them, so the two line up.
     const texts = layers.map((layer) => layer.textContent)
@@ -415,7 +420,13 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     requestAnimationFrame(() => setPickedAt(scrollerRef.current?.offsetParent ? at : null))
   }
 
+  // A PDF no drawing shows any more is closed by react-pdf, and forgotten here.
+  useEffect(() => {
+    for (const file of loadedRef.current.keys()) if (!files.includes(file)) loadedRef.current.delete(file)
+  })
+
   function onLoadError(file: string) {
+    loadedRef.current.delete(file)
     setDrawings((drawings) => drawings.filter((drawing) => drawing.file !== file))
     if (file === pdfUrl) setLoadError(true)
   }
@@ -585,6 +596,103 @@ function ZoomControls({ zoom, onOut, onReset, onIn }: { zoom: number; onOut: () 
 
 // Re-renders with a new PDF, and not with the rest of the editor.
 export default memo(PdfPreview)
+
+/**
+ * Widens a triple-click's selection to the whole printed line. pdf.js prints
+ * a line as a run of text for each font in it, each placed on its own, so the
+ * browser's triple-click selects one run and stops where a bold or italic
+ * word starts.
+ */
+function selectLine(selection: Selection, layer: HTMLElement) {
+  const start = selection.getRangeAt(0).startContainer
+  const run = (start instanceof Element ? start : start.parentElement)?.closest<HTMLElement>('span[role="presentation"]')
+  if (!run || !layer.contains(run)) return
+  const runs = [...layer.querySelectorAll<HTMLElement>('span[role="presentation"]')]
+  const line = run.getBoundingClientRect()
+  const onLine = (other: HTMLElement) => {
+    const { top, bottom } = other.getBoundingClientRect()
+    return (top + bottom) / 2 > line.top && (top + bottom) / 2 < line.bottom
+  }
+  let first = runs.indexOf(run)
+  let last = first
+  while (first > 0 && onLine(runs[first - 1])) first--
+  while (last < runs.length - 1 && onLine(runs[last + 1])) last++
+  selection.setBaseAndExtent(runs[first], 0, runs[last], runs[last].childNodes.length)
+}
+
+/** A word a page prints, keyed by its font and itself, and where it is in its run of text on screen. */
+interface PrintedWord extends Word {
+  key: string
+  run: HTMLElement
+}
+
+/** The words of a page whose text layer is drawn, or none if the layer isn't as pdf.js reads the page. */
+async function wordsOnPage(loaded: PDFDocumentProxy, pageNumber: number, layer: Element): Promise<PrintedWord[]> {
+  const page = await loaded.getPage(pageNumber)
+  const { items } = await page.getTextContent()
+  // pdf.js draws a span for each item of text that isn't empty, in order.
+  const texts = items.filter((item): item is TextItem => "str" in item && item.str !== "")
+  const runs = layer.querySelectorAll<HTMLElement>('span[role="presentation"]')
+  if (runs.length !== texts.length || texts.some((item, index) => runs[index].textContent !== item.str)) return []
+  return texts.flatMap((item, index) => {
+    const font = fontName(page, item.fontName)
+    return wordsIn(item.str).map((word) => ({ ...word, key: `${font} ${item.str.slice(word.start, word.end)}`, run: runs[index] }))
+  })
+}
+
+/**
+ * A font's own name, as "LibertinusSerif-Semibold". pdf.js's name for it is
+ * numbered for each PDF, in the order its fonts are first used, so it can't be
+ * compared from one PDF to the next. A subset's tag, as "ABCDEF+", is left
+ * off, since it can change with the letters used.
+ */
+function fontName(page: PDFPageProxy, loadedName: string): string {
+  if (!page.commonObjs.has(loadedName)) return loadedName
+  const font: { name?: unknown } = page.commonObjs.get(loadedName)
+  return typeof font.name === "string" ? font.name.replace(/^[A-Z]{6}\+/, "") : loadedName
+}
+
+/**
+ * Lights up the words of `words` that aren't in `before`, a stretch of them
+ * in a run at a time; a run that's new as a whole lights up itself.
+ */
+function lightUp(words: readonly PrintedWord[], before: readonly string[]) {
+  const added = newWords(
+    before,
+    words.map((word) => word.key),
+  )
+  const stretches = new Map<HTMLElement, Word[]>()
+  let count = 0
+  words.forEach((word, index) => {
+    if (!added[index]) return
+    const inRun = stretches.get(word.run) ?? []
+    const last = inRun[inRun.length - 1]
+    if (last && added[index - 1] && words[index - 1].run === word.run) last.end = word.end
+    else {
+      inRun.push({ start: word.start, end: word.end })
+      stretches.set(word.run, inRun)
+      count++
+    }
+  })
+  if (count > MAX_LIT) return
+  stretches.forEach((inRun, run) => {
+    const text = run.textContent
+    if (inRun.length === 1 && !text.slice(0, inRun[0].start).trim() && !text.slice(inRun[0].end).trim()) {
+      run.dataset.changed = ""
+      return
+    }
+    const parts: (string | HTMLElement)[] = []
+    let at = 0
+    for (const { start, end } of inRun) {
+      const lit = document.createElement("span")
+      lit.dataset.changed = ""
+      lit.textContent = text.slice(start, end)
+      parts.push(text.slice(at, start), lit)
+      at = end
+    }
+    run.replaceChildren(...parts, text.slice(at))
+  })
+}
 
 // Copying from the preview gives plain text, as pdf.js's own viewer does. The
 // selected text is the invisible copy over the canvas, so the browser's usual

@@ -161,6 +161,20 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
   expect(errors).toEqual([])
 })
 
+test("triple-clicking a line with a bold word on the preview selects the whole line, not the words up to the bold one", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  await open(page)
+  // pdf.js prints the line as three runs of text, around "fast".
+  const { first } = await wordsOnPreview(page, "Builds")
+  await expect.poll(() => textAt(page, first)).toBe(true)
+  await page.mouse.click(first.x, first.y, { clickCount: 3 })
+  await expect.poll(() => lit(page)).toEqual({ words: "Builds fast analytical engines", field: "Summary" })
+  expect(await selected(page)).toBe("Builds fast analytical engines.")
+  expect(errors).toEqual([])
+})
+
 test("selecting words on the preview keeps them selected to copy, and lights them up in their field", async ({ page }) => {
   const errors = pageErrors(page)
   await open(page)
@@ -246,6 +260,10 @@ test("words selected on the preview get the bold, italic, underline and link but
   await page.keyboard.press("Escape")
   await expect(toolbar).toBeHidden()
   await expect.poll(() => lit(page)).toBeNull()
+  // The PDF with the link, on screen alone, so the next words aren't selected
+  // on a page it replaces mid-drag, as on a slow machine.
+  await expect(preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com"]')).toHaveCount(1)
+  await expect(preview(page).locator(".react-pdf__Document")).toHaveCount(1)
   await dragOver(page, "younger students")
   await expect(toolbar).toBeVisible()
   await page.getByRole("heading", { level: 1 }).first().click()
