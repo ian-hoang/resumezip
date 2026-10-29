@@ -396,10 +396,11 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     if (event.button !== 0) return
     const selection = window.getSelection()
     if (!selection?.rangeCount || selection.isCollapsed) return
-    const range = selection.getRangeAt(0)
     const layers = [...(pagesRef.current?.querySelectorAll<HTMLElement>(".textLayer") ?? [])]
-    const layer = layers.find((layer) => layer.contains(range.startContainer))
+    const layer = layers.find((layer) => layer.contains(selection.getRangeAt(0).startContainer))
     if (!layer) return
+    if (event.detail === 3) selectLine(selection, layer)
+    const range = selection.getRangeAt(0)
     // Offsets in all the pages' text, as one string. A range's text is its
     // text nodes' as textContent joins them, so the two line up.
     const texts = layers.map((layer) => layer.textContent)
@@ -595,6 +596,29 @@ function ZoomControls({ zoom, onOut, onReset, onIn }: { zoom: number; onOut: () 
 
 // Re-renders with a new PDF, and not with the rest of the editor.
 export default memo(PdfPreview)
+
+/**
+ * Widens a triple-click's selection to the whole printed line. pdf.js prints
+ * a line as a run of text for each font in it, each placed on its own, so the
+ * browser's triple-click selects one run and stops where a bold or italic
+ * word starts.
+ */
+function selectLine(selection: Selection, layer: HTMLElement) {
+  const start = selection.getRangeAt(0).startContainer
+  const run = (start instanceof Element ? start : start.parentElement)?.closest<HTMLElement>('span[role="presentation"]')
+  if (!run || !layer.contains(run)) return
+  const runs = [...layer.querySelectorAll<HTMLElement>('span[role="presentation"]')]
+  const line = run.getBoundingClientRect()
+  const onLine = (other: HTMLElement) => {
+    const { top, bottom } = other.getBoundingClientRect()
+    return (top + bottom) / 2 > line.top && (top + bottom) / 2 < line.bottom
+  }
+  let first = runs.indexOf(run)
+  let last = first
+  while (first > 0 && onLine(runs[first - 1])) first--
+  while (last < runs.length - 1 && onLine(runs[last + 1])) last++
+  selection.setBaseAndExtent(runs[first], 0, runs[last], runs[last].childNodes.length)
+}
 
 /** A word a page prints, keyed by its font and itself, and where it is in its run of text on screen. */
 interface PrintedWord extends Word {

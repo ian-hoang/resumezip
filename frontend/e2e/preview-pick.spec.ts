@@ -161,6 +161,20 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
   expect(errors).toEqual([])
 })
 
+test("triple-clicking a line with a bold word on the preview selects the whole line, not the words up to the bold one", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  await open(page)
+  // pdf.js prints the line as three runs of text, around "fast".
+  const { first } = await wordsOnPreview(page, "Builds")
+  await expect.poll(() => textAt(page, first)).toBe(true)
+  await page.mouse.click(first.x, first.y, { clickCount: 3 })
+  await expect.poll(() => lit(page)).toEqual({ words: "Builds fast analytical engines", field: "Summary" })
+  expect(await selected(page)).toBe("Builds fast analytical engines.")
+  expect(errors).toEqual([])
+})
+
 test("selecting words on the preview keeps them selected to copy, and lights them up in their field", async ({ page }) => {
   const errors = pageErrors(page)
   await open(page)
