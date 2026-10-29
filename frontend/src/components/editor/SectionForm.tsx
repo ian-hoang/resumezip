@@ -8,7 +8,7 @@ import { isLeftOut } from "@/lib/leftOut"
 import type { Entry } from "@/lib/resume"
 import { EyeIcon, RowAction, RowToggle, TrashIcon } from "@/components/dashboard/RowActions"
 import { sheetPill } from "@/components/pills"
-import { useCheckActions, useCheckTarget } from "./CheckContext"
+import { useCheckActions, useCheckTarget, usePointer } from "./CheckContext"
 import DeleteSection from "./DeleteSection"
 import { loadDragAndDrop, loadedDragAndDrop } from "./dragAndDrop"
 import { bulletsOf, datesOf, newestFirst } from "./entryCards"
@@ -169,12 +169,14 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
   const flagAt = (index: number, field?: string) =>
     here?.kind === "entry" && here.entry === index && here.field === field ? target!.finding : null
 
-  // When the person chooses a finding here, open its entry, then move to its
-  // field once the entry has slid open: just once, not each time it's shown.
+  // When the person chooses a finding here, or picks words on the preview,
+  // open its entry, then move to its field once the entry has slid open:
+  // just once, not each time it's shown.
+  const pointer = usePointer()
   useEffect(() => {
-    const place = target?.finding.place
-    if (!target || !place || !("section" in place) || place.section !== section.name) return
-    if (!pending(target.request)) return
+    const place = pointer?.place
+    if (!pointer || !place || !("section" in place) || place.section !== section.name) return
+    if (!pending(pointer.request)) return
     const entry = place.kind === "entry" ? latest.current[place.entry] : undefined
     if (place.kind === "entry" && !entry) return
     const sliding = entry !== undefined && entry.id !== openRef.current && !reducedMotion()
@@ -186,7 +188,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     }
     const timer = setTimeout(
       () => {
-        if (!claim(target.request)) return
+        if (!claim(pointer.request)) return
         if (place.kind === "heading") {
           pointAt(heading.current?.querySelector<HTMLElement>('button[aria-label="Rename section"]'), undefined, heading.current)
         } else if (place.kind === "section") {
@@ -194,13 +196,14 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
         } else if (entry) {
           const card = elements.current.get(entry.id)
           const selector = place.field ? `[data-field="${place.field}"] ${TYPED}` : FIRST_FIELD
-          pointAt(card?.querySelector<HTMLElement>(selector), place.line)
+          const field = card?.querySelector<HTMLElement>(selector)
+          pointAt(field, place.line, field, pointer.words, pointer.look)
         }
       },
       sliding ? SLIDE_MS : 0,
     )
     return () => clearTimeout(timer)
-  }, [target, pending, claim, section.name])
+  }, [pointer, pending, claim, section.name])
 
   // Asking to confirm a delete moves focus to Keep, so Escape or Enter backs out.
   useEffect(() => {

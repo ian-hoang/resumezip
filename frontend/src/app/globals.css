@@ -422,6 +422,17 @@
    (lightUpChanges in components/editor/PdfPreview.tsx). It fades; with less
    motion it stays as it is for the moment, then goes. Outside a layer, as
    react-pdf's own text layer styles are. */
+/* Words selected on the preview, lit up in the field that printed them
+   while they stay selected there (pointAt in components/editor/fields.tsx).
+   An input lights up as a whole, as a highlight can't reach its value. */
+/* Apart, as a browser without CSS highlights would drop a rule naming one. */
+::highlight(picked) {
+  background-color: var(--color-accent-soft);
+}
+[data-picked] {
+  background-color: var(--color-accent-soft);
+}
+
 .textLayer [data-changed] {
   border-radius: 2px;
   animation: changed 1600ms ease-out forwards;

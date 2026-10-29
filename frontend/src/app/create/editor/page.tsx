@@ -404,6 +404,8 @@ function Editor({ id }: { id: string }) {
     setView(next)
     requestAnimationFrame(() => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }))
   }
+  // Words picked on the preview open in the form, which scrolls to them rather than to where you were.
+  const showForm = useCallback(() => setView("edit"), [])
 
   const download = async () => {
     const resume = read()
@@ -529,7 +531,7 @@ function Editor({ id }: { id: string }) {
     // it back.
     <div className="desk desk-bright flex min-h-screen flex-col p-2 pb-24 sm:p-6 sm:pb-24 xl:h-screen xl:overflow-clip xl:pb-6">
       {/* All of it shares what the checker found: the left bar lists it and the forms point at it. */}
-      <CheckProvider onSelect={select} preview={preview} unbuilt={unbuilt}>
+      <CheckProvider onSelect={select} onPick={showForm} preview={preview} unbuilt={unbuilt}>
         <div className="paper-frame flex flex-1 flex-col xl:min-h-0">
           <div className="paper flex flex-1 flex-col xl:min-h-0">
             {/* Raised (z-40) over the columns and the Edit / Preview switch: the menus and the
