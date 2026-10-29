@@ -11,7 +11,7 @@ import { sheetPill } from "@/components/pills"
 import { useCheckActions, useCheckTarget } from "./CheckContext"
 import DeleteSection from "./DeleteSection"
 import { loadDragAndDrop, loadedDragAndDrop } from "./dragAndDrop"
-import { datesOf, newestFirst } from "./entryCards"
+import { newestFirst } from "./entryCards"
 import { BulletsField, Field, FlagNote, pointAt, SectionHeading } from "./fields"
 import { reducedMotion, reveal, scrollerOf } from "./layout"
 import PaperFromLink from "./PaperFromLink"
@@ -95,7 +95,7 @@ function summaryOf(section: SectionDef, entry: Entry): string {
  * The form for one list section (education, experience, ...): its title and
  * its entries, each a card. One card is open at a time, with its fields; the
  * rest are folded to a line naming them, as "Stanford University" or
- * "Languages · TypeScript, Go", and their dates under it. An open card's name is its
+ * "Languages · TypeScript, Go". An open card's name is its
  * first field, typed in where it's shown.
  */
 function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }: SectionFormProps) {
@@ -416,7 +416,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const second = suffixKey ? (entry[suffixKey]?.trim() ?? "") : ""
     // Folded, a card with no name of its own goes by its next field, or else its first filled one.
     const folded = named || second || summaryOf(section, entry)
-    const dates = datesOf(section.name, entry)
     const titleFlag = flagAt(index, titleField.key)
     const titleNote = `${titleNotes}-${entry.id}`
 
@@ -438,8 +437,9 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
         {/* Clipped only while it folds away, as clipping it always would cut its shadow off. The
             room round it keeps its ring and focus in view then. */}
         <section className={`-m-1.5 min-h-0 p-1.5 ${entry.id === removingId ? "overflow-hidden" : ""}`}>
-          {/* Asked whether to delete it, its edge turns red, its name stays, and its fields fade,
-              so it's clear what would go. Open, it stands off the sheet; picked up, further. */}
+          {/* The card is the entry's name alone, open or folded; open, its fields hang under it
+              on the sheet. Asked whether to delete it, its edge turns red, its name stays, and its
+              fields fade, so it's clear what would go. Open, it stands off the sheet; picked up, further. */}
           <div
             data-card
             className={`rounded-[18px] border bg-sheet transition-[border-color,box-shadow] duration-300 motion-reduce:transition-none ${
@@ -452,7 +452,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                     : "border-hairline shadow-card-rest hover:border-[#dcdfe5]"
             }`}
           >
-            <div className={`flex items-center gap-1 px-2 ${isOpen ? "pb-2.5 pt-3.5" : "py-[11px]"}`}>
+            <div className="flex items-center gap-1 px-2 py-1.5">
               <span
                 {...drag?.dragHandleProps}
                 aria-label={drag && `Reorder ${name}`}
@@ -505,7 +505,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                     {named && second && <span className="text-ink-3"> · {second}</span>}
                     {leftOut && <span className="text-ink-3"> · Left out</span>}
                   </p>
-                  {dates && <p className="mt-0.5 truncate text-[13px] text-ink-3">{dates}</p>}
                 </div>
               )}
 
@@ -588,69 +587,69 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                 )}
               </div>
             </div>
+          </div>
 
-            {/* The fields slide open and closed. */}
-            <div
-              className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
-                entry.id === shownId && isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              }`}
-            >
-              {/* The container whose width lays out the fields (FIELD_SPAN). It's here rather than
+          {/* The fields slide open and closed, on a line down from the card's grip. */}
+          <div
+            className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+              entry.id === shownId && isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+          >
+            {/* The container whose width lays out the fields (FIELD_SPAN). It's here rather than
                   around the whole form: Safari before 26 doesn't place a fixed element inside a
                   query container right (WebKit bug 284945), and an entry being dragged is fixed. */}
-              <div
-                className={`@container min-h-0 overflow-hidden transition-[opacity,filter] duration-200 motion-reduce:transition-none ${
-                  confirming ? "opacity-30 grayscale" : ""
-                }`}
-                inert={!isOpen || confirming}
-              >
-                <div className="flex flex-col gap-4 px-[17px] pb-5 pt-2">
-                  {/* Its eye puts it back too; this says what leaving out means. */}
-                  {leftOut && (
-                    <p className="text-[13px] leading-normal text-ink-3">
-                      Left out of the PDF, and of the copy of the resume inside it. It stays here, in this browser.{" "}
-                      <button
-                        type="button"
-                        onClick={() => setLeftOut(entry.id, false)}
-                        className="font-medium text-accent underline-offset-4 hover:underline"
-                      >
-                        Put it back
-                      </button>
-                    </p>
-                  )}
-                  {flagAt(index) && <FlagNote finding={flagAt(index)!} />}
-                  {titleFlag && <FlagNote id={titleNote} finding={titleFlag} />}
-                  <div className={CARD_GRID}>
-                    {fields.map((field) => {
-                      const flag = flagAt(index, field.key)
-                      return field.type === "bullets" ? (
-                        <BulletsField
-                          key={`${field.key}:${isOpen ? opened : "folded"}`}
-                          name={field.key}
-                          label={field.label}
-                          placeholder={field.placeholder}
-                          value={entry[field.key] ?? ""}
-                          onChange={(value) => update(entry.id, field.key, value)}
-                          className={FIELD_SPAN[field.size]}
-                          flag={flag}
-                          request={flag ? target!.request : undefined}
-                          compact
-                        />
-                      ) : (
-                        <Field
-                          key={field.key}
-                          name={field.key}
-                          label={field.label}
-                          placeholder={field.placeholder}
-                          hint={field.hint}
-                          value={entry[field.key] ?? ""}
-                          onChange={(value) => update(entry.id, field.key, value)}
-                          className={FIELD_SPAN[field.size]}
-                          flag={flag}
-                        />
-                      )
-                    })}
-                  </div>
+            <div
+              className={`@container min-h-0 overflow-hidden transition-[opacity,filter] duration-200 motion-reduce:transition-none ${
+                confirming ? "opacity-30 grayscale" : ""
+              }`}
+              inert={!isOpen || confirming}
+            >
+              <div className="mb-3 ml-[22px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[25px] pt-3">
+                {/* Its eye puts it back too; this says what leaving out means. */}
+                {leftOut && (
+                  <p className="text-[13px] leading-normal text-ink-3">
+                    Left out of the PDF, and of the copy of the resume inside it. It stays here, in this browser.{" "}
+                    <button
+                      type="button"
+                      onClick={() => setLeftOut(entry.id, false)}
+                      className="font-medium text-accent underline-offset-4 hover:underline"
+                    >
+                      Put it back
+                    </button>
+                  </p>
+                )}
+                {flagAt(index) && <FlagNote finding={flagAt(index)!} />}
+                {titleFlag && <FlagNote id={titleNote} finding={titleFlag} />}
+                <div className={CARD_GRID}>
+                  {fields.map((field) => {
+                    const flag = flagAt(index, field.key)
+                    return field.type === "bullets" ? (
+                      <BulletsField
+                        key={`${field.key}:${isOpen ? opened : "folded"}`}
+                        name={field.key}
+                        label={field.label}
+                        placeholder={field.placeholder}
+                        value={entry[field.key] ?? ""}
+                        onChange={(value) => update(entry.id, field.key, value)}
+                        className={FIELD_SPAN[field.size]}
+                        flag={flag}
+                        request={flag ? target!.request : undefined}
+                        compact
+                      />
+                    ) : (
+                      <Field
+                        key={field.key}
+                        name={field.key}
+                        label={field.label}
+                        placeholder={field.placeholder}
+                        hint={field.hint}
+                        value={entry[field.key] ?? ""}
+                        onChange={(value) => update(entry.id, field.key, value)}
+                        className={FIELD_SPAN[field.size]}
+                        flag={flag}
+                      />
+                    )
+                  })}
                 </div>
               </div>
             </div>

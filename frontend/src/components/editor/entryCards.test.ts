@@ -1,32 +1,12 @@
 import { describe, expect, test } from "vitest"
 import type { Entry } from "@/lib/resume"
-import { datesOf, newestFirst } from "./entryCards"
+import { newestFirst } from "./entryCards"
 
 const job = (id: number, start: string, end: string, more: Partial<Entry> = {}): Entry => ({
   id,
   workStartDate: start,
   workEndDate: end,
   ...more,
-})
-
-describe("datesOf", () => {
-  test("leaves the year off the start when both dates are in one year", () => {
-    expect(datesOf("Work", job(1, "May 2025", "Aug 2025"))).toBe("May – Aug 2025")
-    expect(datesOf("Work", job(1, "Sep 2024", "Dec 2025"))).toBe("Sep 2024 – Dec 2025")
-    expect(datesOf("Work", job(1, "Jan 2026", "Present"))).toBe("Jan 2026 – Present")
-  })
-
-  test("shows one date alone, and a date it can't read as written", () => {
-    expect(datesOf("Work", job(1, "May 2025", ""))).toBe("May 2025")
-    expect(datesOf("Work", job(1, "", "Aug 2025"))).toBe("Aug 2025")
-    expect(datesOf("Work", job(1, "2024", "2025"))).toBe("2024 – 2025")
-    expect(datesOf("Work", job(1, "Summer", "Fall 2025"))).toBe("Summer – Fall 2025")
-  })
-
-  test("shows a section's one date field as it's written, and nothing for a section without dates", () => {
-    expect(datesOf("Projects", { id: 1, projectDate: "Jun – Aug 2025" })).toBe("Jun – Aug 2025")
-    expect(datesOf("Skills", { id: 1, skillName: "Languages" })).toBe("")
-  })
 })
 
 describe("newestFirst", () => {

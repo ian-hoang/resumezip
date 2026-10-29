@@ -71,6 +71,11 @@ test("an entry is a card, folded to its name and what's in it, opened with a cli
   await expect(page.getByText("3 entries · drag to reorder", { exact: true })).toBeVisible()
   // Open, its name, the company alone, is typed in where it's shown.
   await expect(page.getByRole("textbox", { name: "Company" }).first()).toHaveValue("Google")
+  // Its card is its name alone, as folded; its fields are under the card, not in it.
+  const openCard = page.locator("[data-card]").first()
+  await expect(openCard.getByRole("textbox", { name: "Company" })).toBeVisible()
+  await expect(openCard.getByRole("textbox", { name: "Role" })).toHaveCount(0)
+  await expect(page.getByRole("textbox", { name: "Role" }).first()).toHaveValue("Engineer")
   await expect(page.getByText("· Engineer", { exact: true })).toHaveCount(0)
 
   // Its bullets show two at a time until the box is used, which then shows them all. (The folded
@@ -184,7 +189,7 @@ test("a school's card is named by the school alone, and volunteering's and leade
   expect(errors).toEqual([])
 })
 
-test("a folded card shows its dates in a few words, and the note under the title says when the newest is first", async ({ page }) => {
+test("a card shows its name alone, no dates, and the note under the title says when the newest is first", async ({ page }) => {
   const errors = pageErrors(page)
   await openSection(page, "Experience", {
     ...RESUME,
@@ -209,7 +214,9 @@ test("a folded card shows its dates in a few words, and the note under the title
     ],
   })
   await expect(page.getByText("2 entries · newest first", { exact: true })).toBeVisible()
-  await expect(page.getByText("Sep – Dec 2024", { exact: true })).toBeVisible()
+  const folded = page.locator("[data-card]").nth(1)
+  await expect(folded.getByText("Initech", { exact: true })).toBeVisible()
+  await expect(folded).not.toContainText("2024")
   // The open card's long bullet is cut short at a word.
   await expect(page.getByText("• Built a service that cut page load time by 30% for twelve million…", { exact: true })).toBeVisible()
 
