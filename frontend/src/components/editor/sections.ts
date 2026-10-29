@@ -108,7 +108,7 @@ const dates = <Prefix extends string>(prefix: Prefix) =>
 const bullets = <Key extends string>(key: Key) =>
   ({
     key,
-    label: "What you did",
+    label: "Description",
     placeholder: "Built a service that cut page load time by 30%",
     size: "full",
     type: "bullets",

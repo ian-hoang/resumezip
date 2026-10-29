@@ -497,7 +497,7 @@ test("choosing a finding far down a long list opens its field without pushing th
   await expect(page.getByRole("button", { name: "Done editing entry 7" })).toBeVisible()
   await panel.getByRole("button", { name: /Experience → Company 7 · bullet 2/ }).click()
   // Its field is marked with the finding, and scrolled to: it started below the form's foot.
-  const field = page.getByRole("textbox", { name: "What you did" }).last()
+  const field = page.getByRole("textbox", { name: "Description" }).last()
   await expect(field).toHaveAccessibleDescription(/Same as another bullet/)
   await expect(field).toBeInViewport()
   // The top bar stays where it was: nothing scrolled the frame it's in, which no wheel scrolls back.
@@ -517,7 +517,7 @@ test("with Check open, the PDF is read too: a bullet that runs three lines is fl
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await bullets.fill(
     "Wrote the first published algorithm for the Analytical Engine, a method for computing Bernoulli numbers that ran to " +
       "twenty-five steps, and explained in seven long notes how the engine could act on symbols as well as numbers, " +

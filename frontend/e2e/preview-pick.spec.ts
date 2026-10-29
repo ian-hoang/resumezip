@@ -129,7 +129,7 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
 
   // A bullet, in a section that isn't open.
   await doubleClick(page, "published")
-  await expect.poll(() => lit(page)).toEqual({ words: "published", field: "What you did" })
+  await expect.poll(() => lit(page)).toEqual({ words: "published", field: "Description" })
   expect(await selected(page)).toBe("published")
   expect(await selectedInForm(page)).toBeNull()
 
@@ -138,7 +138,7 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
   await page.mouse.click(first.x, first.y, { clickCount: 3 })
   await expect
     .poll(() => lit(page))
-    .toMatchObject({ words: expect.stringContaining("Wrote the first published program"), field: "What you did" })
+    .toMatchObject({ words: expect.stringContaining("Wrote the first published program"), field: "Description" })
   expect(await selected(page)).toContain("published program")
 
   // The summary, and a text section, where "Italian" is printed by a bullet too.
@@ -179,8 +179,8 @@ test("selecting words on the preview keeps them selected to copy, and lights the
   expect(copied).toBe("lecture notes from")
 
   // Their field opens with them lit up, and the cursor stays out of the form.
-  await expect.poll(() => lit(page)).toEqual({ words: "lecture notes from", field: "What you did" })
-  await expect(page.getByRole("textbox", { name: "What you did" }).first()).toBeInViewport()
+  await expect.poll(() => lit(page)).toEqual({ words: "lecture notes from", field: "Description" })
+  await expect(page.getByRole("textbox", { name: "Description" }).first()).toBeInViewport()
   expect(await selectedInForm(page)).toBeNull()
 
   // An input can't light up its words, so it lights up as a whole. A click anywhere puts the light out.
@@ -205,7 +205,7 @@ test("on a phone, a word double-clicked on the preview opens the form", async ({
   await open(page, { width: 390, height: 844 })
   await doubleClick(page, "mathematics")
   await expect(preview(page)).toBeHidden()
-  await expect(focused(page)).toHaveAccessibleName("What you did")
+  await expect(focused(page)).toHaveAccessibleName("Description")
   await expect.poll(() => selectedInForm(page)).toBe("mathematics")
   expect(errors).toEqual([])
 })

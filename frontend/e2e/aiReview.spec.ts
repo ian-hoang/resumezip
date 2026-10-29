@@ -189,7 +189,7 @@ test("AI notes are kept in the browser: the same resume shows them again without
   await expect(page.getByRole("tooltip")).toContainText("Tested the checkout service, catching [number] bugs before release")
   // Choosing it opens the words it's about, which say the note to a screen reader, not under the field.
   await row.click()
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await expect(bullets).toBeFocused()
   await expect(bullets).toHaveAccessibleDescription(/Red flag: Says what you did, not what changed/)
   // The note that was never on a line is about the whole resume, and has nothing to open.
@@ -255,7 +255,7 @@ test("a reviewed file is kept as a past review, which opens as it was reviewed, 
   const notes = page.getByRole("region", { name: "AI notes" })
   await expect(page.getByRole("button", { name: "Red flag: Says what you did, not what changed" })).toBeAttached({ timeout: 60_000 })
   await notes.getByRole("button", { name: /Says what you did, not what changed/ }).click()
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await expect(bullets).toBeFocused()
   await bullets.fill("• Built a deploy tool that cut release time from two hours to ten minutes for 40 engineers")
   const again = notes.getByRole("button", { name: "Get new notes for this version" })

@@ -17,7 +17,7 @@ import {
 // Entries and bullets can be moved, and left out of the PDF without being
 // deleted, to tailor one resume to a job.
 
-const BULLETS = "What you did"
+const BULLETS = "Description"
 const RESUME = {
   id: "tailored",
   resumeTitle: "Tailored",
@@ -84,6 +84,9 @@ test("an entry is a card, folded to its name and what's in it, opened with a cli
   await expect(box).toBeVisible()
   await expectText(box, "• Built the search index\n• Cut serving costs by 30%\n• Mentored four interns")
   await expect(page.getByText("+ 1 more", { exact: true })).toHaveCount(0)
+  // Its box is named Description, with no line of keys under it: the buttons over selected words show them.
+  await expect(box).toHaveAccessibleName("Description")
+  await expect(page.getByText(/One bullet per line/)).toHaveCount(0)
 
   await done.click()
   await expect(done).toHaveCount(0)

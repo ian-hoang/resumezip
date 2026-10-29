@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react"
 import { Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
-import { onMac, shortcut } from "@/lib/keys"
+import { shortcut } from "@/lib/keys"
 import { bulletLines, offsetOfLine, withBullets } from "./arrange"
 import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
@@ -265,15 +265,11 @@ export function pointAt(
   view?.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" })
 }
 
-// With Option on a Mac, Alt elsewhere: ⌥↑, Alt+↑.
-const altShortcut = (key: string) => (onMac() ? `⌥${key}` : `Alt+${key}`)
-
 /**
- * The keys for bold and italic, and with `moveLines`, for moving a line. A
- * touch screen has no keys, so it shows the marks to type, which turn bold and
- * italic as they're typed.
+ * The keys for bold and italic. A touch screen has no keys, so it shows the
+ * marks to type, which turn bold and italic as they're typed.
  */
-function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
+function FormatHint() {
   return window.matchMedia("(pointer: coarse)").matches ? (
     <>
       <span className="font-mono">**bold**</span> · <span className="font-mono">*italic*</span>
@@ -282,12 +278,6 @@ function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
     <>
       <kbd className="font-mono">{shortcut("B")}</kbd> <strong className="font-semibold text-ink">bold</strong> ·{" "}
       <kbd className="font-mono">{shortcut("I")}</kbd> <em className="text-ink">italic</em>
-      {moveLines && (
-        <>
-          {" "}
-          · <kbd className="font-mono">{altShortcut("↑")}</kbd> <kbd className="font-mono">{altShortcut("↓")}</kbd> move a line
-        </>
-      )}
     </>
   )
 }
@@ -303,7 +293,11 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
   const boxId = useId()
   const hintId = useId()
   const noteId = useId()
-  const bullets = bulletLines(text)
+  // No line of keys under the box: the buttons over selected words show them,
+  // and on a phone take the place of typing marks. Only what ○ does is said
+  // there, while a line starts with one.
+  const leftOut = bulletLines(text).some((bullet) => bullet.leftOut)
+  const describedBy = [leftOut && hintId, flag && noteId].filter(Boolean).join(" ") || undefined
 
   return (
     <div data-field={name} className={`group/field flex min-w-0 flex-col gap-1.5 ${className}`}>
@@ -324,7 +318,7 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
           value={value}
           onChange={onChange}
           labelId={`${boxId}-label`}
-          describedBy={flag ? `${hintId} ${noteId}` : hintId}
+          describedBy={describedBy}
           invalid={flag?.level === "fix"}
           placeholder={placeholder}
           className={`${underlined(!!flag)} min-h-[132px] leading-relaxed`}
@@ -332,10 +326,11 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
         <FocusLine />
       </div>
       {flag && <FlagNote id={noteId} finding={flag} />}
-      <span id={hintId} className="text-[13px] leading-normal text-ink-2">
-        One bullet per line · <FormatHint moveLines />
-        {bullets.some((bullet) => bullet.leftOut) && " · Lines starting with ○ are left out of the PDF."}
-      </span>
+      {leftOut && (
+        <span id={hintId} className="text-[13px] leading-normal text-ink-2">
+          Lines starting with ○ are left out of the PDF.
+        </span>
+      )}
     </div>
   )
 }

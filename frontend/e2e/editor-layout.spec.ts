@@ -13,7 +13,7 @@ const ENTRY = {
   Start: "Jan 2024",
   End: "Present",
 }
-const BULLETS = "What you did"
+const BULLETS = "Description"
 const LONG_BULLETS = [
   "Built a service that cut page load time by 30% for twelve million monthly visitors across four regions",
   "Led the migration of the billing system from a monolith to event-driven services with zero downtime",

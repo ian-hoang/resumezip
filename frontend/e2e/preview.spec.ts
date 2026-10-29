@@ -141,7 +141,7 @@ test("a second copy of a line already on the page lights up too", async ({ page 
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Role", { exact: true }).fill("Engineer")
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await bullets.fill("• Wrote the tests")
   const lines = preview(page).getByText("Wrote the tests")
   await expect(lines).toHaveCount(1)
