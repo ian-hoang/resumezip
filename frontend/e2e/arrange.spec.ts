@@ -86,10 +86,10 @@ test("an entry is a card, folded to its name and what's in it, opened with a cli
   await expect(done).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Edit entry 1" })).toBeVisible()
 
-  // Folded, it shows its name and how many bullets it has, and a click on it opens it again,
+  // Folded, it shows its name, not how many bullets it has, and a click on it opens it again,
   // with its bullets two at a time again.
-  await expect(page.getByText("3 bullets", { exact: true })).toBeVisible()
   const card = page.locator("[data-card]").first()
+  await expect(card).not.toContainText("bullets")
   await expect(card.getByText("Google", { exact: true })).toBeVisible()
   await expect(card).not.toContainText("Engineer")
   await card.getByText("Google", { exact: true }).click()
@@ -209,7 +209,7 @@ test("a folded card shows its dates in a few words, and the note under the title
     ],
   })
   await expect(page.getByText("2 entries · newest first", { exact: true })).toBeVisible()
-  await expect(page.getByText("Sep – Dec 2024 · 1 bullet", { exact: true })).toBeVisible()
+  await expect(page.getByText("Sep – Dec 2024", { exact: true })).toBeVisible()
   // The open card's long bullet is cut short at a word.
   await expect(page.getByText("• Built a service that cut page load time by 30% for twelve million…", { exact: true })).toBeVisible()
 

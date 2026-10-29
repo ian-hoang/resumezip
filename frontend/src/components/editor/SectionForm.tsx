@@ -11,7 +11,7 @@ import { sheetPill } from "@/components/pills"
 import { useCheckActions, useCheckTarget } from "./CheckContext"
 import DeleteSection from "./DeleteSection"
 import { loadDragAndDrop, loadedDragAndDrop } from "./dragAndDrop"
-import { bulletsOf, datesOf, newestFirst } from "./entryCards"
+import { datesOf, newestFirst } from "./entryCards"
 import { BulletsField, Field, FlagNote, pointAt, SectionHeading } from "./fields"
 import { reducedMotion, reveal, scrollerOf } from "./layout"
 import PaperFromLink from "./PaperFromLink"
@@ -95,7 +95,7 @@ function summaryOf(section: SectionDef, entry: Entry): string {
  * The form for one list section (education, experience, ...): its title and
  * its entries, each a card. One card is open at a time, with its fields; the
  * rest are folded to a line naming them, as "Stanford University" or
- * "Languages · TypeScript, Go", and their dates and bullets under it. An open card's name is its
+ * "Languages · TypeScript, Go", and their dates under it. An open card's name is its
  * first field, typed in where it's shown.
  */
 function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }: SectionFormProps) {
@@ -416,7 +416,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const second = suffixKey ? (entry[suffixKey]?.trim() ?? "") : ""
     // Folded, a card with no name of its own goes by its next field, or else its first filled one.
     const folded = named || second || summaryOf(section, entry)
-    const meta = [datesOf(section.name, entry), bulletsOf(section, entry)].filter(Boolean).join(" · ")
+    const dates = datesOf(section.name, entry)
     const titleFlag = flagAt(index, titleField.key)
     const titleNote = `${titleNotes}-${entry.id}`
 
@@ -505,7 +505,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                     {named && second && <span className="text-ink-3"> · {second}</span>}
                     {leftOut && <span className="text-ink-3"> · Left out</span>}
                   </p>
-                  {meta && <p className="mt-0.5 truncate text-[13px] text-ink-3">{meta}</p>}
+                  {dates && <p className="mt-0.5 truncate text-[13px] text-ink-3">{dates}</p>}
                 </div>
               )}
 

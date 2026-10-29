@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest"
 import type { Entry } from "@/lib/resume"
-import { bulletsOf, datesOf, newestFirst } from "./entryCards"
-import { SECTIONS } from "./sections"
+import { datesOf, newestFirst } from "./entryCards"
 
 const job = (id: number, start: string, end: string, more: Partial<Entry> = {}): Entry => ({
   id,
@@ -27,15 +26,6 @@ describe("datesOf", () => {
   test("shows a section's one date field as it's written, and nothing for a section without dates", () => {
     expect(datesOf("Projects", { id: 1, projectDate: "Jun – Aug 2025" })).toBe("Jun – Aug 2025")
     expect(datesOf("Skills", { id: 1, skillName: "Languages" })).toBe("")
-  })
-})
-
-describe("bulletsOf", () => {
-  test("counts the bullets with words in them", () => {
-    expect(bulletsOf(SECTIONS.Work, { id: 1, workDescription: "• Built it\n• Ran it\n• " })).toBe("2 bullets")
-    expect(bulletsOf(SECTIONS.Work, { id: 1, workDescription: "• Built it" })).toBe("1 bullet")
-    expect(bulletsOf(SECTIONS.Work, { id: 1 })).toBe("")
-    expect(bulletsOf(SECTIONS.Skills, { id: 1, skillDetails: "Go, Rust" })).toBe("")
   })
 })
 

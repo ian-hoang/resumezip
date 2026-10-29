@@ -1,12 +1,11 @@
 // What an entry's card says about it while it's folded (SectionForm.tsx): its
-// dates in a few words and how many bullets it has, and whether a section's
-// entries are in the order the checker wants, newest first.
+// dates in a few words, and whether a section's entries are in the order the
+// checker wants, newest first.
 
 import { isLeftOut } from "@/lib/leftOut"
 import { compareDates, DATE_FIELDS, readDate, readDateRange, type ResumeDate } from "@/lib/check/readDate"
 import type { Entry } from "@/lib/resume"
-import { bulletLines } from "./arrange"
-import type { SectionDef, SectionName } from "./sections"
+import type { SectionName } from "./sections"
 
 const text = (entry: Entry, key: string) => (entry as Record<string, unknown>)[key]
 
@@ -31,14 +30,6 @@ export function datesOf(section: SectionName, entry: Entry): string {
   const sameYear = from && to && !from.present && !to.present && from.year !== undefined && from.year === to.year
   const month = start.replace(TRAILING_YEAR, "")
   return sameYear && from.month !== undefined && month && month !== start ? `${month} – ${end}` : `${start} – ${end}`
-}
-
-/** How many bullets an entry has, in its section's bullets field, if it has one: "2 bullets". */
-export function bulletsOf(section: SectionDef, entry: Entry): string {
-  const field = section.fields.find((def) => def.type === "bullets")
-  if (!field) return ""
-  const count = bulletLines(trimmed(text(entry, field.key))).filter((bullet) => bullet.words.trim()).length
-  return count === 0 ? "" : `${count} ${count === 1 ? "bullet" : "bullets"}`
 }
 
 /** An entry's start and end, from two fields or a range in one, for putting entries in order. */
