@@ -544,29 +544,30 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                       Delete
                     </button>
                   </span>
-                ) : isOpen ? (
-                  <RowAction
-                    key="delete"
-                    data-delete=""
-                    label={`Delete ${name}`}
-                    tip="Delete"
-                    danger
-                    onClick={() => setConfirmingId(entry.id)}
-                    tipBelow
-                  >
-                    <TrashIcon />
-                  </RowAction>
                 ) : (
-                  <RowToggle
-                    key="include"
-                    label={`Include ${name} in the PDF`}
-                    tip={leftOut ? "Put back in the PDF" : "Leave out of the PDF"}
-                    checked={!leftOut}
-                    onChange={(checked) => setLeftOut(entry.id, !checked)}
-                    tipBelow
-                  >
-                    <EyeIcon shut={leftOut} />
-                  </RowToggle>
+                  <>
+                    <RowToggle
+                      key="include"
+                      label={`Include ${name} in the PDF`}
+                      tip={leftOut ? "Put back in the PDF" : "Leave out of the PDF"}
+                      checked={!leftOut}
+                      onChange={(checked) => setLeftOut(entry.id, !checked)}
+                      tipBelow
+                    >
+                      <EyeIcon shut={leftOut} />
+                    </RowToggle>
+                    <RowAction
+                      key="delete"
+                      data-delete=""
+                      label={`Delete ${name}`}
+                      tip="Delete"
+                      danger
+                      onClick={() => setConfirmingId(entry.id)}
+                      tipBelow
+                    >
+                      <TrashIcon />
+                    </RowAction>
+                  </>
                 )}
                 {!confirming && (
                   // One button that folds the card and opens it, its chevron turning.
@@ -604,7 +605,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                 inert={!isOpen || confirming}
               >
                 <div className="flex flex-col gap-4 px-[17px] pb-5 pt-2">
-                  {/* Its eye is on its folded card: open, this is how it's put back. */}
+                  {/* Its eye puts it back too; this says what leaving out means. */}
                   {leftOut && (
                     <p className="text-[13px] leading-normal text-ink-3">
                       Left out of the PDF, and of the copy of the resume inside it. It stays here, in this browser.{" "}

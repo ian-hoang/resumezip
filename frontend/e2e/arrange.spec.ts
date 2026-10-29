@@ -318,7 +318,6 @@ test("a section with every entry left out isn't printed, title and all", async (
   await openSection(page, "Skills")
   await expect.poll(() => printed(page)).toContain("Python, Rust")
 
-  // Its eye is on its card, folded.
   await page.getByRole("button", { name: "Done editing entry 1" }).click()
   await page.getByRole("checkbox", { name: "Include entry 1 in the PDF" }).uncheck()
   await expect
@@ -470,6 +469,77 @@ test("the checker skips what's left out, and opens the right entry after it", as
   await expect(box).toBeFocused()
   await expect.poll(selected).toBe("Responsible for the search index")
 
+  expect(errors).toEqual([])
+})
+
+test("every section's cards have their eye and Delete next to the chevron, open and folded", async ({ page }) => {
+  const errors = pageErrors(page)
+  const one = <T extends Record<string, string>>(entry: T) => [{ id: 1, ...entry }]
+  const resume = {
+    ...RESUME,
+    id: "every-section",
+    educationSection: one({ schoolName: "Stanford University" }),
+    projectsSection: one({ projectName: "Gitlytics" }),
+    publicationsSection: one({ publicationTitle: "Sparse Attention" }),
+    volunteerExperienceSection: one({ volunteerOrg: "Food Bank" }),
+    leadershipExperienceSection: one({ leadershipOrg: "Student Council" }),
+    awardsSection: one({ awardName: "AWS Certified" }),
+  }
+  await openSection(page, "Experience", resume)
+  for (const section of [
+    "Experience",
+    "Skills",
+    "Education",
+    "Projects",
+    "Publications",
+    "Volunteer",
+    "Leadership",
+    "Awards & Certifications",
+  ]) {
+    await page
+      .getByRole("navigation", { name: "Sections" })
+      .getByRole("button", { name: new RegExp(`^${section}$`) })
+      .click()
+    await expect(editorTitle(page)).toHaveText(new RegExp(section))
+    for (const state of ["Done editing entry 1", "Edit entry 1"]) {
+      if (state === "Edit entry 1") await page.getByRole("button", { name: "Done editing entry 1" }).click()
+      await expect(page.getByRole("button", { name: state })).toBeVisible()
+      await expect(page.getByRole("checkbox", { name: "Include entry 1 in the PDF" })).toBeVisible()
+      await expect(page.getByRole("button", { name: "Delete entry 1" })).toBeVisible()
+    }
+  }
+  expect(errors).toEqual([])
+})
+
+test("a folded card is deleted from its own bin, asked first, and an open one left out with its eye", async ({ page }) => {
+  const errors = pageErrors(page)
+  await openSection(page, "Experience")
+
+  // Open, its eye leaves it out, and puts it back.
+  const include = page.getByRole("checkbox", { name: "Include entry 1 in the PDF" })
+  await expect(page.getByRole("button", { name: "Done editing entry 1" })).toBeVisible()
+  await include.uncheck()
+  await expect(page.getByText("Left out of the PDF, and of the copy of the resume inside it.", { exact: false })).toBeVisible()
+  await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBe(true)
+  await include.check()
+  await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBeUndefined()
+
+  // Folded, its bin asks first; Keep backs out to the bin, and Delete deletes it, with Undo.
+  await expect(page.getByRole("button", { name: "Edit entry 2" })).toBeVisible()
+  await page.getByRole("button", { name: "Delete entry 2" }).click()
+  await expect(page.getByRole("status").filter({ hasText: "Delete it?" })).toBeVisible()
+  await page.getByRole("button", { name: "Keep" }).click()
+  await expect(page.getByRole("button", { name: "Delete entry 2" })).toBeFocused()
+  await page.getByRole("button", { name: "Delete entry 2" }).click()
+  await page.getByRole("button", { name: "Delete", exact: true }).click()
+  await expect(page.getByRole("status").filter({ hasText: "deleted" })).toHaveText("“Initech” deleted")
+  await expect
+    .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
+    .toEqual(["Google", "Hooli"])
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect
+    .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
+    .toEqual(["Google", "Initech", "Hooli"])
   expect(errors).toEqual([])
 })
 
