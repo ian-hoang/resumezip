@@ -59,6 +59,17 @@ interface Range {
   end: number
 }
 
+/** What can be done to words in a box from outside it, without moving its selection or focus. */
+export interface BoxStyler {
+  stylesOver: (start: number, end: number) => { style: Style; link: string }
+  toggle: (start: number, end: number, style: Style) => void
+  /** Links the words to `address`, or with "", unlinks them. */
+  link: (start: number, end: number, address: string) => void
+}
+
+/** Each box on the page, for styling words picked on the preview (pickedStyle.ts). */
+export const boxStylers = new WeakMap<HTMLElement, BoxStyler>()
+
 /** "type" and "delete" steps in a row are undone together, as in a text box. */
 type StepKind = "type" | "delete" | "other"
 
@@ -328,6 +339,27 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
 
     actions.current = { toggle, link, editLink }
 
+    // The same, on words picked on the preview, which stay selected there: an
+    // edit like any other, undone with ⌘Z here, that leaves the box's own
+    // selection where it was, and focus where it is.
+    const quietly = (edit: StyledEdit | undefined, range: Range) => {
+      if (!edit) return
+      const was = current()
+      const { edit: next, saved } = settled(edit, was.saved, kind)
+      if (saved === was.saved && sameStyled(next, was.styled)) return
+      record("other", { ...was, ...range }, { saved, styled: next, start: range.start, end: range.end })
+      shown.current = { saved, styled: next }
+      const cursor = box.ownerDocument.activeElement === box ? selectionIn(box) : null
+      drawBox(box, next)
+      if (cursor) selectIn(box, cursor.start, cursor.end)
+      if (saved !== was.saved) change.current(saved)
+    }
+    boxStylers.set(box, {
+      stylesOver: (start, end) => stylesOver(current().styled, start, end, kind),
+      toggle: (start, end, style) => quietly(toggled(current().styled, start, end, style, kind), { start, end }),
+      link: (start, end, address) => quietly(linked(current().styled, start, end, address, kind), { start, end }),
+    })
+
     /** Reads back what the browser changed itself, and makes it an edit. */
     const readBack = (before: Range) => {
       unread.current = false
@@ -539,6 +571,7 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       window.removeEventListener("scroll", placeToolbar, { capture: true })
       window.removeEventListener("resize", placeToolbar)
       clearTimeout(readSoon)
+      boxStylers.delete(box)
     }
   }, [kind])
 

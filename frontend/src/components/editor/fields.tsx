@@ -11,7 +11,8 @@ import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
 import { wordsIn, type PickedWords } from "./previewPick"
 import { bulletLength } from "./styledText"
-import { StyledBox } from "./StyledBox"
+import { KEEPS_PICKED, setPickedInBox } from "./pickedStyle"
+import { boxStylers, StyledBox } from "./StyledBox"
 
 interface FieldProps {
   label: string
@@ -231,15 +232,21 @@ function showWords(field: HTMLElement, line: number | undefined, words: PickedWo
   const found = wordsAt(field, line, words)
   // Safari before 17.2 has no CSS highlights.
   const highlights = typeof CSS.highlights === "undefined" ? null : CSS.highlights
-  if (found && field.isContentEditable && highlights) highlights.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  const light = () => found && highlights?.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  if (found && field.isContentEditable && highlights) light()
   else field.dataset.picked = ""
-  const clear = () => {
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  const clear = (event?: Event) => {
+    if (event?.target instanceof Element && event.target.closest(`[${KEEPS_PICKED}]`)) return
     highlights?.delete(PICKED)
     delete field.dataset.picked
+    setPickedInBox(null)
     document.removeEventListener("pointerdown", clear, true)
   }
   document.addEventListener("pointerdown", clear, true)
   unshow = clear
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  if (found && boxStylers.has(field)) setPickedInBox({ box: field, ...found, relight: light, close: () => clear() })
 }
 
 /**
