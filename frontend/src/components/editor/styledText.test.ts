@@ -5,6 +5,9 @@ import {
   ITALIC,
   joinedBack,
   joinedForward,
+  linkAround,
+  linked,
+  linkOf,
   movedLine,
   pasted,
   removed,
@@ -15,8 +18,10 @@ import {
   styled,
   styledOf,
   styleOver,
+  stylesOver,
   toggled,
   typed,
+  UNDERLINE,
   type Style,
   type Styled,
   type StyledEdit,
@@ -349,5 +354,53 @@ describe("a prose box, as the summary's", () => {
     const s = styledOf(typedMarks, "prose")
     const end = s.text.length
     expect(settled(typed(s, end, end, "!", 0, "prose"), typedMarks, "prose").saved).toBe("**Builds *fast* tools**\nSecond!")
+  })
+})
+
+describe("underline and links", () => {
+  const settle = (edit: StyledEdit) => settled(edit, "", "bullets")
+  const line = "• Shipped the dashboard on time"
+
+  test("U underlines words, and takes it off again", () => {
+    const s = styledOf(line, "bullets")
+    const on = settle(toggled(s, 14, 23, UNDERLINE, "bullets")!)
+    expect(on.saved).toBe("• Shipped the __dashboard__ on time")
+    expect(settle(toggled(on.edit, 14, 23, UNDERLINE, "bullets")!).saved).toBe(line)
+  })
+
+  test("a link underlines its words; U takes the underline off and leaves the link; unlinking takes both off", () => {
+    const s = styledOf(line, "bullets")
+    const link = settle(linked(s, 13, 24, "https://example.com/dash", "bullets")!)
+    // Spaces at either end are left out of it.
+    expect(link.saved).toBe("• Shipped the [__dashboard__](https://example.com/dash) on time")
+    expect(linkOf(link.edit.styles[14])).toBe("https://example.com/dash")
+    expect(linkAround(link.edit, 18)).toEqual({ start: 14, end: 23, address: "https://example.com/dash" })
+    const plain = settle(toggled(link.edit, 14, 23, UNDERLINE, "bullets")!)
+    expect(plain.saved).toBe("• Shipped the [dashboard](https://example.com/dash) on time")
+    expect(stylesOver(plain.edit, 14, 23, "bullets")).toEqual({ style: 0, link: "https://example.com/dash" })
+    expect(settle(linked(link.edit, 14, 23, "", "bullets")!).saved).toBe(line)
+  })
+
+  test("words typed at either end of a link aren't in it, or underlined with it, and words typed inside it are", () => {
+    const s = settle(linked(styledOf(line, "bullets"), 14, 23, "https://example.com/dash", "bullets")!).edit
+    expect(styleAt(s, 23, "bullets")).toBe(0)
+    expect(styleAt(s, 14, "bullets")).toBe(0)
+    expect(linkOf(styleAt(s, 18, "bullets"))).toBe("https://example.com/dash")
+  })
+
+  test("styled and linked words read back as they were saved", () => {
+    const saved = "• [**Atlas** __search__ tool](https://atlas.dev) and __*fast*__ __**bold**__"
+    const s = styledOf(saved, "bullets")
+    expect(s.text).toBe("• Atlas search tool and fast bold")
+    expect(settle({ ...s, start: 0, end: 0 }).saved).toBe(saved)
+  })
+
+  test("_, [, ] and backslashes typed as words stay words, beside any mark", () => {
+    let s: StyledEdit = { ...styledOf("", "bullets"), start: 0, end: 0 }
+    s = typed(s, 0, 0, String.raw`__init__ [1](2) C:\dir _x_`, 0, "bullets")
+    const words = settle(s)
+    expect(words.edit.text).toBe(String.raw`• __init__ [1](2) C:\dir _x_`)
+    const marked = settle(linked(toggled(words.edit, 2, 10, UNDERLINE, "bullets")!, 26, 29, "https://x.co", "bullets")!)
+    expect(styledOf(marked.saved, "bullets")).toEqual({ text: marked.edit.text, styles: marked.edit.styles })
   })
 })

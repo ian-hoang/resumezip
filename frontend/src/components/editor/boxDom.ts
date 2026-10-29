@@ -1,10 +1,11 @@
 // A box's element (StyledBox.tsx): drawing its text into it, a div per line
-// with bold words in <strong> and italic ones in <em>, reading the text back
+// with bold words in <strong>, italic ones in <em>, underlined ones in <u> and
+// linked ones in <a>, reading the text back
 // after the browser changed it itself, and where the cursor is, as an offset
 // in the text.
 
 import { offsetOfLine } from "./arrange"
-import { BOLD, bulletLength, ITALIC, linesOf, sameStyled, type Style, type Styled } from "./styledText"
+import { BOLD, bulletLength, ITALIC, linesOf, linkOf, sameStyled, UNDERLINE, withLink, type Style, type Styled } from "./styledText"
 
 interface Point {
   node: Node
@@ -18,13 +19,19 @@ const BLOCKS = new Set(["DIV", "P", "LI", "UL", "OL", "BLOCKQUOTE", "PRE", "H1",
 const isBold = (weight: string) => weight === "bold" || weight === "bolder" || Number(weight) >= 600
 const isNormal = (weight: string) => weight === "normal" || weight === "lighter" || (weight !== "" && Number(weight) < 600)
 
-/** The style of what's inside `element`, inside text in `style`. The browser can write bold as <b>, or as a span's font-weight. */
+/**
+ * The style of what's inside `element`, inside text in `style`. The browser
+ * can write bold as <b>, or as a span's font-weight. A link is read from an
+ * <a> the box drew, whose href is the address as saved.
+ */
 function styleIn(element: HTMLElement, style: Style): Style {
-  const { fontWeight, fontStyle } = element.style
+  const { fontWeight, fontStyle, textDecorationLine } = element.style
   if (element.tagName === "STRONG" || element.tagName === "B" || isBold(fontWeight)) style |= BOLD
   else if (isNormal(fontWeight)) style &= ~BOLD
   if (element.tagName === "EM" || element.tagName === "I" || fontStyle === "italic" || fontStyle === "oblique") style |= ITALIC
   else if (fontStyle === "normal") style &= ~ITALIC
+  if (element.tagName === "U" || textDecorationLine.includes("underline")) style |= UNDERLINE
+  if (element.tagName === "A" && element.getAttribute("href")) style = withLink(style, element.getAttribute("href")!)
   return style
 }
 
@@ -125,8 +132,27 @@ function runsOf(line: Styled): { text: string; style: Style }[] {
   return runs
 }
 
-// What holds a run's text, outermost first: <strong><em>…</em></strong> for both.
-const wrappers = (style: Style) => [...(style & BOLD ? ["STRONG"] : []), ...(style & ITALIC ? ["EM"] : [])]
+// What holds a run's text, outermost first: <a><u><strong><em>…</em></strong></u></a> for all of them.
+const wrappers = (style: Style) => [
+  ...(linkOf(style) ? ["A"] : []),
+  ...(style & UNDERLINE ? ["U"] : []),
+  ...(style & BOLD ? ["STRONG"] : []),
+  ...(style & ITALIC ? ["EM"] : []),
+]
+
+function wrapper(tag: string, style: Style): HTMLElement {
+  const element = document.createElement(tag)
+  if (tag === "A") element.setAttribute("href", linkOf(style))
+  return element
+}
+
+/** Whether `node` is the element `wrapper` makes, and nothing more, so its words can change in place. */
+const isWrapper = (node: Node, tag: string, style: Style) =>
+  node.nodeName === tag &&
+  node.childNodes.length === 1 &&
+  (tag === "A"
+    ? (node as Element).attributes.length === 1 && (node as Element).getAttribute("href") === linkOf(style)
+    : !(node as Element).attributes.length)
 
 /** A line's element. An empty one holds a <br>, or it would have no height to put the cursor in. */
 function lineElement(line: Styled): HTMLDivElement {
@@ -135,9 +161,9 @@ function lineElement(line: Styled): HTMLDivElement {
   for (const run of runsOf(line)) {
     let node: Node = document.createTextNode(run.text)
     for (const tag of wrappers(run.style).reverse()) {
-      const wrapper = document.createElement(tag)
-      wrapper.append(node)
-      node = wrapper
+      const element = wrapper(tag, run.style)
+      element.append(node)
+      node = element
     }
     div.append(node)
   }
@@ -157,7 +183,7 @@ function runTexts(element: Element, line: Styled): Text[] | null {
   for (const [index, run] of runs.entries()) {
     let node: Node = nodes[index]
     for (const tag of wrappers(run.style)) {
-      if (node.nodeName !== tag || node.childNodes.length !== 1 || (node as Element).attributes.length) return null
+      if (!isWrapper(node, tag, run.style)) return null
       node = node.firstChild!
     }
     if (!(node instanceof Text)) return null
@@ -273,14 +299,17 @@ export function targetIn(root: HTMLElement, event: InputEvent): { start: number;
   return { start: Math.min(...offsets), end: Math.max(...offsets) }
 }
 
-const escaped = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+const escaped = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 
-/** Words copied from the box as HTML, so they paste into a document in bold and italic. */
+/** Words copied from the box as HTML, so they paste into a document styled and linked. */
 export function htmlOf(styled: Styled): string {
   const lines = linesOf(styled).map((line) =>
     runsOf(line)
       .map(({ text, style }) =>
-        wrappers(style).reduceRight((html, tag) => `<${tag.toLowerCase()}>${html}</${tag.toLowerCase()}>`, escaped(text)),
+        wrappers(style).reduceRight((html, tag) => {
+          const name = tag.toLowerCase()
+          return `<${name}${tag === "A" ? ` href="${escaped(linkOf(style))}"` : ""}>${html}</${name}>`
+        }, escaped(text)),
       )
       .join(""),
   )

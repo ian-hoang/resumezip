@@ -6,8 +6,20 @@ import { keyOf, LEGACY_KEY } from "./resumeKeys"
 import { readResume } from "./resumeStorage"
 import { saveNotes, savedByHash, savedForResume, tieToResume } from "./review/ai/saved"
 
-const ada = { id: "a", resumeTitle: "Ada", profileSection: { fullName: "Ada Lovelace" }, updatedAt: "2026-10-06T10:00:00.000Z" }
-const grace = { id: "g", resumeTitle: "Grace", profileSection: { fullName: "Grace Hopper" }, updatedAt: "2026-10-06T10:00:00.000Z" }
+const ada = {
+  id: "a",
+  marks: 2 as const,
+  resumeTitle: "Ada",
+  profileSection: { fullName: "Ada Lovelace" },
+  updatedAt: "2026-10-06T10:00:00.000Z",
+}
+const grace = {
+  id: "g",
+  marks: 2 as const,
+  resumeTitle: "Grace",
+  profileSection: { fullName: "Grace Hopper" },
+  updatedAt: "2026-10-06T10:00:00.000Z",
+}
 
 /** localStorage contents with these resumes saved, each under its own key. */
 const saved = (...resumes: { id: string; [field: string]: unknown }[]) =>
@@ -351,7 +363,7 @@ describe("a resume another tab saved that can't all be read, as from a tab on a 
     storage.setItem(keyOf("x"), text)
     const setItem = vi.spyOn(storage, "setItem")
     tab.receive(keyOf("x"))
-    expect(tab.getState().resumes.x).toEqual({ id: "x", resumeTitle: "X" })
+    expect(tab.getState().resumes.x).toEqual({ id: "x", resumeTitle: "X", marks: 2 })
     vi.advanceTimersByTime(SAVE_DELAY * 2)
     tab.flush()
     expect(setItem).not.toHaveBeenCalled()
