@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useOpenResume, useResumeActions, useResumeField } from "@/context/ResumeContext"
 import { extraHeading, type ExtraSection } from "@/lib/resumeSections"
-import { useCheckActions, useCheckTarget } from "./CheckContext"
+import { useCheckActions, useCheckTarget, usePointer } from "./CheckContext"
 import DeleteSection from "./DeleteSection"
 import { BulletsField, Field, pointAt, SectionHeading } from "./fields"
 
@@ -21,16 +21,21 @@ export default function ExtraSectionForm({ sectionId, onDelete }: { sectionId: s
   const here = place && "sectionId" in place && place.sectionId === sectionId ? place : null
   const flagAt = (field: "text" | "bullets") => (here?.kind === "extra-text" && here.field === field ? target!.finding : null)
 
+  // Where to move to, from the finding or from words picked on the preview.
+  const pointer = usePointer()
+  const pointed = pointer?.place
+  const there = pointed && "sectionId" in pointed && pointed.sectionId === sectionId ? pointed : null
   useEffect(() => {
-    if (!target || !here || !pending(target.request)) return
+    if (!pointer || !there || !pending(pointer.request)) return
     const timer = setTimeout(() => {
-      if (!claim(target.request)) return
+      if (!claim(pointer.request)) return
       const selector =
-        here.kind === "extra-heading" ? 'button[aria-label="Rename section"]' : `[data-field="${here.field}"] [contenteditable="true"]`
-      pointAt(root.current?.querySelector<HTMLElement>(selector), here.kind === "extra-text" ? here.line : undefined)
+        there.kind === "extra-heading" ? 'button[aria-label="Rename section"]' : `[data-field="${there.field}"] [contenteditable="true"]`
+      const field = root.current?.querySelector<HTMLElement>(selector)
+      pointAt(field, there.kind === "extra-text" ? there.line : undefined, field, pointer.words, pointer.look)
     }, 0)
     return () => clearTimeout(timer)
-  }, [target, here, pending, claim])
+  }, [pointer, there, pending, claim])
 
   if (!section) return null
   const title = extraHeading(section)

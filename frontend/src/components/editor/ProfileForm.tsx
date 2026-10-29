@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef } from "react"
 import { useOpenResume, useResumeField } from "@/context/ResumeContext"
-import { useCheckActions, useCheckTarget } from "./CheckContext"
+import { useCheckActions, useCheckTarget, usePointer } from "./CheckContext"
 import { Field, pointAt, SectionHeading } from "./fields"
 import { FIELD_GRID, FIELD_SPAN, PROFILE_FIELDS } from "./sections"
 
@@ -16,16 +16,18 @@ function ProfileForm() {
   const { pending, claim } = useCheckActions()
   const flagged = target?.finding.place.kind === "profile" ? target.finding.place.field : null
 
-  // When the person chooses a finding here, move to its field, just once.
+  // When the person chooses a finding here, or picks words on the preview, move to its field, just once.
+  const pointer = usePointer()
   useEffect(() => {
-    const place = target?.finding.place
-    if (!target || place?.kind !== "profile" || !pending(target.request)) return
+    const place = pointer?.place
+    if (!pointer || place?.kind !== "profile" || !pending(pointer.request)) return
     const timer = setTimeout(() => {
-      if (!claim(target.request)) return
-      pointAt(form.current?.querySelector<HTMLElement>(`[data-field="${place.field}"] :is(input, [contenteditable="true"])`))
+      if (!claim(pointer.request)) return
+      const field = form.current?.querySelector<HTMLElement>(`[data-field="${place.field}"] :is(input, [contenteditable="true"])`)
+      pointAt(field, undefined, field, pointer.words, pointer.look)
     })
     return () => clearTimeout(timer)
-  }, [target, pending, claim])
+  }, [pointer, pending, claim])
 
   return (
     <div className="@container flex flex-col gap-[22px]">

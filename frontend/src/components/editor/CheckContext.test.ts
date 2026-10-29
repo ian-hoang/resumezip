@@ -31,7 +31,7 @@ afterEach(() => {
 function open(mode: string, editor: ReactNode = null) {
   vi.stubGlobal("window", { sessionStorage: { getItem: () => mode, setItem: () => {} } })
   const preview = { url: "blob:preview", printed: JSON.stringify(printedOf(ada)), checkerResume: ada }
-  const props: ComponentProps<typeof CheckProvider> = { onSelect: () => {}, preview, unbuilt: null, children: editor }
+  const props: ComponentProps<typeof CheckProvider> = { onSelect: () => {}, onPick: () => {}, preview, unbuilt: null, children: editor }
   renderToString(createElement(CheckProvider, props))
 }
 
