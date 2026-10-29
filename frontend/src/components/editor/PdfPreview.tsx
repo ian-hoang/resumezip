@@ -15,6 +15,8 @@ import PrintingPage from "./PrintingPage"
 import { useCheckActions } from "./CheckContext"
 import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
+import { PickedToolbar } from "./PickedToolbar"
+import type { SelectedWords } from "./SelectionToolbar"
 
 type ReactPdf = typeof import("./reactPdf")
 
@@ -383,6 +385,9 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
   // opens the form with the word selected, to edit. Only once the button's
   // up, so a drag isn't cut short; a click selects nothing.
   const { pick } = useCheckActions()
+  // Where the words picked are on the page, for the toolbar that styles them,
+  // until the page scrolls under it.
+  const [pickedAt, setPickedAt] = useState<Omit<SelectedWords, "style" | "link"> | null>(null)
   function pickSelected(event: MouseEvent) {
     if (event.button !== 0) return
     const selection = window.getSelection()
@@ -402,7 +407,12 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
       return before + upTo.toString().length
     }
     const end = layer.contains(range.endContainer) ? offset(range.endContainer, range.endOffset) : before + layer.textContent.length
-    pick(texts.join(""), offset(range.startContainer, range.startOffset), end, event.detail === 2)
+    if (!pick(texts.join(""), offset(range.startContainer, range.startOffset), end, event.detail === 2)) return setPickedAt(null)
+    const words = range.getBoundingClientRect()
+    const sides = scrollerRef.current!.getBoundingClientRect()
+    const at = { top: words.top, bottom: words.bottom, left: words.left, right: words.right, boxLeft: sides.left, boxRight: sides.right }
+    // Not where a word picked to edit shows the form instead, hiding the preview.
+    requestAnimationFrame(() => setPickedAt(scrollerRef.current?.offsetParent ? at : null))
   }
 
   function onLoadError(file: string) {
@@ -421,6 +431,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col">
+      {pickedAt && <PickedToolbar at={pickedAt} />}
       {/* On wide screens the zoom is in a pill of its own under the page, below, and the page has this room. */}
       <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
@@ -437,6 +448,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
         onMouseUp={(event) => pickSelected(event.nativeEvent)}
+        onScroll={() => setPickedAt(null)}
         className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-4 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (

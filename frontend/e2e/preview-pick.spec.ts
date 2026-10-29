@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./test"
-import { pageErrors, preview, previewShown, saveResumes } from "./helpers"
+import { pageErrors, preview, previewShown, savedResume, saveResumes } from "./helpers"
 
 // Double-clicking a word on the preview, or selecting a few words there,
 // opens the field that printed them in the form, with the same words
@@ -129,7 +129,7 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
 
   // A bullet, in a section that isn't open.
   await doubleClick(page, "published")
-  await expect.poll(() => lit(page)).toEqual({ words: "published", field: "What you did" })
+  await expect.poll(() => lit(page)).toEqual({ words: "published", field: "Description" })
   expect(await selected(page)).toBe("published")
   expect(await selectedInForm(page)).toBeNull()
 
@@ -138,7 +138,7 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
   await page.mouse.click(first.x, first.y, { clickCount: 3 })
   await expect
     .poll(() => lit(page))
-    .toMatchObject({ words: expect.stringContaining("Wrote the first published program"), field: "What you did" })
+    .toMatchObject({ words: expect.stringContaining("Wrote the first published program"), field: "Description" })
   expect(await selected(page)).toContain("published program")
 
   // The summary, and a text section, where "Italian" is printed by a bullet too.
@@ -179,8 +179,8 @@ test("selecting words on the preview keeps them selected to copy, and lights the
   expect(copied).toBe("lecture notes from")
 
   // Their field opens with them lit up, and the cursor stays out of the form.
-  await expect.poll(() => lit(page)).toEqual({ words: "lecture notes from", field: "What you did" })
-  await expect(page.getByRole("textbox", { name: "What you did" }).first()).toBeInViewport()
+  await expect.poll(() => lit(page)).toEqual({ words: "lecture notes from", field: "Description" })
+  await expect(page.getByRole("textbox", { name: "Description" }).first()).toBeInViewport()
   expect(await selectedInForm(page)).toBeNull()
 
   // An input can't light up its words, so it lights up as a whole. A click anywhere puts the light out.
@@ -205,7 +205,56 @@ test("on a phone, a word double-clicked on the preview opens the form", async ({
   await open(page, { width: 390, height: 844 })
   await doubleClick(page, "mathematics")
   await expect(preview(page)).toBeHidden()
-  await expect(focused(page)).toHaveAccessibleName("What you did")
+  await expect(focused(page)).toHaveAccessibleName("Description")
   await expect.poll(() => selectedInForm(page)).toBe("mathematics")
+  expect(errors).toEqual([])
+})
+
+test("words selected on the preview get the bold, italic, underline and link buttons, which style them in their box", async ({ page }) => {
+  const errors = pageErrors(page)
+  await open(page)
+  const bullets = async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].workDescription
+  const toolbar = page.getByRole("toolbar", { name: "Text style" })
+
+  // The buttons show over the words, which stay selected on the preview and lit up in their box.
+  await dragOver(page, "first published program")
+  await expect(toolbar).toBeVisible()
+  await expect.poll(() => lit(page)).toEqual({ words: "first published program", field: "Description" })
+  expect(await selected(page)).toBe("first published program")
+  const bold = toolbar.getByRole("button", { name: "Bold" })
+  await expect(bold).toHaveAttribute("aria-pressed", "false")
+
+  // Bold, then not: saved in the box, which keeps the words lit up.
+  await bold.click()
+  await expect.poll(bullets).toBe("• Wrote the **first published program** for the engine\n• Translated the lecture notes from Italian")
+  await expect(bold).toHaveAttribute("aria-pressed", "true")
+  await expect.poll(() => lit(page)).toEqual({ words: "first published program", field: "Description" })
+  await bold.click()
+  await expect.poll(bullets).toBe("• Wrote the first published program for the engine\n• Translated the lecture notes from Italian")
+
+  // A link, pasted into the box the toolbar opens, underlined as a link is in the box.
+  await toolbar.getByRole("button", { name: "Link" }).click()
+  const address = page.getByRole("textbox", { name: "Link address" })
+  await address.fill("example.com")
+  await address.press("Enter")
+  await expect
+    .poll(bullets)
+    .toBe("• Wrote the [__first published program__](https://example.com) for the engine\n• Translated the lecture notes from Italian")
+  await expect(toolbar.getByRole("button", { name: "Link" })).toHaveAttribute("aria-pressed", "true")
+
+  // Escape puts the buttons away, and so does a press anywhere else.
+  await page.keyboard.press("Escape")
+  await expect(toolbar).toBeHidden()
+  await expect.poll(() => lit(page)).toBeNull()
+  await dragOver(page, "younger students")
+  await expect(toolbar).toBeVisible()
+  await page.getByRole("heading", { level: 1 }).first().click()
+  await expect(toolbar).toBeHidden()
+
+  // Words in a one-line field, as a company's name, can't be bold, so they get no buttons.
+  await dragOver(page, "Babbage Works")
+  await expect.poll(() => lit(page)).toBeNull()
+  await expect(page.locator("[data-picked]")).toHaveCount(1)
+  await expect(toolbar).toBeHidden()
   expect(errors).toEqual([])
 })

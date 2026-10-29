@@ -18,7 +18,7 @@ test("unknown words are suggestions, and Add word clears them without the text l
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  await page.getByLabel(/^What you did/).fill("Wrote the Zorbly notes on the Qwexy engine\nTaught Zorbly methods to the the society")
+  await page.getByLabel(/^Description/).fill("Wrote the Zorbly notes on the Qwexy engine\nTaught Zorbly methods to the the society")
 
   await page
     .getByRole("tablist", { name: "Write, check or style" })
@@ -32,7 +32,7 @@ test("unknown words are suggestions, and Add word clears them without the text l
 
   // Choosing one opens its bullet, and the note there is about that word,
   // though the bullet has another typo.
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await panel.getByRole("button", { name: /^Experience → .*The English dictionary doesn't know “Qwexy”/ }).click()
   await expect(bullets).toBeFocused()
   await expect(bullets).toHaveAccessibleDescription(/The English dictionary doesn't know “Qwexy”/)

@@ -6,7 +6,7 @@ import { expectText, pageErrors, preview, previewShown, printed, saveResumes, sa
 // its words, prints them alone, clickable, and the underline can be taken off
 // without the link. Text saved before underline and links reads as it did.
 
-const LABEL = "What you did"
+const LABEL = "Description"
 const RESUME = {
   id: "toolbar",
   resumeTitle: "Toolbar",

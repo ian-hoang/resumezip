@@ -160,7 +160,7 @@ test("an older PDF of a resume in this browser says it's older, and replacing th
       .getByRole("button", { name: /^Experience$/ })
       .click()
   const role = page.getByLabel("Role", { exact: true })
-  const bullets = page.getByLabel("What you did")
+  const bullets = page.getByLabel("Description")
 
   // The PDF is downloaded, then the resume changes: a new role, and a new bullet.
   await page.goto("/create/new/ada")

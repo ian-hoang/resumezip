@@ -80,7 +80,6 @@ export default function ExtraSectionForm({ sectionId, onDelete }: { sectionId: s
           value={section.bullets}
           onChange={(bullets) => editSection(id, sectionId, { bullets })}
           flag={flagAt("bullets")}
-          request={target?.request}
         />
       )}
     </div>

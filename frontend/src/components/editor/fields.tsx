@@ -5,14 +5,14 @@ import { useEffect, useId, useRef, useState } from "react"
 import { Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
-import { onMac, shortcut } from "@/lib/keys"
-import { plainText } from "@/lib/typst/resumeData"
+import { shortcut } from "@/lib/keys"
 import { bulletLines, offsetOfLine, withBullets } from "./arrange"
 import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
 import { wordsIn, type PickedWords } from "./previewPick"
 import { bulletLength } from "./styledText"
-import { StyledBox } from "./StyledBox"
+import { KEEPS_PICKED, setPickedInBox } from "./pickedStyle"
+import { boxStylers, StyledBox } from "./StyledBox"
 
 interface FieldProps {
   label: string
@@ -25,8 +25,6 @@ interface FieldProps {
   name?: string
   /** What the checker found here, while the person is fixing it. */
   flag?: Finding | null
-  /** Counts up each time the person chooses `flag`'s finding, as the checker's requests do. */
-  request?: number
   /** What the browser can fill it in with, as "name", "email" or "tel". */
   autoComplete?: string
   /** A web address: phones show the keyboard for one, with no spelling marks and no capital first letter. */
@@ -234,15 +232,21 @@ function showWords(field: HTMLElement, line: number | undefined, words: PickedWo
   const found = wordsAt(field, line, words)
   // Safari before 17.2 has no CSS highlights.
   const highlights = typeof CSS.highlights === "undefined" ? null : CSS.highlights
-  if (found && field.isContentEditable && highlights) highlights.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  const light = () => found && highlights?.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  if (found && field.isContentEditable && highlights) light()
   else field.dataset.picked = ""
-  const clear = () => {
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  const clear = (event?: Event) => {
+    if (event?.target instanceof Element && event.target.closest(`[${KEEPS_PICKED}]`)) return
     highlights?.delete(PICKED)
     delete field.dataset.picked
+    setPickedInBox(null)
     document.removeEventListener("pointerdown", clear, true)
   }
   document.addEventListener("pointerdown", clear, true)
   unshow = clear
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  if (found && boxStylers.has(field)) setPickedInBox({ box: field, ...found, relight: light, close: () => clear() })
 }
 
 /**
@@ -268,15 +272,11 @@ export function pointAt(
   view?.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" })
 }
 
-// With Option on a Mac, Alt elsewhere: ⌥↑, Alt+↑.
-const altShortcut = (key: string) => (onMac() ? `⌥${key}` : `Alt+${key}`)
-
 /**
- * The keys for bold and italic, and with `moveLines`, for moving a line. A
- * touch screen has no keys, so it shows the marks to type, which turn bold and
- * italic as they're typed.
+ * The keys for bold and italic. A touch screen has no keys, so it shows the
+ * marks to type, which turn bold and italic as they're typed.
  */
-function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
+function FormatHint() {
   return window.matchMedia("(pointer: coarse)").matches ? (
     <>
       <span className="font-mono">**bold**</span> · <span className="font-mono">*italic*</span>
@@ -285,28 +285,8 @@ function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
     <>
       <kbd className="font-mono">{shortcut("B")}</kbd> <strong className="font-semibold text-ink">bold</strong> ·{" "}
       <kbd className="font-mono">{shortcut("I")}</kbd> <em className="text-ink">italic</em>
-      {moveLines && (
-        <>
-          {" "}
-          · <kbd className="font-mono">{altShortcut("↑")}</kbd> <kbd className="font-mono">{altShortcut("↓")}</kbd> move a line
-        </>
-      )}
     </>
   )
-}
-
-/** How much of a bullet an open card shows until its box is used, in characters, cut at a word: about a line and a half. */
-const PREVIEW_CHARACTERS = 70
-/** How many bullets an open card shows until its box is used. */
-const PREVIEW_BULLETS = 2
-
-/** A bullet's words without their marks, cut short at a word, with "…" where they were cut. */
-function previewOf(words: string): string {
-  const plain = plainText(words)
-  if (plain.length <= PREVIEW_CHARACTERS) return plain
-  const cut = plain.slice(0, PREVIEW_CHARACTERS + 1)
-  const space = cut.lastIndexOf(" ")
-  return `${(space > PREVIEW_CHARACTERS / 2 ? cut.slice(0, space) : cut.slice(0, PREVIEW_CHARACTERS)).replace(/[\s,.;:]+$/, "")}…`
 }
 
 /**
@@ -314,40 +294,17 @@ function previewOf(words: string): string {
  * and italic words show as they print, and are saved as **bold**, *italic*
  * and ***both***; ⌘B and ⌘I add or remove them. Alt+↑ and Alt+↓ move the line
  * the cursor is on. A line starting with "○" is left out of the PDF.
- *
- * With `compact`, as in an entry's card, it shows its first bullets cut short
- * and how many more there are until it's used: the box itself is over them,
- * unseen, so a click or Tab goes into it, and screen readers read all of it.
  */
-export function BulletsField({
-  label,
-  value,
-  placeholder,
-  className = "",
-  onChange,
-  name,
-  flag,
-  request,
-  compact = false,
-}: FieldProps & { compact?: boolean }) {
+export function BulletsField({ label, value, placeholder, className = "", onChange, name, flag }: FieldProps) {
   const text = withBullets(value)
   const boxId = useId()
   const hintId = useId()
   const noteId = useId()
-  const bullets = bulletLines(text)
-  // Once the box has been used, it shows in full until its card is folded.
-  const [used, setUsed] = useState(false)
-  // Choosing a finding here shows the text, where the cursor goes to it. Only a
-  // new choice does: the finding is found afresh each time the checker runs,
-  // and it's gone while the person is in Write mode, then back.
-  const [shownRequest, setShownRequest] = useState(request)
-  if (request !== undefined && request !== shownRequest) {
-    setShownRequest(request)
-    setUsed(true)
-  }
-  const previewing = compact && !used && bullets.length > 0
-  // Underlined, as the other fields are; the cut-short bullets are drawn the same way.
-  const box = `${underlined(!!flag)} leading-relaxed`
+  // No line of keys under the box: the buttons over selected words show them,
+  // and on a phone take the place of typing marks. Only what ○ does is said
+  // there, while a line starts with one.
+  const leftOut = bulletLines(text).some((bullet) => bullet.leftOut)
+  const describedBy = [leftOut && hintId, flag && noteId].filter(Boolean).join(" ") || undefined
 
   return (
     <div data-field={name} className={`group/field flex min-w-0 flex-col gap-1.5 ${className}`}>
@@ -360,39 +317,27 @@ export function BulletsField({
       >
         {label}
       </label>
-      <div className="relative" onFocus={() => setUsed(true)}>
+      <div className="relative">
         <FocusGlow />
-        {previewing && (
-          <div aria-hidden="true" className={`${box} flex flex-col`}>
-            {bullets.slice(0, PREVIEW_BULLETS).map((bullet) => (
-              <p key={bullet.line} className={bullet.leftOut ? "text-ink-2" : undefined}>
-                {bullet.leftOut ? "○" : "•"} {previewOf(bullet.words)}
-              </p>
-            ))}
-            {bullets.length > PREVIEW_BULLETS && <p className="mt-0.5 text-[13px] text-ink-2">+ {bullets.length - PREVIEW_BULLETS} more</p>}
-          </div>
-        )}
-        {/* While the bullets show cut short, the box is over them, unseen, and no taller. */}
-        <div className={previewing ? "absolute inset-0 overflow-hidden opacity-0" : undefined}>
-          <StyledBox
-            kind="bullets"
-            id={boxId}
-            value={value}
-            onChange={onChange}
-            labelId={`${boxId}-label`}
-            describedBy={flag ? `${hintId} ${noteId}` : hintId}
-            invalid={flag?.level === "fix"}
-            placeholder={placeholder}
-            className={`${box} ${compact ? "min-h-[110px]" : "min-h-[132px]"}`}
-          />
-        </div>
+        <StyledBox
+          kind="bullets"
+          id={boxId}
+          value={value}
+          onChange={onChange}
+          labelId={`${boxId}-label`}
+          describedBy={describedBy}
+          invalid={flag?.level === "fix"}
+          placeholder={placeholder}
+          className={`${underlined(!!flag)} min-h-[132px] leading-relaxed`}
+        />
         <FocusLine />
       </div>
       {flag && <FlagNote id={noteId} finding={flag} />}
-      <span id={hintId} className={`text-[13px] leading-normal text-ink-2 ${previewing ? "sr-only" : ""}`}>
-        One bullet per line · <FormatHint moveLines />
-        {bullets.some((bullet) => bullet.leftOut) && " · Lines starting with ○ are left out of the PDF."}
-      </span>
+      {leftOut && (
+        <span id={hintId} className="text-[13px] leading-normal text-ink-2">
+          Lines starting with ○ are left out of the PDF.
+        </span>
+      )}
     </div>
   )
 }
