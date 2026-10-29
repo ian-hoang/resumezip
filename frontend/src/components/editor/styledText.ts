@@ -1,19 +1,48 @@
-// The text of a box that shows bold and italic words (StyledBox.tsx), as it
-// shows it: the words without their marks, with each character's style. It's
-// saved with the marks the PDF reads (markedPieces in lib/typst/resumeData.ts),
-// **bold**, *italic* and ***both***, and read back with the same code, so the
-// box always shows a line as it prints. A bullets box's lines start with a
-// bullet ("• ", or "○ " when left out), as plain text, and follow arrange.ts's
-// rules for Enter, pasting and typing; a box for prose has no bullets.
+// The text of a box that shows styled words (StyledBox.tsx), as it shows it:
+// the words without their marks, with each character's style. It's saved with
+// the marks the PDF reads (lib/marks.ts), **bold**, *italic*, ***both***,
+// __underline__ and [linked words](address), and read back with the same code,
+// so the box always shows a line as it prints. A bullets box's lines start
+// with a bullet ("• ", or "○ " when left out), as plain text, and follow
+// arrange.ts's rules for Enter, pasting and typing; a box for prose has no bullets.
 
-import { markedPieces } from "@/lib/typst/resumeData"
+import { escapedWords, markedPieces, typedPieces } from "@/lib/marks"
 import { cursorWithBullets, lineStartOf, newBullet, pastedList, sameEnd, typedList, withBullets } from "./arrange"
 
 export const BOLD = 1
 export const ITALIC = 2
+export const UNDERLINE = 4
+// The bits above these hold a character's link, by its place in LINKS.
+const LINK_SHIFT = 3
+const STYLE_BITS = (1 << LINK_SHIFT) - 1
 
-/** A character's style: 0, BOLD, ITALIC, or both added together. */
+/**
+ * A character's style: BOLD, ITALIC and UNDERLINE added together, and its
+ * link, if any (linkOf). Two characters in the same style, link and all, have
+ * the same number, so a style is compared and copied as one.
+ */
 export type Style = number
+
+// Every link address the page has shown, by number; 0 is none. A style holds
+// the number, so it stays a number, and an address keeps its number until the
+// page is closed: styles are never saved as numbers.
+const LINKS = [""]
+
+/** The address `style` links to, or "" if none. */
+export const linkOf = (style: Style) => LINKS[style >> LINK_SHIFT] ?? ""
+
+/** `style` linking to `address`, or to nothing for "". */
+export function withLink(style: Style, address: string): Style {
+  let number = address ? LINKS.indexOf(address) : 0
+  if (number < 0) number = LINKS.push(address) - 1
+  return (style & STYLE_BITS) | (number << LINK_SHIFT)
+}
+
+/** `style` without its link. */
+const unlinked = (style: Style) => style & STYLE_BITS
+
+const styleOf = (piece: { bold: boolean; italic: boolean; underline?: true; link?: string }): Style =>
+  withLink((piece.bold ? BOLD : 0) + (piece.italic ? ITALIC : 0) + (piece.underline ? UNDERLINE : 0), piece.link ?? "")
 
 export interface Styled {
   /** The words as the box shows them, a line each, bullets and all. */
@@ -76,7 +105,7 @@ function readLine(typed: string): { line: Styled; at: number[] } {
   for (const piece of markedPieces(typed)) {
     text += piece.text
     for (let index = 0; index < piece.text.length; index++) {
-      styles.push((piece.bold ? BOLD : 0) + (piece.italic ? ITALIC : 0))
+      styles.push(styleOf(piece))
       at.push(piece.at + index)
     }
   }
@@ -91,43 +120,76 @@ export const styledOf = (saved: string, kind: Kind): Styled =>
       .map((line) => readLine(line).line),
   )
 
-// By style: **bold**, *italic*, ***both***.
-const MARKS = ["", "**", "*", "***"]
+// By bold and italic: **bold**, *italic*, ***both***. Underline goes outside them: __**both**__.
+const STARS = ["", "**", "*", "***"]
+const opening = (style: Style) => `${style & UNDERLINE ? "__" : ""}${STARS[style & (BOLD | ITALIC)]}`
+const closing = (style: Style) => `${STARS[style & (BOLD | ITALIC)]}${style & UNDERLINE ? "__" : ""}`
 
 /**
  * A line in marks, with where each of its characters went. A mark has to
- * touch its words, so spaces at either end of bold or italic words go outside
- * it. With no asterisks typed in the words, every line reads back as it was
- * styled; asterisks typed next to bold or italic words can pair up with a
- * mark, and `settled` then shows what that prints.
+ * touch its words, so spaces at either end of styled or linked words go
+ * outside it, and a link holds the other marks: [the **new** site](address).
+ * Words are escaped (escapedWords), so a "_" or "[" stays a word. With no
+ * asterisks typed in the words, every line reads back as it was styled;
+ * asterisks typed next to bold or italic words can pair up with a mark, and
+ * `settled` then shows what that prints.
  */
 function writeLine({ text, styles }: Styled, kind: Kind): { typed: string; at: number[] } {
   let typed = ""
   const at: number[] = []
-  const add = (from: number, to: number) => {
-    for (let index = from; index < to; index++) {
+  const bullet = (to: number) => {
+    for (let index = 0; index < to; index++) {
       at.push(typed.length)
       typed += text[index]
     }
   }
-  let start = wordsStart(text, kind)
-  add(0, start)
-  while (start < text.length) {
-    let end = start + 1
-    while (end < text.length && styles[end] === styles[start]) end++
-    let from = start
-    let to = end
-    if (styles[start]) {
-      while (from < to && isSpace(text[from])) from++
-      while (to > from && isSpace(text[to - 1])) to--
+  // Each character goes after the backslash escaping it, if it has one.
+  const words = (from: number, to: number) => {
+    const escaped = escapedWords(text.slice(from, to))
+    let out = 0
+    for (let index = from; index < to; index++) {
+      if (escaped[out] === "\\") out++
+      at.push(typed.length + out++)
     }
-    if (from === to) add(start, end)
+    typed += escaped
+  }
+  const trimmed = (from: number, to: number) => {
+    while (from < to && isSpace(text[from])) from++
+    while (to > from && isSpace(text[to - 1])) to--
+    return [from, to]
+  }
+  // Words in runs of one style, each in its marks.
+  const marked = (start: number, stop: number) => {
+    while (start < stop) {
+      const style = unlinked(styles[start])
+      let end = start + 1
+      while (end < stop && unlinked(styles[end]) === style) end++
+      const [from, to] = style ? trimmed(start, end) : [start, start]
+      if (from === to) words(start, end)
+      else {
+        words(start, from)
+        typed += opening(style)
+        words(from, to)
+        typed += closing(style)
+        words(to, end)
+      }
+      start = end
+    }
+  }
+  let start = wordsStart(text, kind)
+  bullet(start)
+  while (start < text.length) {
+    const link = linkOf(styles[start])
+    let end = start + 1
+    while (end < text.length && linkOf(styles[end]) === link) end++
+    const [from, to] = link ? trimmed(start, end) : [start, start]
+    if (from === to) marked(start, end)
     else {
-      add(start, from)
-      typed += MARKS[styles[start]]
-      add(from, to)
-      typed += MARKS[styles[start]]
-      add(to, end)
+      marked(start, from)
+      typed += "["
+      marked(from, to)
+      typed += `](${link})`
+      marked(to, end)
     }
     start = end
   }
@@ -151,10 +213,11 @@ function readTyped(line: Styled, kind: Kind): { line: Styled; at: number[] } {
     let end = start + 1
     while (end < line.text.length && line.styles[end] === line.styles[start]) end++
     const style = line.styles[start]
-    for (const piece of markedPieces(line.text.slice(start, end), (style & BOLD) > 0, (style & ITALIC) > 0)) {
+    for (const piece of typedPieces(line.text.slice(start, end), (style & BOLD) > 0, (style & ITALIC) > 0)) {
       out.text += piece.text
       for (let index = 0; index < piece.text.length; index++) {
-        out.styles.push((piece.bold ? BOLD : 0) + (piece.italic ? ITALIC : 0))
+        // Asterisks only make bold and italic: underline and links are kept as they were.
+        out.styles.push((style & ~(BOLD | ITALIC)) | (piece.bold ? BOLD : 0) | (piece.italic ? ITALIC : 0))
         at.push(start + piece.at + index)
       }
     }
@@ -255,12 +318,15 @@ export function settled(edit: StyledEdit, previous: string, kind: Kind): Settled
 /**
  * The style a character typed at `at` gets: the one before it on its line, or
  * at the start of a line's words, the one after it, as in word processors.
+ * Words typed at either end of a link aren't in it, or underlined with it.
  */
 export function styleAt({ text, styles }: Styled, at: number, kind: Kind): Style {
   const from = lineStartOf(text, at)
   const words = from + wordsStart(text.slice(from), kind)
-  if (at > words) return styles[at - 1]
-  return at === words && at < text.length && text[at] !== "\n" ? styles[at] : 0
+  const after = at < text.length && text[at] !== "\n" ? styles[at] : 0
+  const style = at > words ? styles[at - 1] : at === words ? after : 0
+  const inLink = at > words && linkOf(style) !== "" && after >> LINK_SHIFT === style >> LINK_SHIFT
+  return linkOf(style) && !inLink ? unlinked(style) & ~UNDERLINE : style
 }
 
 /** The style words typed over a selection get: its first word's, as in word processors. */
@@ -349,12 +415,10 @@ export function joinedForward(text: string, at: number): [number, number] | unde
 }
 
 /**
- * Bold (BOLD) or italic (ITALIC) on the words from start to end, or off if
- * they all have it already. Bullets, and spaces at either end, are left as
- * they are, and each line gets its own marks when it's saved. Undefined when
- * there are no words in it.
+ * The characters of the words from start to end: not bullets or line breaks,
+ * or spaces at either end. Undefined when there are no words in it.
  */
-export function toggled(s: Styled, start: number, end: number, style: Style, kind: Kind): StyledEdit | undefined {
+function wordsIn(s: Styled, start: number, end: number, kind: Kind): number[] | undefined {
   const all: number[] = []
   for (let index = start; index < end; index++) {
     if (s.text[index] !== "\n" && !inBullet(s.text, index, kind)) all.push(index)
@@ -362,11 +426,67 @@ export function toggled(s: Styled, start: number, end: number, style: Style, kin
   const first = all.findIndex((index) => !isSpace(s.text[index]))
   if (first < 0) return undefined
   const last = all.findLastIndex((index) => !isSpace(s.text[index]))
-  const words = all.slice(first, last + 1)
-  const on = words.some((index) => !isSpace(s.text[index]) && !(s.styles[index] & style))
+  return all.slice(first, last + 1)
+}
+
+/** Whether there are words from start to end to style or link. */
+export const hasWords = (s: Styled, start: number, end: number, kind: Kind) => wordsIn(s, start, end, kind) !== undefined
+
+/** Styles changed on the words at `words`, selected. */
+function restyledWords(s: Styled, words: number[], change: (style: Style) => Style): StyledEdit {
   const styles = [...s.styles]
-  for (const index of words) styles[index] = on ? styles[index] | style : styles[index] & ~style
+  for (const index of words) styles[index] = change(styles[index])
   return { text: s.text, styles, start: words[0], end: words[words.length - 1] + 1 }
+}
+
+/**
+ * Bold (BOLD), italic (ITALIC) or underline (UNDERLINE) on the words from
+ * start to end, or off if they all have it already. Bullets, and spaces at
+ * either end, are left as they are, and each line gets its own marks when
+ * it's saved. Undefined when there are no words in it.
+ */
+export function toggled(s: Styled, start: number, end: number, style: Style, kind: Kind): StyledEdit | undefined {
+  const words = wordsIn(s, start, end, kind)
+  if (!words) return undefined
+  const on = words.some((index) => !isSpace(s.text[index]) && !(s.styles[index] & style))
+  return restyledWords(s, words, (old) => (on ? old | style : old & ~style))
+}
+
+/**
+ * The words from start to end linked to `address`, and underlined, so the
+ * link shows on the page; with "", unlinked, and not underlined. An
+ * underline is an ordinary one, which can be taken off and leave the link.
+ * Undefined when there are no words in it.
+ */
+export function linked(s: Styled, start: number, end: number, address: string, kind: Kind): StyledEdit | undefined {
+  const words = wordsIn(s, start, end, kind)
+  if (!words) return undefined
+  return restyledWords(s, words, (old) => (address ? withLink(old | UNDERLINE, address) : unlinked(old) & ~UNDERLINE))
+}
+
+/** The link the character at `at`, or the one before it, is in: where it starts and ends, and its address. */
+export function linkAround({ text, styles }: Styled, at: number): { start: number; end: number; address: string } | undefined {
+  const inside = (index: number) => index >= 0 && index < text.length && linkOf(styles[index]) !== ""
+  const index = inside(at) ? at : inside(at - 1) ? at - 1 : -1
+  if (index < 0) return undefined
+  const number = styles[index] >> LINK_SHIFT
+  let start = index
+  let end = index + 1
+  while (start > 0 && styles[start - 1] >> LINK_SHIFT === number && text[start - 1] !== "\n") start--
+  while (end < text.length && styles[end] >> LINK_SHIFT === number && text[end] !== "\n") end++
+  return { start, end, address: linkOf(styles[index]) }
+}
+
+/** Which of BOLD, ITALIC and UNDERLINE every word from start to end has, as buttons show them, and the link they're all in. */
+export function stylesOver(s: Styled, start: number, end: number, kind: Kind): { style: Style; link: string } {
+  const words = wordsIn(s, start, end, kind)?.filter((index) => !isSpace(s.text[index]))
+  if (!words) {
+    const style = styleAt(s, start, kind)
+    return { style: unlinked(style), link: linkOf(style) }
+  }
+  const style = words.reduce((all, index) => all & s.styles[index], STYLE_BITS)
+  const link = linkOf(s.styles[words[0]])
+  return { style, link: words.every((index) => linkOf(s.styles[index]) === link) ? link : "" }
 }
 
 /** Swaps the line with `at` in it with the one above (-1) or below (1), as Alt+↑ and Alt+↓ do, keeping the cursor in it. */

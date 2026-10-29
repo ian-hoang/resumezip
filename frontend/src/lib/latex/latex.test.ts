@@ -372,6 +372,18 @@ describe("Accent's section titles", () => {
   })
 })
 
+test("a LaTeX file underlines and links words as they were marked, printing a link's words alone", () => {
+  const text = latexOf({
+    selectedTemplate: "jake",
+    marks: 2,
+    workExperienceSection: [
+      { id: 1, companyName: "Google", workDescription: "• Shipped the [__dashboard__](https://example.com/dash) on __time__" },
+    ],
+  })
+  expect(text).toContain(String.raw`\href{https://example.com/dash}{\underline{dashboard}}`)
+  expect(text).toContain(String.raw`\underline{time}`)
+})
+
 describe.each(IDS)("a LaTeX file in %s's layout", (id) => {
   test("prints every character TeX reads as markup as typed, in every kind of field", () => {
     const { text, beyondPdfLatex } = toLatexFile(asSaved(everyField(id)))

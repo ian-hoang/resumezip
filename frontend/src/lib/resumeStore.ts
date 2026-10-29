@@ -10,6 +10,7 @@
 // each one changed are kept.
 
 import { CORE_SECTIONS, SECTIONS, type SectionName } from "@/components/editor/sections"
+import { MARKS_VERSION, withMarks } from "./marks"
 import type { Resume, ResumeContent, ResumeField } from "./resume"
 import type { FileResume } from "./resumeFile"
 import { forgetResume } from "./review/ai/saved"
@@ -102,6 +103,7 @@ const blankResume = (template: string): Resume => ({
   ...Object.fromEntries(Object.values(SECTIONS).map(({ dataKey }) => [dataKey, []])),
   sectionOrder: [...CORE_SECTIONS],
   sectionsChosen: true,
+  marks: MARKS_VERSION,
 })
 
 /**
@@ -118,7 +120,7 @@ const migrated = (resume: Resume): [Partial<Resume>, string[]] =>
 /** A resume from a file, as it's added: a blank one with the file's content in it. */
 export const imported = (content: ResumeContent, tag: string): Resume => ({
   ...blankResume(content.selectedTemplate ?? DEFAULT_TEMPLATE),
-  ...content,
+  ...withMarks(content),
   resumeTag: tag,
   updatedAt: content.updatedAt ?? new Date().toISOString(),
 })
@@ -132,7 +134,7 @@ export const imported = (content: ResumeContent, tag: string): Resume => ({
  */
 const replacedBy = (before: Resume, content: ResumeContent, id: string): Resume => ({
   ...before,
-  ...content,
+  ...withMarks(content),
   extraSections: content.extraSections ?? {},
   tune: content.tune ?? null,
   id,

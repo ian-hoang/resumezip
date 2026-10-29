@@ -41,13 +41,16 @@ npm run test:browser   # after a build; see below
   Awards & Certifications are `optional` (`components/editor/sections.ts`) and
   show once they're in the saved order, from Add section, or have entries.
 - The boxes for bullets, the summary and text sections
-  (`src/components/editor/StyledBox.tsx`) show bold and italic words as they
-  print, without their marks, and save them as `**bold**`, `*italic*` and
-  `***both***`, read with the PDF's own code (`markedPieces` in
-  `src/lib/typst/resumeData.ts`). Each is an editable div that makes each edit
-  itself (`styledText.ts`) and draws it (`boxDom.ts`), with its own undo. Only
-  words an input method composes are left to the browser, and read back once
-  it's done.
+  (`src/components/editor/StyledBox.tsx`) show bold, italic, underlined and
+  linked words as they print, without their marks, and save them as
+  `**bold**`, `*italic*`, `***both***`, `__underline__` and `[words](address)`,
+  read with the PDF's own code (`src/lib/marks.ts`). A "_", "[" or backslash
+  typed as a word is saved behind a backslash; resumes from before underline
+  and links are escaped as they're read (`withMarks`). Selecting words shows a
+  toolbar over them (`SelectionToolbar.tsx`). Each box is an editable div that
+  makes each edit itself (`styledText.ts`) and draws it (`boxDom.ts`), with
+  its own undo. Only words an input method composes are left to the browser,
+  and read back once it's done.
 - `src/lib/typst/` builds PDFs in a Web Worker. Its README covers adding a
   template.
 - `src/lib/resumeFile.ts`: every downloaded PDF carries its resume, so the PDF
