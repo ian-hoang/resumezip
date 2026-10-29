@@ -6,7 +6,6 @@ import { Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
 import { onMac, shortcut } from "@/lib/keys"
-import { markedPieces } from "@/lib/typst/resumeData"
 import { bulletLines, withBullets } from "./arrange"
 import { selectLineIn } from "./boxDom"
 import { reducedMotion } from "./layout"
@@ -23,8 +22,6 @@ interface FieldProps {
   name?: string
   /** What the checker found here, while the person is fixing it. */
   flag?: Finding | null
-  /** Counts up each time the person chooses `flag`'s finding, as the checker's requests do. */
-  request?: number
   /** What the browser can fill it in with, as "name", "email" or "tel". */
   autoComplete?: string
   /** A web address: phones show the keyboard for one, with no spelling marks and no capital first letter. */
@@ -225,61 +222,18 @@ function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
   )
 }
 
-/** How much of a bullet an open card shows until its box is used, in characters, cut at a word: about a line and a half. */
-const PREVIEW_CHARACTERS = 70
-/** How many bullets an open card shows until its box is used. */
-const PREVIEW_BULLETS = 2
-
-/** A bullet's words without their bold and italic marks, cut short at a word, with "…" where they were cut. */
-function previewOf(words: string): string {
-  const plain = markedPieces(words)
-    .map((piece) => piece.text)
-    .join("")
-  if (plain.length <= PREVIEW_CHARACTERS) return plain
-  const cut = plain.slice(0, PREVIEW_CHARACTERS + 1)
-  const space = cut.lastIndexOf(" ")
-  return `${(space > PREVIEW_CHARACTERS / 2 ? cut.slice(0, space) : cut.slice(0, PREVIEW_CHARACTERS)).replace(/[\s,.;:]+$/, "")}…`
-}
-
 /**
  * A box for bullet points: one per line, and Enter starts a new bullet. Bold
  * and italic words show as they print, and are saved as **bold**, *italic*
  * and ***both***; ⌘B and ⌘I add or remove them. Alt+↑ and Alt+↓ move the line
  * the cursor is on. A line starting with "○" is left out of the PDF.
- *
- * With `compact`, as in an entry's card, it shows its first bullets cut short
- * and how many more there are until it's used: the box itself is over them,
- * unseen, so a click or Tab goes into it, and screen readers read all of it.
  */
-export function BulletsField({
-  label,
-  value,
-  placeholder,
-  className = "",
-  onChange,
-  name,
-  flag,
-  request,
-  compact = false,
-}: FieldProps & { compact?: boolean }) {
+export function BulletsField({ label, value, placeholder, className = "", onChange, name, flag }: FieldProps) {
   const text = withBullets(value)
   const boxId = useId()
   const hintId = useId()
   const noteId = useId()
   const bullets = bulletLines(text)
-  // Once the box has been used, it shows in full until its card is folded.
-  const [used, setUsed] = useState(false)
-  // Choosing a finding here shows the text, where the cursor goes to it. Only a
-  // new choice does: the finding is found afresh each time the checker runs,
-  // and it's gone while the person is in Write mode, then back.
-  const [shownRequest, setShownRequest] = useState(request)
-  if (request !== undefined && request !== shownRequest) {
-    setShownRequest(request)
-    setUsed(true)
-  }
-  const previewing = compact && !used && bullets.length > 0
-  // Underlined, as the other fields are; the cut-short bullets are drawn the same way.
-  const box = `${underlined(!!flag)} leading-relaxed`
 
   return (
     <div data-field={name} className={`group/field flex min-w-0 flex-col gap-1.5 ${className}`}>
@@ -292,36 +246,23 @@ export function BulletsField({
       >
         {label}
       </label>
-      <div className="relative" onFocus={() => setUsed(true)}>
+      <div className="relative">
         <FocusGlow />
-        {previewing && (
-          <div aria-hidden="true" className={`${box} flex flex-col`}>
-            {bullets.slice(0, PREVIEW_BULLETS).map((bullet) => (
-              <p key={bullet.line} className={bullet.leftOut ? "text-ink-2" : undefined}>
-                {bullet.leftOut ? "○" : "•"} {previewOf(bullet.words)}
-              </p>
-            ))}
-            {bullets.length > PREVIEW_BULLETS && <p className="mt-0.5 text-[13px] text-ink-2">+ {bullets.length - PREVIEW_BULLETS} more</p>}
-          </div>
-        )}
-        {/* While the bullets show cut short, the box is over them, unseen, and no taller. */}
-        <div className={previewing ? "absolute inset-0 overflow-hidden opacity-0" : undefined}>
-          <StyledBox
-            kind="bullets"
-            id={boxId}
-            value={value}
-            onChange={onChange}
-            labelId={`${boxId}-label`}
-            describedBy={flag ? `${hintId} ${noteId}` : hintId}
-            invalid={flag?.level === "fix"}
-            placeholder={placeholder}
-            className={`${box} ${compact ? "min-h-[110px]" : "min-h-[132px]"}`}
-          />
-        </div>
+        <StyledBox
+          kind="bullets"
+          id={boxId}
+          value={value}
+          onChange={onChange}
+          labelId={`${boxId}-label`}
+          describedBy={flag ? `${hintId} ${noteId}` : hintId}
+          invalid={flag?.level === "fix"}
+          placeholder={placeholder}
+          className={`${underlined(!!flag)} min-h-[132px] leading-relaxed`}
+        />
         <FocusLine />
       </div>
       {flag && <FlagNote id={noteId} finding={flag} />}
-      <span id={hintId} className={`text-[13px] leading-normal text-ink-2 ${previewing ? "sr-only" : ""}`}>
+      <span id={hintId} className="text-[13px] leading-normal text-ink-2">
         One bullet per line · <FormatHint moveLines />
         {bullets.some((bullet) => bullet.leftOut) && " · Lines starting with ○ are left out of the PDF."}
       </span>

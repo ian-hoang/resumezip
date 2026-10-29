@@ -78,28 +78,25 @@ test("an entry is a card, folded to its name and what's in it, opened with a cli
   await expect(page.getByRole("textbox", { name: "Role" }).first()).toHaveValue("Engineer")
   await expect(page.getByText("· Engineer", { exact: true })).toHaveCount(0)
 
-  // Its bullets show two at a time until the box is used, which then shows them all. (The folded
-  // cards' boxes are on the page too, out of reach, ready to slide open.)
-  const more = page.getByText("+ 1 more", { exact: true })
+  // Its bullets all show in full, without a click. (The folded cards' boxes are on the page too,
+  // out of reach, ready to slide open.)
   const box = page.getByLabel(BULLETS).first()
-  await expect(more).toBeVisible()
-  await box.click()
-  await expect(more).toBeHidden()
+  await expect(box).toBeVisible()
   await expectText(box, "• Built the search index\n• Cut serving costs by 30%\n• Mentored four interns")
+  await expect(page.getByText("+ 1 more", { exact: true })).toHaveCount(0)
 
   await done.click()
   await expect(done).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Edit entry 1" })).toBeVisible()
 
-  // Folded, it shows its name, not how many bullets it has, and a click on it opens it again,
-  // with its bullets two at a time again.
+  // Folded, it shows its name, not how many bullets it has, and a click on it opens it again.
   const card = page.locator("[data-card]").first()
   await expect(card).not.toContainText("bullets")
   await expect(card.getByText("Google", { exact: true })).toBeVisible()
   await expect(card).not.toContainText("Engineer")
   await card.getByText("Google", { exact: true }).click()
   await expect(done).toBeVisible()
-  await expect(more).toBeVisible()
+  await expect(box).toBeVisible()
 
   expect(errors).toEqual([])
 })
@@ -217,8 +214,11 @@ test("a card shows its name alone, no dates, and the note under the title says w
   const folded = page.locator("[data-card]").nth(1)
   await expect(folded.getByText("Initech", { exact: true })).toBeVisible()
   await expect(folded).not.toContainText("2024")
-  // The open card's long bullet is cut short at a word.
-  await expect(page.getByText("• Built a service that cut page load time by 30% for twelve million…", { exact: true })).toBeVisible()
+  // The open card's long bullet shows in full.
+  await expectText(
+    page.getByLabel(BULLETS).first(),
+    "• Built a service that cut page load time by 30% for twelve million monthly visitors\n• Ran it",
+  )
 
   // Moved above the newer one, it isn't newest first any more.
   await page.getByRole("button", { name: "Reorder entry 2" }).focus()

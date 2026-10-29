@@ -110,8 +110,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
   const [openId, setOpenId] = useState<number | null>(entries[0]?.id ?? null)
   // Follows openId a frame later, so a newly added entry slides open too.
   const [shownId, setShownId] = useState<number | null>(openId)
-  // Counts the times an entry opens, so its bullets start each time as a few lines cut short.
-  const [opened, setOpened] = useState(0)
   const [confirmingId, setConfirmingId] = useState<number | null>(null)
   const [removingId, setRemovingId] = useState<number | null>(null)
   const elements = useRef(new Map<number, HTMLElement>())
@@ -180,7 +178,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const sliding = entry !== undefined && entry.id !== openRef.current && !reducedMotion()
     if (entry) {
       setConfirmingId(null)
-      if (entry.id !== openRef.current) setOpened((count) => count + 1)
       setOpenId(entry.id)
       setShownId(entry.id)
     }
@@ -219,7 +216,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const { id } = restored
     restoredDone.current()
     setConfirmingId(null)
-    setOpened((count) => count + 1)
     setOpenId(id)
     setShownId(id)
     setTimeout(
@@ -277,7 +273,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
    */
   const open = (id: number | null, clicked: number) => {
     setConfirmingId(null)
-    if (id !== null && id !== openId) setOpened((count) => count + 1)
     setOpenId(id)
     // One entry closes as the other opens, in the same frame, so the page's height barely changes.
     setShownId(id)
@@ -316,7 +311,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const blank = Object.fromEntries(section.fields.map((field) => [field.key, ""]))
     save([...current, ...values.map((value, index): Entry => ({ ...blank, ...value, id: id + index }))])
     setConfirmingId(null)
-    setOpened((count) => count + 1)
     setOpenId(id)
     if (!show) return
     // Once it has slid open, bring it into view.
@@ -625,7 +619,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                     const flag = flagAt(index, field.key)
                     return field.type === "bullets" ? (
                       <BulletsField
-                        key={`${field.key}:${isOpen ? opened : "folded"}`}
+                        key={field.key}
                         name={field.key}
                         label={field.label}
                         placeholder={field.placeholder}
@@ -633,8 +627,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                         onChange={(value) => update(entry.id, field.key, value)}
                         className={FIELD_SPAN[field.size]}
                         flag={flag}
-                        request={flag ? target!.request : undefined}
-                        compact
                       />
                     ) : (
                       <Field
