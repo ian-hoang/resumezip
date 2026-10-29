@@ -437,6 +437,10 @@
   border-radius: 2px;
   animation: changed 1600ms ease-out forwards;
 }
+/* Words lit within a run flow with its text, where pdf.js places every span of the layer on its own. */
+.textLayer [role="presentation"] > [data-changed] {
+  position: static;
+}
 @media (prefers-reduced-motion: reduce) {
   .textLayer [data-changed] {
     animation-timing-function: step-end;
