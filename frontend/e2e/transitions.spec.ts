@@ -52,7 +52,7 @@ async function startWriting(page: Page) {
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Reorder Experience" })).toBeVisible()
 }
 
-test("a section, the ATS checks or Style, and the template gallery fade in as they're chosen", async ({ page }) => {
+test("a section, the ATS checks or Style, and on a narrow screen the template gallery, fade in as they're chosen", async ({ page }) => {
   const errors = pageErrors(page)
   await startWriting(page)
   const sections = page.getByRole("navigation", { name: "Sections" })
@@ -79,6 +79,8 @@ test("a section, the ATS checks or Style, and the template gallery fade in as th
   // Let the preview finish, so the compiler's download isn't cut off as the page closes.
   await previewShown(page)
 
+  // Under 1024px the gallery is a dialog over a dimmed screen, which fades in with it.
+  await page.setViewportSize({ width: 800, height: 900 })
   const gallery = await fadingIn(page.getByRole("button", { name: /^Template/ }), page.getByRole("dialog", { name: "Choose a template" }))
   expect(gallery.some((text) => text.includes("Templates"))).toBe(true)
   await expect(page.getByRole("dialog", { name: "Choose a template" })).toBeVisible()
@@ -134,22 +136,26 @@ test("the template gallery fades away as it closes, rather than vanishing", asyn
   expect(errors).toEqual([])
 })
 
-test("the Add section menu grows in solid, and only what's in it fades in", async ({ page }) => {
-  const errors = pageErrors(page)
-  await startWriting(page)
-  await transitionsDone(page)
-  // From here on, the least opacity the menu and what's in it have shown, looked at as the page
-  // changes as well as each frame. Frames came 700ms apart in WebKit on CI, which starts an
-  // animation's clock as it's made, so the contents' 220ms fade was over by the first frame; as
-  // the menu is put on the page, they're at its start. Read from their computed styles rather
-  // than animation events, which WebKit doesn't always deliver.
-  const lowest = await page.evaluateHandle(() => {
-    const seen = { menu: 1, contents: 1 }
+/**
+ * From here on, the least opacity the panel matching `selector` (times what
+ * holds it) and what's in it have shown, looked at as the page changes as well
+ * as each frame. Frames came 700ms apart in WebKit on CI, which starts an
+ * animation's clock as it's made, so the contents' 220ms fade was over by the
+ * first frame; as the panel is put on the page, they're at its start. Read
+ * from their computed styles rather than animation events, which WebKit
+ * doesn't always deliver.
+ */
+async function lowestOpacity(page: Page, selector: string) {
+  const lowest = await page.evaluateHandle((selector) => {
+    const seen = { panel: 1, contents: 1 }
     const look = () => {
-      const menu = document.querySelector('[role="menu"][aria-label="Add section"]')
-      if (!menu) return
-      seen.menu = Math.min(seen.menu, Number(getComputedStyle(menu).opacity))
-      for (const child of menu.children) seen.contents = Math.min(seen.contents, Number(getComputedStyle(child).opacity))
+      const panel = document.querySelector(selector)
+      if (!panel) return
+      let opacity = 1
+      for (let element: Element | null = panel; element; element = element.parentElement)
+        opacity *= Number(getComputedStyle(element).opacity)
+      seen.panel = Math.min(seen.panel, opacity)
+      for (const child of panel.children) seen.contents = Math.min(seen.contents, Number(getComputedStyle(child).opacity))
     }
     new MutationObserver(look).observe(document.body, { childList: true, subtree: true })
     const frame = () => {
@@ -158,7 +164,15 @@ test("the Add section menu grows in solid, and only what's in it fades in", asyn
     }
     requestAnimationFrame(frame)
     return seen
-  })
+  }, selector)
+  return () => lowest.jsonValue()
+}
+
+test("the Add section menu grows in solid, and only what's in it fades in", async ({ page }) => {
+  const errors = pageErrors(page)
+  await startWriting(page)
+  await transitionsDone(page)
+  const lowest = await lowestOpacity(page, '[role="menu"][aria-label="Add section"]')
 
   await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Add section", exact: true }).click()
   const menu = page.getByRole("menu", { name: "Add section" })
@@ -166,11 +180,32 @@ test("the Add section menu grows in solid, and only what's in it fades in", asyn
   await settled(menu)
   // See-through glass doesn't blur what's behind it, so a menu fading in would
   // show the page plainly through it, then frost over at once as it ended.
-  const seen = await lowest.jsonValue()
-  expect(seen.menu).toBe(1)
+  const seen = await lowest()
+  expect(seen.panel).toBe(1)
   expect(seen.contents).toBeLessThan(1)
   await page.keyboard.press("Escape")
   await expect(menu).toBeHidden()
+  expect(errors).toEqual([])
+})
+
+test("on a wide screen the template gallery drops in solid, and only what's in it fades in", async ({ page }) => {
+  const errors = pageErrors(page)
+  await startWriting(page)
+  // Let the preview finish, so the compiler's download isn't cut off as the page closes.
+  await previewShown(page)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await transitionsDone(page)
+  const lowest = await lowestOpacity(page, '[role="dialog"][aria-label="Choose a template"]')
+
+  await page.getByRole("button", { name: /^Template/ }).click()
+  const gallery = page.getByRole("dialog", { name: "Choose a template" })
+  await expect(gallery).toBeVisible()
+  await settled(gallery)
+  // Faded in with what holds it, the glass showed the page plainly through it, then frosted over.
+  const seen = await lowest()
+  expect(seen.panel).toBe(1)
+  expect(seen.contents).toBeLessThan(1)
+  await page.keyboard.press("Escape")
   expect(errors).toEqual([])
 })
 
