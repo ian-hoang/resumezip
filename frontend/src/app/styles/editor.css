@@ -13,16 +13,39 @@
     }
   }
 
-  /* Get AI notes in the Check tab (AiNotesBox.tsx): a pill of liquid glass
-     (.glass in glass.css) as wide as the panel. The panel is plain white, with
-     nothing under the pill to bend (LiquidLens), so the glass shows in how it
-     takes the light: lit along its top, cool where it thickens toward its
-     foot, a rim bright at one corner and blue at the other, and a soft lift.
-     Loaded after glass.css, so this shadow and rim replace .glass's. */
+  /* A button of lit or blue glass on the sheet (glass-lit, glass-blue in
+     glass.css): the back arrow, the template picker, the rail's tabs, Get AI
+     notes. Its fill is on ::before, over the button's own background, so its
+     states are filters rather than a shade behind it: a little richer under
+     the pointer, darker with the keyboard's focus (as focus shows across the
+     site) or while its menu is open, and sunk a little as it's pressed. */
+  .lit-button {
+    transition:
+      filter 200ms var(--ease-glide),
+      scale 120ms ease-out;
+  }
+  .lit-button:hover:not(:disabled) {
+    filter: brightness(0.985) saturate(1.15);
+  }
+  .lit-button:focus-visible,
+  .lit-button[aria-expanded="true"] {
+    filter: brightness(0.94) saturate(1.15);
+  }
+  .lit-button:active:not(:disabled) {
+    scale: 0.98;
+  }
+  .lit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lit-button:active:not(:disabled) {
+      scale: none;
+    }
+  }
+
+  /* Get AI notes in the Check tab (AiNotesBox.tsx): a lit glass pill as wide as the panel. */
   .ai-ask {
-    --glass-blur: 8px;
-    --glass-saturate: 1.3;
-    --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(250 251 254 / 0.7) 46%, rgb(226 233 250 / 0.82));
     display: flex;
     width: 100%;
     height: 46px;
@@ -33,31 +56,6 @@
     font-size: 15px;
     font-weight: 500;
     letter-spacing: -0.01em;
-    box-shadow:
-      0 0 0 1px rgb(17 19 24 / 0.07),
-      0 2px 5px -1px rgb(17 19 24 / 0.1),
-      0 12px 26px -12px rgb(20 40 110 / 0.4);
-    transition:
-      filter 200ms var(--ease-glide),
-      scale 120ms ease-out;
-  }
-  .ai-ask::after {
-    background: linear-gradient(135deg, #fff, rgb(255 255 255 / 0.35) 30%, rgb(46 91 230 / 0.1) 68%, rgb(46 91 230 / 0.32));
-  }
-  .ai-ask:hover:not(:disabled) {
-    filter: brightness(0.985) saturate(1.15);
-  }
-  .ai-ask:active:not(:disabled) {
-    scale: 0.985;
-  }
-  .ai-ask:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ai-ask:active:not(:disabled) {
-      scale: none;
-    }
   }
 
   /* The storm and sun over the AI notes' counts (AiNotesBox.tsx): the review

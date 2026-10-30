@@ -186,7 +186,7 @@ function RailTabs({ unfold }: { unfold?: () => void }) {
             onClick={() => choose(selected ? "write" : option.id)}
             onKeyDown={(event) => onKeyDown(event, index)}
             {...tipProps(badge ? `${option.label} · ${fixes} to fix` : option.label, 0, option.id)}
-            className={`${RAIL_BUTTON} ${selected ? "bg-[#f1f3f8] text-accent" : "text-[#8b9099] hover:bg-[#f6f7f9] hover:text-ink-2"}`}
+            className={`${RAIL_BUTTON} ${selected ? "glass glass-lit text-accent" : "text-[#8b9099] hover:bg-[#f6f7f9] hover:text-ink-2"}`}
           >
             <Icon aria-hidden="true" />
             <span className="sr-only">{option.label}</span>

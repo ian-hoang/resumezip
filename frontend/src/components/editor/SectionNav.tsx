@@ -268,7 +268,7 @@ export default function SectionNav({ sections, headings, extras, active: open, o
       <span
         ref={tabRef}
         aria-hidden="true"
-        className={`absolute left-0 top-0 -z-10 rounded-full bg-[#f1f3f8] transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none xl:rounded-[12px] ${
+        className={`glass glass-lit absolute left-0 top-0 -z-10 rounded-full transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none xl:rounded-[12px] ${
           dragging || active === null ? "invisible" : ""
         }`}
       />

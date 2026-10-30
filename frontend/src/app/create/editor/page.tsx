@@ -590,7 +590,7 @@ function Editor({ id }: { id: string }) {
                     }}
                     aria-label="Dashboard"
                     title="Dashboard"
-                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    className="glass glass-lit lit-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                   >
                     <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
                   </Link>

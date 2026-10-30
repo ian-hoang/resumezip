@@ -175,7 +175,7 @@ export default function AiNotesBox() {
           An AI skims it like a recruiter, then marks red flags and what’s done well on the page.
         </p>
         {problem}
-        <button type="button" onClick={askAi} disabled={!canAsk} className="ai-ask glass mt-1">
+        <button type="button" onClick={askAi} disabled={!canAsk} className="ai-ask glass glass-lit lit-button mt-1">
           {ai.step === "problem" ? "Try again" : "Get AI notes"}
         </button>
         {!canAsk && <p className="text-[12px] leading-snug text-ink-3">Waiting for the preview…</p>}
