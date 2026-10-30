@@ -166,7 +166,7 @@
   }
 
   /* The main action's blue, lighter at its top, and the halo of its own color
-     round it: blue-button's and blue-fill's, below. The dashboard's New
+     round it: blue-button's, below. The dashboard's New
      resume + (dashboard.css) is the same blue, in a halo of its own. The
      gradient's default 180deg is left out, as the build leaves it out of
      gradients outside a variable: a browser can keep it in computed style,
@@ -208,12 +208,6 @@
       scale: none;
     }
   }
-}
-
-/* blue-button's blue and halo alone, for a pill whose halves are buttons of their own (Download PDF and its ▾). */
-@utility blue-fill {
-  background-image: var(--blue-gradient);
-  box-shadow: var(--blue-halo);
 }
 
 /* Any other button standing on the sheet: white, greying a little toward its

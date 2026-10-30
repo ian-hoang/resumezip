@@ -604,10 +604,10 @@ function Editor({ id }: { id: string }) {
                       split. The button's least width fits "Download PDF", so it doesn't shrink when it
                       says Downloaded. */}
                   <div className="relative flex shrink-0 rounded-full text-white">
-                    {/* The pill's blue is under the two halves, not on what holds them: a filter
+                    {/* The pill's blue glass is under the two halves, not on what holds them: a filter
                         there would brighten the menu that opens from the ▾, and keep it from blurring
                         what's behind it. */}
-                    <span aria-hidden="true" className="blue-fill pointer-events-none absolute inset-0 rounded-full" />
+                    <span aria-hidden="true" className="glass glass-blue pointer-events-none absolute inset-0 rounded-full" />
                     <button
                       type="button"
                       onClick={download}

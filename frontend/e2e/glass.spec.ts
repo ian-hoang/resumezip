@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "./test"
 import { textPdf } from "../src/lib/import/testFiles"
-import { openFile } from "./helpers"
+import { newResume, openFile } from "./helpers"
 import { FROM_ELSEWHERE } from "./resumes"
 
 /** How many elements, with their ::before and ::after, draw a backdrop filter. */
@@ -106,6 +106,23 @@ const frostOf = (frame: Locator) =>
     const { backgroundColor, backdropFilter } = getComputedStyle(element, "::before")
     return { backgroundColor, backdropFilter }
   })
+
+// Asked for less transparency, glass turns solid white, which would leave Download PDF's white words on white.
+test("asked for less transparency, Download PDF's glass in the editor is solid blue", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "Playwright can't ask a browser for less transparency; Chromium's DevTools protocol can")
+  const session = await page.context().newCDPSession(page)
+  await session.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] })
+
+  await newResume(page)
+  // The pill's glass lies under its two halves, just before Download PDF.
+  const glass = page.getByRole("button", { name: "Download PDF" }).locator("xpath=preceding-sibling::span[1]")
+  await expect(glass).toHaveClass(/glass-blue/)
+  const fill = await glass.evaluate((element) => {
+    const style = getComputedStyle(element, "::before")
+    return { backgroundColor: style.backgroundColor, backgroundImage: style.backgroundImage }
+  })
+  expect(fill).toEqual({ backgroundColor: "rgb(46, 91, 230)", backgroundImage: "none" })
+})
 
 test("asked for less transparency, the review page's frame is as solid as the dashboard's", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "Playwright can't ask a browser for less transparency; Chromium's DevTools protocol can")

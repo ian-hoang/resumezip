@@ -88,6 +88,21 @@
   .glass-lit::after {
     background: linear-gradient(135deg, #fff, rgb(255 255 255 / 0.35) 30%, rgb(46 91 230 / 0.1) 68%, rgb(46 91 230 / 0.32));
   }
+  /* glass-lit in the main action's blue (--blue-gradient in sheet.css, stretched
+     a little toward its foot), with a rim that's white at its top corner and
+     light blue at the other: Download PDF in the editor. */
+  .glass-blue {
+    --glass-blur: 2px;
+    --glass-saturate: 1.2;
+    --glass-fill: linear-gradient(180deg, #5b97fb, #3a72ee 46%, #2c65e8);
+    box-shadow:
+      0 0 0 1px rgb(30 60 170 / 0.3),
+      0 2px 5px -1px rgb(30 60 170 / 0.3),
+      0 14px 28px -12px rgb(46 91 230 / 0.75);
+  }
+  .glass-blue::after {
+    background: linear-gradient(135deg, rgb(255 255 255 / 0.95), rgb(255 255 255 / 0.25) 30%, transparent 55%, rgb(168 185 242 / 0.7));
+  }
   /* Solid white, nothing showing through, with the glass's lit top and rim: a button beside ink
      glass (GLASS_PILL in components/pills.ts). */
   .glass-solid {
@@ -145,6 +160,10 @@
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
       background: var(--color-sheet);
+    }
+    /* Its words are white. */
+    .glass-blue::before {
+      background: var(--color-accent);
     }
     .liquid-lens {
       display: none;
