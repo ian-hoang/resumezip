@@ -13,6 +13,7 @@ import { PDFJS_WORKER_URL } from "@/lib/pdfjsWorker"
 import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 import { reducedMotion, scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
+import LiquidLens from "@/components/LiquidLens"
 import { useCheckActions } from "./CheckContext"
 import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
@@ -611,8 +612,9 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
         )}
       </div>
 
-      {/* On wide screens, the zoom in a glass pill floating over the foot of the page, which shows through it. */}
-      <div className="glass glass-float absolute bottom-4 left-1/2 z-10 hidden h-10 -translate-x-1/2 items-center gap-1 rounded-full px-2 font-mono text-[14px] text-ink xl:flex">
+      {/* On wide screens, the zoom in a pill of liquid glass floating over the foot of the page, which bends at its rim. */}
+      <div className="glass glass-liquid zoom-glass absolute bottom-4 left-1/2 z-10 hidden h-10 -translate-x-1/2 items-center gap-1 rounded-full px-2 font-mono text-[14px] text-ink xl:flex">
+        <LiquidLens bevel={16} strength={1} />
         {zoomControls}
         <span aria-hidden="true" className="mx-2 h-5 w-px bg-ink/10" />
         <button
