@@ -193,7 +193,7 @@ function body(data: TemplateData, units: Units): string {
         data.projects.forEach((project, index) => {
           if (index) add("  \\resumeEntryGap")
           const name = project.name && bold(projectName(project))
-          row(name, emph(project.date))
+          row(name, emph(dateRange(project.start, project.end)))
           const details = [emph(project.techStack), ...project.links.map((url) => webLink(url, underline))].filter(Boolean)
           if (details.length) add(`  \\resumeDetails{${details.join(" | ")}}`)
           bullets(project.bullets)

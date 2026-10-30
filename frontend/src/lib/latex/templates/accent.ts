@@ -274,7 +274,9 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         entries(data.projects, (project) => {
-          add(`  \\resumeProject{${projectHeader(project, " \\textcolor{accent}{\\textbar} ", underlined)}}{${latex(project.date)}}`)
+          add(
+            `  \\resumeProject{${projectHeader(project, " \\textcolor{accent}{\\textbar} ", underlined)}}{${latex(dateRange(project.start, project.end))}}`,
+          )
           items(project.bullets.map(runs))
         })
         break

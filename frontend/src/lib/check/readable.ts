@@ -160,7 +160,7 @@ const KEY_FIELDS: { [Section in SectionName]: FieldKeyOf<Section>[] } = {
   Work: ["workRole", "companyName", "workStartDate", "workEndDate"],
   Education: ["schoolName", "degree", "schoolStartDate", "schoolEndDate"],
   Skills: ["skillName", "skillDetails"],
-  Projects: ["projectName", "projectDate"],
+  Projects: ["projectName", "projectStartDate", "projectEndDate"],
   Publications: ["publicationTitle", "publicationDate"],
   Volunteership: ["volunteerRole", "volunteerOrg", "volunteerStartDate", "volunteerEndDate"],
   Leadership: ["leadershipRole", "leadershipOrg", "leadershipStartDate", "leadershipEndDate"],

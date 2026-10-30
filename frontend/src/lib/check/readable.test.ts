@@ -153,7 +153,7 @@ describe("R3 entries read as typed", () => {
     expect(check("R3", jake, reading([], missing)).findings).toEqual([
       expect.objectContaining({
         place: { kind: "entry", section: "Work", entry: 0, field: "workEndDate" },
-        message: "Hiring software may not read the end with this entry",
+        message: "Hiring software may not read the end date with this entry",
       }),
     ])
   })
@@ -232,11 +232,11 @@ describe("R3 entries read as typed", () => {
       return check("R3", resume, reading([], missing)).findings.map(({ message, suggestion }) => ({ message, suggestion }))
     }
     expect(noStart("Jan 2024")).toEqual([
-      { message: "Hiring software may not read the start with this entry", suggestion: expect.stringContaining("dismiss this") },
+      { message: "Hiring software may not read the start date with this entry", suggestion: expect.stringContaining("dismiss this") },
     ])
     expect(noStart("Q1 of 2024")).toEqual([
       {
-        message: "Hiring software doesn't read the start with this entry",
+        message: "Hiring software doesn't read the start date with this entry",
         suggestion: "Write it the usual way, like “Jan 2024”, “2024” or “Present”.",
       },
     ])

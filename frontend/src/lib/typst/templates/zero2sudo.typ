@@ -114,9 +114,9 @@
       let title = (if has(pr.name) { strong(project-name(pr)) }, if has(pr.techStack) { pr.techStack }).filter(part => part != none)
       block(sticky: true, {
         if title.len() > 0 { text(size: sized(12pt), title.join([ | ])) }
-        if pr.links.len() > 0 or has(pr.date) {
+        if pr.links.len() > 0 or has(date-range(pr.start, pr.end)) {
           if title.len() > 0 { v(spaced(6.5pt)) }
-          row(pr.links.map(url => box(web-link(url, ul(url)))).join([ | ]), strong(pr.date))
+          row(pr.links.map(url => box(web-link(url, ul(url)))).join([ | ]), strong(date-range(pr.start, pr.end)))
         }
       })
       bullets(pr.bullets)

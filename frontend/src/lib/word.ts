@@ -265,7 +265,7 @@ function documentOf(data: TemplateData, page: Page): { xml: string; links: strin
           if (project.name) parts.push([{ text: project.name, bold: true, link: project.link ? web(project.link) : undefined }])
           if (project.techStack) parts.push([{ text: project.techStack, italic: true }])
           for (const url of project.links) parts.push([{ text: url, link: web(url) }])
-          entry([[joined(parts, " | "), [{ text: project.date }]]], project.bullets)
+          entry([[joined(parts, " | "), [{ text: dateRange(project.start, project.end) }]]], project.bullets)
         }
         break
       case "publications":

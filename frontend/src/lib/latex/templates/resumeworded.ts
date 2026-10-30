@@ -230,7 +230,7 @@ function body(data: TemplateData, units: Units): string {
             name && bold(projectName(project, (body) => `\\MakeUppercase{${body}}`)),
             parts.length > 0 && `\\textcolor{resumeGray}{${name ? "| " : ""}${parts.join(" | ")}}`,
           ].filter(Boolean)
-          add(`  \\resumeRow{${left.join(" ")}}{${latex(project.date)}}`)
+          add(`  \\resumeRow{${left.join(" ")}}{${dates(project.start, project.end)}}`)
           bullets(project.bullets)
         })
         break

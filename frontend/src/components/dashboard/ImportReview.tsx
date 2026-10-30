@@ -76,7 +76,12 @@ const SHOWN: {
     swap: ["volunteerRole", "volunteerOrg"],
     swapLabel: "Swap role and organization",
   },
-  Projects: { primary: "projectName", secondary: ["techStack"], dates: (f) => f.projectDate ?? "", bullets: "projectDescription" },
+  Projects: {
+    primary: "projectName",
+    secondary: ["techStack"],
+    dates: (f) => range(f.projectStartDate, f.projectEndDate),
+    bullets: "projectDescription",
+  },
   Publications: {
     primary: "publicationTitle",
     secondary: ["publicationAuthors", "publicationVenue", "publicationDetails"],

@@ -80,7 +80,8 @@
     {
       "id": 1,
       "projectName": "Kanton Grotesk specimen",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "Figma, Astro",
       "projectGithub": "",
       "additionalLink": "lukasbrandt.design/kanton",
@@ -89,7 +90,8 @@
     {
       "id": 2,
       "projectName": "Transit map of Zurich",
-      "projectDate": "2021",
+      "projectStartDate": "2021",
+      "projectEndDate": "",
       "techStack": "Illustrator, D3",
       "projectGithub": "",
       "additionalLink": "lukasbrandt.design/zurich",

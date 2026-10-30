@@ -8,6 +8,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, test } from "vitest"
 import { differences, printedData, readBack } from "./testRender"
+import { withProjectDates } from "@/lib/projectDates"
 
 const CORPUS = path.resolve("src/lib/import/corpus")
 
@@ -243,7 +244,8 @@ const valueAt = (value: unknown, where: string) =>
 describe.each(files)("%s", (file) => {
   test("reads back no worse than before", async () => {
     const [person] = file.split("/")
-    const want = printed(JSON.parse(readFileSync(path.join(CORPUS, person, "resume.json"), "utf8")))
+    // The fixtures are saved as resumes were before projects had a start and an end, as old files are (withProjectDates).
+    const want = printed(withProjectDates(JSON.parse(readFileSync(path.join(CORPUS, person, "resume.json"), "utf8"))))
     const { resume } = await readBack(new Uint8Array(readFileSync(path.join(CORPUS, `${file}.pdf`))))
     const got = printed(resume)
 

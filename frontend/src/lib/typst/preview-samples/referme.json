@@ -70,7 +70,8 @@
     {
       "id": 1,
       "projectName": "Subway Delays Explorer",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "Python, DuckDB, Streamlit",
       "projectGithub": "github.com/smartinez/subway-delays",
       "additionalLink": "",
@@ -79,7 +80,8 @@
     {
       "id": 2,
       "projectName": "Causal Notes",
-      "projectDate": "2022",
+      "projectStartDate": "2022",
+      "projectEndDate": "",
       "techStack": "R, Quarto",
       "projectGithub": "github.com/smartinez/causal-notes",
       "additionalLink": "",
@@ -88,7 +90,8 @@
     {
       "id": 3,
       "projectName": "Rent Watch NYC",
-      "projectDate": "2021",
+      "projectStartDate": "2021",
+      "projectEndDate": "",
       "techStack": "Python, scikit-learn",
       "projectGithub": "github.com/smartinez/rent-watch",
       "additionalLink": "",

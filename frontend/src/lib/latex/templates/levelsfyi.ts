@@ -271,7 +271,9 @@ function body(data: TemplateData, units: Units): string {
         entries(
           () => {
             for (const project of data.projects) {
-              add(`    \\resumeEntry{${projectHeader(project, "\\hspace{4pt}|\\hspace{4pt}", underlined)}}{${latex(project.date)}}`)
+              add(
+                `    \\resumeEntry{${projectHeader(project, "\\hspace{4pt}|\\hspace{4pt}", underlined)}}{${latex(dateRange(project.start, project.end))}}`,
+              )
               items(project.bullets.map(runs), "    ", space.above(units.space(6.6)))
             }
           },

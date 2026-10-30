@@ -81,7 +81,8 @@
     {
       "id": 1,
       "projectName": "lift",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "Python, NumPy",
       "projectGithub": "github.com/graceliu/lift",
       "additionalLink": "",

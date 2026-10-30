@@ -88,7 +88,8 @@
     {
       "id": 1,
       "projectName": "Limit Order Book",
-      "projectDate": "",
+      "projectStartDate": "",
+      "projectEndDate": "",
       "techStack": "C++, Python",
       "projectGithub": "github.com/aidenpark/orderbook",
       "additionalLink": "",
@@ -97,7 +98,8 @@
     {
       "id": 2,
       "projectName": "Raft KV",
-      "projectDate": "",
+      "projectStartDate": "",
+      "projectEndDate": "",
       "techStack": "Go, gRPC",
       "projectGithub": "github.com/aidenpark/raft-kv",
       "additionalLink": "",
@@ -106,7 +108,8 @@
     {
       "id": 3,
       "projectName": "Pathfinder",
-      "projectDate": "",
+      "projectStartDate": "",
+      "projectEndDate": "",
       "techStack": "TypeScript, React, Node.js",
       "projectGithub": "github.com/aidenpark/pathfinder",
       "additionalLink": "",

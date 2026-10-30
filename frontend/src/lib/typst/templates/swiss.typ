@@ -92,7 +92,7 @@
     section(heading-or(hd.work, "Experience"), entries(data.work.map(w => entry(w.company, date-range(w.start, w.end), w.role, w.location, items: w.bullets))))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
-      block(sticky: true, row(project-header(pr, dot, url => web-link(url, underlined(text(fill: grey, url)))), pr.date))
+      block(sticky: true, row(project-header(pr, dot, url => web-link(url, underlined(text(fill: grey, url)))), date-range(pr.start, pr.end)))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {

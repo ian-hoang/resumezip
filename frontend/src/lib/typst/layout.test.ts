@@ -95,7 +95,7 @@ test.each(TEMPLATES.map((template) => template.id))("%s keeps dates apart from t
         workRole: text,
         workStartDate: `May ${year}`,
       })),
-      projectsSection: entries.map(({ text, year }) => ({ projectName: text, projectDate: `Jan ${year}` })),
+      projectsSection: entries.map(({ text, year }) => ({ projectName: text, projectStartDate: `Jan ${year}` })),
       awardsSection: entries.map(({ text, year }) => ({ awardName: text, awardDate: `Mar ${year}` })),
     }),
   )

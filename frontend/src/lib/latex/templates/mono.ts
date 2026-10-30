@@ -237,7 +237,7 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         for (const project of data.projects) {
-          add(`  \\resumeProject{${projectHeader(project, "\\barSep ", underlined)}}{${latex(project.date)}}`)
+          add(`  \\resumeProject{${projectHeader(project, "\\barSep ", underlined)}}{${latex(dateRange(project.start, project.end))}}`)
           items(project.bullets.map(runs))
         }
         break

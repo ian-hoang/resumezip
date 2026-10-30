@@ -102,7 +102,7 @@
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => {
       let lines = ()
-      if has(pr.name) or has(pr.date) { lines.push(row(strong(project-name(pr)), emph(pr.date))) }
+      if has(pr.name) or has(date-range(pr.start, pr.end)) { lines.push(row(strong(project-name(pr)), emph(date-range(pr.start, pr.end)))) }
       // The tech stack and any printed links go on the second line. It isn't
       // justified: links don't break, so a wrapped line would be stretched.
       let details = ()

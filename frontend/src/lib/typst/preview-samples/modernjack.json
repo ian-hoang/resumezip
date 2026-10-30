@@ -70,7 +70,8 @@
     {
       "id": 1,
       "projectName": "pgshard",
-      "projectDate": "2024 – Present",
+      "projectStartDate": "2024",
+      "projectEndDate": "Present",
       "techStack": "Go, PostgreSQL",
       "projectGithub": "github.com/epetrova/pgshard",
       "additionalLink": "",
@@ -79,7 +80,8 @@
     {
       "id": 2,
       "projectName": "Ledgerline",
-      "projectDate": "2023",
+      "projectStartDate": "2023",
+      "projectEndDate": "",
       "techStack": "Rust",
       "projectGithub": "github.com/epetrova/ledgerline",
       "additionalLink": "",

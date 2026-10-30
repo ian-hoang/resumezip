@@ -19,6 +19,7 @@ import type { CompleteContent, ResumeContent } from "@/lib/resume"
 import { extraKey, extraRef, resolveSections, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
 import { typedPieces } from "@/lib/marks"
 import { PAGE_NUMBER, SOFT_HYPHEN, toLine, type Line, type Part, type Piece, type Run } from "./lines"
+import { splitProjectDate } from "@/lib/projectDates"
 
 /** An entry's values, keyed by its section's field names. */
 type Fields = Partial<Record<FieldKey, string>>
@@ -1348,7 +1349,10 @@ function readProjects(lines: ParseLine[]): SectionResult {
     }
     fields.projectName = tidy(name.replace(/:$/, ""))
     fields.techStack = tidy(tech)
-    fields.projectDate = header.date?.text ?? ""
+    // Split as a project's dates from before its start and end are, so a lone date is its start.
+    const dates = splitProjectDate(header.date?.text ?? "")
+    fields.projectStartDate = dates.start
+    fields.projectEndDate = dates.end
     for (const link of header.links) {
       const url = bare(link)
       if (/^github\.com\/[^/]+\/[^/]+/i.test(url) && !fields.projectGithub) fields.projectGithub = url

@@ -240,7 +240,7 @@ function body(data: TemplateData, units: Units): string {
         for (const project of data.projects) {
           const title = [project.name && bold(projectName(project)), latex(project.techStack)].filter(Boolean).join("\\contactBar ")
           const urls = project.links.map((url) => `\\mbox{${underlined(web(url), url)}}`).join("\\contactBar ")
-          add(`  \\resumeProject{${title}}{${latex(project.date)}}{${urls}}`)
+          add(`  \\resumeProject{${title}}{${latex(dateRange(project.start, project.end))}}{${urls}}`)
           items(project.bullets.map(runs))
         }
         break
