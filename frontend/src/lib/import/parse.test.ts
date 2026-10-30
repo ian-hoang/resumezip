@@ -83,7 +83,7 @@ describe("an entry's date", () => {
       line([["Sprout – HackGT 2026 | React, Flask", 36], ["September 2026", 480]], { bold: true }),
       line([["Built a garden planner", 54]], { bullet: true }),
     ])
-    expect(resume.projectsSection[0].projectDate).toBe("September 2026")
+    expect(resume.projectsSection[0].projectStartDate).toBe("September 2026")
     expect(Object.values(resume.projectsSection[0]).join(" ")).toContain("HackGT 2026")
     expect(unplaced).toEqual([])
   })

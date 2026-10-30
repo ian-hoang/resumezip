@@ -4,6 +4,7 @@ import { memo, useEffect, useId, useLayoutEffect, useRef, useState } from "react
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd"
 import { ChevronDown, GripVertical, Plus } from "lucide-react"
 import { useOpenResume, useResumeField } from "@/context/ResumeContext"
+import { DATE_FIELDS } from "@/lib/check/readDate"
 import { isLeftOut } from "@/lib/leftOut"
 import type { Entry } from "@/lib/resume"
 import { EyeIcon, RowAction, RowToggle, TrashIcon } from "@/components/dashboard/RowActions"
@@ -25,6 +26,14 @@ export interface DeletedEntry {
   index: number
   /** What the message calls it: its one-line summary, or "Entry 2" when it has none. */
   title: string
+}
+
+/** Whether a section's field is a date, which the date picker fills in, and whether it's the end of a range. */
+function dateKindOf(section: SectionName, key: FieldKey): "date" | "end" | undefined {
+  const dates = DATE_FIELDS[section]
+  if (!dates) return undefined
+  if ("single" in dates) return key === dates.single ? "date" : undefined
+  return key === dates.end ? "end" : key === dates.start ? "date" : undefined
 }
 
 interface SectionFormProps {
@@ -642,6 +651,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                         onChange={(value) => update(entry.id, field.key, value)}
                         className={FIELD_SPAN[field.size]}
                         flag={flag}
+                        date={dateKindOf(section.name, field.key)}
                       />
                     )
                   })}

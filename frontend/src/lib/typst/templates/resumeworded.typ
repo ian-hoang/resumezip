@@ -122,7 +122,7 @@
       if has(pr.name) { parts.push(text(weight: "bold", upper(project-name(pr)))) }
       if has(pr.techStack) { parts.push(text(fill: gray, pr.techStack)) }
       for url in pr.links { parts.push(box(web-link(url, underlined(text(fill: gray, url))))) }
-      block(sticky: true, row(parts.join(text(fill: gray, [ | ])), pr.date))
+      block(sticky: true, row(parts.join(text(fill: gray, [ | ])), dates(pr.start, pr.end)))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {

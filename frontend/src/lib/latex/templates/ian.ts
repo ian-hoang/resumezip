@@ -263,7 +263,7 @@ function body(data: TemplateData, units: Units): string {
         entries(
           data.projects,
           (project) => {
-            add(`  \\resumeProject{${projectHeader(project, " | ", underlined)}}{${latex(project.date)}}`)
+            add(`  \\resumeProject{${projectHeader(project, " | ", underlined)}}{${dates(project.start, project.end)}}`)
             items(project.bullets.map(runs), "projectItems")
           },
           "\\resumeProjectGap",

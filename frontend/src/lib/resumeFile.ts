@@ -16,6 +16,7 @@ import { cleanTag, type Entry, type Headings, type Profile, type Resume, type Re
 import { templateById } from "@/lib/templates"
 import { readTune } from "@/lib/tune"
 import { isSectionRef, readExtraSections, resolveSections } from "./resumeSections"
+import { withProjectDates } from "@/lib/projectDates"
 
 export const ATTACHMENT_NAME = "resumezip.json"
 /** Where a Word file keeps its text, and its document's relationships, which have the addresses its links go to. */
@@ -231,7 +232,8 @@ const bulletText = (value: unknown) =>
  * any (toAttachment prints the resume first), but a JSON file does.
  */
 export function cleanResume(input: unknown): ResumeContent {
-  const resume = object(input)
+  // A file from before projects had a start and an end has its projects' dates split (withProjectDates).
+  const resume = object(withProjectDates(input))
   const profile = object(resume.profileSection)
   const headings = object(resume.headings)
   // Fine-tune's settings, if any. Files from before them, and older versions

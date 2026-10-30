@@ -45,7 +45,7 @@ export interface TemplateData {
   }[]
   work: { company: string; location: string; role: string; start: string; end: string; bullets: Run[][] }[]
   /** `link` is set when the name links somewhere; `links` are printed as text. */
-  projects: { name: string; link: string; links: string[]; techStack: string; date: string; bullets: Run[][] }[]
+  projects: { name: string; link: string; links: string[]; techStack: string; start: string; end: string; bullets: Run[][] }[]
   /** Printed as citations; `doi` is set instead of `link` when the link is a DOI. */
   publications: { title: string; authors: AuthorPiece[]; venue: string; details: string; date: string; doi: string; link: string }[]
   skills: { name: string; details: string }[]
@@ -302,7 +302,8 @@ export function toTemplateData(saved: Resume): TemplateData {
         link: titled ? (urls[0] ?? "") : "",
         links: titled ? [] : urls,
         techStack: text(e.techStack),
-        date: text(e.projectDate),
+        start: text(e.projectStartDate),
+        end: text(e.projectEndDate),
         bullets: bullets(e.projectDescription),
       }
     }),

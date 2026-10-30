@@ -154,7 +154,7 @@ test("double-clicking a word on the preview lights it up in its field, and keeps
   await doubleClick(page, "Somerville")
   await expect(page.getByRole("textbox", { name: "Company" }).last()).toHaveAttribute("data-picked", "")
   await doubleClick(page, "2021")
-  await expect(page.getByRole("textbox", { name: "Start" }).last()).toHaveAttribute("data-picked", "")
+  await expect(page.getByRole("textbox", { name: "Start date" }).last()).toHaveAttribute("data-picked", "")
   await expect(page.locator("[data-picked]")).toHaveCount(1)
   expect(await selected(page)).toBe("2021")
 

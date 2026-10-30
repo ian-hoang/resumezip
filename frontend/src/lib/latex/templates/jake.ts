@@ -221,7 +221,10 @@ function body(data: TemplateData): string {
       case "projects":
         entries(() => {
           for (const project of data.projects) {
-            add("    \\resumeProjectHeading", `      {${projectHeader(project, BAR, underlined)}}{${latex(project.date)}}`)
+            add(
+              "    \\resumeProjectHeading",
+              `      {${projectHeader(project, BAR, underlined)}}{${latex(dateRange(project.start, project.end))}}`,
+            )
             itemList(project.bullets.map(runs))
           }
         })

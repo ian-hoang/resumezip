@@ -203,7 +203,7 @@
       block(sticky: pr.bullets.len() > 0, {
         entry-name(project-name(pr))
         if has(pr.techStack) { h(0.4em) + descript([| ] + pr.techStack) }
-        let when = (pr.date, ..pr.links.map(url => web-link(url, underlined(url)))).filter(has)
+        let when = (date-range(pr.start, pr.end), ..pr.links.map(url => web-link(url, underlined(url)))).filter(has)
         if when.len() > 0 {
           v(spaced(4.4pt))
           location(when.join([ | ]))

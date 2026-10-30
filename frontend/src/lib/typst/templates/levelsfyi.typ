@@ -168,7 +168,7 @@
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => entry(
       row(
         project-header(pr, h(4pt) + [|] + h(4pt), url => web-link(url, underlined(url))),
-        strong(pr.date),
+        strong(date-range(pr.start, pr.end)),
       ),
       pr.bullets,
     )).join(v(sized(5.2pt))))

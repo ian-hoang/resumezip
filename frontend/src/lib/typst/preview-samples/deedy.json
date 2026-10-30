@@ -70,7 +70,8 @@
     {
       "id": 1,
       "projectName": "raftkv",
-      "projectDate": "2025",
+      "projectStartDate": "2025",
+      "projectEndDate": "",
       "techStack": "Go, gRPC",
       "projectGithub": "github.com/rmehta/raftkv",
       "additionalLink": "",
@@ -79,7 +80,8 @@
     {
       "id": 2,
       "projectName": "tartanplan",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "TypeScript, Next.js",
       "projectGithub": "github.com/rmehta/tartanplan",
       "additionalLink": "",

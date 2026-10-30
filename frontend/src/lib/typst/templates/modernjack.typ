@@ -99,7 +99,7 @@
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
       block(sticky: true, row(
         text(size: sized(10pt), project-header(pr, [ | ], url => web-link(url, ul(url)))),
-        pr.date,
+        date-range(pr.start, pr.end),
       ))
       bullets(pr.bullets)
     })))

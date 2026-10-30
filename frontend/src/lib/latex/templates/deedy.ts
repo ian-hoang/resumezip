@@ -326,7 +326,9 @@ function body(data: TemplateData, units: Units): string {
         join(
           "\\entrysep",
           data.projects.map((project) => () => {
-            const when = [latex(project.date), ...project.links.map((url) => webLink(url, underline))].filter(Boolean).join(" | ")
+            const when = [latex(dateRange(project.start, project.end)), ...project.links.map((url) => webLink(url, underline))]
+              .filter(Boolean)
+              .join(" | ")
             entry(projectName(project), latex(project.techStack), when, project.bullets)
           }),
         )

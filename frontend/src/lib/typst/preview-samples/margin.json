@@ -71,7 +71,8 @@
     {
       "id": 1,
       "projectName": "Tabsplit",
-      "projectDate": "2023",
+      "projectStartDate": "2023",
+      "projectEndDate": "",
       "techStack": "React, Firebase",
       "projectGithub": "",
       "additionalLink": "priyaraman.com/tables",

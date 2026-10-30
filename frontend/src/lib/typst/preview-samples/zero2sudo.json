@@ -4,7 +4,16 @@
   "resumeTag": "professional",
   "updatedAt": "2026-10-12T12:00:00.000Z",
   "selectedTemplate": "zero2sudo",
-  "sectionOrder": ["Skills", "Work", "Projects", "Education", "Publications", "Leadership", "Volunteership", "Awards"],
+  "sectionOrder": [
+    "Skills",
+    "Work",
+    "Projects",
+    "Education",
+    "Publications",
+    "Leadership",
+    "Volunteership",
+    "Awards"
+  ],
   "headings": {},
   "profileSection": {
     "fullName": "Jordan Nguyen",
@@ -73,7 +82,8 @@
     {
       "id": 1,
       "projectName": "Reviewly",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "TypeScript, React, Express, PostgreSQL",
       "projectGithub": "github.com/jnguyen/reviewly",
       "additionalLink": "",
@@ -82,7 +92,8 @@
     {
       "id": 2,
       "projectName": "Tidepool",
-      "projectDate": "2021",
+      "projectStartDate": "2021",
+      "projectEndDate": "",
       "techStack": "Go, Docker, Terraform, AWS",
       "projectGithub": "github.com/jnguyen/tidepool",
       "additionalLink": "",
@@ -91,15 +102,41 @@
   ],
   "publicationsSection": [],
   "skillsSection": [
-    { "id": 1, "skillName": "Languages", "skillDetails": "Go, TypeScript, JavaScript, Java, Python, SQL" },
-    { "id": 2, "skillName": "Back End", "skillDetails": "Node.js, Express, PostgreSQL, Redis, Kafka, gRPC" },
-    { "id": 3, "skillName": "Front End", "skillDetails": "React, Next.js, CSS" },
-    { "id": 4, "skillName": "Tools", "skillDetails": "Docker, Kubernetes, Terraform, AWS, Git, k6, Jest" }
+    {
+      "id": 1,
+      "skillName": "Languages",
+      "skillDetails": "Go, TypeScript, JavaScript, Java, Python, SQL"
+    },
+    {
+      "id": 2,
+      "skillName": "Back End",
+      "skillDetails": "Node.js, Express, PostgreSQL, Redis, Kafka, gRPC"
+    },
+    {
+      "id": 3,
+      "skillName": "Front End",
+      "skillDetails": "React, Next.js, CSS"
+    },
+    {
+      "id": 4,
+      "skillName": "Tools",
+      "skillDetails": "Docker, Kubernetes, Terraform, AWS, Git, k6, Jest"
+    }
   ],
   "leadershipExperienceSection": [],
   "volunteerExperienceSection": [],
   "awardsSection": [
-    { "id": 1, "awardName": "AWS Certified Developer", "awardOrg": "Amazon Web Services", "awardDate": "2023" },
-    { "id": 2, "awardName": "Best Developer Tool", "awardOrg": "HackLA", "awardDate": "2018" }
+    {
+      "id": 1,
+      "awardName": "AWS Certified Developer",
+      "awardOrg": "Amazon Web Services",
+      "awardDate": "2023"
+    },
+    {
+      "id": 2,
+      "awardName": "Best Developer Tool",
+      "awardOrg": "HackLA",
+      "awardDate": "2018"
+    }
   ]
 }

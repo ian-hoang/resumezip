@@ -70,7 +70,8 @@
     {
       "id": 1,
       "projectName": "CourseCompass",
-      "projectDate": "Jan 2026 – Present",
+      "projectStartDate": "Jan 2026",
+      "projectEndDate": "Present",
       "techStack": "React, TypeScript, PostgreSQL",
       "projectGithub": "github.com/marcusbell/coursecompass",
       "additionalLink": "",
@@ -79,7 +80,8 @@
     {
       "id": 2,
       "projectName": "Tiny Raft",
-      "projectDate": "Sep – Dec 2025",
+      "projectStartDate": "Sep 2025",
+      "projectEndDate": "Dec 2025",
       "techStack": "Go, gRPC",
       "projectGithub": "github.com/marcusbell/tiny-raft",
       "additionalLink": "",

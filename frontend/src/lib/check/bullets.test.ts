@@ -313,7 +313,7 @@ describe("B7 present tense on what has ended", () => {
     expect(check("B7", resumeWith(job(["Cut costs by 40%", "Set up CI"], "Dec 2023"))).status).toBe("passed")
     const resume = {
       ...resumeWith(job(["Built the index"], "Dec 2023")),
-      projectsSection: [{ ...project(["Scrapes 9,000 listings"]), projectDate: "2021" }],
+      projectsSection: [{ ...project(["Scrapes 9,000 listings"]), projectStartDate: "2021" }],
     }
     expect(check("B7", resume).status).toBe("passed")
   })

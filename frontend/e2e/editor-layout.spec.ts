@@ -10,8 +10,8 @@ const ENTRY = {
   Role: "Software Engineer",
   Company: "Example Company",
   Location: "Mountain View, CA",
-  Start: "Jan 2024",
-  End: "Present",
+  "Start date": "Jan 2024",
+  "End date": "Present",
 }
 const BULLETS = "Description"
 const LONG_BULLETS = [

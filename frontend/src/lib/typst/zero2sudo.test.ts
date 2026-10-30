@@ -18,8 +18,8 @@ test("prints a school and its degree on one line, without a bullet", async () =>
 test("prints a project's name and tech stack, then its links and date", async () => {
   const lines = await linesOf({
     projectsSection: [
-      { id: 1, projectName: "Atlas", techStack: "Go, Redis", projectGithub: "github.com/ada/atlas", projectDate: "2024" },
-      { id: 2, projectName: "Beacon", projectDate: "2023" },
+      { id: 1, projectName: "Atlas", techStack: "Go, Redis", projectGithub: "github.com/ada/atlas", projectStartDate: "2024" },
+      { id: 2, projectName: "Beacon", projectStartDate: "2023" },
       { id: 3, projectName: "Comet", techStack: "Rust" },
     ],
   })

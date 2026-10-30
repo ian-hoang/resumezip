@@ -108,7 +108,7 @@
     })))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), after: 8.36pt, entries(gap: 10.46pt, data.projects.map(pr => {
-      block(sticky: true, row(project-header(pr, [ | ], url => web-link(url, ul(url))), strong(pr.date)))
+      block(sticky: true, row(project-header(pr, [ | ], url => web-link(url, ul(url))), strong(dates(pr.start, pr.end))))
       bullets(pr.bullets, gap: 5.26pt)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
