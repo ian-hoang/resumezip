@@ -129,6 +129,25 @@
     }
   }
 
+  /* A section's lines struck out on the preview while its Delete is armed
+     (components/editor/penStrike.ts): over the page and its text, in the pen of
+     the editor's notes, and never in the way of selecting words. */
+  .pen-strike {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .pen-strike path {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+  }
+
   /* The checker's score, rolling like an odometer when it changes
      (components/editor/CheckPanel.tsx). Each digit is a strip of 0 to 9 drawn
      by CSS, so the page's text, and what's read aloud, is just the number,

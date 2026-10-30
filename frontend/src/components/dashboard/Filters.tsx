@@ -107,7 +107,7 @@ export default function Filters({ search, tags, tag, onTag, sort, onSort, view, 
 
 /** A pill saying how the resumes are sorted, which opens a menu of the other ways. */
 function SortMenu({ sort, onSort }: { sort: Sort; onSort: (sort: Sort) => void }) {
-  const { open, setOpen, button, menu, close, onKeyDown } = useMenu()
+  const { open, setOpen, button, menu, close, onKeyDown, shown, closing } = useMenu()
   const id = useId()
   const current = SORTS.find((option) => option.id === sort) ?? SORTS[0]
   return (
@@ -129,14 +129,15 @@ function SortMenu({ sort, onSort }: { sort: Sort; onSort: (sort: Sort) => void }
           aria-hidden="true"
         />
       </button>
-      {open && (
+      {shown && (
         <div
           ref={menu}
           id={id}
           role="menu"
           aria-label="Sort by"
           onKeyDown={onKeyDown}
-          className={`${MENU_PANEL} sort-menu right-0 top-full mt-2`}
+          inert={closing}
+          className={`${MENU_PANEL} sort-menu right-0 top-full mt-2 ${closing ? "is-closing" : ""}`}
         >
           {SORTS.map((option) => (
             <button

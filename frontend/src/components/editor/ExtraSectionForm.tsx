@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useOpenResume, useResumeActions, useResumeField } from "@/context/ResumeContext"
-import { extraHeading, type ExtraSection } from "@/lib/resumeSections"
+import { extraHeading, extraRef, type ExtraSection } from "@/lib/resumeSections"
 import { useCheckActions, useCheckTarget, usePointer } from "./CheckContext"
-import DeleteSection from "./DeleteSection"
+import DeleteSection, { asked, deleteWhat } from "./DeleteSection"
 import { BulletsField, Field, pointAt, SectionHeading } from "./fields"
 
 /** A section the person added, found by its key rather than its title, as two sections can have the same title. */
@@ -14,6 +14,8 @@ export default function ExtraSectionForm({ sectionId, onDelete }: { sectionId: s
   const extraSections = useResumeField("extraSections")
   const section: ExtraSection | undefined = extraSections?.[sectionId]
   const root = useRef<HTMLDivElement>(null)
+  // Whether the section's Delete is armed, asking for a second click.
+  const [asking, setAsking] = useState(false)
   // What the checker points at in this section, while the person fixes it.
   const target = useCheckTarget()
   const { pending, claim } = useCheckActions()
@@ -46,42 +48,44 @@ export default function ExtraSectionForm({ sectionId, onDelete }: { sectionId: s
         allowEmpty
         onRename={(heading) => editSection(id, sectionId, { heading })}
         flag={here?.kind === "extra-heading" ? target!.finding : null}
-        end={<DeleteSection onDelete={onDelete} />}
+        end={<DeleteSection section={extraRef(sectionId)} what={deleteWhat(title)} asking={asking} onAsk={setAsking} onDelete={onDelete} />}
       />
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2.5 text-[14px] text-ink-2">
-          <input
-            type="checkbox"
-            checked={!section.leftOut}
-            onChange={(event) => editSection(id, sectionId, { leftOut: !event.target.checked })}
-            className="h-4 w-4 accent-accent"
+      <div inert={asking} className={`flex flex-col gap-[22px] ${asked(asking)}`}>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2.5 text-[14px] text-ink-2">
+            <input
+              type="checkbox"
+              checked={!section.leftOut}
+              onChange={(event) => editSection(id, sectionId, { leftOut: !event.target.checked })}
+              className="h-4 w-4 accent-accent"
+            />
+            Include section in the PDF
+          </label>
+        </div>
+        {section.leftOut && <p className="text-[13px] text-ink-3">This section stays saved here and is left out of the PDF and checks.</p>}
+        {section.kind === "text" && (
+          <Field
+            multiline
+            name="text"
+            label="Text"
+            value={section.text}
+            onChange={(text) => editSection(id, sectionId, { text })}
+            flag={flagAt("text")}
+            hint="Paragraph breaks are kept."
+            // As tall as eight and a half lines.
+            boxHeight="min-h-[238px]"
           />
-          Include section in the PDF
-        </label>
+        )}
+        {section.kind === "list" && (
+          <BulletsField
+            label="Bullet points"
+            name="bullets"
+            value={section.bullets}
+            onChange={(bullets) => editSection(id, sectionId, { bullets })}
+            flag={flagAt("bullets")}
+          />
+        )}
       </div>
-      {section.leftOut && <p className="text-[13px] text-ink-3">This section stays saved here and is left out of the PDF and checks.</p>}
-      {section.kind === "text" && (
-        <Field
-          multiline
-          name="text"
-          label="Text"
-          value={section.text}
-          onChange={(text) => editSection(id, sectionId, { text })}
-          flag={flagAt("text")}
-          hint="Paragraph breaks are kept."
-          // As tall as eight and a half lines.
-          boxHeight="min-h-[238px]"
-        />
-      )}
-      {section.kind === "list" && (
-        <BulletsField
-          label="Bullet points"
-          name="bullets"
-          value={section.bullets}
-          onChange={(bullets) => editSection(id, sectionId, { bullets })}
-          flag={flagAt("bullets")}
-        />
-      )}
     </div>
   )
 }

@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { ArrowLeft, Eye, PencilLine } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import DeletedToast from "@/components/dashboard/DeletedToast"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
+import { closeResume } from "@/components/dashboard/viewSwitch"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import { DriveIcon, JsonIcon, LatexIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
 import DownloadMenu, { type MenuNotice } from "@/components/editor/DownloadMenu"
@@ -17,11 +18,12 @@ import ProfileForm from "@/components/editor/ProfileForm"
 import Replaced from "@/components/editor/Replaced"
 import SectionForm, { type DeletedEntry } from "@/components/editor/SectionForm"
 import ExtraSectionForm from "@/components/editor/ExtraSectionForm"
-import FixingChip from "@/components/editor/FixingChip"
 import { reducedMotion, useWideScreen, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import StylePanel from "@/components/editor/StylePanel"
 import TemplatePicker from "@/components/editor/TemplatePicker"
+import { swapView } from "@/components/editor/swapView"
+import { useFold } from "@/components/editor/useFold"
 import { useKeepFormPlace } from "@/components/editor/useKeepFormPlace"
 import { usePdfFile } from "@/components/editor/usePdfFile"
 import { useSaveToDrive } from "@/components/editor/useSaveToDrive"
@@ -56,6 +58,9 @@ const DOWNLOADED_MS = 2000
 const DOWNLOAD_FILL_MS = 1500
 
 const EDITOR_ADDRESS = "/create/new/"
+
+// How long a deleted section takes to fade away before the next one shows.
+const LEAVE_MS = 220
 
 // The widest the page is drawn at 100% while the form is folded away: big enough to read like a printed page.
 const FOLDED_PAGE_WIDTH = 860
@@ -98,6 +103,7 @@ export default function EditorPage() {
 function Editor({ id }: { id: string }) {
   const { getState, subscribe, addSection, removeSection, deleteSection, reorderSections } = useResumeActions()
   const { read, update } = useOpenResume()
+  const router = useRouter()
   const loaded = useResumeState((state) => state.loaded)
   // Whether this browser has the resume, once storage has loaded.
   const found = useResumeState((state) => state.loaded && resumeOf(state, id) !== undefined)
@@ -146,7 +152,7 @@ function Editor({ id }: { id: string }) {
   // Small screens show the form or the preview, not both.
   const [view, setView] = useState<"edit" | "preview">("edit")
   // On wide screens the form can be folded away, so the page has the sheet to itself.
-  const [folded, setFolded] = useState(false)
+  const { folded, shut, foldTo, fold } = useFold()
   // The Write | Check | Style tabs are in the top bar on wide screens, and atop the left bar narrower.
   const wide = useWideScreen()
   const [typing, setTyping] = useState(false)
@@ -311,17 +317,20 @@ function Editor({ id }: { id: string }) {
 
   // A new section starts at its top: in the form's pane on wide screens, on the page on small ones
   // (scrolled just far enough that the section tabs stay pinned above it, where the header ends).
-  const select = useCallback((section: ActiveSection) => {
-    setActive(section)
-    setFolded(false)
-    if (window.matchMedia(WIDE_SCREEN).matches) {
-      if (mainRef.current) mainRef.current.scrollTop = 0
-      return
-    }
-    const header = headerRef.current
-    const top = header ? header.offsetTop + header.offsetHeight : 0
-    if (window.scrollY > top) window.scrollTo({ top })
-  }, [])
+  const select = useCallback(
+    (section: ActiveSection) => {
+      setActive(section)
+      foldTo(false)
+      if (window.matchMedia(WIDE_SCREEN).matches) {
+        if (mainRef.current) mainRef.current.scrollTop = 0
+        return
+      }
+      const header = headerRef.current
+      const top = header ? header.offsetTop + header.offsetHeight : 0
+      if (window.scrollY > top) window.scrollTo({ top })
+    },
+    [foldTo],
+  )
 
   const reorder = useCallback((order: SectionRef[]) => reorderSections(id, order), [reorderSections, id])
   const add = useCallback(
@@ -333,19 +342,39 @@ function Editor({ id }: { id: string }) {
     },
     [addSection, id, select],
   )
-  // Takes the section shown off the resume, and shows the one before it, or else after it.
+  // Takes the section shown off the resume, and shows the one before it, or else after it, with the focus on its
+  // title. The section fades away first, as its button in the section list folds up and the rest close the gap.
   const remove = useCallback(() => {
     if (selected === "Profile") return
     setDeletedEntry(null)
     const index = sections.indexOf(selected)
     const next: ActiveSection = sections[index - 1] ?? sections[index + 1] ?? "Profile"
-    const key = extraKey(selected)
-    if (key !== null) deleteSection(id, key)
-    else removeSection(id, selected as SectionName)
-    select(next)
-    requestAnimationFrame(() =>
-      (document.querySelector<HTMLElement>(`[data-section-ref="${next}"]`) ?? mainRef.current?.querySelector<HTMLElement>("h1"))?.focus(),
-    )
+    const leave = () => {
+      const key = extraKey(selected)
+      if (key !== null) deleteSection(id, key)
+      else removeSection(id, selected as SectionName)
+      select(next)
+      requestAnimationFrame(() => mainRef.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true }))
+    }
+    const shown = mainRef.current?.querySelector<HTMLElement>("[data-section-shown]")
+    if (!shown || reducedMotion()) return leave()
+    // Out of reach as it goes, so Delete can't be pressed twice.
+    shown.inert = true
+    const timing = { duration: LEAVE_MS, easing: "cubic-bezier(0.4, 0, 1, 1)", fill: "forwards" } as const
+    shown.animate({ opacity: [1, 0], translate: ["0 0", "0 -6px"] }, timing)
+    // Down the rail on wide screens, along a row narrower; the rows are 4px apart (gap-1).
+    const row = document.querySelector(`[data-section-ref="${selected}"]`)?.closest<HTMLElement>("[data-section-row]")
+    if (row) {
+      const box = row.getBoundingClientRect()
+      const across = !window.matchMedia(WIDE_SCREEN).matches
+      row.animate(
+        across
+          ? { width: [`${box.width}px`, "0px"], marginRight: ["0px", "-4px"], opacity: [1, 0], scale: [1, 0.6] }
+          : { height: [`${box.height}px`, "0px"], marginBottom: ["0px", "-4px"], opacity: [1, 0], scale: [1, 0.6] },
+        timing,
+      )
+    }
+    setTimeout(leave, LEAVE_MS)
   }, [sections, selected, id, deleteSection, removeSection, select])
   const chooseTemplate = useCallback((template: TemplateId) => update("selectedTemplate", template), [update])
   const entryDeleted = useCallback(
@@ -408,15 +437,16 @@ function Editor({ id }: { id: string }) {
   const show = (next: "edit" | "preview") => {
     if (next === view) return
     if (next === "preview") editScroll.current = window.scrollY
-    setView(next)
-    requestAnimationFrame(() => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }))
+    swapView(
+      () => setView(next),
+      () => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }),
+    )
   }
   // Words picked on the preview open in the form, which scrolls to them rather than to where you were.
   const showForm = useCallback(() => {
     setView("edit")
-    setFolded(false)
-  }, [])
-  const fold = useCallback(() => setFolded((folded) => !folded), [])
+    foldTo(false)
+  }, [foldTo])
 
   const download = async () => {
     const resume = read()
@@ -553,6 +583,11 @@ function Editor({ id }: { id: string }) {
                 <div className="flex min-w-0 items-center gap-3 sm:gap-[15px]">
                   <Link
                     href="/create/dashboard"
+                    // The page shrinks back into its place on the dashboard (closeResume).
+                    onClick={(event) => {
+                      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                      if (closeResume(id, () => router.push("/create/dashboard"))) event.preventDefault()
+                    }}
                     aria-label="Dashboard"
                     title="Dashboard"
                     className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
@@ -698,7 +733,7 @@ function Editor({ id }: { id: string }) {
             </header>
 
             <div className="flex flex-1 flex-col xl:min-h-0 xl:flex-row">
-              <LeftBar hidden={view === "preview"} tabs={!wide} folded={folded} onFold={fold} style={style}>
+              <LeftBar hidden={view === "preview"} tabs={!wide} folded={folded} shut={shut} onFold={fold} style={style}>
                 {nav}
               </LeftBar>
 
@@ -708,20 +743,21 @@ function Editor({ id }: { id: string }) {
               <div
                 ref={formRef}
                 id="editor-form"
+                data-column
                 className={`editor-form xl:flex xl:w-[clamp(440px,36vw,520px)] xl:shrink-0 xl:flex-col xl:overflow-clip ${
                   view === "preview" ? "hidden" : ""
-                } ${folded ? "xl:hidden" : ""}`}
+                } ${shut ? "xl:hidden" : ""}`}
               >
                 <main ref={mainRef} className="min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-8 xl:overflow-y-auto xl:pb-14">
                   {/* The fields fit the form's own width rather than the window's. Each grid of
                       them is in a container (ProfileForm, SectionForm), not the whole form, so
                       an entry being dragged isn't in one: SectionForm says why. */}
                   <div className="mx-auto max-w-[640px]">
-                    <FixingChip />
                     {/* Each section fades in as it's chosen: a new key mounts it anew, and
                         `starting:` (CSS @starting-style) is where its transition starts from. */}
                     <div
                       key={selected}
+                      data-section-shown
                       className="transition-[opacity,translate] duration-200 ease-out motion-reduce:transition-none starting:translate-y-1 starting:opacity-0"
                     >
                       {selected === "Profile" ? (

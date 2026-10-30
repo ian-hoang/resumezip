@@ -200,13 +200,13 @@ test("AI notes are kept in the browser: the same resume shows them again without
   await bullets.fill(
     "• Responsible for the checkout service, catching 12 bugs before release\n• Built a deploy tool that cut release time from two hours to ten minutes for 40 engineers",
   )
-  await page.getByRole("button", { name: "Back to AI review" }).click()
+  await page.getByRole("tab", { name: "AI Reviews" }).click()
   await expect(notes.getByText("Changed since the notes")).toBeVisible({ timeout: 60_000 })
   await expect(mark).toHaveCount(0, { timeout: 60_000 })
   await expect(page.getByRole("button", { name: "Done well: A result anyone can picture" })).toBeAttached()
   // Choosing another note opens it, and the one that was open closes; back from its words, it's still open.
   await notes.getByRole("button", { name: "A result anyone can picture" }).click()
-  await page.getByRole("button", { name: "Back to AI review" }).click()
+  await page.getByRole("tab", { name: "AI Reviews" }).click()
   await expect(notes.getByText("Before and after, with who it helped.")).toBeVisible()
   await expect(notes.getByText("A recruiter can't tell what your testing caught.")).toHaveCount(0)
   // The checks' marks are a tab away, and never drawn with the AI's.
@@ -261,7 +261,7 @@ test("a reviewed file is kept as a past review, which opens as it was reviewed, 
   const bullets = page.getByLabel(/^Description/)
   await expect(bullets).toBeFocused()
   await bullets.fill("• Built a deploy tool that cut release time from two hours to ten minutes for 40 engineers")
-  await page.getByRole("button", { name: "Back to AI review" }).click()
+  await page.getByRole("tab", { name: "AI Reviews" }).click()
   const again = notes.getByRole("button", { name: "Get new notes for this version" })
   await expect(again).toBeEnabled({ timeout: 60_000 })
   await again.click()

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import { useLinger } from "@/components/useLinger"
 import { MoreIcon, RowAction } from "./RowActions"
 
 export interface MenuItem {
@@ -17,13 +18,16 @@ export const MENU_ITEM =
 
 // The least room between a More menu and the window's left edge.
 const MARGIN = 16
+// How long a menu takes to shrink away once it's closed (.is-closing in dashboard.css).
+export const MENU_CLOSE_MS = 160
 
 const itemsIn = (menu: HTMLElement | null) => [...(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])]
 
 /**
  * What a button with a small menu needs: arrow keys move through the menu,
  * Escape or Tab closes it, and clicking anywhere else closes it too. It
- * opens on the item that's chosen, if one is.
+ * opens on the item that's chosen, if one is. Closed, it stays `shown` a
+ * moment, `closing`, to shrink back into its button.
  */
 export function useMenu() {
   const [open, setOpen] = useState(false)
@@ -67,7 +71,7 @@ export function useMenu() {
     } else if (event.key === "Tab") close(false)
   }
 
-  return { open, setOpen, button, menu, close, onKeyDown }
+  return { open, setOpen, button, menu, close, onKeyDown, ...useLinger(open, MENU_CLOSE_MS) }
 }
 
 interface MoreMenuProps {
@@ -82,7 +86,7 @@ interface MoreMenuProps {
  * it. Choosing an item closes the menu.
  */
 export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
-  const { open, setOpen, button, menu, close, onKeyDown } = useMenu()
+  const { open, setOpen, button, menu, close, onKeyDown, shown, closing } = useMenu()
   const menuId = useId()
   // It opens leftward from its button, over the page it's on. A phone's
   // left-hand page has too little room left of the button, so there it opens
@@ -109,14 +113,15 @@ export default function MoreMenu({ label, items, ...data }: MoreMenuProps) {
       >
         <MoreIcon />
       </RowAction>
-      {open && (
+      {shown && (
         <div
           ref={menu}
           id={menuId}
           role="menu"
           aria-label={label}
           onKeyDown={onKeyDown}
-          className={`${MENU_PANEL} more-menu bottom-full mb-2 ${fromStart ? "is-start left-0" : "right-0"}`}
+          inert={closing}
+          className={`${MENU_PANEL} more-menu bottom-full mb-2 ${fromStart ? "is-start left-0" : "right-0"} ${closing ? "is-closing" : ""}`}
         >
           {items.map((item) => (
             <button

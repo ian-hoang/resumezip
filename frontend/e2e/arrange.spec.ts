@@ -12,6 +12,7 @@ import {
   savedResume,
   selectInBox,
   seriousAccessibilityProblems,
+  settled,
 } from "./helpers"
 
 // Entries and bullets can be moved, and left out of the PDF without being
@@ -60,6 +61,8 @@ async function openSection(page: Page, section: string, resume: { id: string } &
     .getByRole("navigation", { name: "Sections" })
     .getByRole("button", { name: new RegExp(`^${section}$`) })
     .click()
+  // The section crossfades in (swapView): a drag started before it ends would be measured from its picture.
+  await settled(page.getByRole("main"))
 }
 
 test("an entry is a card, folded to its name and what's in it, opened with a click and folded with its chevron", async ({ page }) => {
@@ -521,28 +524,35 @@ test("every section's cards have their eye and Delete next to the chevron, open 
   expect(errors).toEqual([])
 })
 
-test("a folded card is deleted from its own bin, asked first, and an open one left out with its eye", async ({ page }) => {
+/** How see-through a box looks: its own opacity and every box's round it. */
+const opacityOf = (box: Locator) =>
+  box.evaluate((element) => {
+    let opacity = 1
+    for (let at: Element | null = element; at; at = at.parentElement) opacity *= Number(getComputedStyle(at).opacity)
+    return opacity
+  })
+
+test("a card is deleted from its own bin without asking, with Undo, and an open one left out with its eye, greyed", async ({ page }) => {
   const errors = pageErrors(page)
   await openSection(page, "Experience")
 
-  // Open, its eye leaves it out, and puts it back.
+  // Open, its eye leaves it out, which greys its fields rather than saying so, and puts it back.
   const include = page.getByRole("checkbox", { name: "Include entry 1 in the PDF" })
+  const role = page.getByRole("textbox", { name: "Role" }).first()
   await expect(page.getByRole("button", { name: "Done editing entry 1" })).toBeVisible()
   await include.uncheck()
-  await expect(page.getByText("Left out of the PDF, and of the copy of the resume inside it.", { exact: false })).toBeVisible()
   await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBe(true)
+  await expect.poll(() => opacityOf(role)).toBeLessThan(0.6)
+  await expect(page.getByText("Left out of the PDF", { exact: false })).toHaveCount(0)
   await include.check()
   await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBeUndefined()
+  await expect.poll(() => opacityOf(role)).toBe(1)
 
-  // Folded, its bin asks first; Keep backs out to the bin, and Delete deletes it, with Undo.
+  // Folded, its bin deletes it at once, with Undo.
   await expect(page.getByRole("button", { name: "Edit entry 2" })).toBeVisible()
   await page.getByRole("button", { name: "Delete entry 2" }).click()
-  await expect(page.getByRole("status").filter({ hasText: "Delete it?" })).toBeVisible()
-  await page.getByRole("button", { name: "Keep" }).click()
-  await expect(page.getByRole("button", { name: "Delete entry 2" })).toBeFocused()
-  await page.getByRole("button", { name: "Delete entry 2" }).click()
-  await page.getByRole("button", { name: "Delete", exact: true }).click()
   await expect(page.getByRole("status").filter({ hasText: "deleted" })).toHaveText("“Initech” deleted")
+  await expect(page.getByRole("button", { name: "Keep" })).toHaveCount(0)
   await expect
     .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
     .toEqual(["Google", "Hooli"])
@@ -550,27 +560,6 @@ test("a folded card is deleted from its own bin, asked first, and an open one le
   await expect
     .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
     .toEqual(["Google", "Initech", "Hooli"])
-  expect(errors).toEqual([])
-})
-
-test("asked whether to delete an entry, it shows its name and its fields fade, and Keep backs out", async ({ page }) => {
-  const errors = pageErrors(page)
-  await openSection(page, "Experience")
-  await page.getByRole("button", { name: "Edit entry 2" }).click()
-  await page.getByRole("button", { name: "Delete entry 2" }).click()
-  await expect(page.getByRole("status").filter({ hasText: "Delete it?" })).toBeVisible()
-  // Its name stays, so it's clear which would go.
-  const company = page.getByRole("textbox", { name: "Company" })
-  await expect(company).toHaveValue("Initech")
-  await expect(page.getByRole("button", { name: "Keep" })).toBeFocused()
-  // Its fields can't be typed in meanwhile, its name included (inert, which Playwright doesn't count as hidden).
-  const role = page.getByRole("textbox", { name: "Role" }).nth(1)
-  for (const box of [role, company]) expect(await box.evaluate((box) => box.closest("[inert]") !== null)).toBe(true)
-
-  await page.getByRole("button", { name: "Keep" }).click()
-  await expect(page.getByRole("button", { name: "Delete entry 2" })).toBeFocused()
-  await expect(page.getByRole("status").filter({ hasText: "Delete it?" })).toHaveCount(0)
-  for (const box of [role, company]) expect(await box.evaluate((box) => box.closest("[inert]") !== null)).toBe(false)
   expect(errors).toEqual([])
 })
 
@@ -583,7 +572,6 @@ test("a deleted entry comes back with Undo, or ⌘Z (Ctrl+Z) outside a field, in
   const company = page.getByRole("textbox", { name: "Company" })
   const deleteEntry2 = async () => {
     await page.getByRole("button", { name: "Delete entry 2" }).click()
-    await page.getByRole("button", { name: "Delete", exact: true }).click()
     await expect(page.getByRole("button", { name: "Edit entry 3" })).toHaveCount(0)
   }
 

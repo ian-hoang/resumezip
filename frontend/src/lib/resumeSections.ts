@@ -1,5 +1,6 @@
 import { SECTION_NAMES, SECTIONS, type DataKey, type SectionName } from "@/components/editor/sections"
 import { isObject } from "@/lib/isObject"
+import type { Headings } from "@/lib/resume"
 
 interface ExtraBase {
   heading: string
@@ -21,6 +22,22 @@ export const isSectionRef = (value: unknown, extras: ExtraSections): value is Se
   (SECTION_NAMES.includes(value as SectionName) || (extraKey(value) !== null && Object.hasOwn(extras, extraKey(value)!)))
 export const sectionIncluded = (section: { leftOut?: boolean }) => section.leftOut !== true
 export const extraHeading = (section: ExtraSection) => section.heading.trim() || "New section"
+
+/** Each section's title as the person named it, or the editor's: what the section list calls it and the PDF prints over it. */
+export function sectionTitles(
+  sections: readonly SectionRef[],
+  headings: Headings | null | undefined,
+  extras: ExtraSections | null | undefined,
+): Map<SectionRef, string> {
+  return new Map(
+    sections.map((ref) => {
+      const key = extraKey(ref)
+      if (key !== null) return [ref, extras?.[key] ? extraHeading(extras[key]) : "New section"] as const
+      const section = SECTIONS[ref as SectionName]
+      return [ref, headings?.[section.headingKey] || section.title] as const
+    }),
+  )
+}
 
 /**
  * The added sections that can be read, and whether that's all of them: a file

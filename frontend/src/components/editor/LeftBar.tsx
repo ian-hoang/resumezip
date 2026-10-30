@@ -20,6 +20,7 @@ import CheckPanel from "./CheckPanel"
 import { WIDE_SCREEN } from "./layout"
 import { useMarks, type Shown } from "./MarksContext"
 import { useRailTip } from "./RailTip"
+import { swapView } from "./swapView"
 
 const MODES: { id: Mode; label: string; icon: LucideIcon }[] = [
   { id: "write", label: "Write", icon: PenLine },
@@ -52,18 +53,18 @@ export function ModeTabs({ stretch = false }: { stretch?: boolean }) {
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const thumb = useThumb(mode)
 
-  const choose = (next: Mode) => {
-    chooseMode(next)
-    // On small screens the bar is only pinned in Write mode, so if the page
-    // was scrolled down the form, go back up to show what Check or Style has.
-    // It stops at the top, where the pinned bar sits.
-    if (next !== "write" && !window.matchMedia(WIDE_SCREEN).matches) {
-      requestAnimationFrame(() => {
+  const choose = (next: Mode) =>
+    swapView(
+      () => chooseMode(next),
+      () => {
+        // On small screens the bar is only pinned in Write mode, so if the page
+        // was scrolled down the form, go back up to show what Check or Style has.
+        // It stops at the top, where the pinned bar sits.
+        if (next === "write" || window.matchMedia(WIDE_SCREEN).matches) return
         const top = document.getElementById(PANEL_ID)?.closest("aside")?.getBoundingClientRect().top ?? 0
         if (top < 0) window.scrollTo({ top: window.scrollY + top })
-      })
-    }
-  }
+      },
+    )
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     const next = tabFrom(event.key, index)
@@ -121,8 +122,8 @@ const RAIL_BUTTON =
 type RailTab = "write" | Shown | "style"
 // Writing has no tab of its own: the rail's sections are the form, and choosing the open tab again closes it.
 const RAIL_TABS: { id: Exclude<RailTab, "write">; label: string; icon: LucideIcon }[] = [
-  { id: "checks", label: "ATS checks", icon: ListChecks },
-  { id: "ai", label: "AI review", icon: ScanEye },
+  { id: "checks", label: "ATS Checks", icon: ListChecks },
+  { id: "ai", label: "AI Reviews", icon: ScanEye },
   { id: "style", label: "Style", icon: Type },
 ]
 const railTabId = (tab: RailTab) => `editor-rail-${tab}`
@@ -135,7 +136,7 @@ function useRailTab(): RailTab {
 }
 
 /**
- * The ATS checks, AI review and Style in the rail on wide screens: its icons,
+ * The ATS Checks, AI Reviews and Style in the rail on wide screens: its icons,
  * one above the other, with the name in a tip. Each takes the form's place;
  * choosing it again goes back to writing, as choosing a section does. While
  * writing none is chosen, and the first takes the Tab key.
@@ -148,11 +149,12 @@ function RailTabs({ unfold }: { unfold?: () => void }) {
   const { tipProps, tip } = useRailTip()
   const fixes = useFixCount()
 
-  const choose = (next: RailTab) => {
-    unfold?.()
-    if (next === "checks" || next === "ai") show(next)
-    chooseMode(next === "checks" || next === "ai" ? "check" : next)
-  }
+  const choose = (next: RailTab) =>
+    swapView(() => {
+      if (next === "checks" || next === "ai") show(next)
+      chooseMode(next === "checks" || next === "ai" ? "check" : next)
+      unfold?.()
+    })
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = RAIL_TABS.length - 1
@@ -241,8 +243,10 @@ interface LeftBarProps {
   hidden: boolean
   /** Whether the Write | Check | Style tabs are here, as on narrower screens; on wide ones they're in the rail. */
   tabs: boolean
-  /** Whether the form is folded away, on wide screens. */
+  /** Whether the form is folded away, on wide screens, or on its way. */
   folded: boolean
+  /** Whether it has slid shut, and is out of the layout. */
+  shut: boolean
   onFold: () => void
   /** The section list: in the rail on wide screens, and in Write mode narrower. */
   children: React.ReactNode
@@ -252,14 +256,14 @@ interface LeftBarProps {
 
 /**
  * The editor's left part. On wide screens it's a rail of icons down the left of
- * the sheet: hide or show the form, then Write, the ATS checks, AI review and
- * Style, then the sections; all but Write open their panel beside it, in the
- * form's place (styles/editor.css hides the form), and hidden with it. Narrower, it's a bar
+ * the sheet: hide or show the form, then the ATS Checks, AI Reviews and
+ * Style, each opening its panel beside it, in the form's place (styles/editor.css
+ * hides the form), and hidden with it, then the sections. Narrower, it's a bar
  * above the form with the Write | Check | Style tabs and the section list,
  * what the checker found, or Fine-tune, pinned in Write mode so the section
  * tabs stay at hand; in Style mode it takes the form's place (styles/editor.css).
  */
-function LeftBar({ hidden, tabs, folded, onFold, children, style }: LeftBarProps) {
+function LeftBar({ hidden, tabs, folded, shut, onFold, children, style }: LeftBarProps) {
   const mode = useCheckMode()
   const wide = !tabs
   const railTab = useRailTab()
@@ -282,7 +286,7 @@ function LeftBar({ hidden, tabs, folded, onFold, children, style }: LeftBarProps
         className={`flex shrink-0 overflow-clip rounded-bl-[28px] border-r border-hairline ${hidden ? "hidden" : ""}`}
       >
         <div className="flex w-16 shrink-0 flex-col items-center pt-4">
-          <FoldButton folded={folded} onFold={onFold} />
+          <FoldButton folded={folded} onFold={() => onFold()} />
           <span aria-hidden="true" className={RAIL_RULE} />
           <RailTabs unfold={folded ? onFold : undefined} />
           <span aria-hidden="true" className={RAIL_RULE} />
@@ -292,13 +296,18 @@ function LeftBar({ hidden, tabs, folded, onFold, children, style }: LeftBarProps
             as from a finding being fixed, finds it as it was left: the same note open, scrolled as far, the
             score as it was. */}
         {(mode !== "write" || checked) && (
-          <div
-            {...(mode !== "write" ? panel : {})}
-            hidden={mode === "write" || folded}
-            className={`${scrolls} w-[clamp(440px,36vw,520px)] border-l border-hairline px-8 pt-6`}
-          >
-            <div key={mode === "style" ? "style" : notes} className={fadeIn}>
-              {mode === "style" ? style : <CheckPanel />}
+          // The column the form folds away from (data-column), as the form's.
+          <div data-column hidden={mode === "write" || shut} className="flex shrink-0 flex-col overflow-clip border-l border-hairline">
+            <div {...(mode !== "write" ? panel : {})} className={`${scrolls} w-[clamp(440px,36vw,520px)] px-8 pt-6`}>
+              <div key={mode === "style" ? "style" : notes} className={fadeIn}>
+                {/* The rail names it only in a tip, so it has a title, as each section has. */}
+                {railTab !== "write" && (
+                  <h2 className="mb-5 font-serif text-[34px] leading-[1.1] tracking-[-0.03em] text-ink">
+                    {RAIL_TABS.find((tab) => tab.id === railTab)!.label}
+                  </h2>
+                )}
+                {mode === "style" ? style : <CheckPanel />}
+              </div>
             </div>
           </div>
         )}

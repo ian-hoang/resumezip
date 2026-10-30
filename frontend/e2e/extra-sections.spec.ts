@@ -3,9 +3,11 @@ import { expect, test, type Page } from "./test"
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 import {
   editorHeading,
+  editorTitle,
   openFile,
   pageErrors,
   pdfText,
+  preview,
   previewShown,
   saveResumes,
   savedResume,
@@ -96,13 +98,34 @@ test("two added sections called Experience are told apart, print, and open again
     .getByRole("button", { name: /^Experience, section \d+$/ })
     .last()
     .click()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Cancel", exact: true }).press("Escape")
-  await expect(page.getByRole("button", { name: "Delete section", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(nav(page).locator('[aria-current="true"]')).toBeFocused()
+  // The bin asks without a word in the form: armed, its name says what would go, what's under the title fades out
+  // of reach, and on the page the pen strikes through this section's lines alone (its title and two bullets; its
+  // left-out line isn't printed), not those of the other two called Experience. Escape backs out, and the pen lifts.
+  const bin = page.getByRole("button", { name: "Delete section", exact: true })
+  const armed = page.getByRole("button", { name: "Delete Experience", exact: true })
+  // The pen's lines are drawn on the page, unseen by a screen reader, which hears the question instead.
+  const struck = preview(page).locator(".pen-strike path")
+  await bin.click()
+  await expect(armed).toBeVisible()
+  await expect(page.getByRole("status").filter({ hasText: "Press again to delete Experience." })).toBeAttached()
+  expect(await page.getByRole("checkbox", { name: "Include section in the PDF" }).evaluate((box) => box.closest("[inert]") !== null)).toBe(
+    true,
+  )
+  await expect(struck).toHaveCount(3)
+  await armed.press("Escape")
+  await expect(bin).toBeFocused()
+  await expect(struck).toHaveCount(0)
+  // A double-click arms it, but its second click doesn't delete, and a click anywhere else backs out.
+  await bin.dblclick()
+  await expect(armed).toBeVisible()
+  await page.getByRole("heading", { level: 1 }).click()
+  await expect(bin).toBeVisible()
+  await expect.poll(async () => Object.keys((await savedResume(page, "flexible")).extraSections)).toHaveLength(2)
+  // Its second click deletes.
+  await bin.click()
+  await armed.click()
+  // The section before it shows, with the focus on its title.
+  await expect(editorTitle(page)).toBeFocused()
   await expect.poll(async () => Object.keys((await savedResume(page, "flexible")).extraSections)).toHaveLength(1)
   expect(errors).toEqual([])
 })
@@ -130,8 +153,7 @@ test("a resume starts with four sections, and the optional ones are added and de
   await expect(menu(page)).toBeHidden()
   await expect(nav(page).getByRole("button", { name: "Add section", exact: true })).toBeFocused()
   await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
+  await page.getByRole("button", { name: "Delete Awards & Certifications", exact: true }).click()
   await expect(nav(page).getByRole("button", { name: /^Awards & Certifications$/ })).toHaveCount(0)
   await expect.poll(async () => (await savedResume(page, "flexible")).sectionOrder).not.toContain("Awards")
   expect(errors).toEqual([])
@@ -188,10 +210,9 @@ test("an added section alone is checked, its finding selects the line it's about
   await expect(field).toBeFocused()
   expect(await page.evaluate(() => String(getSelection()))).toBe("Wrote the the notes")
   await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  // The rail stays beside the form, so the focus goes to the section before it there, as in Write.
-  await expect.poll(() => page.evaluate(() => document.activeElement?.closest("nav")?.getAttribute("aria-label"))).toBe("Sections")
+  await page.getByRole("button", { name: "Delete Interests", exact: true }).click()
+  // The section before it shows, with the focus on its title, as in Write.
+  await expect(editorTitle(page)).toBeFocused()
   await expect(issue).toBeHidden()
   expect(errors).toEqual([])
 })
@@ -216,8 +237,7 @@ test.describe("touch", () => {
       .poll(async () => Object.values((await savedResume(page, "flexible")).extraSections ?? {}).some((section: any) => section.leftOut))
       .toBe(true)
     await page.getByRole("button", { name: "Delete section", exact: true }).click()
-    await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
-    await page.getByRole("button", { name: "Delete section", exact: true }).click()
+    await page.getByRole("button", { name: "Delete New section", exact: true }).click()
     await expect.poll(async () => Object.keys((await savedResume(page, "flexible")).extraSections)).toEqual([])
     expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
     expect(errors).toEqual([])
@@ -260,8 +280,7 @@ test("a section the resume started with can be deleted, and added back from the 
   const education = nav(page).getByRole("button", { name: /^Education$/ })
   await education.click()
   await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
-  await page.getByRole("button", { name: "Delete section", exact: true }).click()
+  await page.getByRole("button", { name: "Delete Education", exact: true }).click()
   await expect(education).toHaveCount(0)
   await expect.poll(async () => (await savedResume(page, "flexible")).sectionOrder).not.toContain("Education")
 

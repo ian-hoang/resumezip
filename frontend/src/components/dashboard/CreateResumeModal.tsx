@@ -350,7 +350,7 @@ function ChoiceMenu<Value extends string>({
   options: Choice<Value>[]
   onChange: (value: Value) => void
 }) {
-  const { open, setOpen, button, menu, close, onKeyDown } = useMenu()
+  const { open, setOpen, button, menu, close, onKeyDown, shown, closing } = useMenu()
   const menuId = useId()
   const list = useRef<HTMLDivElement>(null)
   const current = options.find((option) => option.value === value) ?? options[0]
@@ -379,14 +379,15 @@ function ChoiceMenu<Value extends string>({
           aria-hidden="true"
         />
       </button>
-      {open && (
+      {shown && (
         <div
           ref={menu}
           id={menuId}
           role="menu"
           aria-label={label}
           onKeyDown={onKeyDown}
-          className={`${MENU_PANEL} choice-menu bottom-full left-0 mb-2`}
+          inert={closing}
+          className={`${MENU_PANEL} choice-menu bottom-full left-0 mb-2 ${closing ? "is-closing" : ""}`}
         >
           {/* The choices scroll inside the glass, not the glass itself: its frost is a layer of its own
               (.glass::before), which would scroll away with them and leave the menu see-through. */}

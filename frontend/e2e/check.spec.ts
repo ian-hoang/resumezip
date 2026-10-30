@@ -254,7 +254,7 @@ test("the score goes up as a problem is fixed", async ({ page }) => {
   // It opens in the form, in the checks' place, and the way back shows the score gone up.
   await email.click()
   await page.getByLabel("Email", { exact: true }).fill("ada@example.com")
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await expect.poll(async () => Number(await number.textContent())).toBeGreaterThan(before)
   await expect(panel.getByRole("button", { name: /^Contact & personal details/ })).not.toHaveAccessibleName(/to fix/)
 
@@ -277,7 +277,7 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   // With the page's clock stopped, typing never pauses. What the person
   // tells the checker still shows at once.
   await page.clock.pauseAt(Date.now() + 1_000)
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   const advice = panel.getByRole("button", { name: /Profile → LinkedIn Consider adding a LinkedIn profile/ })
   await panel.getByRole("button", { name: "Dismiss: Consider adding a LinkedIn profile" }).click()
   await expect(advice).toBeHidden()
@@ -286,7 +286,7 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   await email.pressSequentially("ada@example.com")
   // A fixed wait: proving what's typed isn't checked yet.
   await page.waitForTimeout(1_000)
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await expect(missing).toBeVisible()
 
   // Once typing pauses, it is.
@@ -354,7 +354,7 @@ test("the score's word says how it reads, and a perfect score's scale turns to a
   // that a light sweeps along once.
   await panel.getByRole("button", { name: /Add your email address/ }).click()
   await page.getByLabel("Email", { exact: true }).fill("marcus.bell@example.com")
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await expect(score.getByText(/^\d+$/)).toHaveText("100")
   await expect(score).toContainText("Perfect")
   await expect.poll(() => perfectScaleShown(score)).toBe(true)
@@ -410,7 +410,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
   const panel = page.getByRole("tabpanel", { name: "ATS checks" })
 
   // The tab says only ATS checks: what it found is in the panel.
-  await expect(check).toHaveAccessibleName("ATS checks")
+  await expect(check).toHaveAccessibleName("ATS Checks")
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email", { exact: true }).fill("ada@example")
   await page
@@ -419,7 +419,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  await expect(check).toHaveAccessibleName("ATS checks")
+  await expect(check).toHaveAccessibleName("ATS Checks")
 
   // The email's finding opens the profile, with the cursor in the field. Why it matters is
   // marked on the preview, not written under the field, which says it to a screen reader.
@@ -449,7 +449,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
   await expect(field).toHaveAttribute("aria-invalid", "true")
   await field.fill("ada@example.com")
   await expect(field).not.toHaveAttribute("aria-invalid")
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await expect(email).toBeHidden()
 
   // Missing work identity is a fix; optional LinkedIn advice can be dismissed.
@@ -509,7 +509,7 @@ test("choosing a finding far down a long list opens its field without pushing th
   const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await panel.getByRole("button", { name: /Experience → Company 7 · bullet 1/ }).click()
   await expect(page.getByRole("button", { name: "Done editing entry 7" })).toBeVisible()
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await panel.getByRole("button", { name: /Experience → Company 7 · bullet 2/ }).click()
   // Its field is marked with the finding, and scrolled to: it started below the form's foot.
   const field = page.getByRole("textbox", { name: "Description" }).last()
@@ -771,27 +771,22 @@ test.describe("on a wide screen", () => {
     await expect(name).toBeHidden()
     // The tab says how many must be fixed, in its tip.
     await ats.hover()
-    await expect(page.getByText(/^ATS checks · \d+ to fix$/)).toBeVisible()
+    await expect(page.getByText(/^ATS Checks · \d+ to fix$/)).toBeVisible()
 
-    // A finding opens its field in the form, in the list's place, with the way back and on.
+    // A finding opens its field in the form, in the list's place, with no chip over the form: the rail's tab
+    // goes back to the list.
     await panel.getByRole("button", { name: /Not a whole email address/ }).click()
     await expect(page.getByLabel("Email")).toBeFocused()
     await expect(panel).toBeHidden()
     await expect(ats).toHaveAttribute("aria-selected", "false")
-    // Next opens the next finding's field, which can be in another section, where the email isn't.
-    await page.getByRole("button", { name: "Next" }).click()
-    await expect
-      .poll(() => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.id))
-      .not.toMatch(/email/i)
-    await expect(page.getByRole("button", { name: "Back to ATS checks" })).toBeVisible()
-    await page.getByRole("button", { name: "Back to ATS checks" }).click()
+    await expect(page.getByRole("button", { name: /^Back to/ })).toHaveCount(0)
+    await ats.click()
     await expect(ats).toHaveAttribute("aria-selected", "true")
     await expect(panel).toBeVisible()
 
-    // Choosing the tab again goes back to writing, in the section the last finding opened.
+    // Choosing the tab again goes back to writing, in the section the finding opened.
     await ats.click()
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible()
-    await expect(page.getByRole("button", { name: "Back to ATS checks" })).toBeHidden()
     expect(errors).toEqual([])
   })
 

@@ -512,7 +512,8 @@ test("switching to the list moves each resume's page and name to its row, with f
   // colors, so the page would change shade until it ended. It stays live, and the new view fades in.
   const parts = moving.map(({ part }) => part)
   expect(parts.filter((part) => part.endsWith("(root)"))).toEqual([])
-  expect(new Set(parts.filter((part) => part.startsWith("::view-transition-group("))).size).toBe(4)
+  // The site's header is pictured on its own too, so it stays put as pages change (globals.css); it doesn't move here.
+  expect(new Set(parts.filter((part) => part.startsWith("::view-transition-group(") && !part.includes("site-header"))).size).toBe(4)
   expect(await page.evaluate(() => window.fadingIn)).toBe(true)
   for (const { ms } of moving) {
     expect(ms).toBeGreaterThanOrEqual(380)

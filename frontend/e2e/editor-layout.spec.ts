@@ -257,6 +257,52 @@ test("on a wide screen, the form can be hidden for a bigger page, and choosing a
   expect(errors).toEqual([])
 })
 
+test("on a wide screen, the form slides away and back, and the page grows and shrinks with it, rather than at once", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await newResume(page)
+  await previewShown(page)
+  const region = preview(page)
+
+  /** The preview's and its page's widths, each frame for a moment from just before the click. */
+  const widthsWhile = async (click: () => Promise<void>) => {
+    const recording = await region.evaluateHandle((region) => {
+      const frames: { panel: number; page: number }[] = []
+      const done = new Promise<typeof frames>((resolve) => {
+        const record = () => {
+          const canvas = region.querySelector("canvas")
+          frames.push({ panel: region.getBoundingClientRect().width, page: canvas?.getBoundingClientRect().width ?? 0 })
+          if (frames.length < 60) requestAnimationFrame(record)
+          else resolve(frames)
+        }
+        requestAnimationFrame(record)
+      })
+      return { done }
+    })
+    await click()
+    const frames = await recording.evaluate(({ done }) => done)
+    await recording.dispose()
+    return frames
+  }
+  /** How many frames were part way between the first and the last. */
+  const between = (values: number[]) => {
+    const [low, high] = [Math.min(values[0], values.at(-1)!), Math.max(values[0], values.at(-1)!)]
+    return values.filter((value) => value > low + 2 && value < high - 2).length
+  }
+
+  const hiding = await widthsWhile(() => page.getByRole("button", { name: "Hide the form" }).click())
+  expect(hiding.at(-1)!.panel).toBeGreaterThan(hiding[0].panel + 300)
+  expect(between(hiding.map((frame) => frame.panel))).toBeGreaterThanOrEqual(3)
+  expect(between(hiding.map((frame) => frame.page))).toBeGreaterThanOrEqual(3)
+
+  const showing = await widthsWhile(() => experience(page).click())
+  expect(showing.at(-1)!.panel).toBeLessThan(showing[0].panel - 300)
+  expect(between(showing.map((frame) => frame.panel))).toBeGreaterThanOrEqual(3)
+  expect(between(showing.map((frame) => frame.page))).toBeGreaterThanOrEqual(3)
+  await expect(editorHeading(page, "Experience", { exact: true })).toBeVisible()
+  expect(errors).toEqual([])
+})
+
 test("a folded entry with a long name stays as wide as the form, its name cut short", async ({ page }) => {
   const errors = pageErrors(page)
   // The form is too narrow for these names on one line.

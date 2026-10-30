@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
 interface Words {
@@ -15,7 +15,12 @@ interface Tip {
   key: string
   top: number
   left: number
+  /** On its way out: it fades, then goes. */
+  leaving?: boolean
 }
+
+// How long a tip takes to fade away (matches duration-150).
+const FADE_MS = 150
 
 /**
  * The name beside a button in the editor's rail of icons, while it's pointed
@@ -23,11 +28,20 @@ interface Tip {
  * is fixed to the window beside the button, in a portal. The button's own name
  * already says what it is, so the tip isn't read out again. `tip()` goes after
  * the buttons, so it shows their words from the same render: a count that
- * comes in while one's pointed at shows at once.
+ * comes in while one's pointed at shows at once. It fades in beside the
+ * button, glides to the next one as the pointer moves down the rail, and
+ * fades away as it leaves.
  */
 export function useRailTip(on = true) {
   const [tip, setTip] = useState<Tip | null>(null)
   const words = useRef(new Map<string, Words>())
+  const leaving = tip?.leaving ?? false
+  useEffect(() => {
+    if (!leaving) return
+    const timer = setTimeout(() => setTip((tip) => (tip?.leaving ? null : tip)), FADE_MS)
+    return () => clearTimeout(timer)
+  }, [leaving])
+  const hide = () => setTip((tip) => tip && { ...tip, leaving: true })
 
   const tipProps = (text: string, count = 0, key = text) => {
     words.current.set(key, { text, count })
@@ -38,9 +52,9 @@ export function useRailTip(on = true) {
     }
     return {
       onPointerEnter: (event: React.PointerEvent<HTMLElement>) => show(event.currentTarget),
-      onPointerLeave: () => setTip(null),
+      onPointerLeave: hide,
       onFocus: (event: React.FocusEvent<HTMLElement>) => show(event.currentTarget),
-      onBlur: () => setTip(null),
+      onBlur: hide,
     }
   }
 
@@ -51,7 +65,7 @@ export function useRailTip(on = true) {
       <span
         aria-hidden="true"
         style={{ top: tip.top, left: tip.left }}
-        className="pointer-events-none fixed z-50 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-ink px-3 py-1.5 text-[13px] font-medium tracking-[-0.01em] text-white shadow-[0_8px_20px_-8px_rgb(17_19_24/0.45)]"
+        className={`pointer-events-none fixed z-50 flex -translate-y-1/2 items-center transition-[opacity,translate,top] duration-150 ease-out motion-reduce:transition-none starting:-translate-x-1 starting:opacity-0 ${tip.leaving ? "-translate-x-1 opacity-0" : ""} gap-2 whitespace-nowrap rounded-full bg-ink px-3 py-1.5 text-[13px] font-medium tracking-[-0.01em] text-white shadow-[0_8px_20px_-8px_rgb(17_19_24/0.45)]`}
       >
         {shown.text}
         {shown.count > 0 && <span className="tabular-nums text-white/60">{shown.count}</span>}
@@ -60,5 +74,5 @@ export function useRailTip(on = true) {
     )
   }
 
-  return { tipProps, tip: tipShown, hideTip: () => setTip(null) }
+  return { tipProps, tip: tipShown, hideTip: hide }
 }

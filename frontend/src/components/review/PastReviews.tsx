@@ -79,8 +79,7 @@ export default function PastReviews({
           Past reviews
         </h2>
         {asking ? (
-          // In the editor's words and look (SectionForm's "Delete it?"), fading in where Clear all was
-          // (`starting:` is CSS @starting-style).
+          // Fading in where Clear all was (`starting:` is CSS @starting-style).
           <span
             className="ml-auto flex h-10 shrink-0 items-center gap-2 transition-opacity duration-200 motion-reduce:transition-none starting:opacity-0"
             onKeyDown={(event) => {
