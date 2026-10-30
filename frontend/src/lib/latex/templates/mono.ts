@@ -24,10 +24,11 @@ import {
   projectHeader,
   runs,
   sectionsOf,
-  shownLink,
   SOURCE_SANS,
   stretch,
   sum,
+  underline,
+  underlined,
   unlessPdfLatex,
   webLink,
   type Fallbacks,
@@ -182,10 +183,10 @@ function body(data: TemplateData, units: Units): string {
   const contacts = [
     latex(profile.location),
     latex(profile.phone),
-    profile.email && emailLink(profile.email),
-    profile.linkedin && webLink(profile.linkedin),
-    profile.github && webLink(profile.github),
-    profile.website && webLink(profile.website),
+    profile.email && emailLink(profile.email, underline),
+    profile.linkedin && webLink(profile.linkedin, underline),
+    profile.github && webLink(profile.github, underline),
+    profile.website && webLink(profile.website, underline),
   ]
     .filter(Boolean)
     .map((item) => `\\mbox{${item}}`)
@@ -236,14 +237,14 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         for (const project of data.projects) {
-          add(`  \\resumeProject{${projectHeader(project, "\\barSep ", shownLink)}}{${latex(project.date)}}`)
+          add(`  \\resumeProject{${projectHeader(project, "\\barSep ", underlined)}}{${latex(project.date)}}`)
           items(project.bullets.map(runs))
         }
         break
       case "publications": {
         // [1], [2], ... 0.7em before each, 5pt apart.
         const apart = sum(units.space(5), units.space(-LEADING * SIZE))
-        add(citations(data.publications, shownLink, `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${apart}`))
+        add(citations(data.publications, underlined, `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${apart}`))
         break
       }
       case "skills":

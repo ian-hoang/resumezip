@@ -2,7 +2,7 @@
 // is clickable on its words alone, and its address isn't printed.
 
 import { describe, expect, test } from "vitest"
-import { pagesOf, render } from "@/lib/import/testRender"
+import { pagesOf, render, shapesOf } from "@/lib/import/testRender"
 import { TEMPLATES } from "@/lib/templates"
 
 const resume = (template: string) => ({
@@ -31,4 +31,19 @@ describe.each(TEMPLATES.map((template) => template.id))("%s", (template) => {
     expect(links).toContain("https://example.com/dash")
     expect(links).toContain("https://example.com/search")
   })
+})
+
+// A profile address, a project's link and a paper's link, each printed as its
+// address. The same resume without them prints the same lines less those
+// addresses, so each underline is one more shape drawn.
+const links = (template: string, linked: boolean) => ({
+  selectedTemplate: template,
+  profileSection: { fullName: "Ada Lovelace", email: "ada@example.com", personalWebsite: linked ? "ada.dev" : "" },
+  projectsSection: [{ id: 1, projectName: "Engine", projectGithub: linked ? "github.com/ada/engine" : "" }],
+  publicationsSection: [{ id: 1, publicationTitle: "Notes", publicationLink: linked ? "https://example.com/notes" : "" }],
+})
+
+test.each(TEMPLATES.map((template) => template.id))("%s underlines its links", async (template) => {
+  const [without, withLinks] = await Promise.all([render(links(template, false)), render(links(template, true))])
+  expect((await shapesOf(withLinks)) - (await shapesOf(without))).toBe(3)
 })

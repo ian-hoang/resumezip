@@ -89,7 +89,8 @@
   } else if name == "Education" and data.education.len() > 0 {
     section(heading-or(hd.education, "Education"), entries(data.education.map(e => {
       let degree = join-present(", ", e.degree, if has(e.gpa) { "GPA " + e.gpa } else { "" })
-      let title = (if has(e.school) { strong(e.school) }, if has(degree) { degree }).filter(part => part != none).join([ - ])
+      // A string, not [ - ]: markup that starts with "- " is a bullet.
+      let title = (if has(e.school) { strong(e.school) }, if has(degree) { degree }).filter(part => part != none).join(" - ")
       let items = ()
       if has(e.coursework) { items.push([*Relevant Coursework:* #e.coursework]) }
       if has(e.involvement) { items.push([*Involvement:* #e.involvement]) }
@@ -108,13 +109,14 @@
     })))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
-      // The name and date, then the links on the left and the tech stack on
-      // the right, as the jobs above have their place.
+      // The name and tech stack, then the links on the left and the date on
+      // the right, each line only when it has something on it.
+      let title = (if has(pr.name) { strong(project-name(pr)) }, if has(pr.techStack) { pr.techStack }).filter(part => part != none)
       block(sticky: true, {
-        text(size: sized(12pt), row(strong(project-name(pr)), strong(pr.date)))
-        if pr.links.len() > 0 or has(pr.techStack) {
-          v(spaced(6.5pt))
-          row(pr.links.map(url => box(web-link(url, ul(url)))).join([ | ]), pr.techStack)
+        if title.len() > 0 { text(size: sized(12pt), title.join([ | ])) }
+        if pr.links.len() > 0 or has(pr.date) {
+          if title.len() > 0 { v(spaced(6.5pt)) }
+          row(pr.links.map(url => box(web-link(url, ul(url)))).join([ | ]), strong(pr.date))
         }
       })
       bullets(pr.bullets)
