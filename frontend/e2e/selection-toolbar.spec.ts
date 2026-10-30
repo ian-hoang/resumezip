@@ -4,7 +4,9 @@ import { expectText, pageErrors, preview, previewShown, printed, saveResumes, sa
 // Selecting words in a styled box shows a toolbar over them: bold, italic,
 // underline and link, each also on a key (⌘B, ⌘I, ⌘U, ⌘K). A link underlines
 // its words, prints them alone, clickable, and the underline can be taken off
-// without the link. Text saved before underline and links reads as it did.
+// without the link. Linked words show their address beside the link button,
+// which takes the link off; so does a link pointed at on the preview. Text
+// saved before underline and links reads as it did.
 
 const LABEL = "Description"
 const RESUME = {
@@ -113,7 +115,7 @@ test("⌘U underlines, and ⌘K links, words; the link is underlined, and U take
   await expect(address).toBeFocused()
   await address.fill("not a link")
   await address.press("Enter")
-  await expect(page.getByRole("group", { name: "Link" }).getByRole("alert")).toHaveText("Paste a web or email address.")
+  await expect(toolbar(page).getByRole("alert")).toHaveText("Paste a web or email address.")
   await address.fill("example.com/dash")
   await address.press("Enter")
   await expect(box).toBeFocused()
@@ -139,13 +141,78 @@ test("⌘U underlines, and ⌘K links, words; the link is underlined, and U take
   expect(await printed(page)).not.toContain("example.com")
   await expect(preview(page).locator('.react-pdf__Page__annotations a[href="https://example.com/dash"]')).toHaveCount(1)
 
-  // With the cursor in the link, ⌘K opens it, to change or remove.
+  // With the cursor in the link, ⌘K opens it, to change, or the link button takes it off.
   await selectInBox(box, 17)
   await page.keyboard.press("ControlOrMeta+k")
   await expect(address).toHaveValue("example.com/dash")
-  await page.getByRole("button", { name: "Remove" }).click()
+  await expect(address).toBeFocused()
+  await toolbar(page).getByRole("button", { name: "Link" }).click()
   await expect(box.getByRole("link")).toHaveCount(0)
   await expect.poll(() => saved(page)).toBe("• Shipped the dashboard! on time")
+  expect(errors).toEqual([])
+})
+
+test("linked words show their address beside the link button, to change there, and the link button takes the link off", async ({
+  page,
+}) => {
+  const errors = pageErrors(page)
+  const box = await openBox(page, "• Shipped the [__dashboard__](https://example.com/dash) on time\n• Wrote the docs")
+  // Words with no link show no address, until the link button opens a box to paste one in.
+  await selectInBox(box, 34, 39)
+  const address = toolbar(page).getByRole("textbox", { name: "Link address" })
+  await expect(toolbar(page).getByRole("button", { name: "Bold" })).toBeVisible()
+  await expect(address).toBeHidden()
+  await selectInBox(box, 14, 23)
+  await expect(toolbar(page).getByRole("button", { name: "Link" })).toHaveAttribute("aria-pressed", "true")
+  await expect(address).toHaveValue("example.com/dash")
+  await expect(box).toBeFocused()
+
+  // A click in the address changes it.
+  await address.click()
+  await address.fill("example.com/new")
+  await address.press("Enter")
+  await expect(box).toBeFocused()
+  await expect.poll(() => saved(page)).toBe("• Shipped the [__dashboard__](https://example.com/new) on time\n• Wrote the docs")
+  await expect(address).toHaveValue("example.com/new")
+
+  // The link button takes the link off, and the address goes.
+  await toolbar(page).getByRole("button", { name: "Link" }).click()
+  await expect.poll(() => saved(page)).toBe("• Shipped the dashboard on time\n• Wrote the docs")
+  await expect(address).toBeHidden()
+  await expect(toolbar(page).getByRole("button", { name: "Link" })).toHaveAttribute("aria-pressed", "false")
+  await expect(box).toBeFocused()
+  expect(errors).toEqual([])
+})
+
+test("pointing at a link on the preview shows its address over it, to change or take off, and the link still opens", async ({ page }) => {
+  const errors = pageErrors(page)
+  await openBox(page, "• Shipped the [__dashboard__](https://example.com/dash) on time")
+  const link = preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com/dash"]')
+  await expect(link).toHaveCount(1)
+  await expect(link).toHaveAttribute("target", "_blank")
+  const pill = page.getByRole("toolbar", { name: "Link" })
+  await link.hover()
+  await expect(pill).toBeVisible()
+  const address = pill.getByRole("textbox", { name: "Link address" })
+  await expect(address).toHaveValue("example.com/dash")
+  // Over the link, not on it, so it can still be clicked.
+  expect((await pill.boundingBox())!.y + (await pill.boundingBox())!.height).toBeLessThanOrEqual((await link.boundingBox())!.y)
+
+  // Changed there, it's changed in its box, with the words lit up there.
+  await address.click()
+  await address.fill("example.com/new")
+  await address.press("Enter")
+  await expect.poll(() => saved(page)).toBe("• Shipped the [__dashboard__](https://example.com/new) on time")
+  await expect(preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com/new"]')).toHaveCount(1)
+
+  // The pointer moved off, the pill goes; back on the link, it comes back, and its link button takes the link off.
+  await page.getByRole("heading", { level: 1 }).first().click()
+  await page.mouse.move(0, 0)
+  await expect(pill).toBeHidden()
+  await preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com/new"]').hover()
+  await expect(pill).toBeVisible()
+  await pill.getByRole("button", { name: "Link" }).click()
+  await expect.poll(() => saved(page)).toBe("• Shipped the dashboard on time")
   expect(errors).toEqual([])
 })
 
