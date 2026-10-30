@@ -118,7 +118,8 @@ test("two added sections called Experience are told apart, print, and open again
   // A double-click arms it, but its second click doesn't delete, and a click anywhere else backs out.
   await bin.dblclick()
   await expect(armed).toBeVisible()
-  await page.getByRole("heading", { level: 1 }).click()
+  // The form's heading: the preview's PDF has one of its own, the name, which WebKit lists as a heading too.
+  await page.getByRole("main").getByRole("heading", { level: 1 }).click()
   await expect(bin).toBeVisible()
   await expect.poll(async () => Object.keys((await savedResume(page, "flexible")).extraSections)).toHaveLength(2)
   // Its second click deletes.

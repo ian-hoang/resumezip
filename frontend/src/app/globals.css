@@ -764,8 +764,12 @@
 
 /* From page to page with the header's links (SiteHeader.tsx, turnPage in
    rise.ts): the page fades and lifts a little out of focus as the next one
-   fades up into place, and the header, the same on both, stays put. */
-.site-pill {
+   fades up into place, and the header, the same on both, stays put. Named
+   only for this: in other transitions it would be a picture of its own, and
+   going from the home page to the editor, which has no header, WebKit was
+   left holding an animation on it that crashed the page once listed
+   (document.getAnimations). */
+:root:active-view-transition-type(page) .site-pill {
   view-transition-name: site-header;
 }
 :root:active-view-transition-type(page)::view-transition-old(root) {

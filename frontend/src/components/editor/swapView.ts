@@ -1,5 +1,5 @@
 import { flushSync } from "react-dom"
-import { canTransition } from "@/components/site/rise"
+import { canTransition, startTransition } from "@/components/site/rise"
 import { WIDE_SCREEN } from "./layout"
 
 /**
@@ -24,15 +24,17 @@ export function swapView(update: () => void, then?: () => void) {
     then?.()
     return
   }
-  const transition = document.startViewTransition({
-    types: ["view-swap"],
-    update: () => {
-      flushSync(update)
-      then?.()
-    },
-  })
   // A press while it fades ends the fade at once, so what's pressed, or dragged, is the live page.
   const skip = () => transition.skipTransition()
+  const transition = startTransition(
+    {
+      types: ["view-swap"],
+      update: () => {
+        flushSync(update)
+        then?.()
+      },
+    },
+    () => document.removeEventListener("pointerdown", skip, { capture: true }),
+  )
   document.addEventListener("pointerdown", skip, { capture: true, once: true })
-  void transition.finished.finally(() => document.removeEventListener("pointerdown", skip, { capture: true }))
 }

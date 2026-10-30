@@ -2,7 +2,7 @@ import type { CSSProperties, MouseEvent } from "react"
 import { flushSync } from "react-dom"
 import { useRouter } from "next/navigation"
 import { reducedMotion } from "@/components/editor/layout"
-import { canTransition, waitFor } from "@/components/site/rise"
+import { canTransition, startTransition, waitFor } from "@/components/site/rise"
 import { pageOf } from "./flight"
 
 /** The view transition type that dashboard.css times and shapes the switch by. */
@@ -29,8 +29,8 @@ export function switchView(update: () => void): "morph" | "fade" | "instant" {
   const run = () => flushSync(update)
   // Types came with the options form. Browsers from before them only take a
   // callback, and switch with their own timing.
-  if ("types" in ViewTransition.prototype) document.startViewTransition({ update: run, types: [SWITCH_TYPE] })
-  else document.startViewTransition(run)
+  if ("types" in ViewTransition.prototype) startTransition({ update: run, types: [SWITCH_TYPE] })
+  else document.startViewTransition(run).ready.catch(() => {})
   return "morph"
 }
 
@@ -67,17 +67,19 @@ function openResume(go: () => void, page: HTMLElement | null): boolean {
   // Its usual name pairs it with the other dashboard view; for this, it pairs with the editor's page.
   const usual = page.style.viewTransitionName
   page.style.viewTransitionName = OPEN_NAME
-  const transition = document.startViewTransition({
-    types: [OPEN_TYPE],
-    update: async () => {
-      page.style.viewTransitionName = usual
-      go()
-      await waitFor(() => document.querySelector("[data-open-target]") !== null)
+  startTransition(
+    {
+      types: [OPEN_TYPE],
+      update: async () => {
+        page.style.viewTransitionName = usual
+        go()
+        await waitFor(() => document.querySelector("[data-open-target]") !== null)
+      },
     },
-  })
-  transition.finished.finally(() => {
-    page.style.viewTransitionName = usual
-  })
+    () => {
+      page.style.viewTransitionName = usual
+    },
+  )
   return true
 }
 
@@ -93,23 +95,25 @@ export function closeResume(id: string, go: () => void): boolean {
   if (!canTransition() || !document.querySelector("[data-open-target]")) return false
   let page: HTMLElement | null = null
   let usual = ""
-  const transition = document.startViewTransition({
-    types: [CLOSE_TYPE],
-    update: async () => {
-      go()
-      await waitFor(() => (page = pageOf(document.body, id)) !== null)
-      // Its own picture rather than its template's, if it's drawn in a moment.
-      await waitFor(() => page?.querySelector("img.page-arrived") != null, PICTURE_MS)
-      // Its usual name pairs it with the other dashboard view; for this, it pairs with the editor's page.
-      if (page) {
-        usual = page.style.viewTransitionName
-        page.style.viewTransitionName = OPEN_NAME
-      }
+  startTransition(
+    {
+      types: [CLOSE_TYPE],
+      update: async () => {
+        go()
+        await waitFor(() => (page = pageOf(document.body, id)) !== null)
+        // Its own picture rather than its template's, if it's drawn in a moment.
+        await waitFor(() => page?.querySelector("img.page-arrived") != null, PICTURE_MS)
+        // Its usual name pairs it with the other dashboard view; for this, it pairs with the editor's page.
+        if (page) {
+          usual = page.style.viewTransitionName
+          page.style.viewTransitionName = OPEN_NAME
+        }
+      },
     },
-  })
-  transition.finished.finally(() => {
-    if (page) page.style.viewTransitionName = usual
-  })
+    () => {
+      if (page) page.style.viewTransitionName = usual
+    },
+  )
   return true
 }
 

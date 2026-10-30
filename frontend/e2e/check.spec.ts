@@ -123,6 +123,8 @@ test("the left bar switches between writing and checking, and remembers which", 
   await expect(check).toHaveAttribute("aria-selected", "true")
   await checked()
   await check.click()
+  // The switch crossfades, and is saved as it's made: wait for it before the reload.
+  await writing()
   await previewShown(page)
   await page.reload()
   await writing()
@@ -283,6 +285,8 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   await expect(advice).toBeHidden()
 
   await missing.click()
+  // The form crossfades in: typed before it's on the page, the keys would go nowhere.
+  await expect(email).toBeVisible()
   await email.pressSequentially("ada@example.com")
   // A fixed wait: proving what's typed isn't checked yet.
   await page.waitForTimeout(1_000)
@@ -776,7 +780,8 @@ test.describe("on a wide screen", () => {
     // A finding opens its field in the form, in the list's place, with no chip over the form: the rail's tab
     // goes back to the list.
     await panel.getByRole("button", { name: /Not a whole email address/ }).click()
-    await expect(page.getByLabel("Email")).toBeFocused()
+    // Exact: the finding's mark on the preview is named for the email too.
+    await expect(page.getByLabel("Email", { exact: true })).toBeFocused()
     await expect(panel).toBeHidden()
     await expect(ats).toHaveAttribute("aria-selected", "false")
     await expect(page.getByRole("button", { name: /^Back to/ })).toHaveCount(0)
