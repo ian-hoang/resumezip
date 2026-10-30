@@ -194,7 +194,7 @@ const DEFINITIONS = {
       { key: "techStack", label: "Tech stack", placeholder: "Next.js, TypeScript, PostgreSQL", size: "full" },
       { key: "projectGithub", label: "GitHub", placeholder: "github.com/you/project", size: "half" },
       { key: "additionalLink", label: "Website", placeholder: "project.dev", size: "half" },
-      { ...bullets("projectDescription"), label: "What it does" },
+      bullets("projectDescription"),
     ],
   },
   Publications: {
