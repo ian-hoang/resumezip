@@ -164,7 +164,8 @@ export default function AiNotesBox() {
   if (!aiNotes || aiNotes.length === 0) {
     return (
       <section aria-labelledby={heading} className="flex flex-col gap-3">
-        <h2 id={heading} className="label-mono text-ink-2">
+        {/* On wide screens the panel's title, AI Reviews, says it. */}
+        <h2 id={heading} className="label-mono text-ink-2 xl:sr-only">
           AI notes
         </h2>
         <p className="font-serif text-[30px] leading-[1.02] tracking-[-0.03em] text-ink">

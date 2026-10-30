@@ -36,7 +36,7 @@ test("unknown words are suggestions, and Add word clears them without the text l
   await panel.getByRole("button", { name: /^Experience → .*The English dictionary doesn't know “Qwexy”/ }).click()
   await expect(bullets).toBeFocused()
   await expect(bullets).toHaveAccessibleDescription(/The English dictionary doesn't know “Qwexy”/)
-  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await page.getByRole("tab", { name: "ATS Checks" }).click()
   await expect(panel.getByRole("button", { name: /Dismiss: The English dictionary doesn't know “Qwexy”/ })).toBeVisible()
 
   // Add word clears a word in both bullets.

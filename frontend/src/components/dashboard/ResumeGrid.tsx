@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRef } from "react"
 import { Plus } from "lucide-react"
 import { ago } from "@/lib/ago"
 import type { ResumeWithId } from "@/lib/resume"
@@ -10,6 +11,7 @@ import PagePicture from "./PagePicture"
 import { CopyIcon, DownloadIcon, PencilIcon, RowAction, TagIcon, TrashIcon } from "./RowActions"
 import { RenameInput, tagName } from "./ResumeTable"
 import { nameOf, type ListActions } from "./useListActions"
+import { useGlideOnChange } from "./flight"
 import { morph, useOpenOnClick } from "./viewSwitch"
 
 /** When a resume was last edited, in a few words: "Just now", "5 min ago", "Yesterday", "2 Oct". */
@@ -47,9 +49,11 @@ export default function ResumeGrid({ resumes, actions, onDelete, onRetype, leavi
   const { downloading, downloaded, renaming, setRenaming, copied, duplicate, download } = actions
   const now = new Date()
   const open = useOpenOnClick()
+  const list = useRef<HTMLUListElement>(null)
+  useGlideOnChange(list, resumes.map((resume) => resume.id).join("\n"))
 
   return (
-    <ul aria-label="Resumes" className="resume-grid">
+    <ul ref={list} aria-label="Resumes" className="resume-grid">
       {resumes.map((resume, index) => {
         const href = `/create/new/${resume.id}`
         const name = nameOf(resume)

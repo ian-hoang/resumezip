@@ -7,6 +7,8 @@ import type { ResumeWithId } from "@/lib/resume"
 import { typingIn } from "@/lib/keys"
 import { templateById } from "@/lib/templates"
 import { reducedMotion } from "@/components/editor/layout"
+import { useLinger } from "@/components/useLinger"
+import { MENU_CLOSE_MS } from "./MoreMenu"
 import PagePicture from "./PagePicture"
 import { editedAgo } from "./ResumeGrid"
 import { nameOf } from "./useListActions"
@@ -81,6 +83,10 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
   const listed = found.slice(0, LISTED)
   const picked = Math.min(active, listed.length - 1)
   const open = listing && listed.length > 0
+  // Closed, the matches shrink away still showing what they showed.
+  const panel = useLinger(open, MENU_CLOSE_MS)
+  const lastListed = useRef(listed)
+  if (open) lastListed.current = listed
   // Typed in, with nothing to list: the panel says so, rather than staying away.
   const nothing = listing && query.trim() !== "" && found.length === 0
 
@@ -266,10 +272,10 @@ export default function SearchBar({ resumes, query, onQuery }: SearchBarProps) {
             <p className="px-4 py-3 text-[15px] text-ink-2">{matching}</p>
           </div>
         )}
-        {open && (
-          <div className="search-panel glass glass-frost rounded-panel">
+        {panel.shown && (
+          <div inert={panel.closing} className={`search-panel glass glass-frost rounded-panel ${panel.closing ? "is-closing" : ""}`}>
             <ul id={panelId} role="listbox" aria-label="Matching resumes">
-              {listed.map((resume, index) => (
+              {lastListed.current.map((resume, index) => (
                 <li
                   key={resume.id}
                   id={`${optionId}-${index}`}

@@ -448,8 +448,8 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
 
 interface SectionHeadingProps {
   title: string
-  /** A line under the title, as "3 entries · drag to reorder". */
-  note?: string
+  /** A line under the title, as "3 entries · drag to reorder", or the question as Delete asks. */
+  note?: React.ReactNode
   /** When given, the title can be renamed. */
   onRename?: (title: string) => void
   /** What the checker found about the section or its title, while the person is fixing it. */

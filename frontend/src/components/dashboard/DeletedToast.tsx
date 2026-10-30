@@ -11,7 +11,7 @@ interface DeletedToastProps {
   onUndo: () => void
   /** The time to undo is up. */
   onDone: () => void
-  /** What was deleted, as a small picture in place of the paper ball: a resume's page, which flies into it (flight.ts). */
+  /** What was deleted, as a small picture before the words: a resume's page, which flies into it (flight.ts). */
   page?: ReactNode
   /** Added to the dock's class and style, to place it somewhere other than the foot of the screen's middle. */
   className?: string
@@ -65,12 +65,10 @@ export default function DeletedToast({ title, onUndo, onDone, page, className = 
         onPointerEnter={() => setHeld((held) => ({ ...held, pointer: true }))}
         onPointerLeave={() => setHeld((held) => ({ ...held, pointer: false }))}
       >
-        {page ? (
+        {page && (
           <span data-toast-page="" className="toast-page" aria-hidden="true">
             {page}
           </span>
-        ) : (
-          <span className="paper-ball" aria-hidden="true" />
         )}
         {/* The page's live region says it aloud. */}
         <p className="min-w-0 flex-1 truncate text-sm">&ldquo;{title}&rdquo; deleted</p>
@@ -85,13 +83,13 @@ export default function DeletedToast({ title, onUndo, onDone, page, className = 
           }}
           onBlur={() => setHeld((held) => ({ ...held, keyboard: false }))}
           aria-keyshortcuts={onMac() ? "Meta+Z" : "Control+Z"}
-          className="ink-button inline-flex h-9 shrink-0 items-center gap-2 rounded-full pl-4 pr-2.5 text-sm font-medium [@media(hover:none)]:pr-4"
+          className="ink-button inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full pl-3 pr-2 text-[13px] font-medium [@media(hover:none)]:pr-3"
         >
           Undo
           {/* Only a hint for a keyboard, so not on touch screens. */}
           <kbd
             aria-hidden="true"
-            className="rounded-[5px] px-[5px] py-[3px] font-mono text-[11px] leading-none tracking-[0.04em] text-white/75 ring-1 ring-inset ring-white/30 [@media(hover:none)]:hidden"
+            className="rounded-[4px] px-1 py-[2px] font-mono text-[10px] leading-none tracking-[0.04em] text-white/70 ring-1 ring-inset ring-white/28 [@media(hover:none)]:hidden"
           >
             {shortcut("Z")}
           </kbd>

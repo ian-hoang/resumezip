@@ -11,19 +11,51 @@ const WAIT_MS = 2500
 export const canTransition = () => "startViewTransition" in document && "types" in ViewTransition.prototype && !reducedMotion()
 
 /**
- * Resolves once `found` is true, or after WAIT_MS, for a view transition
+ * Starts a view transition, running `done` once it's over, however it ends.
+ * One that's skipped or cut short (a press mid-fade, the window resized, an
+ * update the browser gave up waiting for) rejects `ready`, and `finished` if
+ * the update timed out, which would show as uncaught errors. The change
+ * itself still happens, only without the animation, so they're caught here.
+ */
+export function startTransition(options: StartViewTransitionOptions, done?: () => void): ViewTransition {
+  const transition = document.startViewTransition(options)
+  transition.ready.catch(() => {})
+  transition.finished.then(done, done)
+  return transition
+}
+
+/**
+ * Resolves once `found` is true, or after `ms` (WAIT_MS), for a view transition
  * waiting on the next page. Polled with timers: the browser runs no animation
  * frames while it waits for the new page, so requestAnimationFrame would never
  * come back.
  */
-export function waitFor(found: () => boolean): Promise<void> {
-  const until = performance.now() + WAIT_MS
+export function waitFor(found: () => boolean, ms = WAIT_MS): Promise<void> {
+  const until = performance.now() + ms
   return new Promise((done) => {
     const look = () => {
       if (found() || performance.now() > until) done()
       else setTimeout(look, 16)
     }
     look()
+  })
+}
+
+/**
+ * Goes to another page from the header's links: the page fades and lifts a
+ * little as the next one fades up (the "page" view transition in globals.css),
+ * the header staying put. Where the browser has no view transitions, or with
+ * less motion, it just goes.
+ */
+export function turnPage(go: () => void) {
+  if (!canTransition()) return go()
+  const from = location.pathname
+  startTransition({
+    types: ["page"],
+    update: async () => {
+      go()
+      await waitFor(() => location.pathname !== from && document.querySelector("main") !== null)
+    },
   })
 }
 
@@ -35,7 +67,7 @@ export function waitFor(found: () => boolean): Promise<void> {
 export function rise(go: () => void) {
   if (!canTransition()) return go()
   const from = location.pathname
-  document.startViewTransition({
+  startTransition({
     types: ["rise"],
     update: async () => {
       go()

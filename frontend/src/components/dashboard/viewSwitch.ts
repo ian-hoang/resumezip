@@ -2,7 +2,8 @@ import type { CSSProperties, MouseEvent } from "react"
 import { flushSync } from "react-dom"
 import { useRouter } from "next/navigation"
 import { reducedMotion } from "@/components/editor/layout"
-import { canTransition, waitFor } from "@/components/site/rise"
+import { canTransition, startTransition, waitFor } from "@/components/site/rise"
+import { pageOf } from "./flight"
 
 /** The view transition type that dashboard.css times and shapes the switch by. */
 const SWITCH_TYPE = "resume-view"
@@ -28,8 +29,8 @@ export function switchView(update: () => void): "morph" | "fade" | "instant" {
   const run = () => flushSync(update)
   // Types came with the options form. Browsers from before them only take a
   // callback, and switch with their own timing.
-  if ("types" in ViewTransition.prototype) document.startViewTransition({ update: run, types: [SWITCH_TYPE] })
-  else document.startViewTransition(run)
+  if ("types" in ViewTransition.prototype) startTransition({ update: run, types: [SWITCH_TYPE] })
+  else document.startViewTransition(run).ready.catch(() => {})
   return "morph"
 }
 
@@ -45,8 +46,11 @@ export const morph = (part: "page" | "name", index: number): CSSProperties => ({
   viewTransitionClass: `resume-${part}`,
 })
 
-/** The view transition type for opening a resume from the dashboard (globals.css). */
+/** The view transition types for opening a resume from the dashboard, and going back to it (globals.css). */
 const OPEN_TYPE = "resume-open"
+const CLOSE_TYPE = "resume-close"
+// The most going back waits for the resume's own picture on the dashboard, holding the editor still meanwhile.
+const PICTURE_MS = 400
 /** What a resume's page on the dashboard and the editor's page are both called while one becomes the other. */
 export const OPEN_NAME = "resume-open-page"
 
@@ -63,17 +67,53 @@ function openResume(go: () => void, page: HTMLElement | null): boolean {
   // Its usual name pairs it with the other dashboard view; for this, it pairs with the editor's page.
   const usual = page.style.viewTransitionName
   page.style.viewTransitionName = OPEN_NAME
-  const transition = document.startViewTransition({
-    types: [OPEN_TYPE],
-    update: async () => {
-      page.style.viewTransitionName = usual
-      go()
-      await waitFor(() => document.querySelector("[data-open-target]") !== null)
+  startTransition(
+    {
+      types: [OPEN_TYPE],
+      update: async () => {
+        page.style.viewTransitionName = usual
+        go()
+        await waitFor(() => document.querySelector("[data-open-target]") !== null)
+      },
     },
-  })
-  transition.finished.finally(() => {
-    page.style.viewTransitionName = usual
-  })
+    () => {
+      page.style.viewTransitionName = usual
+    },
+  )
+  return true
+}
+
+/**
+ * Back to the dashboard from a resume's editor: where the browser has view
+ * transitions, the editor's page shrinks back into the resume's page on the
+ * dashboard as it comes in, the way it came (openResume, backwards). The
+ * browser holds a picture of the editor until that page is on the dashboard
+ * (or gives up after a moment, and the rest crossfades). Returns false where
+ * it doesn't run, for the link to go as usual.
+ */
+export function closeResume(id: string, go: () => void): boolean {
+  if (!canTransition() || !document.querySelector("[data-open-target]")) return false
+  let page: HTMLElement | null = null
+  let usual = ""
+  startTransition(
+    {
+      types: [CLOSE_TYPE],
+      update: async () => {
+        go()
+        await waitFor(() => (page = pageOf(document.body, id)) !== null)
+        // Its own picture rather than its template's, if it's drawn in a moment.
+        await waitFor(() => page?.querySelector("img.page-arrived") != null, PICTURE_MS)
+        // Its usual name pairs it with the other dashboard view; for this, it pairs with the editor's page.
+        if (page) {
+          usual = page.style.viewTransitionName
+          page.style.viewTransitionName = OPEN_NAME
+        }
+      },
+    },
+    () => {
+      if (page) page.style.viewTransitionName = usual
+    },
+  )
   return true
 }
 

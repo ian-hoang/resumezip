@@ -116,7 +116,8 @@ test("on a wide screen Style takes the form's place, beside the rail, and the he
 
   await styleTab(page).click()
   await expect(styleTab(page)).toHaveAttribute("aria-selected", "true")
-  await expect(style.getByRole("heading", { name: "Fine-tune" })).toBeVisible()
+  // Titled, as the rail names it only in a tip.
+  await expect(page.getByRole("tabpanel", { name: "Style" }).getByRole("heading", { name: "Style", exact: true })).toBeVisible()
   // In the form's place, and the rail's sections stay at hand.
   await expect(name).toBeHidden()
   await expect(sections).toBeVisible()

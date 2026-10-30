@@ -4,7 +4,7 @@
 // bin's lid tips open, the pencil writes, the eye blinks, the tick draws.
 // The dashboard's More dots hop (app/styles/dashboard.css).
 
-import type { ReactNode, Ref } from "react"
+import type { MouseEvent, ReactNode, Ref } from "react"
 
 interface TipProps {
   /** What the tip says, when it's shorter than the label, as "Delete" for "Delete entry 2". */
@@ -17,7 +17,7 @@ interface TipProps {
 
 interface RowActionProps extends TipProps {
   label: string
-  onClick: () => void
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
   children: ReactNode
   /** Red when pointed at, as it deletes. */
   danger?: boolean

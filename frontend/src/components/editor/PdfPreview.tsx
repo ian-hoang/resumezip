@@ -11,7 +11,7 @@ import "react-pdf/dist/esm/Page/AnnotationLayer.css"
 import "react-pdf/dist/esm/Page/TextLayer.css"
 import { PDFJS_WORKER_URL } from "@/lib/pdfjsWorker"
 import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
-import { scrollerOf, uncovered } from "./layout"
+import { reducedMotion, scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
 import { useCheckActions } from "./CheckContext"
 import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
@@ -75,8 +75,12 @@ const PAGE_RATIO = 11 / 8.5
 const PAGE_GAP = 16
 // How long the stand-in page takes to fade out over the first preview.
 const FADE_MS = 300
-// How long the zoom stays put before the pages are drawn again at its size.
+// How long the zoom, or the page's size, stays put before the pages are drawn again at it.
 const SETTLE_MS = 150
+// How long the pages take to grow or shrink to a zoom chosen with the buttons or Fit.
+const ZOOM_MS = 240
+// How long the widest the page may be takes to change, as the form slides away or back (useFold).
+const RESIZE_MS = 300
 // The most stretches of words a new preview lights up, each within one run of
 // text on the page. Typing or styling changes one or two (part of a line, and
 // the next if it wraps); more is a new template, a file opened over the resume
@@ -131,6 +135,9 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
   const anchorRef = useRef<ZoomAnchor | null>(null)
   // Set by Fit, which shows the first page from its top rather than keeping a point in place.
   const toTopRef = useRef(false)
+  // Set by the zoom buttons and Fit, whose change of size eases in; and the zoom the pages were last shown at.
+  const easeZoom = useRef(false)
+  const zoomShown = useRef(zoom)
   const heldRef = useRef<HeldAnchor | null>(null)
   // The drawing on screen and its pages, each PDF loaded, and the words the
   // shown one printed, page by page, to light up what the next one changes
@@ -176,9 +183,45 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
     if (downloaded) fetchWorker()
   }, [downloaded])
 
-  const fitWidth = Math.min(availableWidth, maxPageWidth)
+  // The widest the page may be, moving to maxPageWidth as the form slides, so the page grows or shrinks with it.
+  const [widest, setWidest] = useState(maxPageWidth)
+  const widestRef = useRef(widest)
+  widestRef.current = widest
+  useEffect(() => {
+    const from = widestRef.current
+    if (from === maxPageWidth) return
+    if (reducedMotion()) {
+      setWidest(maxPageWidth)
+      return
+    }
+    const start = performance.now()
+    let frame = requestAnimationFrame(function step(now) {
+      // A frame's time is when it began, which can be just before `start`.
+      const done = Math.min(1, Math.max(0, (now - start) / RESIZE_MS))
+      // Close to ease-glide, which the form slides by.
+      setWidest(from + (maxPageWidth - from) * (1 - (1 - done) ** 4))
+      if (done < 1) frame = requestAnimationFrame(step)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [maxPageWidth])
+
+  const fitWidth = Math.min(availableWidth, widest)
   const pageWidth = fitWidth * zoom
-  const drawWidth = fitWidth * drawnZoom
+  // The size the pages are drawn at catches up once the page stops changing size, as while the form
+  // slides or the window is resized, rather than drawing them every frame; what's drawn is stretched
+  // meanwhile. The first drawing doesn't wait.
+  const [drawnFit, setDrawnFit] = useState(fitWidth)
+  const drawn = drawings.length > 0
+  useEffect(() => {
+    if (drawnFit === fitWidth) return
+    if (!drawn) {
+      setDrawnFit(fitWidth)
+      return
+    }
+    const timer = setTimeout(() => setDrawnFit(fitWidth), SETTLE_MS)
+    return () => clearTimeout(timer)
+  }, [fitWidth, drawnFit, drawn])
+  const drawWidth = drawnFit * drawnZoom
 
   const shownDrawing = drawings.findLast((drawing) => drawing.ready) ?? drawings[drawings.length - 1]
   const numPages = shownDrawing?.pages ?? 1
@@ -248,24 +291,37 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
   }, [])
 
   // The pages grow or shrink from their top left corner, so scroll the anchor
-  // back under where it was before the browser paints.
+  // back under where it was before the browser paints. From the buttons and
+  // Fit, they then ease from their old size to the new one around that point
+  // (the top's middle for Fit), rather than snapping to it; Ctrl + scroll and
+  // pinches come in small steps of their own, which follow the hand.
   useLayoutEffect(() => {
     const anchor = anchorRef.current
     const pages = pagesRef.current
     anchorRef.current = null
+    const from = zoomShown.current
+    zoomShown.current = zoom
+    const ease = easeZoom.current
+    easeZoom.current = false
     if (toTopRef.current && scrollerRef.current) {
       toTopRef.current = false
       scrollerRef.current.scrollTo({ top: 0, left: 0, behavior: "instant" })
-      return
+    } else if (anchor && pages && scrollerRef.current) {
+      const at = onScreen(anchor, pages.getBoundingClientRect(), ratioRef.current)
+      // Across, the panel scrolls. Up and down, the panel does on wide screens and
+      // the page on small ones, which would scroll smoothly without "instant".
+      // Rounded, as WebKit would drop the fraction of a pixel instead.
+      scrollerRef.current.scrollBy({ left: Math.round(at.x - anchor.clientX), behavior: "instant" })
+      scrollerOf(pages).scrollBy({ top: Math.round(at.y - anchor.clientY), behavior: "instant" })
+      heldRef.current = { anchor, box: pages.getBoundingClientRect() }
     }
-    if (!anchor || !pages || !scrollerRef.current) return
-    const at = onScreen(anchor, pages.getBoundingClientRect(), ratioRef.current)
-    // Across, the panel scrolls. Up and down, the panel does on wide screens and
-    // the page on small ones, which would scroll smoothly without "instant".
-    // Rounded, as WebKit would drop the fraction of a pixel instead.
-    scrollerRef.current.scrollBy({ left: Math.round(at.x - anchor.clientX), behavior: "instant" })
-    scrollerOf(pages).scrollBy({ top: Math.round(at.y - anchor.clientY), behavior: "instant" })
-    heldRef.current = { anchor, box: pages.getBoundingClientRect() }
+    if (!ease || !pages || from === zoom || reducedMotion()) return
+    const box = pages.getBoundingClientRect()
+    const origin = anchor ? `${anchor.clientX - box.left}px ${anchor.clientY - box.top}px` : "50% 0"
+    pages.animate(
+      { transform: [`scale(${from / zoom})`, "none"], transformOrigin: [origin, origin] },
+      { duration: ZOOM_MS, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    )
   }, [zoom])
 
   // The buttons zoom around the middle of what's showing of the panel.
@@ -278,6 +334,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
       const middle = (Math.max(box.top, view.top) + Math.min(box.top + scroller.clientHeight, view.bottom)) / 2
       anchorRef.current = anchorAt(pages, box.left + scroller.clientWidth / 2, middle, heldRef.current, ratioRef.current)
     }
+    easeZoom.current = true
     setZoom(change)
   }
 
@@ -293,6 +350,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
     if (fitted !== zoom) {
       anchorRef.current = null
       toTopRef.current = true
+      easeZoom.current = true
       setZoom(fitted)
     }
     scroller.scrollTo({ top: 0, left: 0, behavior: "instant" })
@@ -507,6 +565,8 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
                         {Array.from({ length: drawing.pages ?? 0 }, (_, index) => (
                           <div
                             key={index}
+                            // A section's Delete finds the shown page's lines by it (penStrike.ts).
+                            data-preview-page={drawing === shownDrawing ? index + 1 : undefined}
                             ref={
                               drawing === shownDrawing
                                 ? (element) => {

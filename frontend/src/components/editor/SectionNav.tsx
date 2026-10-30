@@ -8,12 +8,13 @@ import { GripVertical } from "lucide-react"
 import { useOpenResume, useResumeState } from "@/context/ResumeContext"
 import { useCheckActions, useCheckMode } from "./CheckContext"
 import type { Headings } from "@/lib/resume"
-import { extraHeading, extraKey, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
+import { extraKey, sectionTitles, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
 import { resumeOf } from "@/lib/resumeStore"
 import AddSectionMenu from "./AddSectionMenu"
 import { loadDragAndDrop, type DragAndDrop } from "./dragAndDrop"
 import { reducedMotion, useWideScreen } from "./layout"
 import { useRailTip } from "./RailTip"
+import { swapView } from "./swapView"
 import { EXTRA_ICONS, PROFILE_ICON, SECTION_ICONS } from "./sectionIcons"
 import { SECTION_NAMES, SECTIONS, type SectionName } from "./sections"
 
@@ -51,10 +52,11 @@ export default function SectionNav({ sections, headings, extras, active: open, o
   const { tipProps, tip } = useRailTip(wide)
   const { chooseMode } = useCheckActions()
   // On wide screens the rail stays beside Check and Style, and choosing a section from it goes back to writing.
-  const choose = (section: ActiveSection) => {
-    if (wide) chooseMode("write")
-    onSelect(section)
-  }
+  const choose = (section: ActiveSection) =>
+    swapView(() => {
+      if (wide) chooseMode("write")
+      onSelect(section)
+    })
   // The sections at the last render, to tell one just added, which slides in.
   const seen = useRef<ReadonlySet<SectionRef> | null>(null)
   const added = new Set(seen.current ? sections.filter((ref) => !seen.current!.has(ref)) : [])
@@ -105,15 +107,7 @@ export default function SectionNav({ sections, headings, extras, active: open, o
     onReorder(next)
   }
 
-  // A section's title as the person named it, or the editor's.
-  const titles = new Map(
-    sections.map((ref) => {
-      const key = extraKey(ref)
-      if (key !== null) return [ref, extras?.[key] ? extraHeading(extras[key]) : "New section"] as const
-      const section = SECTIONS[ref as SectionName]
-      return [ref, headings?.[section.headingKey] || section.title] as const
-    }),
-  )
+  const titles = sectionTitles(sections, headings, extras)
   const counts = new Map<string, number>()
   for (const title of titles.values()) counts.set(title, (counts.get(title) ?? 0) + 1)
   const titleOf = (name: SectionRef) => titles.get(name)!

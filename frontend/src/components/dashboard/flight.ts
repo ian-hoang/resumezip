@@ -3,6 +3,9 @@
 // Web Animations rather than CSS, as where it lands is only known once the
 // message is on the page.
 
+import { useLayoutEffect, useRef, type RefObject } from "react"
+import { reducedMotion } from "@/components/editor/layout"
+
 /** How long the page takes to fly into the message or back, in milliseconds. */
 const FLIGHT_MS = 560
 
@@ -15,6 +18,44 @@ const FLIGHT_EASING = "cubic-bezier(0.6, 0, 0.2, 1)"
 const EASE_GLIDE = "cubic-bezier(0.16, 1, 0.3, 1)"
 // The copy fades out over the flight's last moment, as the message's own small page fades in (dashboard.css).
 const HAND_OVER_MS = 60
+
+/**
+ * Whenever `order` changes (a search, a sort, a copy made, one put back), a
+ * list's resumes slide from where they were to their new places, and one
+ * that wasn't there before grows in, rather than each jumping. Places are
+ * kept by layout (offsetLeft, offsetTop), which a slide's own translate
+ * doesn't change; a resume a deletion is already sliding (glideFrom) is left
+ * to it.
+ */
+export function useGlideOnChange(list: RefObject<HTMLElement | null>, order: string) {
+  const places = useRef(new Map<string, { x: number; y: number }>())
+  useLayoutEffect(() => {
+    const before = places.current
+    const now = new Map<string, { x: number; y: number }>()
+    for (const element of list.current?.querySelectorAll<HTMLElement>(":scope > [data-glide]") ?? []) {
+      const at = { x: element.offsetLeft, y: element.offsetTop }
+      now.set(element.dataset.glide!, at)
+      // One being put back is flown back to its place instead (fly).
+      if (before.size === 0 || reducedMotion() || element.getAnimations().length > 0 || element.matches(".is-returning")) continue
+      const was = before.get(element.dataset.glide!)
+      if (!was) {
+        element.animate(
+          [
+            { opacity: 0, scale: 0.96 },
+            { opacity: 1, scale: 1 },
+          ],
+          { duration: GLIDE_MS, easing: EASE_GLIDE },
+        )
+        continue
+      }
+      const dx = was.x - at.x
+      const dy = was.y - at.y
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue
+      element.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0 0" }], { duration: GLIDE_MS, easing: EASE_GLIDE })
+    }
+    places.current = now
+  }, [list, order])
+}
 
 /** Where each of a list's resumes (and the New resume tile) is, before a change. */
 export function placesIn(list: Element | null): Map<Element, DOMRect> {

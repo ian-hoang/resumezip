@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useId, useRef, useState } from "react"
 import { Menu, Star, X } from "lucide-react"
 import { reducedMotion } from "@/components/editor/layout"
 import { REPO_URL } from "@/lib/site"
 import Logo from "./Logo"
+import { turnPage } from "./rise"
 
 const LINKS = [
   { href: "/templates", label: "Templates" },
@@ -24,14 +25,19 @@ const MENU_FILL = "[--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rg
 const PILL = "items-center justify-center whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em]"
 
 /**
- * A link to the page that's already open scrolls back to its top smoothly,
- * instead of Next's jump to the top as it loads the page again.
+ * A header link's click: to the page that's already open, it scrolls back to
+ * its top smoothly, instead of Next's jump to the top as it loads the page
+ * again; to another, the page turns (turnPage). With a modifier key, as to
+ * open a new tab, it goes as usual.
  */
-function toTopIfHere(pathname: string, href: string) {
-  return (event: React.MouseEvent) => {
-    if (pathname !== href || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+function useGo() {
+  const pathname = usePathname()
+  const router = useRouter()
+  return (href: string) => (event: React.MouseEvent) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" })
+    if (pathname === href) window.scrollTo({ top: 0, behavior: reducedMotion() ? "auto" : "smooth" })
+    else turnPage(() => router.push(href))
   }
 }
 
@@ -41,7 +47,7 @@ function SitePill() {
   const menuId = useId()
   const headerRef = useRef<HTMLElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
-  const pathname = usePathname()
+  const go = useGo()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -92,7 +98,7 @@ function SitePill() {
       <div className="glass glass-frost flex h-[52px] items-center justify-between gap-4 rounded-full pl-5 pr-1.5 md:gap-7 lg:gap-10">
         <Link
           href="/"
-          onClick={toTopIfHere(pathname, "/")}
+          onClick={go("/")}
           className="flex items-center gap-2 font-logo text-[21px] font-medium tracking-[-0.02em] transition-opacity hover:opacity-80"
         >
           <Logo className="h-[18px] w-auto" />
@@ -104,7 +110,7 @@ function SitePill() {
             <Link
               key={link.href}
               href={link.href}
-              onClick={toTopIfHere(pathname, link.href)}
+              onClick={go(link.href)}
               className="nav-underline whitespace-nowrap text-[15px] tracking-[-0.01em] text-ink-2 hover:text-ink"
             >
               {link.label}
@@ -149,7 +155,7 @@ function SitePill() {
             href={link.href}
             onClick={(event) => {
               setMenuOpen(false)
-              toTopIfHere(pathname, link.href)(event)
+              go(link.href)(event)
             }}
             style={{ "--i": index } as React.CSSProperties}
             className="menu-item py-3 text-[17px] tracking-[-0.01em]"

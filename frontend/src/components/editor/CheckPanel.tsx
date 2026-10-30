@@ -89,26 +89,35 @@ export default function CheckPanel() {
     <div className="flex flex-col gap-5 px-3 py-4 xl:p-0">
       <MarksSwitch />
       <ScoreHeader total={score.total} mustFix={score.mustFix} fixes={fixes} bulletsTake={score.bulletsTake} updating={checking.size > 0} />
-      {(waitingFor("pdf") || checkingGrammar) && (
-        <div role="status" className="flex flex-col gap-1 text-sm text-ink-2">
-          {waitingFor("pdf") && (
-            <p>
-              {pdf === "unbuilt"
+      {/* What's still being checked, under the score. The lines open and close rather than appear and
+          go, so the list under them glides instead of jumping. */}
+      <div
+        role="status"
+        className={`flex flex-col text-sm text-ink-2 transition-[margin] duration-300 ease-out motion-reduce:transition-none ${
+          waitingFor("pdf") || checkingGrammar ? "" : "-mb-5"
+        }`}
+      >
+        <StatusLine
+          text={
+            !waitingFor("pdf")
+              ? null
+              : pdf === "unbuilt"
                 ? "The preview couldn't be built, so the checks on the PDF are left out."
                 : pdf === "unreadable"
                   ? "The PDF couldn't be read, so the checks on it are left out."
-                  : "Checking the PDF…"}
-            </p>
-          )}
-          {checkingGrammar && (
-            <p>
-              {grammar === "failed"
+                  : "Checking the PDF…"
+          }
+        />
+        <StatusLine
+          text={
+            !checkingGrammar
+              ? null
+              : grammar === "failed"
                 ? "Spelling and grammar couldn't all be checked, so what wasn't is left out."
-                : "Checking spelling and grammar…"}
-            </p>
-          )}
-        </div>
-      )}
+                : "Checking spelling and grammar…"
+          }
+        />
+      </div>
 
       <CheckIndex view={view} findings={report.findings} withFindings={withFindings} checking={checking} scores={score.categories} />
 
@@ -136,6 +145,25 @@ export default function CheckPanel() {
   )
 }
 
+/** One line of what's still being checked: it opens to its height, and closes still saying what it said. */
+function StatusLine({ text }: { text: string | null }) {
+  const said = useRef(text)
+  if (text) said.current = text
+  return (
+    <div
+      aria-hidden={text ? undefined : true}
+      // Hidden (visibility) once it's closed, which changes at the end of the transition.
+      className={`grid transition-[grid-template-rows,opacity,visibility] duration-300 ease-out motion-reduce:transition-none ${
+        text ? "grid-rows-[1fr] opacity-100" : "invisible grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <p className="pb-1">{said.current}</p>
+      </div>
+    </div>
+  )
+}
+
 /** Which notes the panel lists and the preview is marked with: the ATS checks or the AI's. On wide screens each has its own tab in the rail instead (LeftBar.tsx). */
 function MarksSwitch() {
   const { shown, show } = useMarks()
@@ -147,10 +175,10 @@ function MarksSwitch() {
       className="review-switch self-start bg-fill shadow-[inset_0_0_0_1px_var(--color-fill-line)] xl:hidden"
     >
       <button type="button" aria-pressed={shown === "checks"} onClick={() => show("checks")}>
-        ATS checks
+        ATS Checks
       </button>
       <button type="button" aria-pressed={shown === "ai"} onClick={() => show("ai")}>
-        AI notes
+        AI Reviews
       </button>
     </div>
   )

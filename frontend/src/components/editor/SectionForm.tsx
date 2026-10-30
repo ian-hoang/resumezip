@@ -8,9 +8,8 @@ import { DATE_FIELDS } from "@/lib/check/readDate"
 import { isLeftOut } from "@/lib/leftOut"
 import type { Entry } from "@/lib/resume"
 import { EyeIcon, RowAction, RowToggle, TrashIcon } from "@/components/dashboard/RowActions"
-import { sheetPill } from "@/components/pills"
 import { useCheckActions, useCheckTarget, usePointer } from "./CheckContext"
-import DeleteSection from "./DeleteSection"
+import DeleteSection, { asked, deleteWhat } from "./DeleteSection"
 import { loadDragAndDrop, loadedDragAndDrop } from "./dragAndDrop"
 import { newestFirst } from "./entryCards"
 import { BulletsField, Field, FlagNote, pointAt, SectionHeading } from "./fields"
@@ -119,12 +118,12 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
   const [openId, setOpenId] = useState<number | null>(entries[0]?.id ?? null)
   // Follows openId a frame later, so a newly added entry slides open too.
   const [shownId, setShownId] = useState<number | null>(openId)
-  const [confirmingId, setConfirmingId] = useState<number | null>(null)
   const [removingId, setRemovingId] = useState<number | null>(null)
+  // Whether the section's Delete is armed, asking for a second click.
+  const [asking, setAsking] = useState(false)
   const elements = useRef(new Map<number, HTMLElement>())
   const list = useRef<HTMLElement | null>(null)
   const addButton = useRef<HTMLButtonElement>(null)
-  const cancelButton = useRef<HTMLButtonElement>(null)
   const heading = useRef<HTMLDivElement>(null)
   // Ties each card's name to what the checker says about it, under it.
   const titleNotes = useId()
@@ -188,7 +187,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     if (place.kind === "entry" && !entry) return
     const sliding = entry !== undefined && entry.id !== openRef.current && !reducedMotion()
     if (entry) {
-      setConfirmingId(null)
       setOpenId(entry.id)
       setShownId(entry.id)
     }
@@ -211,11 +209,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     return () => clearTimeout(timer)
   }, [pointer, pending, claim, section.name])
 
-  // Asking to confirm a delete moves focus to Keep, so Escape or Enter backs out.
-  useEffect(() => {
-    if (confirmingId !== null) cancelButton.current?.focus()
-  }, [confirmingId])
-
   // An entry Undo put back opens again, lit up like a moved one, with the
   // cursor in it, or on its Done button on a touch screen, where a field
   // would pop up the keyboard. The timer outlives the effect, which runs again
@@ -227,7 +220,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     if (!restored || restored.section !== section.name) return
     const { id } = restored
     restoredDone.current()
-    setConfirmingId(null)
     setOpenId(id)
     setShownId(id)
     setTimeout(
@@ -243,11 +235,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
       reducedMotion() ? 0 : SLIDE_MS,
     )
   }, [restored, section.name])
-
-  const cancelDelete = (id: number) => {
-    setConfirmingId(null)
-    requestAnimationFrame(() => elements.current.get(id)?.querySelector<HTMLElement>("[data-delete]")?.focus())
-  }
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setShownId(openId))
@@ -284,7 +271,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
    * still on screen while the entries around it slide open or closed.
    */
   const open = (id: number | null, clicked: number) => {
-    setConfirmingId(null)
     setOpenId(id)
     // One entry closes as the other opens, in the same frame, so the page's height barely changes.
     setShownId(id)
@@ -322,7 +308,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     const id = current.length > 0 ? Math.max(...current.map((entry) => entry.id)) + 1 : 1
     const blank = Object.fromEntries(section.fields.map((field) => [field.key, ""]))
     save([...current, ...values.map((value, index): Entry => ({ ...blank, ...value, id: id + index }))])
-    setConfirmingId(null)
     setOpenId(id)
     if (!show) return
     // Once it has slid open, bring it into view.
@@ -352,9 +337,8 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     onEntryDeleted({ section: section.name, entry, index, title: summaryOf(section, entry) || `Entry ${index + 1}` })
   }
 
-  // The entry slides away, then it's deleted.
-  const confirmRemove = (id: number) => {
-    setConfirmingId(null)
+  // The entry slides away, then it's deleted. It isn't asked about first: Undo puts it back.
+  const slideAway = (id: number) => {
     if (reducedMotion()) return remove(id)
     setRemovingId(id)
     setTimeout(() => remove(id), SLIDE_MS)
@@ -376,7 +360,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
     next.splice(destination.index, 0, ...next.splice(from, 1))
     moving.current = { id }
     save(next)
-    setConfirmingId(null)
   }
 
   /** Leaves an entry out of the PDF, or puts it back. An entry that's in has no `leftOut` at all. */
@@ -415,7 +398,6 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
   /** An entry, the same with drag and drop or without, so it doesn't move as drag and drop arrives. */
   const renderEntry = (entry: Entry, index: number, drag?: DraggableProvided, dragging = false) => {
     const isOpen = entry.id === openId
-    const confirming = entry.id === confirmingId
     const name = `entry ${index + 1}`
     const leftOut = isLeftOut(entry)
     const named = entry[titleField.key]?.trim() ?? ""
@@ -442,20 +424,17 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
       >
         {/* Clipped only while it folds away, as clipping it always would cut its shadow off. The
             room round it keeps its ring and focus in view then. */}
-        <section className={`-m-1.5 min-h-0 p-1.5 ${entry.id === removingId ? "overflow-hidden" : ""}`}>
+        <section className={`-m-1.5 min-h-0 p-1.5 ${entry.id === removingId ? "overflow-hidden" : ""}`} inert={entry.id === removingId}>
           {/* The card is the entry's name alone, open or folded; open, its fields hang under it
-              on the sheet. Asked whether to delete it, its edge turns red, its name stays, and its
-              fields fade, so it's clear what would go. Open, it stands off the sheet; picked up, further. */}
+              on the sheet. Open, it stands off the sheet; picked up, further. */}
           <div
             data-card
             className={`rounded-[18px] border bg-sheet transition-[border-color,box-shadow] duration-300 motion-reduce:transition-none ${
-              confirming
-                ? "border-alert shadow-[0_0_0_1px_var(--color-alert)]"
-                : dragging
-                  ? "border-[#e3e5ea] shadow-card-lifted"
-                  : isOpen
-                    ? "border-[#e3e5ea] shadow-card-open"
-                    : "border-hairline shadow-card-rest hover:border-[#dcdfe5]"
+              dragging
+                ? "border-[#e3e5ea] shadow-card-lifted"
+                : isOpen
+                  ? "border-[#e3e5ea] shadow-card-open"
+                  : "border-hairline shadow-card-rest hover:border-[#dcdfe5]"
             }`}
           >
             <div className="flex items-center gap-1 px-2 py-1.5">
@@ -471,11 +450,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                 // Its name, to type in, as wide as what's typed (the unseen copy under it sets the
                 // width), then the field after it. The copy isn't part of the field's name.
                 <div className="flex min-w-0 flex-1 items-baseline">
-                  <div
-                    data-field={titleField.key}
-                    inert={confirming}
-                    className="ml-1.5 grid min-w-0 shrink text-[15px] font-medium tracking-[-0.01em]"
-                  >
+                  <div data-field={titleField.key} className="ml-1.5 grid min-w-0 shrink text-[15px] font-medium tracking-[-0.01em]">
                     {/* 2px wider than its words, for the caret after the last letter. */}
                     <span
                       aria-hidden="true"
@@ -494,7 +469,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                       data-flagged={titleFlag ? "" : undefined}
                       // Underlined while pointed at or typed in, as the resume's name in the top bar is. A name
                       // too long for the line ends in "…" until it's typed in.
-                      className="col-start-1 row-start-1 w-full min-w-0 text-ellipsis border-0 border-b border-transparent bg-transparent py-0.5 text-ink outline-none transition-colors duration-150 placeholder:font-normal placeholder:text-ink-2/50 hover:border-rule-strong focus:border-accent focus-visible:outline-none data-[flagged]:border-accent"
+                      className={`col-start-1 row-start-1 w-full min-w-0 text-ellipsis border-0 border-b border-transparent bg-transparent py-0.5 ${leftOut ? "text-ink-3" : "text-ink"} outline-none transition-colors duration-150 placeholder:font-normal placeholder:text-ink-2/50 hover:border-rule-strong focus:border-accent focus-visible:outline-none data-[flagged]:border-accent`}
                     />
                   </div>
                   {/* Where both don't fit, the second part gives way first, down to a few letters, so it isn't a
@@ -514,83 +489,33 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
                 </div>
               )}
 
-              <div
-                className="flex shrink-0 items-center gap-0.5"
-                onKeyDown={(event) => {
-                  if (event.key === "Escape" && confirming) {
-                    event.stopPropagation()
-                    cancelDelete(entry.id)
-                  }
-                }}
-              >
-                {confirming ? (
-                  // The question fades in where the buttons were (`starting:` is CSS @starting-style), as tall as them.
-                  // On a phone only its buttons show, leaving the entry's name room.
-                  <span
-                    key="confirming"
-                    className="flex h-10 items-center gap-2 transition-opacity duration-200 motion-reduce:transition-none starting:opacity-0"
-                  >
-                    <span className="mr-1 text-sm text-ink max-sm:sr-only" role="status">
-                      Delete it?
-                    </span>
-                    <button
-                      ref={cancelButton}
-                      type="button"
-                      onClick={() => cancelDelete(entry.id)}
-                      className={sheetPill("white", "h-9 px-4 text-[15px] font-medium")}
-                    >
-                      Keep
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => confirmRemove(entry.id)}
-                      className={sheetPill("danger", "h-9 px-4 text-[15px] font-medium")}
-                    >
-                      Delete
-                    </button>
-                  </span>
-                ) : (
-                  <>
-                    <RowToggle
-                      key="include"
-                      label={`Include ${name} in the PDF`}
-                      tip={leftOut ? "Put back in the PDF" : "Leave out of the PDF"}
-                      checked={!leftOut}
-                      onChange={(checked) => setLeftOut(entry.id, !checked)}
-                      tipBelow
-                    >
-                      <EyeIcon shut={leftOut} />
-                    </RowToggle>
-                    <RowAction
-                      key="delete"
-                      data-delete=""
-                      label={`Delete ${name}`}
-                      tip="Delete"
-                      danger
-                      onClick={() => setConfirmingId(entry.id)}
-                      tipBelow
-                    >
-                      <TrashIcon />
-                    </RowAction>
-                  </>
-                )}
-                {!confirming && (
-                  // One button that folds the card and opens it, its chevron turning.
-                  <RowAction
-                    key="toggle"
-                    {...(isOpen ? { "data-done": "" } : {})}
-                    label={isOpen ? `Done editing ${name}` : `Edit ${name}`}
-                    tip={isOpen ? "Done" : "Edit"}
-                    onClick={() => open(isOpen ? null : entry.id, entry.id)}
-                    tipBelow
-                    tipAtEnd
-                  >
-                    <ChevronDown
-                      className={`h-[18px] w-[18px] transition-transform duration-300 ease-glide motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
-                      aria-hidden="true"
-                    />
-                  </RowAction>
-                )}
+              <div className="flex shrink-0 items-center gap-0.5">
+                <RowToggle
+                  label={`Include ${name} in the PDF`}
+                  tip={leftOut ? "Put back in the PDF" : "Leave out of the PDF"}
+                  checked={!leftOut}
+                  onChange={(checked) => setLeftOut(entry.id, !checked)}
+                  tipBelow
+                >
+                  <EyeIcon shut={leftOut} />
+                </RowToggle>
+                <RowAction label={`Delete ${name}`} tip="Delete" danger onClick={() => slideAway(entry.id)} tipBelow>
+                  <TrashIcon />
+                </RowAction>
+                {/* One button that folds the card and opens it, its chevron turning. */}
+                <RowAction
+                  {...(isOpen ? { "data-done": "" } : {})}
+                  label={isOpen ? `Done editing ${name}` : `Edit ${name}`}
+                  tip={isOpen ? "Done" : "Edit"}
+                  onClick={() => open(isOpen ? null : entry.id, entry.id)}
+                  tipBelow
+                  tipAtEnd
+                >
+                  <ChevronDown
+                    className={`h-[18px] w-[18px] transition-transform duration-300 ease-glide motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                  />
+                </RowAction>
               </div>
             </div>
           </div>
@@ -604,26 +529,14 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
             {/* The container whose width lays out the fields (FIELD_SPAN). It's here rather than
                   around the whole form: Safari before 26 doesn't place a fixed element inside a
                   query container right (WebKit bug 284945), and an entry being dragged is fixed. */}
+            {/* Left out of the PDF, its fields are greyed, as its name is, and can still be typed in. */}
             <div
               className={`@container min-h-0 overflow-hidden transition-[opacity,filter] duration-200 motion-reduce:transition-none ${
-                confirming ? "opacity-30 grayscale" : ""
+                leftOut ? "opacity-50 grayscale" : ""
               }`}
-              inert={!isOpen || confirming}
+              inert={!isOpen}
             >
               <div className="mb-3 ml-[10px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[13px] pr-6 pt-3">
-                {/* Its eye puts it back too; this says what leaving out means. */}
-                {leftOut && (
-                  <p className="text-[13px] leading-normal text-ink-3">
-                    Left out of the PDF, and of the copy of the resume inside it. It stays here, in this browser.{" "}
-                    <button
-                      type="button"
-                      onClick={() => setLeftOut(entry.id, false)}
-                      className="font-medium text-accent underline-offset-4 hover:underline"
-                    >
-                      Put it back
-                    </button>
-                  </p>
-                )}
                 {flagAt(index) && <FlagNote finding={flagAt(index)!} />}
                 {titleFlag && <FlagNote id={titleNote} finding={titleFlag} />}
                 <div className={CARD_GRID}>
@@ -672,53 +585,57 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
           note={note}
           onRename={(name) => updateResume("headings", { ...headings, [section.headingKey]: name })}
           flag={here?.kind === "heading" || here?.kind === "section" ? target!.finding : null}
-          end={<DeleteSection onDelete={onDelete} />}
+          end={
+            <DeleteSection section={section.name} what={deleteWhat(title, count)} asking={asking} onAsk={setAsking} onDelete={onDelete} />
+          }
         />
       </div>
 
-      {section.choice && <SectionChoice choice={section.choice} />}
+      <div inert={asking} className={`flex flex-col ${asked(asking)}`}>
+        {section.choice && <SectionChoice choice={section.choice} />}
 
-      <div className="mt-[18px] flex flex-col">
-        {entries.length > 0 &&
-          (dnd ? (
-            <dnd.DragDropContext onBeforeCapture={() => stopMoving(elements.current)} onDragEnd={onDragEnd}>
-              <dnd.Droppable droppableId="entries">
-                {(drop) => (
-                  <div
-                    ref={(element) => {
-                      drop.innerRef(element)
-                      list.current = element
-                    }}
-                    {...drop.droppableProps}
-                    className="flex flex-col"
-                  >
-                    {entries.map((entry, index) => (
-                      <dnd.Draggable key={entry.id} draggableId={String(entry.id)} index={index} isDragDisabled={entry.id === confirmingId}>
-                        {(drag, snapshot) => renderEntry(entry, index, drag, snapshot.isDragging)}
-                      </dnd.Draggable>
-                    ))}
-                    {drop.placeholder}
-                  </div>
-                )}
-              </dnd.Droppable>
-            </dnd.DragDropContext>
-          ) : (
-            <div
-              ref={(element) => {
-                list.current = element
-              }}
-              className="flex flex-col"
-            >
-              {entries.map((entry, index) => renderEntry(entry, index))}
+        <div className="mt-[18px] flex flex-col">
+          {entries.length > 0 &&
+            (dnd ? (
+              <dnd.DragDropContext onBeforeCapture={() => stopMoving(elements.current)} onDragEnd={onDragEnd}>
+                <dnd.Droppable droppableId="entries">
+                  {(drop) => (
+                    <div
+                      ref={(element) => {
+                        drop.innerRef(element)
+                        list.current = element
+                      }}
+                      {...drop.droppableProps}
+                      className="flex flex-col"
+                    >
+                      {entries.map((entry, index) => (
+                        <dnd.Draggable key={entry.id} draggableId={String(entry.id)} index={index} isDragDisabled={entry.id === removingId}>
+                          {(drag, snapshot) => renderEntry(entry, index, drag, snapshot.isDragging)}
+                        </dnd.Draggable>
+                      ))}
+                      {drop.placeholder}
+                    </div>
+                  )}
+                </dnd.Droppable>
+              </dnd.DragDropContext>
+            ) : (
+              <div
+                ref={(element) => {
+                  list.current = element
+                }}
+                className="flex flex-col"
+              >
+                {entries.map((entry, index) => renderEntry(entry, index))}
+              </div>
+            ))}
+
+          {addButtonElement}
+          {section.fromPaperLink && (
+            <div className="mt-4">
+              <PaperFromLink entries={() => latest.current} owner={() => read()?.profileSection?.fullName ?? ""} onAdd={addEntries} />
             </div>
-          ))}
-
-        {addButtonElement}
-        {section.fromPaperLink && (
-          <div className="mt-4">
-            <PaperFromLink entries={() => latest.current} owner={() => read()?.profileSection?.fullName ?? ""} onAdd={addEntries} />
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
