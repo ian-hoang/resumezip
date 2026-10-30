@@ -325,15 +325,22 @@ function MovingStory({ hero }: { hero: React.ReactNode }) {
         const open = 1 - smooth(span(v, BEATS.closes[i]))
         const kept = laid.beside || i === BEATS.notes.length - 1 ? 1 : open
         show(i, kept)
-        loops.current[i]!.style.opacity = String(kept * (1 - wrap))
+        // React lets go of the marks' elements before this effect is cleaned up, so a frame
+        // already queued as the page is left finds them gone: there's nothing to draw then.
+        const loop = loops.current[i]
+        if (!loop) return
+        loop.style.opacity = String(kept * (1 - wrap))
         const menu = menus.current[i]
         if (!menu) return draw(i, t)
         draw(i, span(t, CLICK.ink))
         menu.style.opacity = String(open * (1 - wrap))
-        pressed.current[i]!.style.opacity = t >= CLICK.press[0] ? "1" : "0"
+        const button = pressed.current[i]
+        const openedMenu = opened.current[i]
+        if (!button || !openedMenu) return
+        button.style.opacity = t >= CLICK.press[0] ? "1" : "0"
         const opening = out3(span(t, CLICK.open))
-        opened.current[i]!.style.opacity = String(smooth(span(t, CLICK.open)))
-        opened.current[i]!.style.transform = `translate3d(0, ${(1 - opening) * -10}px, 0) scale(${lerp(0.97, 1, opening)})`
+        openedMenu.style.opacity = String(smooth(span(t, CLICK.open)))
+        openedMenu.style.transform = `translate3d(0, ${(1 - opening) * -10}px, 0) scale(${lerp(0.97, 1, opening)})`
         if (t > 0 && t < CLICK.leave[1]) clicking = i
       })
 
