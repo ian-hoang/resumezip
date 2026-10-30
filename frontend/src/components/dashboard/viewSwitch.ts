@@ -83,6 +83,16 @@ function openResume(go: () => void, page: HTMLElement | null): boolean {
   return true
 }
 
+let closing = false
+
+/**
+ * Whether the dashboard is coming in under closeResume's transition. It
+ * skips its own fade in then (page-in in globals.css): the transition already
+ * crossfades it in, and a resume's page and name, pictured apart from the
+ * rest, would escape the second fade and be there well before the sheet.
+ */
+export const closingResume = () => closing
+
 /**
  * Back to the dashboard from a resume's editor: where the browser has view
  * transitions, the editor's page shrinks back into the resume's page on the
@@ -95,6 +105,7 @@ export function closeResume(id: string, go: () => void): boolean {
   if (!canTransition() || !document.querySelector("[data-open-target]")) return false
   let page: HTMLElement | null = null
   let usual = ""
+  closing = true
   startTransition(
     {
       types: [CLOSE_TYPE],
@@ -111,6 +122,7 @@ export function closeResume(id: string, go: () => void): boolean {
       },
     },
     () => {
+      closing = false
       if (page) page.style.viewTransitionName = usual
     },
   )

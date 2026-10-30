@@ -21,7 +21,7 @@ import ResumeTable, { tagName } from "@/components/dashboard/ResumeTable"
 import SearchBar, { matches } from "@/components/dashboard/SearchBar"
 import UnreadableData from "@/components/dashboard/UnreadableData"
 import { focusShown, nameOf, useListActions } from "@/components/dashboard/useListActions"
-import { switchView } from "@/components/dashboard/viewSwitch"
+import { closingResume, switchView } from "@/components/dashboard/viewSwitch"
 import { reducedMotion } from "@/components/editor/layout"
 import { BLUE_PILL, sheetPill, WHITE_PILL } from "@/components/pills"
 import DownloadFailed from "@/components/site/DownloadFailed"
@@ -122,6 +122,8 @@ export default function DashboardPage() {
   const [view, setView] = useState<View>("pages")
   // Set once a switch fades the new view in: off until then, so the first view doesn't fade in on load.
   const [fadeIn, setFadeIn] = useState(false)
+  // Back from the editor, the page comes in with the transition's crossfade alone (closingResume).
+  const [closedResume] = useState(closingResume)
   const [sort, setSort] = useState<Sort>("edited")
   const [tag, setTag] = useState(EVERY_TYPE)
   const [query, setQuery] = useState("")
@@ -487,7 +489,7 @@ export default function DashboardPage() {
 
       {/* One sheet in a frosted frame over the sky, holding the greeting, the toolbar and the resumes. */}
       <div className={PAPER_FRAME}>
-        <main className={CARD_SHEET}>
+        <main className={CARD_SHEET} data-no-page-in={closedResume || undefined}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <p className={COUNT_BADGE}>
