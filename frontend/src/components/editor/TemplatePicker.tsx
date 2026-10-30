@@ -114,9 +114,13 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
         // 1rem above its foot. It fades in (`starting:` is CSS @starting-style):
         // the dialog grows into place, and the panel on wider screens drops into
         // it. It fades away the same way, as a dialog does.
+        // Glass under a fading parent stops blurring, so the wider panel, with no
+        // dimmed screen around it, doesn't fade in: it would show the page through
+        // it, then turn frosted. It drops in solid and only what's in it fades in,
+        // as the ▾ menu does.
         <div
           inert={closing}
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity motion-reduce:transition-none starting:opacity-0 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity motion-reduce:transition-none starting:opacity-0 lg:starting:opacity-100 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${
             closing ? "opacity-0 duration-[260ms] ease-in-out" : "duration-200 ease-out"
           }`}
           onClick={(event) => {
@@ -128,7 +132,7 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Choose a template"
-            className={`glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-8rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100 ${
+            className={`glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-8rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100 lg:[&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
               // Glass under a fading parent stops blurring, which would show the page through it as
               // it goes: it fades as a nearly solid sheet instead.
               closing
