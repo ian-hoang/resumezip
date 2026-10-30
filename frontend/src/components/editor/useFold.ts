@@ -25,8 +25,10 @@ export function useFold() {
   const [shut, setShut] = useState(false)
   const wanted = useRef(false)
   const slide = useRef<{ animation: Animation; shutting: boolean } | null>(null)
-  // Set as the form comes back, for the column to slide open once it's on the page.
-  const opening = useRef(false)
+  // Set as the form folds away or comes back, for the column to slide once the editor has been rendered
+  // for it: started before, its time would run out during that render on a slow machine, and it would
+  // jump rather than slide.
+  const pending = useRef<"shut" | "open" | null>(null)
 
   const start = useCallback((column: HTMLElement, shutting: boolean) => {
     const inner = column.firstElementChild as HTMLElement
@@ -47,37 +49,36 @@ export function useFold() {
     }
   }, [])
 
-  const foldTo = useCallback(
-    (fold: boolean) => {
-      if (wanted.current === fold) return
-      wanted.current = fold
-      opening.current = false
-      setFolded(fold)
-      const running = slide.current
-      if (running) {
-        running.shutting = fold
-        running.animation.reverse()
-        return
-      }
-      if (!fold) {
-        opening.current = true
-        setShut(false)
-        return
-      }
-      const column = shownColumn()
-      if (!column || reducedMotion() || !window.matchMedia(WIDE_SCREEN).matches) setShut(true)
-      else start(column, true)
-    },
-    [start],
-  )
+  const foldTo = useCallback((fold: boolean) => {
+    if (wanted.current === fold) return
+    wanted.current = fold
+    pending.current = null
+    setFolded(fold)
+    const running = slide.current
+    if (running) {
+      running.shutting = fold
+      running.animation.reverse()
+      return
+    }
+    if (!fold) {
+      pending.current = "open"
+      setShut(false)
+      return
+    }
+    if (!shownColumn() || reducedMotion() || !window.matchMedia(WIDE_SCREEN).matches) setShut(true)
+    else pending.current = "shut"
+  }, [])
 
-  // The column's back in the layout, at its full width: it slides open from nothing before it's painted.
+  // Before the first frame after the render: shutting, the column is still at its full width; opening, it's
+  // back in the layout at its full width, and slides open from nothing.
   useLayoutEffect(() => {
-    if (!opening.current) return
-    opening.current = false
+    const going = pending.current
+    if (!going) return
+    pending.current = null
     const column = shownColumn()
-    if (column && !reducedMotion() && window.matchMedia(WIDE_SCREEN).matches) start(column, false)
-  }, [shut, start])
+    if (column && !reducedMotion() && window.matchMedia(WIDE_SCREEN).matches) start(column, going === "shut")
+    else if (going === "shut") setShut(true)
+  }, [folded, shut, start])
 
   const fold = useCallback(() => foldTo(!wanted.current), [foldTo])
   return { folded, shut, foldTo, fold }

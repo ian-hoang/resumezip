@@ -257,8 +257,23 @@ test("on a wide screen, the form can be hidden for a bigger page, and choosing a
   expect(errors).toEqual([])
 })
 
-test("on a wide screen, the form slides away and back, and the page grows and shrinks with it, rather than at once", async ({ page }) => {
+test("on a wide screen, the form slides away and back, and the page grows and shrinks with it, rather than at once", async ({
+  page,
+  browserName,
+}) => {
   const errors = pageErrors(page)
+  // Each slide the form's column is given: its widths, and how long it takes.
+  await page.addInitScript(() => {
+    const slides: { widths: string[]; ms: number }[] = []
+    Object.assign(window, { slides })
+    const animate = Element.prototype.animate
+    Element.prototype.animate = function (keyframes, options) {
+      if (this instanceof HTMLElement && this.matches("[data-column]") && keyframes && "width" in keyframes)
+        slides.push({ widths: keyframes.width as string[], ms: Number(typeof options === "number" ? options : options?.duration) })
+      return animate.call(this, keyframes, options)
+    }
+  })
+  const slides = () => page.evaluate(() => (window as unknown as { slides: { widths: string[]; ms: number }[] }).slides)
   await page.setViewportSize({ width: 1440, height: 900 })
   await newResume(page)
   await previewShown(page)
@@ -295,22 +310,32 @@ test("on a wide screen, the form slides away and back, and the page grows and sh
   }
   /**
    * How many frames were part way between the first and the last. One is enough to show it didn't change at
-   * once: CI's machines draw few frames while the form slides, as few as one of the 300ms.
+   * once. Counted in Chromium only: WebKit in CI can draw no frame at all within the 300ms, so there it's
+   * enough that the column was given the slide.
    */
   const between = (values: number[]) => {
     const [low, high] = [Math.min(values[0], values.at(-1)!), Math.max(values[0], values.at(-1)!)]
     return values.filter((value) => value > low + 2 && value < high - 2).length
   }
 
+  const counted = browserName === "chromium"
+
   const hiding = await widthsWhile(() => page.getByRole("button", { name: "Hide the form" }).click())
   expect(hiding.at(-1)!.panel).toBeGreaterThan(hiding[0].panel + 300)
-  expect(between(hiding.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
-  expect(between(hiding.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
+  expect((await slides()).at(-1)).toMatchObject({ widths: [expect.stringMatching(/^[1-9]\d*px$/), "0px"], ms: 300 })
+  if (counted) {
+    expect(between(hiding.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
+    expect(between(hiding.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
+  }
 
   const showing = await widthsWhile(() => experience(page).click())
   expect(showing.at(-1)!.panel).toBeLessThan(showing[0].panel - 300)
-  expect(between(showing.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
-  expect(between(showing.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
+  expect(await slides()).toHaveLength(2)
+  expect((await slides()).at(-1)).toMatchObject({ widths: ["0px", expect.stringMatching(/^[1-9]\d*px$/)], ms: 300 })
+  if (counted) {
+    expect(between(showing.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
+    expect(between(showing.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
+  }
   await expect(editorHeading(page, "Experience", { exact: true })).toBeVisible()
   expect(errors).toEqual([])
 })
