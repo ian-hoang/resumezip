@@ -7,14 +7,14 @@ import type { GrammarLint } from "./engine"
 import { GRAMMAR_RULES_OFF } from "./settings"
 import { oneSlipApart } from "./text"
 
-export const HARPER_VERSION = "2.10.0"
+export const HARPER_VERSION = "2.13.0"
 
 /** Harper's slim build: its rules and an English dictionary, compiled to WebAssembly. */
 export const HARPER_FILE = "dist/harper_wasm_slim_bg.wasm"
 export const HARPER_CDN_URL = `https://cdn.jsdelivr.net/npm/harper.js@${HARPER_VERSION}/${HARPER_FILE}`
 
 /** The file's SHA-256, in subresource-integrity form. harper.test.ts checks it against the installed package. */
-export const HARPER_INTEGRITY = "sha256-jTVPYtaXGUI1lZy2+lhpmxlcBY3jbVnpFPQHhBDp4KE="
+export const HARPER_INTEGRITY = "sha256-yC2NeyZDCFurpBDRLmGmKr/caUr6jriWAw+Zkz3VjLs="
 
 /** Harper's name for each kind of English (dialect.ts). */
 export const DIALECTS: Record<DialectName, Dialect> = {
