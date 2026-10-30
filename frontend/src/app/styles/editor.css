@@ -105,8 +105,8 @@
   }
 
   /* On wide screens (Tailwind's `xl`, WIDE_SCREEN in components/editor/layout.ts)
-     the pages scroll between the top of the preview's panel and its zoom pill,
-     under soft edges rather than being cut off (components/editor/PdfPreview.tsx). */
+     the pages scroll the preview's whole panel, with the zoom pill floating over
+     its foot, under soft edges rather than being cut off (components/editor/PdfPreview.tsx). */
   @media (min-width: 80rem) {
     .preview-canvas {
       -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 20px), transparent);
@@ -114,12 +114,18 @@
     }
   }
 
-  /* Narrower, Style takes the form's place: the left bar shows Fine-tune where
-     the form would be (components/editor/LeftBar.tsx). The template is picked
-     with the header's Template button. */
-  @media (width < 80rem) {
-    aside[data-mode="style"] ~ .editor-form {
-      display: none;
+  /* Style takes the form's place: the left bar shows Fine-tune where the form
+     would be (components/editor/LeftBar.tsx). The template is picked with the
+     header's Template button. On wide screens Check does too, so the page keeps
+     its room; narrower, Check's lists are above the form. The form stays in the
+     page, hidden, so its place and open entries are kept. Important, as the
+     form's own `xl:flex` is a utility, which beats this layer. */
+  aside[data-mode="style"] ~ .editor-form {
+    display: none !important;
+  }
+  @media (width >= 80rem) {
+    aside[data-mode="check"] ~ .editor-form {
+      display: none !important;
     }
   }
 

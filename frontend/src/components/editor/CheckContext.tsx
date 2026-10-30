@@ -126,6 +126,17 @@ const CheckActionsContext = createContext<CheckActions | null>(null)
 // Null while no finding is being fixed, so undefined is outside a CheckProvider.
 const CheckTargetContext = createContext<Target | null | undefined>(undefined)
 const PointerContext = createContext<Pointer | null | undefined>(undefined)
+const FixingContext = createContext<Fixing | null>(null)
+
+/** The finding being fixed in the form, opened from Check on a wide screen: back to the list, or on to the next. */
+export interface Fixing {
+  /** The list it was opened from: the ATS checks, or the AI's notes. */
+  from: "checks" | "ai"
+  /** How many are left in the list from the next one on; none for an AI note. */
+  more: number
+  next?: () => void
+  back: () => void
+}
 
 /** The form section a place is in; none for the PDF's pages. */
 function sectionOf(place: Place): ActiveSection | null {
@@ -195,9 +206,14 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
   // A resume with nothing to check yet opens in Write, so its sections aren't
   // hidden behind a request to fill them in.
   const [mode, setMode] = useState<Mode>(() => (hasEnoughToCheck(viewOf(resume)) ? savedMode() : "write"))
+  // On wide screens Check takes the form's place, so a finding chosen there opens in the form, in
+  // Write: this is the one being fixed, and where it was in the list, so the form can offer the next
+  // one or go back. Choosing a mode puts it down.
+  const [fixing, setFixing] = useState<{ finding: Finding; index: number } | null>(null)
   const chooseMode = useCallback((next: Mode) => {
     setMode(next)
     saveMode(next)
+    setFixing(null)
   }, [])
   // Once Check has been opened, the resume, the preview and the text are
   // checked from then on, starting with the render that opens it, so the
@@ -325,17 +341,23 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
   const showForm = useRef(onPick)
   showForm.current = onPick
 
+  // Picked words are found in the resume the preview was made from, as
+  // that's where its places are; it's only behind the form while a new
+  // preview is on its way.
+  const latest = useRef({ resume: preview?.checkerResume ?? resume, mode, report, fixing })
+  latest.current = { resume: preview?.checkerResume ?? resume, mode, report, fixing }
+
   const open = useCallback((finding: Finding) => {
     const section = sectionOf(finding.place)
     if (section) select.current(section)
     setChosen({ finding, request: ++requests.current })
+    const { mode, report, fixing } = latest.current
+    if ((mode === "check" || fixing) && window.matchMedia(WIDE_SCREEN).matches) {
+      setMode("write")
+      saveMode("write")
+      setFixing({ finding, index: report?.findings.findIndex((found) => found.key === finding.key) ?? -1 })
+    }
   }, [])
-
-  // Picked words are found in the resume the preview was made from, as
-  // that's where its places are; it's only behind the form while a new
-  // preview is on its way.
-  const latest = useRef({ resume: preview?.checkerResume ?? resume, mode })
-  latest.current = { resume: preview?.checkerResume ?? resume, mode }
   const pick = useCallback(
     (printed: string, start: number, end: number, edit = false) => {
       const found = pickedIn(textsOf(viewOf(latest.current.resume)), printed, start, end)
@@ -343,8 +365,8 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
       const section = sectionOf(found.place)
       if (section) select.current(section)
       const wide = window.matchMedia(WIDE_SCREEN).matches
-      // Narrower, Style takes the form's place.
-      if (latest.current.mode === "style" && !wide) chooseMode("write")
+      // Style takes the form's place, and on wide screens Check does too.
+      if (latest.current.mode === "style" || (wide && latest.current.mode === "check")) chooseMode("write")
       const look = wide || !edit
       if (!look) showForm.current()
       setPicked({ place: found.place, request: ++requests.current, words: found, look })
@@ -372,14 +394,30 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
           report.findings.find((finding) => sameIssue(finding, chosen.finding)))
       : undefined
   const target = useMemo(
-    () => (chosen && live && mode === "check" ? { finding: live, request: chosen.request } : null),
-    [chosen, live, mode],
+    () => (chosen && live && (mode === "check" || fixing) ? { finding: live, request: chosen.request } : null),
+    [chosen, live, mode, fixing],
   )
   const pointer = useMemo(() => {
     if (target && (!picked || target.request > picked.request)) return { place: target.finding.place, request: target.request }
     return picked
   }, [target, picked])
   const value = useMemo(() => (report ? { report, checked, pdf, grammar } : null), [report, checked, pdf, grammar])
+  // The next finding in the list after the one being fixed: the one after it while it's still there,
+  // or the one that took its place once it's fixed. An AI note isn't in the list, so it has none.
+  const findings = report?.findings
+  const fixingValue = useMemo(() => {
+    if (!fixing) return null
+    const ai = fixing.finding.rule === AI_RULE
+    const at = findings?.findIndex((finding) => finding.key === fixing.finding.key) ?? -1
+    const nextIndex = ai || !findings ? -1 : at === -1 ? fixing.index : at + 1
+    const nextFinding = nextIndex >= 0 ? findings?.[nextIndex] : undefined
+    return {
+      from: ai ? ("ai" as const) : ("checks" as const),
+      more: nextFinding && findings ? findings.length - nextIndex : 0,
+      next: nextFinding ? () => open(nextFinding) : undefined,
+      back: () => chooseMode("check"),
+    }
+  }, [fixing, findings, open, chooseMode])
   const actions = useMemo(
     () => ({ ...check.actions, chooseMode, open, pick, pending, claim }),
     [check.actions, chooseMode, open, pick, pending, claim],
@@ -390,9 +428,11 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
         <CheckContext.Provider value={value}>
           <CheckTargetContext.Provider value={target}>
             <PointerContext.Provider value={pointer}>
-              <MarksProvider report={report ?? null} reading={current?.pdf ?? null} file={current?.url ?? null} mode={mode} open={open}>
-                {children}
-              </MarksProvider>
+              <FixingContext.Provider value={fixingValue}>
+                <MarksProvider report={report ?? null} reading={current?.pdf ?? null} file={current?.url ?? null} mode={mode} open={open}>
+                  {children}
+                </MarksProvider>
+              </FixingContext.Provider>
             </PointerContext.Provider>
           </CheckTargetContext.Provider>
         </CheckContext.Provider>
@@ -417,6 +457,16 @@ export function useCheck(): CheckValue {
   const check = useContext(CheckContext)
   if (!check) throw new Error("useCheck must be used inside CheckProvider, once Check has been opened")
   return check
+}
+
+/** The finding being fixed, opened from Check on a wide screen; null otherwise. */
+export function useFixing(): Fixing | null {
+  return useContext(FixingContext)
+}
+
+/** useCheck, or null until Check has been opened, for what shows outside the panel (the rail's count of fixes). */
+export function useCheckIfOpened(): CheckValue | null {
+  return useContext(CheckContext)
 }
 
 /** What changes the checker's state. A component using just this doesn't re-render when the resume is checked again. */

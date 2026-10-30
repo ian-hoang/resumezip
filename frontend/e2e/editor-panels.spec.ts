@@ -38,7 +38,7 @@ async function pageShown(preview: Locator): Promise<Box> {
 const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 
 const download = (page: Page) => page.getByRole("button", { name: "Download PDF" })
-const modes = (page: Page) => page.getByRole("tablist", { name: "Write, check or style" })
+const modes = (page: Page) => page.getByRole("tablist", { name: /check or style$/i })
 const styleTab = (page: Page) => modes(page).getByRole("tab", { name: "Style" })
 
 for (const [width, height] of [
@@ -60,10 +60,17 @@ for (const [width, height] of [
       "the page": await pageShown(preview(page)),
       "the zoom pill": await boxOf(preview(page).getByRole("button", { name: "Fit" }).locator("xpath=..")),
     }
+    // The zoom pill floats over the foot of the page, so only it may be over another part.
     const names = Object.keys(parts)
     for (const [index, a] of names.entries()) {
-      for (const b of names.slice(index + 1)) expect(overlap(parts[a], parts[b]), `${a} and ${b} overlap`).toBe(false)
+      for (const b of names.slice(index + 1)) {
+        if (a === "the page" && b === "the zoom pill") continue
+        expect(overlap(parts[a], parts[b]), `${a} and ${b} overlap`).toBe(false)
+      }
     }
+    const pill = parts["the zoom pill"]
+    expect(overlap(pill, right), "the zoom pill is on the preview").toBe(true)
+    expect(right.y + right.height - (pill.y + pill.height)).toBeLessThan(40)
 
     // Download PDF is at the right of the top bar.
     const button = await boxOf(download(page))
@@ -81,7 +88,7 @@ for (const [width, height] of [
       expect(Math.abs(gap)).toBeLessThan(1)
     }
     // The form has room to write in.
-    expect(form.width).toBeGreaterThanOrEqual(480)
+    expect(form.width).toBeGreaterThanOrEqual(440)
 
     // All of it in the window, which doesn't scroll either way.
     for (const [name, box] of Object.entries(parts)) {
@@ -97,20 +104,23 @@ for (const [width, height] of [
   })
 }
 
-test("the Style tab holds Fine-tune beside the form, and the header's Template button picks the template on every screen", async ({
+test("on a wide screen Style takes the form's place, beside the rail, and the header's Template button picks the template", async ({
   page,
 }) => {
   const errors = pageErrors(page)
   await startWriting(page, 1440, 900)
   const style = page.getByRole("region", { name: "Style" })
   const sections = page.getByRole("navigation", { name: "Sections" })
+  const name = page.getByLabel("Full name")
   await expect(style).toBeHidden()
 
   await styleTab(page).click()
   await expect(styleTab(page)).toHaveAttribute("aria-selected", "true")
-  await expect(sections).toBeHidden()
   await expect(style.getByRole("heading", { name: "Fine-tune" })).toBeVisible()
-  // Fine-tune uses the panel's whole width, as the section list does.
+  // In the form's place, and the rail's sections stay at hand.
+  await expect(name).toBeHidden()
+  await expect(sections).toBeVisible()
+  // Fine-tune uses the panel's whole width.
   expect((await boxOf(style.getByRole("slider", { name: /Text size/ }))).width).toBeGreaterThan((await boxOf(style)).width - 40)
 
   await chooseTemplate(page, "Harvard")
@@ -118,19 +128,18 @@ test("the Style tab holds Fine-tune beside the form, and the header's Template b
   await expect(preview(page).getByText("ADA LOVELACE", { exact: true })).toBeAttached()
   await expect(templateShown(page)).toContainText("Harvard")
 
-  // The form stays beside it, to keep writing in.
-  await page.getByLabel("Full name").fill("Ada King")
-  await expect(preview(page).getByText("ADA KING", { exact: true })).toBeAttached()
-
-  // The arrow keys go round the three tabs.
+  // The arrow keys go round the rail's tabs, up and down.
   await styleTab(page).focus()
-  await page.keyboard.press("ArrowRight")
-  await expect(modes(page).getByRole("tab", { name: "Write" })).toBeFocused()
-  await expect(sections).toBeVisible()
+  await page.keyboard.press("ArrowDown")
+  await expect(modes(page).getByRole("tab", { name: "ATS checks" })).toBeFocused()
   await expect(style).toBeHidden()
-  await page.keyboard.press("ArrowLeft")
+  await page.keyboard.press("ArrowUp")
   await expect(styleTab(page)).toBeFocused()
   await expect(style).toBeVisible()
+  // Choosing Style again goes back to writing.
+  await styleTab(page).click()
+  await expect(styleTab(page)).toHaveAttribute("aria-selected", "false")
+  await expect(name).toBeVisible()
 
   expect(errors).toEqual([])
 })

@@ -453,10 +453,10 @@ test("the checker skips what's left out, and opens the right entry after it", as
   })
 
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await expect(panel.getByRole("button", { name: weak("Google") })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Initech/ })).toHaveCount(0)
 
@@ -468,10 +468,10 @@ test("the checker skips what's left out, and opens the right entry after it", as
   await expect(box).toBeFocused()
   await expect.poll(selected).toBe("Responsible for the search index")
 
-  // Write mode hides the finding, and Check shows it again.
-  const modes = page.getByRole("tablist", { name: "Write, check or style" })
-  await modes.getByRole("tab", { name: "Write" }).click()
-  await modes.getByRole("tab", { name: /^Check/ }).click()
+  // The finding opened in the form, in the checks' place, and the checks show it again.
+  const modes = page.getByRole("tablist", { name: /check or style$/i })
+  await expect(modes.getByRole("tab", { name: "ATS checks" })).toHaveAttribute("aria-selected", "false")
+  await modes.getByRole("tab", { name: "ATS checks" }).click()
   await expect(panel.getByRole("button", { name: weak("Google") })).toBeVisible()
 
   // Choosing the finding again goes back to the text, at its bullet.

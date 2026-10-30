@@ -10,13 +10,14 @@ import { DownloadIcon } from "@/components/dashboard/RowActions"
 import { CheckProvider } from "@/components/editor/CheckContext"
 import { DriveIcon, JsonIcon, LatexIcon, ShareIcon, WordIcon } from "@/components/editor/FormatIcons"
 import DownloadMenu, { type MenuNotice } from "@/components/editor/DownloadMenu"
-import LeftBar, { ModeTabs } from "@/components/editor/LeftBar"
+import LeftBar from "@/components/editor/LeftBar"
 import PdfPreview from "@/components/editor/PdfPreview"
 import Loader from "@/components/site/Loader"
 import ProfileForm from "@/components/editor/ProfileForm"
 import Replaced from "@/components/editor/Replaced"
 import SectionForm, { type DeletedEntry } from "@/components/editor/SectionForm"
 import ExtraSectionForm from "@/components/editor/ExtraSectionForm"
+import FixingChip from "@/components/editor/FixingChip"
 import { reducedMotion, useWideScreen, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
 import StylePanel from "@/components/editor/StylePanel"
@@ -55,6 +56,9 @@ const DOWNLOADED_MS = 2000
 const DOWNLOAD_FILL_MS = 1500
 
 const EDITOR_ADDRESS = "/create/new/"
+
+// The widest the page is drawn at 100% while the form is folded away: big enough to read like a printed page.
+const FOLDED_PAGE_WIDTH = 860
 
 // The notes under the top bar's row, across the top bar: what wasn't saved, a
 // resume replaced by an opened file, a download that failed.
@@ -141,6 +145,8 @@ function Editor({ id }: { id: string }) {
   const [latexNotice, setLatexNotice] = useState<MenuNotice | null>(null)
   // Small screens show the form or the preview, not both.
   const [view, setView] = useState<"edit" | "preview">("edit")
+  // On wide screens the form can be folded away, so the page has the sheet to itself.
+  const [folded, setFolded] = useState(false)
   // The Write | Check | Style tabs are in the top bar on wide screens, and atop the left bar narrower.
   const wide = useWideScreen()
   const [typing, setTyping] = useState(false)
@@ -307,6 +313,7 @@ function Editor({ id }: { id: string }) {
   // (scrolled just far enough that the section tabs stay pinned above it, where the header ends).
   const select = useCallback((section: ActiveSection) => {
     setActive(section)
+    setFolded(false)
     if (window.matchMedia(WIDE_SCREEN).matches) {
       if (mainRef.current) mainRef.current.scrollTop = 0
       return
@@ -405,7 +412,11 @@ function Editor({ id }: { id: string }) {
     requestAnimationFrame(() => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }))
   }
   // Words picked on the preview open in the form, which scrolls to them rather than to where you were.
-  const showForm = useCallback(() => setView("edit"), [])
+  const showForm = useCallback(() => {
+    setView("edit")
+    setFolded(false)
+  }, [])
+  const fold = useCallback(() => setFolded((folded) => !folded), [])
 
   const download = async () => {
     const resume = read()
@@ -522,14 +533,15 @@ function Editor({ id }: { id: string }) {
 
   return (
     // The editor is one white sheet in a frosted frame over the sky. On wide screens (WIDE_SCREEN)
-    // it fills the window: a top bar over three columns, the sections (or what Check found, or
-    // Style) on the left, the form in the middle, and the page on the right. Narrower, the same
+    // it fills the window, with only a thin edge of sky round the frame so the page has the room: a
+    // top bar over three columns, the sections (or what Check found, or Style) on the left, the form
+    // in the middle, and the page on the right. Narrower, the same
     // parts stack on the sheet: the top bar, the left bar's tabs, the form, and an Edit / Preview
     // switch for the page. On wide screens it and the columns clip (overflow: clip) rather than
     // hide: a hidden box is still a scroll box, and choosing a finding scrolls its field into view
     // through every scroll box around it, which would shift the sheet up where no wheel can bring
     // it back.
-    <div className="desk desk-bright flex min-h-screen flex-col p-2 pb-24 sm:p-6 sm:pb-24 xl:h-screen xl:overflow-clip xl:pb-6">
+    <div className="desk desk-bright flex min-h-screen flex-col p-2 pb-24 sm:p-6 sm:pb-24 xl:h-screen xl:overflow-clip xl:p-2.5">
       {/* All of it shares what the checker found: the left bar lists it and the forms point at it. */}
       <CheckProvider onSelect={select} onPick={showForm} preview={preview} unbuilt={unbuilt}>
         <div className="paper-frame flex flex-1 flex-col xl:min-h-0">
@@ -537,21 +549,19 @@ function Editor({ id }: { id: string }) {
             {/* Raised (z-40) over the columns and the Edit / Preview switch: the menus and the
                 gallery that open from it go over them. */}
             <header ref={headerRef} className="relative z-40 border-b border-hairline">
-              <div className="flex min-h-[72px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-[13px] sm:px-[14px] xl:grid xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5 sm:px-3.5">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-[15px]">
                   <Link
                     href="/create/dashboard"
                     aria-label="Dashboard"
                     title="Dashboard"
-                    className="white-button inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                   >
                     <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
                   </Link>
                   <ResumeName />
                   <SavedNote />
                 </div>
-                {/* In the middle of the bar, whatever the name's length, on wide screens; narrower, atop the left bar. */}
-                {wide && <ModeTabs />}
                 {/* On the narrowest phones the template's name is cut short, so Download PDF still fits. */}
                 <div className="flex min-w-0 items-center justify-end gap-2.5 sm:gap-[15px]">
                   <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
@@ -567,7 +577,7 @@ function Editor({ id }: { id: string }) {
                       type="button"
                       onClick={download}
                       disabled={downloading}
-                      className="download-button relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-[18px] pr-4 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[160px] sm:text-[15px] [&_svg]:size-4"
+                      className="download-button relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-4 pr-3.5 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[148px] [&_svg]:size-4"
                     >
                       <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
                       {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
@@ -688,7 +698,7 @@ function Editor({ id }: { id: string }) {
             </header>
 
             <div className="flex flex-1 flex-col xl:min-h-0 xl:flex-row">
-              <LeftBar hidden={view === "preview"} tabs={!wide} style={style}>
+              <LeftBar hidden={view === "preview"} tabs={!wide} folded={folded} onFold={fold} style={style}>
                 {nav}
               </LeftBar>
 
@@ -697,15 +707,17 @@ function Editor({ id }: { id: string }) {
                   In Style mode on narrower screens, Style takes its place. */}
               <div
                 ref={formRef}
-                className={`editor-form xl:flex xl:w-[clamp(480px,39vw,560px)] xl:shrink-0 xl:flex-col xl:overflow-clip ${
+                id="editor-form"
+                className={`editor-form xl:flex xl:w-[clamp(440px,36vw,520px)] xl:shrink-0 xl:flex-col xl:overflow-clip ${
                   view === "preview" ? "hidden" : ""
-                }`}
+                } ${folded ? "xl:hidden" : ""}`}
               >
-                <main ref={mainRef} className="min-w-0 flex-1 px-4 pb-12 pt-7 sm:px-9 xl:overflow-y-auto xl:pb-14 xl:pt-[28px]">
+                <main ref={mainRef} className="min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-8 xl:overflow-y-auto xl:pb-14">
                   {/* The fields fit the form's own width rather than the window's. Each grid of
                       them is in a container (ProfileForm, SectionForm), not the whole form, so
                       an entry being dragged isn't in one: SectionForm says why. */}
                   <div className="mx-auto max-w-[640px]">
+                    <FixingChip />
                     {/* Each section fades in as it's chosen: a new key mounts it anew, and
                         `starting:` (CSS @starting-style) is where its transition starts from. */}
                     <div
@@ -730,13 +742,22 @@ function Editor({ id }: { id: string }) {
                 </main>
               </div>
 
-              {/* The page, on a grey panel: on wide screens in the room the columns leave. */}
+              {/* The page, on a grey panel: on wide screens in the room the columns leave, running to the
+                  sheet's edges, its corner rounded with the sheet's. */}
               <section
                 aria-label="Live preview"
-                className={`min-w-0 flex-col p-3 xl:flex xl:flex-1 xl:overflow-clip xl:pl-0 ${view === "preview" ? "flex max-xl:flex-1" : "hidden"}`}
+                className={`min-w-0 flex-col p-2.5 xl:flex xl:flex-1 xl:overflow-clip xl:p-0 ${
+                  view === "preview" ? "flex max-xl:flex-1" : "hidden"
+                }`}
               >
-                <div className="flex min-h-0 flex-1 flex-col rounded-[22px] bg-[#eef0f4] xl:rounded-[24px]">
-                  <PdfPreview pdfUrl={pdfUrl} template={shownTemplate} error={compileError} updating={switchingTemplate && !compileError} />
+                <div className="flex min-h-0 flex-1 flex-col rounded-[22px] bg-[#eef0f4] xl:rounded-none xl:rounded-br-[28px]">
+                  <PdfPreview
+                    pdfUrl={pdfUrl}
+                    template={shownTemplate}
+                    error={compileError}
+                    updating={switchingTemplate && !compileError}
+                    maxPageWidth={folded ? FOLDED_PAGE_WIDTH : undefined}
+                  />
                 </div>
               </section>
             </div>
@@ -810,7 +831,7 @@ function ResumeName() {
 
   // As wide as its words: an unseen copy of them sizes the box, which the input fills.
   return (
-    <span className="grid min-w-0 text-[17px] font-medium tracking-[-0.02em] sm:text-[18px]">
+    <span className="grid min-w-0 text-[16px] font-medium tracking-[-0.02em] sm:text-[17px]">
       <span
         aria-hidden="true"
         className="invisible col-start-1 row-start-1 overflow-hidden whitespace-pre border-b border-transparent py-0.5 pr-1"

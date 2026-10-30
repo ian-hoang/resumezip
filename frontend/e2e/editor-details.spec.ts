@@ -18,7 +18,7 @@ test("a field glows while it has the focus, and nothing moves", async ({ page })
   const errors = pageErrors(page)
   await startWriting(page)
   const email = page.getByLabel("Email")
-  await page.getByRole("tab", { name: "Write" }).focus()
+  await page.getByRole("tab", { name: "ATS checks" }).focus()
   const before = [await boxOf(page.getByLabel("Full name")), await boxOf(email)]
   await email.focus()
   // The glow is drawn behind the field, as a shadow and a wash, so nothing around it moves.
@@ -42,7 +42,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
         .click()
       await page.getByRole("button", { name: "Add experience" }).click()
       await page.getByLabel("Company").fill("Analytical Engines")
-      await page.getByRole("tab", { name: /^Check/ }).click()
+      await page.getByRole("tab", { name: "ATS checks" }).click()
       const number = page.getByRole("region", { name: "ATS score" }).getByText(/^\d+$/)
       await expect(number).toBeVisible()
 

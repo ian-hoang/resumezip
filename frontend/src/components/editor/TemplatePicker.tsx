@@ -95,7 +95,7 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => (open ? hide() : show())}
-        className="white-button inline-flex h-10 max-w-full items-center gap-2.5 rounded-full pl-3.5 pr-3 text-[14px] font-medium tracking-[-0.01em]"
+        className="white-button inline-flex h-9 max-w-full items-center gap-2 rounded-full pl-3 pr-2.5 text-[14px] font-medium tracking-[-0.01em]"
       >
         <Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
         {/* Said, but not shown: the icon stands for it. */}

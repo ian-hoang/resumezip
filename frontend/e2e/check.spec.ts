@@ -14,6 +14,8 @@ import {
 
 // The editor's left bar switches between the sections (Write), what the
 // checker found (Check) and Fine-tune (Style), and remembers which for the visit.
+// On wide screens, as here unless a test says otherwise, Check's two lists each
+// have a tab in the rail, ATS checks and AI review, and take the form's place.
 
 /** A new resume with a name and an entry, so there's something to check, and its preview on screen. */
 async function resumeToCheck(page: Page) {
@@ -67,13 +69,17 @@ const animationsIn = (locator: Locator) =>
 test("the left bar switches between writing and checking, and remembers which", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write, check or style" })
-  const write = modes.getByRole("tab", { name: "Write" })
-  const check = modes.getByRole("tab", { name: /^Check/ })
+  const modes = page.getByRole("tablist", { name: /check or style$/i })
+  const check = modes.getByRole("tab", { name: "ATS checks" })
   const sections = page.getByRole("navigation", { name: "Sections" })
+  // Writing, with no tab chosen: the rail's sections are the form.
+  const writing = async (tab = check) => {
+    await expect(tab).toHaveAttribute("aria-selected", "false")
+    await expect(sections).toBeVisible()
+  }
 
-  // It opens on Write, with the section list.
-  await expect(write).toHaveAttribute("aria-selected", "true")
+  // It opens on writing.
+  await writing()
   // A name and an entry, so there's something to check: a resume with nothing
   // to check yet always opens on Write.
   await page.getByLabel("Full name").fill("Ada Lovelace")
@@ -82,22 +88,23 @@ test("the left bar switches between writing and checking, and remembers which", 
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Role").fill("Analyst")
 
-  // Check puts the checker where the section list was, and leaves the form as it was.
+  // The ATS checks take the form's place, with the sections still in the rail; choosing them again brings the form back.
   await check.click()
   await expect(check).toHaveAttribute("aria-selected", "true")
-  await expect(sections).toBeHidden()
-  await expect(page.getByRole("tabpanel", { name: /^Check/ })).toBeVisible()
-  await expect(editorHeading(page, "Experience")).toBeVisible()
+  await expect(sections).toBeVisible()
+  await expect(page.getByRole("tabpanel", { name: "ATS checks" })).toBeVisible()
+  await expect(editorHeading(page, "Experience")).toBeHidden()
   expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
 
-  // Arrow keys, Home and End move between the three, as in any set of tabs.
+  // Arrow keys, Home and End move between the rail's tabs, up and down, as in any set of tabs.
   const style = modes.getByRole("tab", { name: "Style" })
+  const ai = modes.getByRole("tab", { name: "AI review" })
   await check.focus()
   for (const [key, tab] of [
-    ["ArrowLeft", write],
+    ["ArrowDown", ai],
     ["End", style],
-    ["Home", write],
-    ["ArrowRight", check],
+    ["ArrowUp", ai],
+    ["Home", check],
   ] as const) {
     await page.keyboard.press(key)
     await expect(tab).toBeFocused()
@@ -108,28 +115,24 @@ test("the left bar switches between writing and checking, and remembers which", 
   // waits for the preview, so the PDF compiler's download isn't cut off,
   // which Safari logs as an error, and in Check for the score, so the
   // checker's reader isn't either.
-  const score = page
-    .getByRole("tabpanel", { name: /^Check/ })
-    .getByRole("region", { name: "ATS score" })
-    .locator("[aria-live=polite]")
+  const score = page.getByRole("tabpanel", { name: "ATS checks" }).getByRole("region", { name: "ATS score" }).locator("[aria-live=polite]")
   const checked = () => expect(score).toContainText(/^\d+\s*\/ 100\s*out of 100$/)
   await previewShown(page)
   await checked()
   await page.reload()
   await expect(check).toHaveAttribute("aria-selected", "true")
   await checked()
-  await write.click()
+  await check.click()
   await previewShown(page)
   await page.reload()
-  await expect(write).toHaveAttribute("aria-selected", "true")
-  await expect(sections).toBeVisible()
+  await writing()
 
   // It's remembered for the visit, not for good: a new tab opens on Write.
   await check.click()
   await checked()
   const later = await page.context().newPage()
   await later.goto(page.url())
-  await expect(later.getByRole("tab", { name: "Write" })).toHaveAttribute("aria-selected", "true")
+  await expect(later.getByRole("tab", { name: "ATS checks" })).toHaveAttribute("aria-selected", "false")
   await previewShown(later)
   await later.close()
 
@@ -145,7 +148,7 @@ test("the left bar switches between writing and checking, and remembers which", 
   await page.getByRole("button", { name: "New resume" }).first().click()
   await page.getByRole("dialog").getByRole("button", { name: "Create" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(write).toHaveAttribute("aria-selected", "true")
+  await writing()
   await previewShown(page)
 
   expect(errors).toEqual([])
@@ -154,9 +157,8 @@ test("the left bar switches between writing and checking, and remembers which", 
 test("the checker asks for a name and an entry first, then scores the resume and lists what to fix by category", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const write = page.getByRole("tab", { name: "Write" })
-  const check = page.getByRole("tab", { name: /^Check/ })
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const check = page.getByRole("tab", { name: "ATS checks" })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const score = panel.getByRole("region", { name: "ATS score" })
 
   await check.click()
@@ -164,9 +166,9 @@ test("the checker asks for a name and an entry first, then scores the resume and
   await expect(waiting).toBeVisible()
   await expect(score).toContainText("Not scored yet")
 
-  // The form stays beside the checker, so the name can be typed straight in.
+  // Choosing them again brings the form back, in the checks' place, to type the name in.
+  await check.click()
   await page.getByLabel("Full name").fill("Ada Lovelace")
-  await write.click()
   await page
     .getByRole("navigation", { name: "Sections" })
     .getByRole("button", { name: /^Experience$/ })
@@ -226,7 +228,7 @@ test("the checker asks for a name and an entry first, then scores the resume and
 test("the score goes up as a problem is fixed", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email", { exact: true }).fill("ada@example")
   await page
@@ -236,8 +238,8 @@ test("the score goes up as a problem is fixed", async ({ page }) => {
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
 
   // The contact category is open, as it has something to fix, and lists it.
@@ -249,8 +251,10 @@ test("the score goes up as a problem is fixed", async ({ page }) => {
   const number = panel.getByRole("region", { name: "ATS score" }).getByText(/^\d+$/)
   await expect(panel.getByRole("status")).toBeHidden()
   const before = Number(await number.textContent())
+  // It opens in the form, in the checks' place, and the way back shows the score gone up.
   await email.click()
   await page.getByLabel("Email", { exact: true }).fill("ada@example.com")
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   await expect.poll(async () => Number(await number.textContent())).toBeGreaterThan(before)
   await expect(panel.getByRole("button", { name: /^Contact & personal details/ })).not.toHaveAccessibleName(/to fix/)
 
@@ -261,8 +265,8 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   const errors = pageErrors(page)
   await page.clock.install()
   await resumeToCheck(page)
-  const check = page.getByRole("tab", { name: /^Check/ })
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const check = page.getByRole("tab", { name: "ATS checks" })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await check.click()
   await expect(panel.getByRole("status")).toBeHidden()
   const missing = panel.getByRole("button", { name: /Add your email address/ })
@@ -273,13 +277,16 @@ test("the resume is checked again once typing pauses, not at every key, and a di
   // With the page's clock stopped, typing never pauses. What the person
   // tells the checker still shows at once.
   await page.clock.pauseAt(Date.now() + 1_000)
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   const advice = panel.getByRole("button", { name: /Profile → LinkedIn Consider adding a LinkedIn profile/ })
   await panel.getByRole("button", { name: "Dismiss: Consider adding a LinkedIn profile" }).click()
   await expect(advice).toBeHidden()
 
+  await missing.click()
   await email.pressSequentially("ada@example.com")
   // A fixed wait: proving what's typed isn't checked yet.
   await page.waitForTimeout(1_000)
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   await expect(missing).toBeVisible()
 
   // Once typing pauses, it is.
@@ -296,14 +303,14 @@ test("the score moves while it's worked out: dots bounce in its place, the numbe
   const errors = pageErrors(page)
   await holdablePreviews(page)
   await resumeToCheck(page)
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const score = panel.getByRole("region", { name: "ATS score" })
 
   // A change the preview hasn't caught up with keeps the checks on the PDF
   // waiting, and the score with them. Meanwhile three dots bounce in its place.
   await holdPreviews(page, true)
   await page.getByLabel("Role").fill("Analyst")
-  await page.getByRole("tab", { name: /^Check/ }).click()
+  await page.getByRole("tab", { name: "ATS checks" }).click()
   await expect(score).toContainText("Checking")
   await expect.poll(() => animationNamesIn(score)).toContain("score-dot")
 
@@ -315,7 +322,9 @@ test("the score moves while it's worked out: dots bounce in its place, the numbe
 
   // Checked again after a change, the score stays and pulses until it's done.
   await holdPreviews(page, true)
+  await page.getByRole("tab", { name: "ATS checks" }).click()
   await page.getByLabel("Role").fill("Lead analyst")
+  await page.getByRole("tab", { name: "ATS checks" }).click()
   await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
   await expect(score.getByText(/^\d+$/)).toBeVisible()
   await expect.poll(() => animationsIn(score)).toBeGreaterThan(0)
@@ -329,9 +338,9 @@ test("the score moves while it's worked out: dots bounce in its place, the numbe
 test("the score's word says how it reads, and a perfect score's scale turns to a gradient a light sweeps along once", async ({ page }) => {
   const errors = pageErrors(page)
   await resumeToCheck(page)
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const score = panel.getByRole("region", { name: "ATS score" })
-  await page.getByRole("tab", { name: /^Check/ }).click()
+  await page.getByRole("tab", { name: "ATS checks" }).click()
   await expect(panel.getByRole("status")).toBeHidden()
   await expect(score).toContainText("Needs work")
   expect(await perfectScaleShown(score)).toBe(false)
@@ -345,6 +354,7 @@ test("the score's word says how it reads, and a perfect score's scale turns to a
   // that a light sweeps along once.
   await panel.getByRole("button", { name: /Add your email address/ }).click()
   await page.getByLabel("Email", { exact: true }).fill("marcus.bell@example.com")
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   await expect(score.getByText(/^\d+$/)).toHaveText("100")
   await expect(score).toContainText("Perfect")
   await expect.poll(() => perfectScaleShown(score)).toBe(true)
@@ -376,8 +386,8 @@ test("a line under the score says how much weak bullets take off it", async ({ p
       ]),
     },
   )
-  await page.getByRole("tab", { name: /^Check/ }).click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  await page.getByRole("tab", { name: "ATS checks" }).click()
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const score = panel.getByRole("region", { name: "ATS score" })
   await expect(panel.getByRole("status")).toBeHidden()
   await expect(score).toContainText(/Your bullets take \d+ off until they earn 75% of their points\./)
@@ -395,12 +405,12 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
 }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const modes = page.getByRole("tablist", { name: "Write, check or style" })
-  const check = modes.getByRole("tab", { name: /^Check/ })
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const modes = page.getByRole("tablist", { name: /check or style$/i })
+  const check = modes.getByRole("tab", { name: "ATS checks" })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
 
-  // The tab says only Check: what it found is in the panel.
-  await expect(check).toHaveAccessibleName("Check")
+  // The tab says only ATS checks: what it found is in the panel.
+  await expect(check).toHaveAccessibleName("ATS checks")
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email", { exact: true }).fill("ada@example")
   await page
@@ -409,7 +419,7 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Company").fill("Analytical Engines")
-  await expect(check).toHaveAccessibleName("Check")
+  await expect(check).toHaveAccessibleName("ATS checks")
 
   // The email's finding opens the profile, with the cursor in the field. Why it matters is
   // marked on the preview, not written under the field, which says it to a screen reader.
@@ -427,16 +437,20 @@ test("choosing a finding opens its field, where it shows while Check is open, fi
     .evaluate((element) => element.closest(".sr-only")?.getBoundingClientRect().height)
   expect(hidden).toBeLessThanOrEqual(1)
 
-  // Back in Write mode the field is left plain, until Check is open again.
-  await modes.getByRole("tab", { name: "Write" }).click()
+  // Choosing the checks again and leaving them puts the finding down, and the field is left plain, until the
+  // finding is opened again.
+  await check.click()
+  await check.click()
   await expect(field).not.toHaveAccessibleDescription(why)
   await expect(field).not.toHaveAttribute("aria-invalid")
   await check.click()
+  await email.click()
   await expect(field).toHaveAccessibleDescription(why)
   await expect(field).toHaveAttribute("aria-invalid", "true")
   await field.fill("ada@example.com")
-  await expect(email).toBeHidden()
   await expect(field).not.toHaveAttribute("aria-invalid")
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
+  await expect(email).toBeHidden()
 
   // Missing work identity is a fix; optional LinkedIn advice can be dismissed.
   const role = panel.getByRole("button", { name: /^Experience → .* No role$/ })
@@ -484,17 +498,18 @@ test("choosing a finding far down a long list opens its field without pushing th
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/create/new/long-check")
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
   const back = page.getByRole("link", { name: "Dashboard" })
   const top = (await back.boundingBox())!.y
 
   // The last entry opens on its first finding. The second is then chosen in an open entry: in
   // Safari, with motion reduced, a finding that opens its entry can lose its place (a bug of its own).
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await panel.getByRole("button", { name: /Experience → Company 7 · bullet 1/ }).click()
   await expect(page.getByRole("button", { name: "Done editing entry 7" })).toBeVisible()
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   await panel.getByRole("button", { name: /Experience → Company 7 · bullet 2/ }).click()
   // Its field is marked with the finding, and scrolled to: it started below the form's foot.
   const field = page.getByRole("textbox", { name: "Description" }).last()
@@ -507,8 +522,8 @@ test("choosing a finding far down a long list opens its field without pushing th
 test("with Check open, the PDF is read too: a bullet that runs three lines is flagged and opens", async ({ page }) => {
   const errors = pageErrors(page)
   await newResume(page)
-  const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const check = page.getByRole("tablist", { name: /check or style$/i }).getByRole("tab", { name: "ATS checks" })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
 
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page
@@ -541,10 +556,10 @@ test("a name in a script no font has is a must-fix that says it doesn't print, n
   const errors = pageErrors(page)
   await openSample(page, "unprinted-name", { fullName: "王小明" })
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
 
   const finding = panel.getByRole("button", { name: /“王小明” doesn't print$/ })
   await expect(finding).toBeVisible()
@@ -582,10 +597,10 @@ test("each finding's mark on the preview is drawn in its dot's color: must fix r
   )
   await page.goto(`/create/new/${id}`)
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const preview = page.getByRole("region", { name: "Live preview" })
 
   for (const [tier, message] of [
@@ -632,10 +647,10 @@ test("when the preview can't be built, the checker says its PDF checks are left 
   await page.getByLabel("Company").fill("Analytical Engines")
 
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await expect(panel.getByRole("status")).toContainText("The preview couldn't be built, so the checks on the PDF are left out.")
   expect(errors).toEqual([])
 })
@@ -647,12 +662,12 @@ test.describe("with less motion", () => {
     const errors = pageErrors(page)
     await holdablePreviews(page)
     await resumeToCheck(page)
-    const panel = page.getByRole("tabpanel", { name: /^Check/ })
+    const panel = page.getByRole("tabpanel", { name: "ATS checks" })
     const score = panel.getByRole("region", { name: "ATS score" })
 
     await holdPreviews(page, true)
     await page.getByLabel("Role").fill("Analyst")
-    await page.getByRole("tab", { name: /^Check/ }).click()
+    await page.getByRole("tab", { name: "ATS checks" }).click()
     await expect(score).toContainText("Checking")
     expect(await animationsIn(score)).toBe(0)
 
@@ -661,7 +676,9 @@ test.describe("with less motion", () => {
     await expect(panel.getByRole("status")).toBeHidden()
 
     await holdPreviews(page, true)
+    await page.getByRole("tab", { name: "ATS checks" }).click()
     await page.getByLabel("Role").fill("Lead analyst")
+    await page.getByRole("tab", { name: "ATS checks" }).click()
     await expect(panel.getByRole("status")).toContainText("Checking the PDF…")
     expect(await animationsIn(score)).toBe(0)
     await holdPreviews(page, false)
@@ -673,8 +690,8 @@ test.describe("with less motion", () => {
   test("a perfect score's scale shows its gradient at once, with no light sweeping along it", async ({ page }) => {
     const errors = pageErrors(page)
     await openSample(page, "perfect")
-    await page.getByRole("tab", { name: /^Check/ }).click()
-    const panel = page.getByRole("tabpanel", { name: /^Check/ })
+    await page.getByRole("tab", { name: "ATS checks" }).click()
+    const panel = page.getByRole("tabpanel", { name: "ATS checks" })
     const score = panel.getByRole("region", { name: "ATS score" })
     await expect(score.getByText(/^\d+$/)).toHaveText("100")
     await expect(score).toContainText("Perfect")
@@ -692,7 +709,7 @@ test.describe("on a phone", () => {
   test("the switch sits above the section tabs, and works with the Edit and Preview switch", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const modes = page.getByRole("tablist", { name: "Write, check or style" })
+    const modes = page.getByRole("tablist", { name: /check or style$/i })
     const check = modes.getByRole("tab", { name: /^Check/ })
     const sections = page.getByRole("navigation", { name: "Sections" })
 
@@ -718,7 +735,7 @@ test.describe("on a phone", () => {
   test("tapping Check far down the form goes back up to what was found", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const check = page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })
+    const check = page.getByRole("tablist", { name: /check or style$/i }).getByRole("tab", { name: /^Check/ })
 
     // The switch stays pinned while the form scrolls under it.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
@@ -728,6 +745,67 @@ test.describe("on a phone", () => {
     await check.tap()
     await expect(page.getByRole("tabpanel", { name: /^Check/ })).toBeInViewport()
     await expect(check).toBeInViewport()
+    expect(errors).toEqual([])
+  })
+})
+
+test.describe("on a wide screen", () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+  const tabs = (page: Page) => page.getByRole("tablist", { name: /check or style$/i })
+
+  test("the ATS checks take the form's place, and a finding opens in the form, with the way back and on to the next", async ({ page }) => {
+    const errors = pageErrors(page)
+    const sample = JSON.parse(readFileSync("src/lib/typst/preview-samples/jake.json", "utf8"))
+    const work = sample.workExperienceSection.map((job: { workDescription: string }, index: number) =>
+      index === 0 ? { ...job, workDescription: job.workDescription.replace(/^• \S+/, "• Responsible for") } : job,
+    )
+    await openSample(page, "wide-check", { email: "marcus.bell@" }, { workExperienceSection: work })
+    await previewShown(page)
+    const ats = tabs(page).getByRole("tab", { name: "ATS checks" })
+    const name = page.getByLabel("Full name")
+    await expect(name).toBeVisible()
+
+    await ats.click()
+    const panel = page.getByRole("tabpanel", { name: "ATS checks" })
+    await expect(panel.getByRole("region", { name: "ATS score" })).toBeVisible()
+    await expect(name).toBeHidden()
+    // The tab says how many must be fixed, in its tip.
+    await ats.hover()
+    await expect(page.getByText(/^ATS checks · \d+ to fix$/)).toBeVisible()
+
+    // A finding opens its field in the form, in the list's place, with the way back and on.
+    await panel.getByRole("button", { name: /Not a whole email address/ }).click()
+    await expect(page.getByLabel("Email")).toBeFocused()
+    await expect(panel).toBeHidden()
+    await expect(ats).toHaveAttribute("aria-selected", "false")
+    // Next opens the next finding's field, which can be in another section, where the email isn't.
+    await page.getByRole("button", { name: "Next" }).click()
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.id))
+      .not.toMatch(/email/i)
+    await expect(page.getByRole("button", { name: "Back to ATS checks" })).toBeVisible()
+    await page.getByRole("button", { name: "Back to ATS checks" }).click()
+    await expect(ats).toHaveAttribute("aria-selected", "true")
+    await expect(panel).toBeVisible()
+
+    // Choosing the tab again goes back to writing, in the section the last finding opened.
+    await ats.click()
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Back to ATS checks" })).toBeHidden()
+    expect(errors).toEqual([])
+  })
+
+  test("AI review takes the form's place too, with the rail's tabs for its switch", async ({ page }) => {
+    const errors = pageErrors(page)
+    await openSample(page, "wide-ai")
+    await previewShown(page)
+    const ai = tabs(page).getByRole("tab", { name: "AI review" })
+    await ai.click()
+    await expect(page.getByRole("tabpanel", { name: "AI review" }).getByRole("button", { name: "Get AI notes" })).toBeVisible()
+    await expect(page.getByLabel("Full name")).toBeHidden()
+    await expect(page.getByRole("group", { name: "Notes on the page" })).toBeHidden()
+    await ai.click()
+    await expect(page.getByLabel("Full name")).toBeVisible()
     expect(errors).toEqual([])
   })
 })

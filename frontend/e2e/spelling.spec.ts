@@ -21,10 +21,10 @@ test("unknown words are suggestions, and Add word clears them without the text l
   await page.getByLabel(/^Description/).fill("Wrote the Zorbly notes on the Qwexy engine\nTaught Zorbly methods to the the society")
 
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   const typos = panel.getByRole("button", { name: /^Experience → .*The English dictionary doesn't know “Zorbly”/ })
   await expect(typos).toHaveCount(2)
   await expect(panel.getByRole("button", { name: /“the” twice in a row/ })).toBeVisible()
@@ -36,6 +36,7 @@ test("unknown words are suggestions, and Add word clears them without the text l
   await panel.getByRole("button", { name: /^Experience → .*The English dictionary doesn't know “Qwexy”/ }).click()
   await expect(bullets).toBeFocused()
   await expect(bullets).toHaveAccessibleDescription(/The English dictionary doesn't know “Qwexy”/)
+  await page.getByRole("button", { name: "Back to ATS checks" }).click()
   await expect(panel.getByRole("button", { name: /Dismiss: The English dictionary doesn't know “Qwexy”/ })).toBeVisible()
 
   // Add word clears a word in both bullets.

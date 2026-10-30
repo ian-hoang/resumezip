@@ -6,12 +6,14 @@ import { flushSync } from "react-dom"
 import type { DraggableProvided, DropResult } from "@hello-pangea/dnd"
 import { GripVertical } from "lucide-react"
 import { useOpenResume, useResumeState } from "@/context/ResumeContext"
+import { useCheckActions, useCheckMode } from "./CheckContext"
 import type { Headings } from "@/lib/resume"
 import { extraHeading, extraKey, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
 import { resumeOf } from "@/lib/resumeStore"
 import AddSectionMenu from "./AddSectionMenu"
 import { loadDragAndDrop, type DragAndDrop } from "./dragAndDrop"
 import { reducedMotion, useWideScreen } from "./layout"
+import { useRailTip } from "./RailTip"
 import { EXTRA_ICONS, PROFILE_ICON, SECTION_ICONS } from "./sectionIcons"
 import { SECTION_NAMES, SECTIONS, type SectionName } from "./sections"
 
@@ -29,19 +31,30 @@ interface SectionNavProps {
 }
 
 /**
- * The sections, each with its icon: a list in the left column on wide screens, with how many
- * entries each has, and a row of pill tabs on narrower ones. Profile stays first; the rest can be
- * dragged into any order by their icons.
+ * The sections, each with its icon: a rail of icons in the left column on wide screens, each
+ * section's name and how many entries it has in a tip beside it, and a row of pill tabs on
+ * narrower ones. Profile stays first; the rest can be dragged into any order by their icons.
  */
-export default function SectionNav({ sections, headings, extras, active, onSelect, onReorder, onAdd }: SectionNavProps) {
+export default function SectionNav({ sections, headings, extras, active: open, onSelect, onReorder, onAdd }: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null)
   const tabRef = useRef<HTMLSpanElement>(null)
   // The section the white tab was last put behind, so choosing another slides it there.
   const tabAt = useRef<ActiveSection | null>(null)
   const wide = useWideScreen()
+  const mode = useCheckMode()
+  // On wide screens the ATS checks, AI review and Style take the form's place, so no section shows as chosen in the
+  // rail while they're open.
+  const active: ActiveSection | null = wide && mode !== "write" ? null : open
   const [dnd, setDnd] = useState<DragAndDrop | null>(null)
   const [dragging, setDragging] = useState(false)
   const entries = useEntryCounts()
+  const { tipProps, tip } = useRailTip(wide)
+  const { chooseMode } = useCheckActions()
+  // On wide screens the rail stays beside Check and Style, and choosing a section from it goes back to writing.
+  const choose = (section: ActiveSection) => {
+    if (wide) chooseMode("write")
+    onSelect(section)
+  }
   // The sections at the last render, to tell one just added, which slides in.
   const seen = useRef<ReadonlySet<SectionRef> | null>(null)
   const added = new Set(seen.current ? sections.filter((ref) => !seen.current!.has(ref)) : [])
@@ -158,14 +171,14 @@ export default function SectionNav({ sections, headings, extras, active, onSelec
   // Keyboard focus shows as a soft shade and dark text rather than the site's blue ring, which would box the row in.
   // The chosen section has the grey tab behind it already, so a shade there would draw a second one inside it.
   const item = (isActive: boolean) =>
-    `flex h-9 w-full min-w-0 shrink-0 items-center gap-3 whitespace-nowrap rounded-full pl-9 pr-3.5 text-left text-[15px] tracking-[-0.01em] transition-colors focus-visible:outline-none xl:h-10 xl:shrink xl:rounded-[12px] xl:pl-[41px] xl:pr-[15px] ${
+    `flex h-9 w-full min-w-0 shrink-0 items-center gap-3 whitespace-nowrap rounded-full pl-9 pr-3.5 text-left text-[15px] tracking-[-0.01em] transition-colors focus-visible:outline-none xl:h-10 xl:rounded-[12px] xl:p-0 ${
       isActive ? "font-medium text-ink" : "text-[#3a3e46] hover:text-ink focus-visible:bg-ink/[0.05] focus-visible:text-ink"
     }`
   // A row's own background: the grey tab is drawn behind the chosen one,
   // except while a section is dragged, when the rows move under it and the
   // chosen one has its own. Another is shaded while pointed at.
   const rowBackground = (isActive: boolean) => (isActive ? (dragging ? "bg-[#f1f3f8]" : "") : "hover:bg-[#f6f7f9]")
-  // The section's icon, which turns into a grip while the row is pointed at or its handle has the keyboard.
+  // The section's icon. In the row of tabs it turns into a grip while the row is pointed at or its handle has the keyboard.
   const iconClass = (isActive: boolean) =>
     `h-[18px] w-[18px] transition-colors ${isActive ? "text-accent" : "text-[#8b9099] group-hover/row:text-ink-2"}`
 
@@ -182,44 +195,46 @@ export default function SectionNav({ sections, headings, extras, active, onSelec
         ref={drag?.innerRef}
         {...drag?.draggableProps}
         data-section-row
-        className={`group/row relative flex shrink-0 items-center rounded-full transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none xl:rounded-[12px] ${
+        {...tipProps(titleOf(name), count)}
+        className={`group/row relative flex shrink-0 items-center rounded-full transition-[opacity,translate,background-color] duration-300 ease-out motion-reduce:transition-none xl:w-10 xl:rounded-[12px] ${
           added.has(name) ? "starting:-translate-x-2 starting:opacity-0" : ""
         } ${isDragged ? "bg-sheet shadow-[0_8px_20px_-8px_rgb(17_19_24/0.3)] ring-1 ring-hairline" : rowBackground(isActive)}`}
       >
-        {/* The icon is the handle a section is dragged by; pressed without dragging, it opens the section as the row does. */}
+        {/* The icon is the handle a section is dragged by; pressed without dragging, it opens the section as the row does.
+            In the rail the icon is the button's, so the button can be pressed anywhere, and the handle is a strip
+            down the row's left edge that shows a grip while the row is pointed at. */}
         <span
           {...drag?.dragHandleProps}
           aria-label={drag && `Reorder ${labelOf(name, index)}`}
-          onClick={() => onSelect(name)}
-          className="group/handle absolute inset-y-0 left-0 z-[1] flex w-9 items-center justify-center rounded-full focus-visible:bg-ink/[0.06] focus-visible:outline-none xl:w-10 xl:rounded-[12px]"
+          onClick={() => choose(name)}
+          className={`group/handle absolute inset-y-0 left-0 z-[1] flex items-center justify-center focus-visible:bg-ink/[0.06] focus-visible:outline-none ${
+            wide ? "w-3 rounded-l-[12px]" : "w-9 rounded-full"
+          }`}
         >
-          <Icon
-            className={`${iconClass(isActive)} ${drag ? "group-hover/row:hidden group-focus-visible/handle:hidden" : ""} ${isDragged ? "hidden" : ""}`}
-            aria-hidden="true"
-          />
+          {!wide && (
+            <Icon
+              className={`${iconClass(isActive)} ${drag ? "group-hover/row:hidden group-focus-visible/handle:hidden" : ""} ${isDragged ? "hidden" : ""}`}
+              aria-hidden="true"
+            />
+          )}
           {drag && (
             <GripVertical
-              className={`h-4 w-4 text-ink-2 ${isDragged ? "block" : "hidden group-hover/row:block group-focus-visible/handle:block"}`}
+              className={`text-ink-2 ${wide ? "h-3.5 w-3.5" : "h-4 w-4"} ${isDragged ? "block" : "hidden group-hover/row:block group-focus-visible/handle:block"}`}
               aria-hidden="true"
             />
           )}
         </span>
         <button
           type="button"
-          onClick={() => onSelect(name)}
+          onClick={() => choose(name)}
           className={item(isActive)}
           aria-current={isActive || undefined}
           aria-label={labelOf(name, index)}
           data-section-ref={name}
         >
-          {/* A title too long for the list, as a section can be renamed, is cut short rather than running under the count. */}
-          <span className="min-w-0 truncate">{titleOf(name)}</span>
-          {/* How many entries it has, in the list on wide screens. The form lists the entries, so it isn't read out. */}
-          {count > 0 && (
-            <span aria-hidden="true" className="ml-auto hidden text-[13px] tabular-nums text-ink-3 xl:inline">
-              {count}
-            </span>
-          )}
+          {wide && <Icon className={`mx-auto ${iconClass(isActive)}`} aria-hidden="true" />}
+          {/* A title too long for a tab, as a section can be renamed, is cut short. In the rail it's the tip instead. */}
+          <span className="min-w-0 truncate xl:sr-only">{titleOf(name)}</span>
         </button>
       </div>
     )
@@ -260,14 +275,15 @@ export default function SectionNav({ sections, headings, extras, active, onSelec
         ref={tabRef}
         aria-hidden="true"
         className={`absolute left-0 top-0 -z-10 rounded-full bg-[#f1f3f8] transition-[transform,width] duration-300 ease-glide motion-reduce:transition-none xl:rounded-[12px] ${
-          dragging ? "invisible" : ""
+          dragging || active === null ? "invisible" : ""
         }`}
       />
 
       {/* Laid out as the other sections are, its icon where theirs are, but with nothing to drag it by. */}
       <div
         data-section-row
-        className={`group/row relative flex shrink-0 items-center rounded-full transition-colors xl:rounded-[12px] ${rowBackground(active === "Profile")}`}
+        {...tipProps("Profile")}
+        className={`group/row relative flex shrink-0 items-center rounded-full transition-colors xl:w-10 xl:rounded-[12px] ${rowBackground(active === "Profile")}`}
       >
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center xl:w-10">
           <PROFILE_ICON className={iconClass(active === "Profile")} />
@@ -275,11 +291,11 @@ export default function SectionNav({ sections, headings, extras, active, onSelec
         <button
           type="button"
           data-section-ref="Profile"
-          onClick={() => onSelect("Profile")}
+          onClick={() => choose("Profile")}
           className={item(active === "Profile")}
           aria-current={active === "Profile" || undefined}
         >
-          Profile
+          <span className="xl:sr-only">Profile</span>
         </button>
       </div>
 
@@ -304,7 +320,7 @@ export default function SectionNav({ sections, headings, extras, active, onSelec
 
       <AddSectionMenu sections={addable} onAdd={onAdd} />
 
-      <p className="mt-[19px] hidden px-3 text-[13px] leading-5 text-ink-3 xl:block">Drag a section to change its place on the page.</p>
+      {!dragging && tip()}
     </nav>
   )
 }

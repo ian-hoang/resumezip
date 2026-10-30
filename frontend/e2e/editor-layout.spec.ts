@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "./test"
 import { WIDE_SCREEN } from "../src/components/editor/layout"
-import { editorHeading, newResume, pageErrors, preview, saveResumes, settled } from "./helpers"
+import { editorHeading, newResume, pageErrors, preview, previewShown, saveResumes, settled } from "./helpers"
 
 // The editor puts the form beside the preview only where both have room
 // (components/editor/layout.ts). Narrower, an Edit / Preview switch shows one
@@ -207,28 +207,59 @@ test("a field chosen while a new entry slides open keeps the cursor", async ({ p
   expect(errors).toEqual([])
 })
 
-test("on a wide screen, the section list says how many entries each section has", async ({ page }) => {
+test("on a wide screen, the rail's tip names the section and says how many entries it has", async ({ page }) => {
   const errors = pageErrors(page)
   await page.setViewportSize({ width: 1440, height: 900 })
   await newResume(page)
   // The number isn't part of the button's name, as the form lists the entries.
-  await expect(experience(page)).toHaveText(/Experience$/)
+  await expect(experience(page)).toHaveText(/^Experience$/)
 
   await experience(page).click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Role", { exact: true }).fill("Analyst")
-  await expect(experience(page)).toHaveText(/Experience\s*1$/)
   await page.getByRole("button", { name: "Add experience" }).click()
-  await expect(experience(page)).toHaveText(/Experience\s*2$/)
+  await experience(page).hover()
+  await expect(page.getByText(/^Experience\s*2$/)).toBeVisible()
   // Sections with nothing in them have no number.
-  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: /^Projects$/ })).toHaveText(/Projects$/)
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("button", { name: /^Projects$/ })
+    .hover()
+  // Its name is in the tip, and in its button for screen readers.
+  await expect(page.getByText(/^Projects$/)).toHaveCount(2)
+  await expect(page.getByText(/^Projects\s*\d+$/)).toHaveCount(0)
+  await expect(page.getByText(/^Experience\s*2$/)).toBeHidden()
   await expect(preview(page).getByText("Analyst").first()).toBeVisible()
+  expect(errors).toEqual([])
+})
+
+test("on a wide screen, the form can be hidden for a bigger page, and choosing a section brings it back", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await newResume(page)
+  await previewShown(page)
+  const pageWidth = async () => (await preview(page).locator(".react-pdf__Page__canvas").first().boundingBox())!.width
+  const before = await pageWidth()
+  const name = page.getByLabel("Full name", { exact: true })
+  await expect(name).toBeVisible()
+
+  await page.getByRole("button", { name: "Hide the form" }).click()
+  await expect(name).toBeHidden()
+  await expect(page.getByRole("button", { name: "Show the form" })).toHaveAttribute("aria-expanded", "false")
+  await expect.poll(pageWidth).toBeGreaterThan(before + 100)
+
+  await page.getByRole("button", { name: "Show the form" }).click()
+  await expect(name).toBeVisible()
+  await page.getByRole("button", { name: "Hide the form" }).click()
+  await experience(page).click()
+  await expect(editorHeading(page, "Experience", { exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Hide the form" })).toHaveAttribute("aria-expanded", "true")
   expect(errors).toEqual([])
 })
 
 test("a folded entry with a long name stays as wide as the form, its name cut short", async ({ page }) => {
   const errors = pageErrors(page)
-  // Check's panel makes the form narrower, so these don't fit on one line.
+  // The form is too narrow for these names on one line.
   await page.setViewportSize({ width: 1440, height: 900 })
   const paper = (id: number, publicationTitle: string, publicationVenue: string) => ({ id, publicationTitle, publicationVenue })
   await saveResumes(page, [
@@ -254,11 +285,6 @@ test("a folded entry with a long name stays as wide as the form, its name cut sh
     .getByRole("button", { name: /^Publications$/ })
     .click()
   await expect(editorHeading(page, "Publications")).toBeVisible()
-  await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
-    .click()
-  await expect(page.getByRole("tabpanel", { name: /^Check/ })).toBeVisible()
 
   // Each card, open or folded, ends where the Add button under the list does, so its buttons stay in view.
   const add = await page.getByRole("button", { name: "Add publication" }).boundingBox()
