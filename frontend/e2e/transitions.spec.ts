@@ -236,7 +236,8 @@ test("back on the dashboard from a resume, the page comes in on the switch's one
     return seen
   })
   await page.getByRole("link", { name: "Dashboard" }).click()
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Mara")
+  // The greeting by name: the editor can still be on the page as the switch begins, with headings of its own.
+  await expect(page.getByRole("heading", { level: 1, name: /^Good \w+, Mara$/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Mara at Stripe/ }).first()).toBeVisible()
   expect((await fadedAlone.jsonValue()).faded).toBe(false)
   expect(errors).toEqual([])
