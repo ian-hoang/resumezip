@@ -89,7 +89,8 @@
   } else if name == "Education" and data.education.len() > 0 {
     section(heading-or(hd.education, "Education"), entries(data.education.map(e => {
       let degree = join-present(", ", e.degree, if has(e.gpa) { "GPA " + e.gpa } else { "" })
-      let title = (if has(e.school) { strong(e.school) }, if has(degree) { degree }).filter(part => part != none).join([ - ])
+      // A string, not [ - ]: markup that starts with "- " is a bullet.
+      let title = (if has(e.school) { strong(e.school) }, if has(degree) { degree }).filter(part => part != none).join(" - ")
       let items = ()
       if has(e.coursework) { items.push([*Relevant Coursework:* #e.coursework]) }
       if has(e.involvement) { items.push([*Involvement:* #e.involvement]) }
