@@ -106,12 +106,12 @@
   let reach = (
     if has(p.location) { p.location },
     if has(p.phone) { p.phone },
-    if has(p.email) { email-link(p.email, p.email) },
+    if has(p.email) { email-link(p.email, underlined(p.email)) },
   ).filter(item => item != none)
   let profiles = (
-    if has(p.linkedin) { web-link(p.linkedin, p.linkedin) },
-    if has(p.github) { web-link(p.github, p.github) },
-    if has(p.website) { web-link(p.website, p.website) },
+    if has(p.linkedin) { web-link(p.linkedin, underlined(p.linkedin)) },
+    if has(p.github) { web-link(p.github, underlined(p.github)) },
+    if has(p.website) { web-link(p.website, underlined(p.website)) },
   ).filter(item => item != none)
   let gap = 12pt
   layout(size => range(calc.max(reach.len(), profiles.len()))
@@ -167,13 +167,13 @@
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), data.projects.map(pr => entry(
       row(
-        project-header(pr, h(4pt) + [|] + h(4pt), url => web-link(url, url)),
+        project-header(pr, h(4pt) + [|] + h(4pt), url => web-link(url, underlined(url))),
         strong(pr.date),
       ),
       pr.bullets,
     )).join(v(sized(5.2pt))))
   } else if name == "Publications" and data.publications.len() > 0 {
-    section(heading-or(hd.publications, "Publications"), citations(data.publications, web-link, gap: 5.2pt))
+    section(heading-or(hd.publications, "Publications"), citations(data.publications, (url, body) => web-link(url, underlined(body)), gap: 5.2pt))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), bullets(data.skills.map(s => {
       if has(s.name) { strong(s.name + ":") + h(0.5em) }

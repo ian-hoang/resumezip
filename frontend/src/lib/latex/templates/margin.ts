@@ -26,8 +26,9 @@ import {
   projectHeader,
   runs,
   sectionsOf,
-  shownLink,
   signs,
+  underline,
+  underlined,
   unlessPdfLatex,
   webLink,
   type Fallbacks,
@@ -262,8 +263,8 @@ function body(data: TemplateData): string {
   const heading = (title: string) => add("", `\\resumeSection{${title}}`)
 
   const { profile } = data
-  const reach = [latex(profile.location), latex(profile.phone), profile.email && emailLink(profile.email)]
-  const web = [profile.linkedin, profile.github, profile.website].map((url) => url && webLink(url))
+  const reach = [latex(profile.location), latex(profile.phone), profile.email && emailLink(profile.email, underline)]
+  const web = [profile.linkedin, profile.github, profile.website].map((url) => url && webLink(url, underline))
   const contacts = [reach, web].map((items) => items.filter(Boolean).map((item) => `\\mbox{${item}}`)).filter((items) => items.length)
   // The name's line is there even without a name, as in the PDF.
   if (profile.name || contacts.length) {
@@ -312,12 +313,12 @@ function body(data: TemplateData): string {
         break
       case "projects":
         for (const project of data.projects) {
-          add(`  \\resumeProject{${projectHeader(project, "\\projectSep ", shownLink)}}{${latex(project.date)}}`)
+          add(`  \\resumeProject{${projectHeader(project, "\\projectSep ", underlined)}}{${latex(project.date)}}`)
           bullets(project.bullets.map(runs))
         }
         break
       case "publications":
-        add(citations(data.publications, shownLink, "labelsep=0.7em, topsep=0pt, parsep=0pt, itemsep=\\citationSpace, beginpenalty=10000"))
+        add(citations(data.publications, underlined, "labelsep=0.7em, topsep=0pt, parsep=0pt, itemsep=\\citationSpace, beginpenalty=10000"))
         break
       case "skills":
         for (const skill of data.skills) add(`  \\resumeSkill{${latex(skill.name)}}{${latex(skill.details)}}`)

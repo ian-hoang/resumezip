@@ -130,11 +130,11 @@
   }))
   // Profiles on one line, then how to reach you.
   let profiles = ()
-  if has(p.website) { profiles.push(web-link(p.website, p.website)) }
-  if has(p.linkedin) { profiles.push(web-link(p.linkedin, p.linkedin)) }
-  if has(p.github) { profiles.push(web-link(p.github, p.github)) }
+  if has(p.website) { profiles.push(web-link(p.website, underlined(p.website))) }
+  if has(p.linkedin) { profiles.push(web-link(p.linkedin, underlined(p.linkedin))) }
+  if has(p.github) { profiles.push(web-link(p.github, underlined(p.github))) }
   let reach = ()
-  if has(p.email) { reach.push(email-link(p.email, p.email)) }
+  if has(p.email) { reach.push(email-link(p.email, underlined(p.email))) }
   if has(p.phone) { reach.push(p.phone) }
   if has(p.location) { reach.push(p.location) }
   // The first line far enough below the name that it doesn't read as part of it.
@@ -203,7 +203,7 @@
       block(sticky: pr.bullets.len() > 0, {
         entry-name(project-name(pr))
         if has(pr.techStack) { h(0.4em) + descript([| ] + pr.techStack) }
-        let when = (pr.date, ..pr.links.map(url => web-link(url, url))).filter(has)
+        let when = (pr.date, ..pr.links.map(url => web-link(url, underlined(url)))).filter(has)
         if when.len() > 0 {
           v(spaced(4.4pt))
           location(when.join([ | ]))
@@ -212,7 +212,7 @@
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
-    (heading-or(hd.publications, "Publications"), citations(data.publications, web-link))
+    (heading-or(hd.publications, "Publications"), citations(data.publications, (url, body) => web-link(url, underlined(body))))
   } else if name == "Leadership" and data.leadership.len() > 0 {
     (heading-or(hd.leadership, "Leadership"), entries(data.leadership.map(l => entry(l.organization, l.role, date-range(l.start, l.end), l.location, items: l.bullets))))
   } else if name == "Volunteership" and data.volunteer.len() > 0 {

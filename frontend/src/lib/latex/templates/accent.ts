@@ -25,9 +25,10 @@ import {
   projectHeader,
   ROW,
   runs,
-  shownLink,
   signs,
   sum,
+  underline,
+  underlined,
   unlessPdfLatex,
   webLink,
   type Fallbacks,
@@ -229,10 +230,10 @@ function body(data: TemplateData, units: Units): string {
   const contacts = [
     latex(profile.location),
     latex(profile.phone),
-    profile.email && emailLink(profile.email),
-    profile.linkedin && webLink(profile.linkedin),
-    profile.github && webLink(profile.github),
-    profile.website && webLink(profile.website),
+    profile.email && emailLink(profile.email, underline),
+    profile.linkedin && webLink(profile.linkedin, underline),
+    profile.github && webLink(profile.github, underline),
+    profile.website && webLink(profile.website, underline),
   ].filter(Boolean)
   if (profile.name) add(`\\resumeName{${name}}`)
   // Each item kept whole, a line breaking between them.
@@ -273,7 +274,7 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         entries(data.projects, (project) => {
-          add(`  \\resumeProject{${projectHeader(project, " \\textcolor{accent}{\\textbar} ", shownLink)}}{${latex(project.date)}}`)
+          add(`  \\resumeProject{${projectHeader(project, " \\textcolor{accent}{\\textbar} ", underlined)}}{${latex(project.date)}}`)
           items(project.bullets.map(runs))
         })
         break
@@ -281,7 +282,7 @@ function body(data: TemplateData, units: Units): string {
         add(
           citations(
             data.publications,
-            shownLink,
+            underlined,
             `labelindent=0pt, labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${sum(space(5), "-" + lead(BASE))}, before=\\vspace{-${lead(BASE)}}`,
           ),
         )

@@ -53,10 +53,10 @@
   let items = ()
   if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push(p.phone) }
-  if has(p.email) { items.push(email-link(p.email, p.email)) }
-  if has(p.linkedin) { items.push(web-link(p.linkedin, p.linkedin)) }
-  if has(p.github) { items.push(web-link(p.github, p.github)) }
-  if has(p.website) { items.push(web-link(p.website, p.website)) }
+  if has(p.email) { items.push(email-link(p.email, underlined(p.email))) }
+  if has(p.linkedin) { items.push(web-link(p.linkedin, underlined(p.linkedin))) }
+  if has(p.github) { items.push(web-link(p.github, underlined(p.github))) }
+  if has(p.website) { items.push(web-link(p.website, underlined(p.website))) }
   // Where you are and how to reach you on one line, your profiles on the next.
   if items.len() > 0 {
     v(sized(6pt))
@@ -88,11 +88,11 @@
     section(heading-or(hd.work, "Experience"), entries(data.work.map(w => entry(w.company, date-range(w.start, w.end), w.role, w.location, items: w.bullets))))
   } else if name == "Projects" and data.projects.len() > 0 {
     section(heading-or(hd.projects, "Projects"), entries(data.projects.map(pr => {
-      block(sticky: true, row(project-header(pr, text(fill: grey, [ | ]), url => web-link(url, url)), text(fill: grey, pr.date)))
+      block(sticky: true, row(project-header(pr, text(fill: grey, [ | ]), url => web-link(url, underlined(url))), text(fill: grey, pr.date)))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
-    section(heading-or(hd.publications, "Publications"), citations(data.publications, web-link, gap: 5pt))
+    section(heading-or(hd.publications, "Publications"), citations(data.publications, (url, body) => web-link(url, underlined(body)), gap: 5pt))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), grid(
       columns: (auto, 1fr),
