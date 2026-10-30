@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./test"
-import { newResume, pageErrors } from "./helpers"
+import { editorTitle, newResume, pageErrors } from "./helpers"
 
 // A date field's calendar (components/editor/DatePicker.tsx): opened from the
 // icon at the field's end, a year first, then a month, or the year alone, no
@@ -63,7 +63,7 @@ test("the calendar picks a year, then a month or the year alone, or no date, and
 
   // A press anywhere else closes it.
   await endIcon.click()
-  await page.getByRole("heading", { name: "Experience" }).click()
+  await editorTitle(page).click()
   await expect(endCalendar).toBeHidden()
   expect(errors).toEqual([])
 })
