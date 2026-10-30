@@ -65,6 +65,8 @@ export interface BoxStyler {
   toggle: (start: number, end: number, style: Style) => void
   /** Links the words to `address`, or with "", unlinks them. */
   link: (start: number, end: number, address: string) => void
+  /** The whole of the link the character at `at` is in. */
+  linkAround: (at: number) => Range | undefined
 }
 
 /** Each box on the page, for styling words picked on the preview (pickedStyle.ts). */
@@ -175,9 +177,11 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
   linkingNow.current = linking
   const toolbar = useRef<HTMLDivElement>(null)
   // What the toolbar's buttons do, set by the effect that makes edits.
-  const actions = useRef<{ toggle: (style: Style) => void; link: (range: Range, address: string) => void; editLink: () => void } | null>(
-    null,
-  )
+  const actions = useRef<{
+    toggle: (style: Style) => void
+    link: (range: Range | null, address: string) => void
+    editLink: () => void
+  } | null>(null)
 
   // Text the box didn't save (the first, or a change from another tab):
   // shown as given, with nothing to undo, as a text box does.
@@ -312,7 +316,8 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       pending = { at: before.start, style: now ^ style }
     }
 
-    // The link box, for the words selected, or with none, the link the cursor is in.
+    // The link box, for the words selected, or with none, the link the cursor is in. A click in
+    // the toolbar's address opens it too, with focus there already, and the words as they were.
     const editLink = () => {
       const before = selection()
       const s = current().styled
@@ -323,12 +328,17 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
         selectIn(box, around.start, around.end)
         selected = { start: around.start, end: around.end }
       }
-      placeToolbar()
-      setLinking({ ...range, address: around?.address ?? stylesOver(s, range.start, range.end, kind).link })
+      if (box.ownerDocument.activeElement === box) placeToolbar()
+      const opened = { ...range, address: around?.address ?? stylesOver(s, range.start, range.end, kind).link }
+      // At once, so the selection moving into the address doesn't hide the toolbar.
+      linkingNow.current = opened
+      setLinking(opened)
     }
 
-    // Links the words to `address`, or unlinks them with "", and puts the selection back on them.
-    const link = (range: Range, address: string) => {
+    // Links the words (those in the link box, or else the ones selected) to `address`, or unlinks
+    // them with "", and puts the selection back on them.
+    const link = (words: Range | null, address: string) => {
+      const range = words ?? selection()
       setLinking(null)
       linkingNow.current = null
       box.focus({ preventScroll: true })
@@ -358,6 +368,7 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       stylesOver: (start, end) => stylesOver(current().styled, start, end, kind),
       toggle: (start, end, style) => quietly(toggled(current().styled, start, end, style, kind), { start, end }),
       link: (start, end, address) => quietly(linked(current().styled, start, end, address, kind), { start, end }),
+      linkAround: (at) => linkAround(current().styled, at),
     })
 
     /** Reads back what the browser changed itself, and makes it an edit. */
@@ -610,7 +621,7 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
           editingLink={linking && linking.address}
           onToggle={(style) => actions.current?.toggle(style)}
           onEditLink={() => actions.current?.editLink()}
-          onLink={(address) => linking && actions.current?.link(linking, address)}
+          onLink={(address) => actions.current?.link(linking, address)}
           onCancelLink={() => closeLink(true)}
           onLeave={() => closeLink(false)}
           toolbarRef={toolbar}

@@ -30,5 +30,20 @@ export function onPickedInBox(listener: () => void) {
   }
 }
 
+/** Calls `then` with the next words picked in a box, if they're picked within `ms`. Returns what stops waiting. */
+export function whenPickedInBox(then: (picked: PickedInBox) => void, ms = 1000): () => void {
+  const stop = () => {
+    clearTimeout(timer)
+    unlisten()
+  }
+  const unlisten = onPickedInBox(() => {
+    if (!picked) return
+    stop()
+    then(picked)
+  })
+  const timer = setTimeout(stop, ms)
+  return stop
+}
+
 /** Marks the preview's toolbar: a press in it keeps the words picked. */
 export const KEEPS_PICKED = "data-keeps-picked"
