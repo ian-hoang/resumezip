@@ -293,7 +293,10 @@ test("on a wide screen, the form slides away and back, and the page grows and sh
     await recording.dispose()
     return frames
   }
-  /** How many frames were part way between the first and the last. */
+  /**
+   * How many frames were part way between the first and the last. One is enough to show it didn't change at
+   * once: CI's machines draw few frames while the form slides, as few as one of the 300ms.
+   */
   const between = (values: number[]) => {
     const [low, high] = [Math.min(values[0], values.at(-1)!), Math.max(values[0], values.at(-1)!)]
     return values.filter((value) => value > low + 2 && value < high - 2).length
@@ -301,13 +304,13 @@ test("on a wide screen, the form slides away and back, and the page grows and sh
 
   const hiding = await widthsWhile(() => page.getByRole("button", { name: "Hide the form" }).click())
   expect(hiding.at(-1)!.panel).toBeGreaterThan(hiding[0].panel + 300)
-  expect(between(hiding.map((frame) => frame.panel))).toBeGreaterThanOrEqual(2)
-  expect(between(hiding.map((frame) => frame.page))).toBeGreaterThanOrEqual(2)
+  expect(between(hiding.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
+  expect(between(hiding.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
 
   const showing = await widthsWhile(() => experience(page).click())
   expect(showing.at(-1)!.panel).toBeLessThan(showing[0].panel - 300)
-  expect(between(showing.map((frame) => frame.panel))).toBeGreaterThanOrEqual(2)
-  expect(between(showing.map((frame) => frame.page))).toBeGreaterThanOrEqual(2)
+  expect(between(showing.map((frame) => frame.panel))).toBeGreaterThanOrEqual(1)
+  expect(between(showing.map((frame) => frame.page))).toBeGreaterThanOrEqual(1)
   await expect(editorHeading(page, "Experience", { exact: true })).toBeVisible()
   expect(errors).toEqual([])
 })
