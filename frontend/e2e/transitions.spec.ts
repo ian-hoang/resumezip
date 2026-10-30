@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { editorHeading, newResume, pageErrors, previewShown, settled, transitionsDone } from "./helpers"
+import { editorHeading, newResume, pageErrors, previewShown, saveResumes, settled, transitionsDone } from "./helpers"
+import { MARA } from "./resumes"
 
 // What a click brings up fades in, rather than appearing all at once, unless
 // the visitor asks for less motion.
@@ -206,6 +207,38 @@ test("on a wide screen the template gallery drops in solid, and only what's in i
   expect(seen.panel).toBe(1)
   expect(seen.contents).toBeLessThan(1)
   await page.keyboard.press("Escape")
+  expect(errors).toEqual([])
+})
+
+test("back on the dashboard from a resume, the page comes in on the switch's one crossfade, with its resumes", async ({ page }) => {
+  const errors = pageErrors(page)
+  await saveResumes(page, [MARA])
+  await page.goto("/create/dashboard")
+  test.skip(
+    !(await page.evaluate(() => "startViewTransition" in document && "types" in ViewTransition.prototype)),
+    "The page shrinks back into its place only with typed view transitions",
+  )
+  await page
+    .getByRole("link", { name: /Mara at Stripe/ })
+    .first()
+    .click()
+  await previewShown(page)
+  // From here on, whether anything in the dashboard's sheet faded in on its own. A resume's
+  // page and name are pictured apart from the rest in the switch, so they'd be there well
+  // before the sheet and the greeting, which faded in twice.
+  const fadedAlone = await page.evaluateHandle(() => {
+    const seen = { faded: false }
+    const look = () => {
+      for (const child of document.querySelectorAll("main > *"))
+        if (child.getAnimations().some((animation) => (animation as CSSAnimation).animationName === "page-in")) seen.faded = true
+    }
+    new MutationObserver(look).observe(document.body, { childList: true, subtree: true })
+    return seen
+  })
+  await page.getByRole("link", { name: "Dashboard" }).click()
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Mara")
+  await expect(page.getByRole("link", { name: /Mara at Stripe/ }).first()).toBeVisible()
+  expect((await fadedAlone.jsonValue()).faded).toBe(false)
   expect(errors).toEqual([])
 })
 
