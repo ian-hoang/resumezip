@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { expectText, pageErrors, preview, previewShown, printed, saveResumes, savedResume, selectInBox } from "./helpers"
+import { expectText, pageErrors, preview, previewShown, printed, saveResumes, savedResume, selectInBox, settled } from "./helpers"
 
 // Selecting words in a styled box shows a toolbar over them: bold, italic,
 // underline and link, each also on a key (⌘B, ⌘I, ⌘U, ⌘K). A link underlines
@@ -152,6 +152,49 @@ test("⌘U underlines, and ⌘K links, words; the link is underlined, and U take
   expect(errors).toEqual([])
 })
 
+/**
+ * Rests the mouse on a link on the preview. Scrolled into view first, and only then pointed at:
+ * Playwright's hover can scroll the preview as the pointer arrives, and a scroll puts the pill away.
+ */
+async function pointAt(link: Locator) {
+  await link.scrollIntoViewIfNeeded()
+  await link.page().evaluate(() => new Promise(requestAnimationFrame))
+  const { x, y, width, height } = (await link.boundingBox())!
+  await link.page().mouse.move(x + width / 2, y + height / 2, { steps: 4 })
+}
+
+test("the address slides open beside the link button and shut again, rather than popping in and out", async ({ page }) => {
+  const errors = pageErrors(page)
+  const box = await openBox(page, "• Shipped the dashboard on time")
+  await selectInBox(box, 14, 23)
+  await expect(toolbar(page)).toBeVisible()
+  // From here on, whether what holds the address was given a slide as it opened or shut: a
+  // transition of its columns. Read as the page changes rather than frame by frame, as WebKit
+  // on CI can draw no frame within the 220ms slide.
+  const slid = await page.evaluateHandle(() => {
+    const seen = { open: false, shut: false }
+    new MutationObserver((changes) => {
+      for (const { target } of changes) {
+        if (!(target instanceof HTMLElement) || target.dataset.grow === undefined) continue
+        const sliding = target
+          .getAnimations()
+          .some((animation) => (animation as CSSTransition).transitionProperty === "grid-template-columns")
+        if (sliding) seen[target.dataset.grow === "open" ? "open" : "shut"] = true
+      }
+    }).observe(document.body, { attributes: true, attributeFilter: ["data-grow"], subtree: true })
+    return seen
+  })
+  await toolbar(page).getByRole("button", { name: "Link" }).click()
+  const address = toolbar(page).getByRole("textbox", { name: "Link address" })
+  await expect(address).toBeFocused()
+  // Open all the way first: shut before it had moved, there'd be nothing to slide back.
+  await settled(toolbar(page))
+  await address.press("Escape")
+  await expect(address).toBeHidden()
+  expect(await slid.jsonValue()).toEqual({ open: true, shut: true })
+  expect(errors).toEqual([])
+})
+
 test("linked words show their address beside the link button, to change there, and the link button takes the link off", async ({
   page,
 }) => {
@@ -191,7 +234,7 @@ test("pointing at a link on the preview shows its address over it, to change or 
   await expect(link).toHaveCount(1)
   await expect(link).toHaveAttribute("target", "_blank")
   const pill = page.getByRole("toolbar", { name: "Link" })
-  await link.hover()
+  await pointAt(link)
   await expect(pill).toBeVisible()
   const address = pill.getByRole("textbox", { name: "Link address" })
   await expect(address).toHaveValue("example.com/dash")
@@ -209,7 +252,7 @@ test("pointing at a link on the preview shows its address over it, to change or 
   await page.getByRole("heading", { level: 1 }).first().click()
   await page.mouse.move(0, 0)
   await expect(pill).toBeHidden()
-  await preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com/new"]').hover()
+  await pointAt(preview(page).locator('.react-pdf__Page__annotations a[href^="https://example.com/new"]'))
   await expect(pill).toBeVisible()
   await pill.getByRole("button", { name: "Link" }).click()
   await expect.poll(() => saved(page)).toBe("• Shipped the dashboard on time")
