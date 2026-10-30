@@ -2,14 +2,15 @@
 
 import type React from "react"
 import { useEffect, useId, useRef, useState } from "react"
-import { Pencil } from "lucide-react"
+import { Calendar, Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
 import { shortcut } from "@/lib/keys"
 import { bulletLines, offsetOfLine, withBullets } from "./arrange"
 import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
-import { reducedMotion } from "./layout"
+import { reducedMotion, scrollerOf } from "./layout"
 import { wordsIn, type PickedWords } from "./previewPick"
+import DatePicker, { type PickerPlace } from "./DatePicker"
 import { bulletLength } from "./styledText"
 import { KEEPS_PICKED, setPickedInBox } from "./pickedStyle"
 import { boxStylers, StyledBox } from "./StyledBox"
@@ -35,6 +36,8 @@ interface FieldProps {
   multiline?: boolean
   /** A multiline box's least height, as a class: as tall as three lines unless given. */
   boxHeight?: string
+  /** A date, which a picker under it can fill in, and an end date, which can also be Present. It can still be typed in. */
+  date?: "date" | "end"
 }
 
 /**
@@ -123,15 +126,77 @@ export function Field({
   multiline,
   hint,
   boxHeight = "min-h-24",
+  date,
 }: FieldProps) {
   const noteId = useId()
   const boxId = useId()
   const hintId = useId()
+  const pickerId = useId()
+  const [picking, setPicking] = useState(false)
+  // Where the picker is, fixed to the window: as wide as the field, over it unless the form's top is too close.
+  const [place, setPlace] = useState<PickerPlace | null>(null)
+  const fieldRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const calendarRef = useRef<HTMLButtonElement>(null)
+  const openPicker = () => {
+    const field = fieldRef.current
+    const input = inputRef.current
+    if (!field || !input) return
+    // Just over the date typed, over its label too, and a little wider than the field on both sides.
+    const box = input.getBoundingClientRect()
+    const above = box.top - scrollerOf(field).getBoundingClientRect().top > PICKER_HEIGHT
+    const side = { left: box.left - PICKER_OVERHANG, width: box.width + 2 * PICKER_OVERHANG }
+    setPlace(above ? { ...side, bottom: window.innerHeight - box.top + 4 } : { ...side, top: box.bottom + 4 })
+    setPicking(true)
+  }
+  // The picker is in a layer of its own, so it's in the field for leaving, pressing away and Escape.
+  const inPicker = (node: Node | null) => !!node && !!document.getElementById(pickerId)?.contains(node)
+  // The picker closes with a press anywhere else, as a menu does, and as the form scrolls or the window resizes
+  // under it, being fixed where the field was.
+  useEffect(() => {
+    if (!picking) return
+    const away = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!fieldRef.current?.contains(target) && !document.getElementById(pickerId)?.contains(target)) setPicking(false)
+    }
+    const close = () => setPicking(false)
+    document.addEventListener("pointerdown", away)
+    window.addEventListener("scroll", close, true)
+    window.addEventListener("resize", close)
+    return () => {
+      document.removeEventListener("pointerdown", away)
+      window.removeEventListener("scroll", close, true)
+      window.removeEventListener("resize", close)
+    }
+  }, [picking, pickerId])
   const describedBy = [hint && hintId, flag && noteId].filter(Boolean).join(" ") || undefined
   const look = underlined(!!flag)
   const Labelled = multiline ? "div" : "label"
   return (
-    <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+    <div
+      ref={fieldRef}
+      data-field={name}
+      // Leaving the field and its picker for anything else, as with Tab, closes the picker.
+      onBlur={
+        date
+          ? (event) => {
+              const next = event.relatedTarget as Node | null
+              if (!fieldRef.current?.contains(next) && !inPicker(next)) setPicking(false)
+            }
+          : undefined
+      }
+      onKeyDown={
+        date
+          ? (event) => {
+              if (event.key !== "Escape" || !picking) return
+              event.stopPropagation()
+              setPicking(false)
+              calendarRef.current?.focus()
+            }
+          : undefined
+      }
+      className={`flex min-w-0 flex-col gap-1.5 ${className} ${date ? "relative" : ""}`}
+    >
       <Labelled className="group/field relative flex min-w-0 flex-col gap-1.5">
         <span
           id={`${boxId}-label`}
@@ -155,8 +220,11 @@ export function Field({
           />
         ) : (
           <input
+            ref={inputRef}
             type={type}
             value={value}
+            // Named by its label alone, not the calendar button in it too.
+            aria-labelledby={date ? `${boxId}-label` : undefined}
             placeholder={placeholder}
             aria-describedby={describedBy}
             aria-invalid={flag?.level === "fix" || undefined}
@@ -165,11 +233,40 @@ export function Field({
             spellCheck={web ? false : undefined}
             autoCapitalize={web ? "off" : undefined}
             onChange={(event) => onChange(event.target.value)}
-            className={`${look} placeholder:text-ink-2/50`}
+            className={`${look} placeholder:text-ink-2/50 ${date ? "pr-9" : ""}`}
           />
+        )}
+        {date && (
+          <button
+            ref={calendarRef}
+            type="button"
+            aria-label="Pick a date"
+            title="Pick a date"
+            aria-haspopup="dialog"
+            aria-expanded={picking}
+            aria-controls={picking ? pickerId : undefined}
+            onClick={() => (picking ? setPicking(false) : openPicker())}
+            className="absolute bottom-1 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-expanded:bg-fill aria-expanded:text-accent [&_svg]:size-[17px]"
+          >
+            <Calendar aria-hidden="true" />
+          </button>
         )}
         <FocusLine />
       </Labelled>
+      {date && picking && place && (
+        <DatePicker
+          place={place}
+          id={pickerId}
+          labelledBy={`${boxId}-label`}
+          value={value}
+          end={date === "end"}
+          onPick={(picked) => {
+            onChange(picked)
+            setPicking(false)
+            inputRef.current?.focus()
+          }}
+        />
+      )}
       {multiline ? (
         <span id={hintId} className="text-[13px] leading-normal text-ink-2">
           {hint && `${hint} `}
@@ -186,6 +283,11 @@ export function Field({
     </div>
   )
 }
+
+// About how tall the date picker is: it opens over its field when there's this much room there.
+const PICKER_HEIGHT = 180
+// How far the date picker reaches past its field on each side.
+const PICKER_OVERHANG = 20
 
 /** Selects a line's words in a bullets box, after its "• ", to point at one bullet. */
 function selectLine(field: HTMLElement, line: number) {
