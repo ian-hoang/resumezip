@@ -101,14 +101,14 @@ export const PROFILE_FIELDS: readonly ProfileFieldDef<ProfileKey>[] = PROFILE
 // The end's placeholder is a date: "Present" there read as what a blank end means, and a blank one prints nothing.
 const dates = <Prefix extends string>(prefix: Prefix) =>
   [
-    { key: `${prefix}StartDate`, label: "Start", placeholder: "Jan 2024", size: "half" },
-    { key: `${prefix}EndDate`, label: "End", placeholder: "Dec 2025", size: "half" },
+    { key: `${prefix}StartDate`, label: "Start date", placeholder: "Jan 2024", size: "half" },
+    { key: `${prefix}EndDate`, label: "End date", placeholder: "Dec 2025", size: "half" },
   ] as const
 
 const bullets = <Key extends string>(key: Key) =>
   ({
     key,
-    label: "What you did",
+    label: "Description",
     placeholder: "Built a service that cut page load time by 30%",
     size: "full",
     type: "bullets",
@@ -128,8 +128,8 @@ const DEFINITIONS = {
       { key: "degree", label: "Degree", placeholder: "B.S. in Computer Science", size: "full" },
       { key: "schoolLocation", label: "Location", placeholder: "Stanford, CA", size: "half" },
       { key: "gpa", label: "GPA", placeholder: "3.9 / 4.0", size: "half" },
-      { key: "schoolStartDate", label: "Start", placeholder: "Sep 2024", size: "half" },
-      { key: "schoolEndDate", label: "End", placeholder: "Jun 2028", size: "half" },
+      { key: "schoolStartDate", label: "Start date", placeholder: "Sep 2024", size: "half" },
+      { key: "schoolEndDate", label: "End date", placeholder: "Jun 2028", size: "half" },
       { key: "coursework", label: "Relevant coursework", placeholder: "Data Structures, Operating Systems", size: "full" },
       { key: "involvement", label: "Involvement", placeholder: "ACM, Google Developer Student Club", size: "full" },
     ],
@@ -189,12 +189,12 @@ const DEFINITIONS = {
       ],
     },
     fields: [
-      { key: "projectName", label: "Name", placeholder: "Gitlytics", size: "half" },
-      { key: "projectDate", label: "Dates", placeholder: "Jun – Aug 2025", size: "full" },
+      { key: "projectName", label: "Name", placeholder: "Gitlytics", size: "full" },
+      ...dates("project"),
       { key: "techStack", label: "Tech stack", placeholder: "Next.js, TypeScript, PostgreSQL", size: "full" },
       { key: "projectGithub", label: "GitHub", placeholder: "github.com/you/project", size: "half" },
       { key: "additionalLink", label: "Website", placeholder: "project.dev", size: "half" },
-      { ...bullets("projectDescription"), label: "What it does" },
+      bullets("projectDescription"),
     ],
   },
   Publications: {

@@ -153,7 +153,7 @@ describe("R3 entries read as typed", () => {
     expect(check("R3", jake, reading([], missing)).findings).toEqual([
       expect.objectContaining({
         place: { kind: "entry", section: "Work", entry: 0, field: "workEndDate" },
-        message: "Hiring software may not read the end with this entry",
+        message: "Hiring software may not read the end date with this entry",
       }),
     ])
   })
@@ -232,11 +232,11 @@ describe("R3 entries read as typed", () => {
       return check("R3", resume, reading([], missing)).findings.map(({ message, suggestion }) => ({ message, suggestion }))
     }
     expect(noStart("Jan 2024")).toEqual([
-      { message: "Hiring software may not read the start with this entry", suggestion: expect.stringContaining("dismiss this") },
+      { message: "Hiring software may not read the start date with this entry", suggestion: expect.stringContaining("dismiss this") },
     ])
     expect(noStart("Q1 of 2024")).toEqual([
       {
-        message: "Hiring software doesn't read the start with this entry",
+        message: "Hiring software doesn't read the start date with this entry",
         suggestion: "Write it the usual way, like “Jan 2024”, “2024” or “Present”.",
       },
     ])
@@ -246,6 +246,27 @@ describe("R3 entries read as typed", () => {
     const merged = { ...found, sections: [{ name: "Work" as const, entries: [] }] }
     expect(check("R3", jake, reading([], merged)).findings).toEqual([
       expect.objectContaining({ place: { kind: "section", section: "Work" }, message: "Hiring software reads 0 entries here, not 1" }),
+    ])
+  })
+
+  test("asks only for a name on each project, which has no role or place and needn't have a date", () => {
+    const resume = {
+      ...jake,
+      projectsSection: [
+        { id: 1, projectName: "Inkwell" },
+        { id: 2, projectName: "Ferry" },
+      ],
+    }
+    const merged = {
+      ...found,
+      sections: [...found.sections, { name: "Projects" as const, entries: [{ fields: { projectName: "Inkwell" }, lines: [] }] }],
+    }
+    expect(check("R3", resume, reading([], merged)).findings).toEqual([
+      expect.objectContaining({
+        place: { kind: "section", section: "Projects" },
+        message: "Hiring software reads 1 entry here, not 2",
+        suggestion: "A project may be running into the next one. Check each has its own name.",
+      }),
     ])
   })
 })

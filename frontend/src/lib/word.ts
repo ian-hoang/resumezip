@@ -29,11 +29,16 @@ import { crc32, zip } from "@/lib/zip"
 /** A Word file's type, for a download. */
 export const WORD_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-/** Text in one style, linked to `link` if it has one. */
+/**
+ * Text in one style, linked to `link` if it has one. A link is underlined in
+ * Word's Hyperlink style unless `underline` says whether it is, as words
+ * linked in a bullet or prose do: they show as they print.
+ */
 interface Piece {
   text: string
   bold?: boolean
   italic?: boolean
+  underline?: boolean
   link?: string
 }
 
@@ -91,8 +96,8 @@ const escape = (text: string) =>
 
 // A run of text in one style. A line break in it stays one, and a tab is a
 // space, since tab stops here are for dates.
-function run({ text, bold, italic }: Piece, link: boolean): string {
-  const style = `${link ? '<w:rStyle w:val="Hyperlink"/>' : ""}${bold ? "<w:b/><w:bCs/>" : ""}${italic ? "<w:i/><w:iCs/>" : ""}`
+function run({ text, bold, italic, underline }: Piece, link: boolean): string {
+  const style = `${link && underline === undefined ? '<w:rStyle w:val="Hyperlink"/>' : ""}${bold ? "<w:b/><w:bCs/>" : ""}${italic ? "<w:i/><w:iCs/>" : ""}${underline ? '<w:u w:val="single"/>' : ""}`
   const lines = text
     .replace(/\t/g, " ")
     .split(/\r\n?|\n/)
@@ -171,15 +176,17 @@ function documentOf(data: TemplateData, page: Page): { xml: string; links: strin
   }
 
   const heading = (text: string) => add("Heading1", [{ text }])
+  // Words the person styled, as they print: underlined only where they are, linked or not.
+  const printed = (line: Piece[]) => line.map((piece) => ({ ...piece, underline: !!piece.underline }))
   // A paragraph's lines in one paragraph, with a line break between them.
   const prose = (paragraphs: Paragraph[]) =>
     paragraphs.forEach((lines) =>
       add(
         "BodyText",
-        lines.flatMap((line, index) => (index ? [{ text: "\n" }, ...line] : line)),
+        lines.flatMap((line, index) => (index ? [{ text: "\n" }, ...printed(line)] : printed(line))),
       ),
     )
-  const bullets = (items: Piece[][]) => items.forEach((item) => add("ListBullet", item, { list: BULLETS }))
+  const bullets = (items: Piece[][]) => items.forEach((item) => add("ListBullet", printed(item), { list: BULLETS }))
   /**
    * An entry: its lines, each with something on the left and on the right
    * margin, then its bullets. Lines with nothing on them are left out. The
@@ -258,7 +265,7 @@ function documentOf(data: TemplateData, page: Page): { xml: string; links: strin
           if (project.name) parts.push([{ text: project.name, bold: true, link: project.link ? web(project.link) : undefined }])
           if (project.techStack) parts.push([{ text: project.techStack, italic: true }])
           for (const url of project.links) parts.push([{ text: url, link: web(url) }])
-          entry([[joined(parts, " | "), [{ text: project.date }]]], project.bullets)
+          entry([[joined(parts, " | "), [{ text: dateRange(project.start, project.end) }]]], project.bullets)
         }
         break
       case "publications":

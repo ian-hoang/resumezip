@@ -74,10 +74,10 @@
   let items = ()
   if has(p.location) { items.push(p.location) }
   if has(p.phone) { items.push("P: " + p.phone) }
-  if has(p.email) { items.push(email-link(p.email, p.email)) }
-  if has(p.linkedin) { items.push(web-link(p.linkedin, p.linkedin)) }
-  if has(p.github) { items.push(web-link(p.github, p.github)) }
-  if has(p.website) { items.push(web-link(p.website, p.website)) }
+  if has(p.email) { items.push(email-link(p.email, underlined(p.email))) }
+  if has(p.linkedin) { items.push(web-link(p.linkedin, underlined(p.linkedin))) }
+  if has(p.github) { items.push(web-link(p.github, underlined(p.github))) }
+  if has(p.website) { items.push(web-link(p.website, underlined(p.website))) }
   if items.len() > 0 {
     v(sized(6.38pt))
     // A long line wraps between items, never inside a link.
@@ -121,12 +121,12 @@
       let parts = ()
       if has(pr.name) { parts.push(text(weight: "bold", upper(project-name(pr)))) }
       if has(pr.techStack) { parts.push(text(fill: gray, pr.techStack)) }
-      for url in pr.links { parts.push(box(web-link(url, text(fill: gray, url)))) }
-      block(sticky: true, row(parts.join(text(fill: gray, [ | ])), pr.date))
+      for url in pr.links { parts.push(box(web-link(url, underlined(text(fill: gray, url))))) }
+      block(sticky: true, row(parts.join(text(fill: gray, [ | ])), dates(pr.start, pr.end)))
       bullets(pr.bullets)
     })))
   } else if name == "Publications" and data.publications.len() > 0 {
-    section(heading-or(hd.publications, "Publications"), citations(data.publications, web-link, gap: 5.78pt))
+    section(heading-or(hd.publications, "Publications"), citations(data.publications, (url, body) => web-link(url, underlined(body)), gap: 5.78pt))
   } else if name == "Skills" and data.skills.len() > 0 {
     section(heading-or(hd.skills, "Skills"), data.skills.map(s => {
       if has(s.name) { strong(s.name + ":") + [ ] }

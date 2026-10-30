@@ -31,14 +31,24 @@
   margin * tune.margin
 }
 
+// An underline in em, so it follows the text size: for the words the user
+// underlined, and the printed links of templates without an underline of
+// their own (`ul`).
+#let underlined(body) = underline(offset: 0.18em, stroke: 0.05em, evade: false, body)
+
 // A bullet, or a line of prose: its runs from resumeData.ts, with the words
-// the user marked **bold** or *italic* set that way. Bullets a template builds
-// itself (like "Relevant Coursework: ...") are content already and pass through.
+// the user styled set that way, and linked ones clickable. A link prints its
+// words alone, underlined only when they are, so it looks like the rest of
+// the line to hiring software. `underline` and `link` are only there when
+// set. Bullets a template builds itself (like "Relevant Coursework: ...") are
+// content already and pass through.
 #let rich(item) = if type(item) == array {
   item.map(run => {
     let body = run.text
     if run.italic { body = emph(body) }
     if run.bold { body = strong(body) }
+    if run.at("underline", default: false) { body = underlined(body) }
+    if run.at("link", default: "") != "" { body = link(run.link, body) }
     body
   }).join()
 } else { item }

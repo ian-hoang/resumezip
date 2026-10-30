@@ -83,7 +83,7 @@ describe("an entry's date", () => {
       line([["Sprout – HackGT 2026 | React, Flask", 36], ["September 2026", 480]], { bold: true }),
       line([["Built a garden planner", 54]], { bullet: true }),
     ])
-    expect(resume.projectsSection[0].projectDate).toBe("September 2026")
+    expect(resume.projectsSection[0].projectStartDate).toBe("September 2026")
     expect(Object.values(resume.projectsSection[0]).join(" ")).toContain("HackGT 2026")
     expect(unplaced).toEqual([])
   })
@@ -91,6 +91,24 @@ describe("an entry's date", () => {
   test("is a year in the title when there's no other", () => {
     const { resume } = read("Awards", [line([["First Place, HackGT 2026", 36]])])
     expect(resume.awardsSection[0].awardDate).toBe("2026")
+  })
+})
+
+describe("projects without dates", () => {
+  test("a name set like the one above, with no bullets between, is the next project; a line under a name set apart from it is that project's", () => {
+    const { resume } = read("Projects", [
+      line([["Inkwell | React, Node.js", 36]], { bold: true }),
+      line([["Built a notes app with offline sync", 54]], { bullet: true }),
+      line([["Ferry | Go", 36]], { bold: true }),
+      line([["Tally", 36]], { bold: true }),
+      line([["Python, Flask", 36]], { italic: true }),
+      line([["Built a budget tracker for shared flats", 54]], { bullet: true }),
+    ])
+    expect(resume.projectsSection.map(({ projectName, techStack }) => [projectName, techStack])).toEqual([
+      ["Inkwell", "React, Node.js"],
+      ["Ferry", "Go"],
+      ["Tally", "Python, Flask"],
+    ])
   })
 })
 

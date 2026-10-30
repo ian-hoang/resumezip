@@ -7,7 +7,7 @@ import { cursorInBox, expectText, pageErrors, previewShown, saveResumes, savedRe
 // a line with no bullet get one, and a list typed or pasted gets one bullet a
 // line. Each edit is undone and redone, as typing is.
 
-const LABEL = "What you did"
+const LABEL = "Description"
 const BULLETS = "• Built the search index\n• Cut serving costs by 30%"
 const RESUME = {
   id: "undo",

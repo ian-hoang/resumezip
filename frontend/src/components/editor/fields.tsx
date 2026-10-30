@@ -2,15 +2,18 @@
 
 import type React from "react"
 import { useEffect, useId, useRef, useState } from "react"
-import { Pencil } from "lucide-react"
+import { Calendar, Pencil } from "lucide-react"
 import { TONE_NAMES } from "@/components/review/notes"
 import type { Finding } from "@/lib/check/engine"
-import { onMac, shortcut } from "@/lib/keys"
-import { markedPieces } from "@/lib/typst/resumeData"
-import { bulletLines, withBullets } from "./arrange"
-import { selectLineIn } from "./boxDom"
-import { reducedMotion } from "./layout"
-import { StyledBox } from "./StyledBox"
+import { shortcut } from "@/lib/keys"
+import { bulletLines, offsetOfLine, withBullets } from "./arrange"
+import { rangeIn, readBox, selectIn, selectLineIn } from "./boxDom"
+import { reducedMotion, scrollerOf } from "./layout"
+import { wordsIn, type PickedWords } from "./previewPick"
+import DatePicker, { type PickerPlace } from "./DatePicker"
+import { bulletLength } from "./styledText"
+import { KEEPS_PICKED, setPickedInBox } from "./pickedStyle"
+import { boxStylers, StyledBox } from "./StyledBox"
 
 interface FieldProps {
   label: string
@@ -23,8 +26,6 @@ interface FieldProps {
   name?: string
   /** What the checker found here, while the person is fixing it. */
   flag?: Finding | null
-  /** Counts up each time the person chooses `flag`'s finding, as the checker's requests do. */
-  request?: number
   /** What the browser can fill it in with, as "name", "email" or "tel". */
   autoComplete?: string
   /** A web address: phones show the keyboard for one, with no spelling marks and no capital first letter. */
@@ -35,6 +36,8 @@ interface FieldProps {
   multiline?: boolean
   /** A multiline box's least height, as a class: as tall as three lines unless given. */
   boxHeight?: string
+  /** A date, which a picker under it can fill in, and an end date, which can also be Present. It can still be typed in. */
+  date?: "date" | "end"
 }
 
 /**
@@ -71,10 +74,12 @@ export function FlagNote({ id, finding }: { id?: string; finding: Finding }) {
 /**
  * How a field looks, a one-line input or a text box alike: no box, just a
  * line under it, blue where the checker points. Its parent is `relative`, in
- * a `group/field`, with FocusGlow before it and FocusLine after it.
+ * a `group/field`, with FocusGlow before it and FocusLine after it. Its words
+ * are 15px on wide screens, and 16px narrower: Safari on iOS zooms the page
+ * into a field with smaller words when it's focused.
  */
 const underlined = (flagged: boolean) =>
-  `relative w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors focus-visible:outline-none ${
+  `relative w-full min-w-0 border-0 bg-transparent py-1.5 text-base text-ink outline-none xl:text-[15px] transition-colors focus-visible:outline-none ${
     !flagged ? "border-b border-rule-strong hover:border-ink/40" : "border-b-2 border-accent"
   }`
 
@@ -121,15 +126,77 @@ export function Field({
   multiline,
   hint,
   boxHeight = "min-h-24",
+  date,
 }: FieldProps) {
   const noteId = useId()
   const boxId = useId()
   const hintId = useId()
+  const pickerId = useId()
+  const [picking, setPicking] = useState(false)
+  // Where the picker is, fixed to the window: as wide as the field, over it unless the form's top is too close.
+  const [place, setPlace] = useState<PickerPlace | null>(null)
+  const fieldRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const calendarRef = useRef<HTMLButtonElement>(null)
+  const openPicker = () => {
+    const field = fieldRef.current
+    const input = inputRef.current
+    if (!field || !input) return
+    // Just over the date typed, over its label too, and a little wider than the field on both sides.
+    const box = input.getBoundingClientRect()
+    const above = box.top - scrollerOf(field).getBoundingClientRect().top > PICKER_HEIGHT
+    const side = { left: box.left - PICKER_OVERHANG, width: box.width + 2 * PICKER_OVERHANG }
+    setPlace(above ? { ...side, bottom: window.innerHeight - box.top + 4 } : { ...side, top: box.bottom + 4 })
+    setPicking(true)
+  }
+  // The picker is in a layer of its own, so it's in the field for leaving, pressing away and Escape.
+  const inPicker = (node: Node | null) => !!node && !!document.getElementById(pickerId)?.contains(node)
+  // The picker closes with a press anywhere else, as a menu does, and as the form scrolls or the window resizes
+  // under it, being fixed where the field was.
+  useEffect(() => {
+    if (!picking) return
+    const away = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!fieldRef.current?.contains(target) && !document.getElementById(pickerId)?.contains(target)) setPicking(false)
+    }
+    const close = () => setPicking(false)
+    document.addEventListener("pointerdown", away)
+    window.addEventListener("scroll", close, true)
+    window.addEventListener("resize", close)
+    return () => {
+      document.removeEventListener("pointerdown", away)
+      window.removeEventListener("scroll", close, true)
+      window.removeEventListener("resize", close)
+    }
+  }, [picking, pickerId])
   const describedBy = [hint && hintId, flag && noteId].filter(Boolean).join(" ") || undefined
   const look = underlined(!!flag)
   const Labelled = multiline ? "div" : "label"
   return (
-    <div data-field={name} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+    <div
+      ref={fieldRef}
+      data-field={name}
+      // Leaving the field and its picker for anything else, as with Tab, closes the picker.
+      onBlur={
+        date
+          ? (event) => {
+              const next = event.relatedTarget as Node | null
+              if (!fieldRef.current?.contains(next) && !inPicker(next)) setPicking(false)
+            }
+          : undefined
+      }
+      onKeyDown={
+        date
+          ? (event) => {
+              if (event.key !== "Escape" || !picking) return
+              event.stopPropagation()
+              setPicking(false)
+              calendarRef.current?.focus()
+            }
+          : undefined
+      }
+      className={`flex min-w-0 flex-col gap-1.5 ${className} ${date ? "relative" : ""}`}
+    >
       <Labelled className="group/field relative flex min-w-0 flex-col gap-1.5">
         <span
           id={`${boxId}-label`}
@@ -153,8 +220,11 @@ export function Field({
           />
         ) : (
           <input
+            ref={inputRef}
             type={type}
             value={value}
+            // Named by its label alone, not the calendar button in it too.
+            aria-labelledby={date ? `${boxId}-label` : undefined}
             placeholder={placeholder}
             aria-describedby={describedBy}
             aria-invalid={flag?.level === "fix" || undefined}
@@ -163,11 +233,40 @@ export function Field({
             spellCheck={web ? false : undefined}
             autoCapitalize={web ? "off" : undefined}
             onChange={(event) => onChange(event.target.value)}
-            className={`${look} placeholder:text-ink-2/50`}
+            className={`${look} placeholder:text-ink-2/50 ${date ? "pr-9" : ""}`}
           />
+        )}
+        {date && (
+          <button
+            ref={calendarRef}
+            type="button"
+            aria-label="Pick a date"
+            title="Pick a date"
+            aria-haspopup="dialog"
+            aria-expanded={picking}
+            aria-controls={picking ? pickerId : undefined}
+            onClick={() => (picking ? setPicking(false) : openPicker())}
+            className="absolute bottom-1 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-expanded:bg-fill aria-expanded:text-accent [&_svg]:size-[17px]"
+          >
+            <Calendar aria-hidden="true" />
+          </button>
         )}
         <FocusLine />
       </Labelled>
+      {date && picking && place && (
+        <DatePicker
+          place={place}
+          id={pickerId}
+          labelledBy={`${boxId}-label`}
+          value={value}
+          end={date === "end"}
+          onPick={(picked) => {
+            onChange(picked)
+            setPicking(false)
+            inputRef.current?.focus()
+          }}
+        />
+      )}
       {multiline ? (
         <span id={hintId} className="text-[13px] leading-normal text-ink-2">
           {hint && `${hint} `}
@@ -185,28 +284,103 @@ export function Field({
   )
 }
 
+// About how tall the date picker is: it opens over its field when there's this much room there.
+const PICKER_HEIGHT = 180
+// How far the date picker reaches past its field on each side.
+const PICKER_OVERHANG = 20
+
 /** Selects a line's words in a bullets box, after its "• ", to point at one bullet. */
 function selectLine(field: HTMLElement, line: number) {
   if (field.isContentEditable) selectLineIn(field, line)
 }
 
-/** Moves the cursor to what the checker points at (one bullet, if `line` is given) and scrolls it into view. */
-export function pointAt(target: HTMLElement | null | undefined, line?: number, view: HTMLElement | null | undefined = target) {
+/**
+ * Where words picked on the preview are in a field: in its value, or in its
+ * box's text, in the line `line` of a bullets box. Null if they aren't there
+ * any more.
+ */
+function wordsAt(field: HTMLElement, line: number | undefined, words: PickedWords): { start: number; end: number } | null {
+  if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) return wordsIn(field.value, words)
+  if (!field.isContentEditable) return null
+  const text = readBox(field).styled.text
+  if (line === undefined) return wordsIn(text, words)
+  const lines = text.split("\n")
+  if (line < 0 || line >= lines.length) return null
+  const start = offsetOfLine(lines, line) + bulletLength(lines[line])
+  const found = wordsIn(lines[line].slice(bulletLength(lines[line])), words)
+  return found && { start: start + found.start, end: start + found.end }
+}
+
+/** Selects words picked on the preview in a field, or else the whole bullet. */
+function selectWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
+  const found = wordsAt(field, line, words)
+  if (!found) {
+    if (line !== undefined) selectLine(field, line)
+  } else if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+    field.setSelectionRange(found.start, found.end)
+  } else selectIn(field, found.start, found.end)
+}
+
+// The CSS highlight (::highlight(picked) in globals.css) on words selected on
+// the preview, or the field they're in, until the next click anywhere.
+const PICKED = "picked"
+let unshow = () => {}
+
+/**
+ * Lights up words selected on the preview in their field, without moving the
+ * cursor, so they stay selected there to copy. A text box lights up the
+ * words; an input, whose value a highlight can't reach, lights up as a whole.
+ */
+function showWords(field: HTMLElement, line: number | undefined, words: PickedWords) {
+  unshow()
+  const found = wordsAt(field, line, words)
+  // Safari before 17.2 has no CSS highlights.
+  const highlights = typeof CSS.highlights === "undefined" ? null : CSS.highlights
+  const light = () => found && highlights?.set(PICKED, new Highlight(rangeIn(field, found.start, found.end)))
+  if (found && field.isContentEditable && highlights) light()
+  else field.dataset.picked = ""
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  const clear = (event?: Event) => {
+    if (event?.target instanceof Element && event.target.closest(`[${KEEPS_PICKED}]`)) return
+    highlights?.delete(PICKED)
+    delete field.dataset.picked
+    setPickedInBox(null)
+    document.removeEventListener("pointerdown", clear, true)
+  }
+  document.addEventListener("pointerdown", clear, true)
+  unshow = clear
+  // Words in a box with bold and italic can be styled from the preview, with its toolbar over them.
+  if (found && boxStylers.has(field)) setPickedInBox({ box: field, ...found, relight: light, close: () => clear() })
+}
+
+/**
+ * Moves the cursor to what the checker points at (one bullet, if `line` is
+ * given), or selects `words` picked on the preview, and scrolls it into view.
+ * With `look`, the words are lit up rather than selected, and the cursor stays
+ * where it is.
+ */
+export function pointAt(
+  target: HTMLElement | null | undefined,
+  line?: number,
+  view: HTMLElement | null | undefined = target,
+  words?: PickedWords,
+  look = false,
+) {
   if (!target) return
-  target.focus({ preventScroll: true })
-  if (line !== undefined) selectLine(target, line)
+  if (words && look) showWords(target, line, words)
+  else {
+    target.focus({ preventScroll: true })
+    if (words) selectWords(target, line, words)
+    else if (line !== undefined) selectLine(target, line)
+  }
   view?.scrollIntoView({ block: "center", behavior: reducedMotion() ? "auto" : "smooth" })
 }
 
-// With Option on a Mac, Alt elsewhere: ⌥↑, Alt+↑.
-const altShortcut = (key: string) => (onMac() ? `⌥${key}` : `Alt+${key}`)
-
 /**
- * The keys for bold and italic, and with `moveLines`, for moving a line. A
- * touch screen has no keys, so it shows the marks to type, which turn bold and
- * italic as they're typed.
+ * The keys for bold and italic. A touch screen has no keys, so it shows the
+ * marks to type, which turn bold and italic as they're typed.
  */
-function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
+function FormatHint() {
   return window.matchMedia("(pointer: coarse)").matches ? (
     <>
       <span className="font-mono">**bold**</span> · <span className="font-mono">*italic*</span>
@@ -215,30 +389,8 @@ function FormatHint({ moveLines = false }: { moveLines?: boolean }) {
     <>
       <kbd className="font-mono">{shortcut("B")}</kbd> <strong className="font-semibold text-ink">bold</strong> ·{" "}
       <kbd className="font-mono">{shortcut("I")}</kbd> <em className="text-ink">italic</em>
-      {moveLines && (
-        <>
-          {" "}
-          · <kbd className="font-mono">{altShortcut("↑")}</kbd> <kbd className="font-mono">{altShortcut("↓")}</kbd> move a line
-        </>
-      )}
     </>
   )
-}
-
-/** How much of a bullet an open card shows until its box is used, in characters, cut at a word: about a line and a half. */
-const PREVIEW_CHARACTERS = 70
-/** How many bullets an open card shows until its box is used. */
-const PREVIEW_BULLETS = 2
-
-/** A bullet's words without their bold and italic marks, cut short at a word, with "…" where they were cut. */
-function previewOf(words: string): string {
-  const plain = markedPieces(words)
-    .map((piece) => piece.text)
-    .join("")
-  if (plain.length <= PREVIEW_CHARACTERS) return plain
-  const cut = plain.slice(0, PREVIEW_CHARACTERS + 1)
-  const space = cut.lastIndexOf(" ")
-  return `${(space > PREVIEW_CHARACTERS / 2 ? cut.slice(0, space) : cut.slice(0, PREVIEW_CHARACTERS)).replace(/[\s,.;:]+$/, "")}…`
 }
 
 /**
@@ -246,40 +398,17 @@ function previewOf(words: string): string {
  * and italic words show as they print, and are saved as **bold**, *italic*
  * and ***both***; ⌘B and ⌘I add or remove them. Alt+↑ and Alt+↓ move the line
  * the cursor is on. A line starting with "○" is left out of the PDF.
- *
- * With `compact`, as in an entry's card, it shows its first bullets cut short
- * and how many more there are until it's used: the box itself is over them,
- * unseen, so a click or Tab goes into it, and screen readers read all of it.
  */
-export function BulletsField({
-  label,
-  value,
-  placeholder,
-  className = "",
-  onChange,
-  name,
-  flag,
-  request,
-  compact = false,
-}: FieldProps & { compact?: boolean }) {
+export function BulletsField({ label, value, placeholder, className = "", onChange, name, flag }: FieldProps) {
   const text = withBullets(value)
   const boxId = useId()
   const hintId = useId()
   const noteId = useId()
-  const bullets = bulletLines(text)
-  // Once the box has been used, it shows in full until its card is folded.
-  const [used, setUsed] = useState(false)
-  // Choosing a finding here shows the text, where the cursor goes to it. Only a
-  // new choice does: the finding is found afresh each time the checker runs,
-  // and it's gone while the person is in Write mode, then back.
-  const [shownRequest, setShownRequest] = useState(request)
-  if (request !== undefined && request !== shownRequest) {
-    setShownRequest(request)
-    setUsed(true)
-  }
-  const previewing = compact && !used && bullets.length > 0
-  // Underlined, as the other fields are; the cut-short bullets are drawn the same way.
-  const box = `${underlined(!!flag)} leading-relaxed`
+  // No line of keys under the box: the buttons over selected words show them,
+  // and on a phone take the place of typing marks. Only what ○ does is said
+  // there, while a line starts with one.
+  const leftOut = bulletLines(text).some((bullet) => bullet.leftOut)
+  const describedBy = [leftOut && hintId, flag && noteId].filter(Boolean).join(" ") || undefined
 
   return (
     <div data-field={name} className={`group/field flex min-w-0 flex-col gap-1.5 ${className}`}>
@@ -292,39 +421,27 @@ export function BulletsField({
       >
         {label}
       </label>
-      <div className="relative" onFocus={() => setUsed(true)}>
+      <div className="relative">
         <FocusGlow />
-        {previewing && (
-          <div aria-hidden="true" className={`${box} flex flex-col`}>
-            {bullets.slice(0, PREVIEW_BULLETS).map((bullet) => (
-              <p key={bullet.line} className={bullet.leftOut ? "text-ink-2" : undefined}>
-                {bullet.leftOut ? "○" : "•"} {previewOf(bullet.words)}
-              </p>
-            ))}
-            {bullets.length > PREVIEW_BULLETS && <p className="mt-0.5 text-[13px] text-ink-2">+ {bullets.length - PREVIEW_BULLETS} more</p>}
-          </div>
-        )}
-        {/* While the bullets show cut short, the box is over them, unseen, and no taller. */}
-        <div className={previewing ? "absolute inset-0 overflow-hidden opacity-0" : undefined}>
-          <StyledBox
-            kind="bullets"
-            id={boxId}
-            value={value}
-            onChange={onChange}
-            labelId={`${boxId}-label`}
-            describedBy={flag ? `${hintId} ${noteId}` : hintId}
-            invalid={flag?.level === "fix"}
-            placeholder={placeholder}
-            className={`${box} ${compact ? "min-h-[110px]" : "min-h-[132px]"}`}
-          />
-        </div>
+        <StyledBox
+          kind="bullets"
+          id={boxId}
+          value={value}
+          onChange={onChange}
+          labelId={`${boxId}-label`}
+          describedBy={describedBy}
+          invalid={flag?.level === "fix"}
+          placeholder={placeholder}
+          className={`${underlined(!!flag)} min-h-[116px] leading-relaxed`}
+        />
         <FocusLine />
       </div>
       {flag && <FlagNote id={noteId} finding={flag} />}
-      <span id={hintId} className={`text-[13px] leading-normal text-ink-2 ${previewing ? "sr-only" : ""}`}>
-        One bullet per line · <FormatHint moveLines />
-        {bullets.some((bullet) => bullet.leftOut) && " · Lines starting with ○ are left out of the PDF."}
-      </span>
+      {leftOut && (
+        <span id={hintId} className="text-[13px] leading-normal text-ink-2">
+          Lines starting with ○ are left out of the PDF.
+        </span>
+      )}
     </div>
   )
 }
@@ -367,7 +484,7 @@ export function SectionHeading({ title, note, onRename, flag, allowEmpty = false
         <div className="flex min-w-0 flex-col gap-[5px]">
           {draft === null ? (
             <div className="group/title flex min-w-0 flex-wrap items-center gap-1.5">
-              <h1 tabIndex={-1} className="min-w-0 font-serif text-[34px] leading-[1.1] tracking-[-0.03em] wrap-anywhere sm:text-[40px]">
+              <h1 tabIndex={-1} className="min-w-0 font-serif text-[30px] leading-[1.1] tracking-[-0.03em] wrap-anywhere sm:text-[34px]">
                 {title}
               </h1>
               {onRename && (
@@ -399,7 +516,7 @@ export function SectionHeading({ title, note, onRename, flag, allowEmpty = false
                 if (event.key === "Enter") save()
                 else setDraft(null)
               }}
-              className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[34px] leading-[1.1] tracking-[-0.03em] outline-none focus-visible:outline-none sm:text-[40px]"
+              className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[30px] leading-[1.1] tracking-[-0.03em] outline-none focus-visible:outline-none sm:text-[34px]"
             />
           )}
           {note && <p className="text-[14px] leading-5 text-ink-3">{note}</p>}

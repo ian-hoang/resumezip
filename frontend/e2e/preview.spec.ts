@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { chooseTemplate, newResume, pageErrors, preview } from "./helpers"
+import { chooseTemplate, newResume, pageErrors, preview, selectInBox } from "./helpers"
 
 declare global {
   interface Window {
@@ -141,7 +141,7 @@ test("a second copy of a line already on the page lights up too", async ({ page 
     .click()
   await page.getByRole("button", { name: "Add experience" }).click()
   await page.getByLabel("Role", { exact: true }).fill("Engineer")
-  const bullets = page.getByLabel(/^What you did/)
+  const bullets = page.getByLabel(/^Description/)
   await bullets.fill("• Wrote the tests")
   const lines = preview(page).getByText("Wrote the tests")
   await expect(lines).toHaveCount(1)
@@ -150,6 +150,34 @@ test("a second copy of a line already on the page lights up too", async ({ page 
   await expect(lines).toHaveCount(2)
   await expect(lines.nth(1)).toHaveAttribute("data-changed")
   await expect(lines.nth(0)).not.toHaveAttribute("data-changed")
+  expect(errors).toEqual([])
+})
+
+test("bolding a word, or typing one, lights up that word alone and not the rest of its line", async ({ page }) => {
+  const errors = pageErrors(page)
+  await newResume(page)
+  await page.getByLabel("Full name").fill("Ada Lovelace")
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("button", { name: /^Experience$/ })
+    .click()
+  await page.getByRole("button", { name: "Add experience" }).click()
+  await page.getByLabel("Role", { exact: true }).fill("Engineer")
+  const bullets = page.getByLabel(/^Description/)
+  await bullets.fill("• Built a fast parser")
+  await expect(preview(page).getByText("Built a fast parser")).toHaveCount(1)
+  const lit = preview(page).locator("[data-changed]")
+
+  // pdf.js splits the line into three runs of text around the bold word.
+  await selectInBox(bullets, 10, 14)
+  await page.keyboard.press("ControlOrMeta+b")
+  await expect(lit).toHaveText(["fast"])
+
+  // A word typed onto the end of the line, within the run it's printed in.
+  await selectInBox(bullets, 21)
+  await page.keyboard.type(" quickly")
+  await expect(lit).toHaveText(["quickly"])
+  await expect(preview(page).getByText(/parser quickly/)).not.toHaveAttribute("data-changed")
   expect(errors).toEqual([])
 })
 

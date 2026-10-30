@@ -91,13 +91,15 @@ export function latex(value: string): string {
 export const bold = (body: string) => `\\textbf{${body}}`
 export const italic = (body: string) => `\\textit{${body}}`
 
-/** A bullet, or a line of prose: its words in bold and italic where they were marked so (`rich` in templates/common.typ). */
+/** A bullet, or a line of prose: its words styled and linked as they were marked (`rich` in templates/common.typ). */
 export const runs = (pieces: Run[]) =>
   pieces
     .map((piece) => {
       let out = latex(piece.text)
       if (piece.italic) out = italic(out)
       if (piece.bold) out = bold(out)
+      if (piece.underline) out = underline(out)
+      if (piece.link) out = href(piece.link, out)
       return out
     })
     .join("")

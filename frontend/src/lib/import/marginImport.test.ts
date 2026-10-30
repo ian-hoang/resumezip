@@ -96,4 +96,18 @@ describe("a Margin PDF opened without its resume", () => {
     expect(parsed.occurrences.at(-1)?.heading).toBe("Honors, Awards, Grants, Prizes, Fellowships and Certifications")
     expect(wrong).toEqual([])
   })
+
+  test("reads an undated project beside the Projects heading as a project, not a heading", async () => {
+    // Without its date, the project's title is all that's beside the heading,
+    // short enough to be one.
+    const projectsSection = sample.projectsSection.map((project: Record<string, unknown>) => ({
+      ...project,
+      projectStartDate: "",
+      projectEndDate: "",
+    }))
+    const { parsed, wrong } = await read({ ...sample, projectsSection })
+    expect(parsed.unplaced).toEqual([])
+    expect(parsed.sections.find((section) => section.name === "Projects")?.entries).toHaveLength(1)
+    expect(wrong).toEqual([])
+  })
 })

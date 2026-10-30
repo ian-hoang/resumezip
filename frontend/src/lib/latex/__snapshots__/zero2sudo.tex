@@ -105,14 +105,16 @@
   \nobreak
 }
 
-% A project: its name and date in bold, then its links and its tech stack
-% on a line of their own, when it has either
-\newcommand{\resumeProject}[4]{%
+% A project: its name in bold and its tech stack, then its links and its
+% date in bold on a line of their own, each line only when it has something
+\newcommand{\resumeProject}[3]{%
   \par\ifdim\lastskip=0pt \vspace{15bp}\fi
-  {\largeSize\resumeRow{\textbf{#1}}{\textbf{#2}}}%
-  \if\relax\detokenize{#3#4}\relax\else
-    \nobreak\vspace{6.5bp}%
-    \resumeRow{#3}{#4}%
+  \if\relax\detokenize{#1}\relax\else
+    {\largeSize\noindent#1\par}%
+    \if\relax\detokenize{#2#3}\relax\else\nobreak\vspace{6.5bp}\fi
+  \fi
+  \if\relax\detokenize{#2#3}\relax\else
+    \resumeRow{#3}{\textbf{#2}}%
   \fi
   \nobreak
 }
@@ -175,7 +177,7 @@
   \end{resumeItems}
 
 \resumeSection{Projects}
-  \resumeProject{tinykv}{2024}{\mbox{\href{https://github.com/rconde/tinykv}{\underline{github.com/rconde/tinykv}}}}{Rust, Raft}
+  \resumeProject{\textbf{tinykv}\contactBar Rust, Raft}{2024}{\mbox{\href{https://github.com/rconde/tinykv}{\underline{github.com/rconde/tinykv}}}}
   \begin{resumeItems}
     \resumeItem{A key\_value store with \textbf{snapshots}}
   \end{resumeItems}

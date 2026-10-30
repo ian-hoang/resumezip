@@ -6,7 +6,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { CompileFormatEnum, createTypstCompiler, type TypstCompiler } from "@myriaddreamin/typst.ts/compiler"
 import { loadFonts } from "@myriaddreamin/typst.ts/options.init"
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
+import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { TextItem } from "pdfjs-dist/types/src/display/api"
 import { firstColumnOf, templateById } from "@/lib/templates"
@@ -138,6 +138,18 @@ export function textWithFonts(pdf: Uint8Array): Promise<{ text: string; font: st
       }
     }
     return pieces
+  })
+}
+
+/** How many shapes a PDF draws (rules, underlines, boxes), counted as pdf.js reads its paths. */
+export function shapesOf(pdf: Uint8Array): Promise<number> {
+  return withPdf(pdf, async (doc) => {
+    let shapes = 0
+    for (let number = 1; number <= doc.numPages; number++) {
+      const { fnArray } = await (await doc.getPage(number)).getOperatorList()
+      shapes += fnArray.filter((op) => op === OPS.constructPath).length
+    }
+    return shapes
   })
 }
 

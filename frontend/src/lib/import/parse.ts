@@ -17,8 +17,9 @@ import { EXPECTED_WORDS, PRESENT_WORDS, US_STATES } from "@/lib/check/settings"
 import { escaped } from "@/lib/check/text"
 import type { CompleteContent, ResumeContent } from "@/lib/resume"
 import { extraKey, extraRef, resolveSections, type ExtraKind, type ExtraSections, type SectionRef } from "@/lib/resumeSections"
-import { plainText } from "@/lib/typst/resumeData"
+import { typedPieces } from "@/lib/marks"
 import { PAGE_NUMBER, SOFT_HYPHEN, toLine, type Line, type Part, type Piece, type Run } from "./lines"
+import { splitProjectDate } from "@/lib/projectDates"
 
 /** An entry's values, keyed by its section's field names. */
 type Fields = Partial<Record<FieldKey, string>>
@@ -614,7 +615,11 @@ function summaryLines(lines: ParseLine[]): { text: string[]; marked: string[] } 
     .map((line) => {
       const text = tidy(line.text)
       const withMarks = tidy(marked(trimmedPieces(line.pieces), whole))
-      return { text, marked: plainText(withMarks) === text ? withMarks : text }
+      // Read as bold and italic alone: what's imported is escaped for underline and links as it's added (withMarks).
+      const printed = typedPieces(withMarks)
+        .map((piece) => piece.text)
+        .join("")
+      return { text, marked: printed === text ? withMarks : text }
     })
     .filter((line) => line.text)
   return { text: kept.map((line) => line.text), marked: kept.map((line) => line.marked) }
@@ -1320,7 +1325,11 @@ function readEducation(lines: ParseLine[]): SectionResult {
 
 function readProjects(lines: ParseLine[]): SectionResult {
   const leftover: SectionResult["leftover"] = { lines: [], text: [] }
-  const entries = groupEntries(lines).map((group) => {
+  // A project needs no date or bullets, so with neither, the next one's name
+  // comes straight after its own. The lines under a name (its tech, its
+  // links) are set apart from it; one set like it is the next project's.
+  const anotherProject = (header: ParseLine[], line: ParseLine) => sameStyle(header[0], line)
+  const entries = groupEntries(lines, undefined, anotherProject).map((group) => {
     const fields = blankEntry("Projects")
     const header = readHeader(group.header)
     const texts = header.texts.map((fragment) => fragment.text)
@@ -1340,7 +1349,10 @@ function readProjects(lines: ParseLine[]): SectionResult {
     }
     fields.projectName = tidy(name.replace(/:$/, ""))
     fields.techStack = tidy(tech)
-    fields.projectDate = header.date?.text ?? ""
+    // Split as a project's dates from before its start and end are, so a lone date is its start.
+    const dates = splitProjectDate(header.date?.text ?? "")
+    fields.projectStartDate = dates.start
+    fields.projectEndDate = dates.end
     for (const link of header.links) {
       const url = bare(link)
       if (/^github\.com\/[^/]+\/[^/]+/i.test(url) && !fields.projectGithub) fields.projectGithub = url
@@ -1983,10 +1995,14 @@ function splitSideHeadings(lines: SourceLine[]): SourceLine[] {
       split.push(line)
       return
     }
+    // The section's text at its own size: the line's is the heading's, set
+    // bigger, which would make a short entry title, like an undated
+    // project's, look like a heading too.
     const rest = line.parts.slice(1)
+    const size = Math.max(...rest.map((part) => part.size ?? line.size))
     const entry =
       rest.length > 0 &&
-      toLine(rest, line.size, line.links, { page: line.page, box: line.box && ([rest[0].x, ...line.box.slice(1)] as Line["box"]) })
+      toLine(rest, size, line.links, { page: line.page, box: line.box && ([rest[0].x, ...line.box.slice(1)] as Line["box"]) })
     if (entry) split.push({ ...entry, sourceIndex: line.sourceIndex })
   })
   return split

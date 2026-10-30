@@ -140,14 +140,16 @@ ${PLAIN_ROW}
   \\nobreak
 }
 
-% A project: its name and date in bold, then its links and its tech stack
-% on a line of their own, when it has either
-\\newcommand{\\resumeProject}[4]{%
+% A project: its name in bold and its tech stack, then its links and its
+% date in bold on a line of their own, each line only when it has something
+\\newcommand{\\resumeProject}[3]{%
   \\par\\ifdim\\lastskip=0pt \\vspace{${units.size(15)}}\\fi
-  {\\largeSize\\resumeRow{\\textbf{#1}}{\\textbf{#2}}}%
-  \\if\\relax\\detokenize{#3#4}\\relax\\else
-    \\nobreak\\vspace{${units.space(6.5)}}%
-    \\resumeRow{#3}{#4}%
+  \\if\\relax\\detokenize{#1}\\relax\\else
+    {\\largeSize\\noindent#1\\par}%
+    \\if\\relax\\detokenize{#2#3}\\relax\\else\\nobreak\\vspace{${units.space(6.5)}}\\fi
+  \\fi
+  \\if\\relax\\detokenize{#2#3}\\relax\\else
+    \\resumeRow{#3}{\\textbf{#2}}%
   \\fi
   \\nobreak
 }
@@ -236,8 +238,9 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         for (const project of data.projects) {
+          const title = [project.name && bold(projectName(project)), latex(project.techStack)].filter(Boolean).join("\\contactBar ")
           const urls = project.links.map((url) => `\\mbox{${underlined(web(url), url)}}`).join("\\contactBar ")
-          add(`  \\resumeProject{${projectName(project)}}{${latex(project.date)}}{${urls}}{${latex(project.techStack)}}`)
+          add(`  \\resumeProject{${title}}{${latex(dateRange(project.start, project.end))}}{${urls}}`)
           items(project.bullets.map(runs))
         }
         break

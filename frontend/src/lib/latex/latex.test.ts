@@ -102,7 +102,7 @@ function everyField(selectedTemplate: string, field = (name: string) => `${name}
         id: 1,
         projectName: field("Project"),
         techStack: field("Stack"),
-        projectDate: field("Shipped"),
+        projectStartDate: field("Shipped"),
         projectGithub: field("example.com/repo"),
         projectDescription: `• ${field("Project bullet")}`,
       },
@@ -207,7 +207,7 @@ const EVERYTHING = {
       id: 1,
       projectName: "tinykv",
       techStack: "Rust, Raft",
-      projectDate: "2024",
+      projectStartDate: "2024",
       projectGithub: "github.com/rconde/tinykv",
       projectDescription: "• A key_value store with **snapshots**",
     },
@@ -370,6 +370,18 @@ describe("Accent's section titles", () => {
     })
     expect(text).toContain(`\\resumeSection{${first}}{${rest}}`)
   })
+})
+
+test("a LaTeX file underlines and links words as they were marked, printing a link's words alone", () => {
+  const text = latexOf({
+    selectedTemplate: "jake",
+    marks: 2,
+    workExperienceSection: [
+      { id: 1, companyName: "Google", workDescription: "• Shipped the [__dashboard__](https://example.com/dash) on __time__" },
+    ],
+  })
+  expect(text).toContain(String.raw`\href{https://example.com/dash}{\underline{dashboard}}`)
+  expect(text).toContain(String.raw`\underline{time}`)
 })
 
 describe.each(IDS)("a LaTeX file in %s's layout", (id) => {

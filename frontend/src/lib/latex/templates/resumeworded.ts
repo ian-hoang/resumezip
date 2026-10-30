@@ -20,10 +20,11 @@ import {
   projectName,
   runs,
   sectionsOf,
-  shownLink,
   signs,
   sum,
   UNBROKEN_ROW,
+  underline,
+  underlined,
   webLink,
   type Fallbacks,
   type LatexTemplate,
@@ -34,7 +35,7 @@ import type { Paragraph, Run, TemplateData } from "@/lib/typst/resumeData"
 /** The longer of two lengths that `Units` gave, as the .typ's `calc.max`. */
 const longer = (a: string, b: string) => (parseFloat(a) >= parseFloat(b) ? a : b)
 
-/** Links print as plain text, kept whole, as the .typ boxes them. */
+/** A contact item kept whole, as the .typ boxes them. Links are underlined, which keeps them whole too. */
 const whole = (body: string) => `\\mbox{${body}}`
 
 /** "Start – End", with an en dash. */
@@ -169,10 +170,10 @@ function body(data: TemplateData, units: Units): string {
   const contacts = [
     profile.location && whole(latex(profile.location)),
     profile.phone && whole(latex(`P: ${profile.phone}`)),
-    profile.email && emailLink(profile.email, whole),
-    profile.linkedin && webLink(profile.linkedin, whole),
-    profile.github && webLink(profile.github, whole),
-    profile.website && webLink(profile.website, whole),
+    profile.email && emailLink(profile.email, underline),
+    profile.linkedin && webLink(profile.linkedin, underline),
+    profile.github && webLink(profile.github, underline),
+    profile.website && webLink(profile.website, underline),
   ].filter(Boolean)
   add("\\begin{resumeHeader}")
   if (profile.name) add(`  \\resumeName{${latex(profile.name)}}`)
@@ -222,17 +223,19 @@ function body(data: TemplateData, units: Units): string {
         entries(data.projects, (project) => {
           // The name in capitals, then the tech stack and any links in gray.
           const name = project.name && latex(project.name)
-          const parts = [project.techStack && latex(project.techStack), ...project.links.map((url) => webLink(url, whole))].filter(Boolean)
+          const parts = [project.techStack && latex(project.techStack), ...project.links.map((url) => webLink(url, underline))].filter(
+            Boolean,
+          )
           const left = [
             name && bold(projectName(project, (body) => `\\MakeUppercase{${body}}`)),
             parts.length > 0 && `\\textcolor{resumeGray}{${name ? "| " : ""}${parts.join(" | ")}}`,
           ].filter(Boolean)
-          add(`  \\resumeRow{${left.join(" ")}}{${latex(project.date)}}`)
+          add(`  \\resumeRow{${left.join(" ")}}{${dates(project.start, project.end)}}`)
           bullets(project.bullets)
         })
         break
       case "publications":
-        add(citations(data.publications, shownLink, "labelsep=0.7em"))
+        add(citations(data.publications, underlined, "labelsep=0.7em"))
         break
       case "skills":
         add(

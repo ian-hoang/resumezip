@@ -32,9 +32,10 @@ import {
   projectName,
   runs,
   sectionsOf,
-  shownLink,
   signs,
   sum,
+  underline,
+  underlined,
   unlessPdfLatex,
   VIETNAMESE,
   webLink,
@@ -325,14 +326,16 @@ function body(data: TemplateData, units: Units): string {
         join(
           "\\entrysep",
           data.projects.map((project) => () => {
-            const when = [latex(project.date), ...project.links.map((url) => webLink(url))].filter(Boolean).join(" | ")
+            const when = [latex(dateRange(project.start, project.end)), ...project.links.map((url) => webLink(url, underline))]
+              .filter(Boolean)
+              .join(" | ")
             entry(projectName(project), latex(project.techStack), when, project.bullets)
           }),
         )
         break
       case "publications": {
         const spacing = `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${sum(units.space(6), minus(units.space(FONTS.body.size / 2)))}`
-        add("\\begin{publications}", citations(data.publications, shownLink, spacing), "\\end{publications}")
+        add("\\begin{publications}", citations(data.publications, underlined, spacing), "\\end{publications}")
         break
       }
       case "awards":
@@ -361,8 +364,8 @@ function body(data: TemplateData, units: Units): string {
   // ---------- Heading ----------
   const { profile } = data
   const words = profile.name.split(" ").filter(Boolean)
-  const profiles = [profile.website, profile.linkedin, profile.github].filter(Boolean).map((url) => webLink(url))
-  const reach = [profile.email && emailLink(profile.email), latex(profile.phone), latex(profile.location)].filter(Boolean)
+  const profiles = [profile.website, profile.linkedin, profile.github].filter(Boolean).map((url) => webLink(url, underline))
+  const reach = [profile.email && emailLink(profile.email, underline), latex(profile.phone), latex(profile.location)].filter(Boolean)
   const contacts = [profiles, reach].filter((items) => items.length)
 
   add("{\\centering")

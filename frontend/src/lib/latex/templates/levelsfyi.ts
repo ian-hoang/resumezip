@@ -20,23 +20,14 @@ import {
   ROW,
   runs,
   sectionsOf,
-  shownLink,
   texGyre,
+  underline,
+  underlined,
   webLink,
   type LatexTemplate,
-  type ShowLink,
   type Units,
 } from "../common"
 import type { Paragraph, TemplateData } from "@/lib/typst/resumeData"
-
-/**
- * A link's text, never hyphenated, as the .typ's links aren't: TeX only
- * hyphenates a word that follows a space, and the kern stands between them.
- */
-const whole = (body: string) => `\\kern0pt ${body}`
-
-/** A link printed as its own text, plain, as the .typ's are. */
-const plain: ShowLink = (url, text) => shownLink(url, text, whole)
 
 // Typst measures a space from one line's baseline down to the next line's cap
 // height, and sets a paragraph's lines `LEADING` apart that way; TeX measures
@@ -223,8 +214,8 @@ function body(data: TemplateData, units: Units): string {
 
   // Where you are and how to reach you on the left, your profiles on the right.
   const { profile } = data
-  const reach = [latex(profile.location), latex(profile.phone), profile.email && emailLink(profile.email, whole)].filter(Boolean)
-  const profiles = [profile.linkedin, profile.github, profile.website].filter(Boolean).map((url) => webLink(url, whole))
+  const reach = [latex(profile.location), latex(profile.phone), profile.email && emailLink(profile.email, underline)].filter(Boolean)
+  const profiles = [profile.linkedin, profile.github, profile.website].filter(Boolean).map((url) => webLink(url, underline))
   if (profile.name || reach.length || profiles.length) {
     add(`\\resumeName{${latex(profile.name)}}`)
     for (let row = 0; row < Math.max(reach.length, profiles.length); row++) {
@@ -280,7 +271,9 @@ function body(data: TemplateData, units: Units): string {
         entries(
           () => {
             for (const project of data.projects) {
-              add(`    \\resumeEntry{${projectHeader(project, "\\hspace{4pt}|\\hspace{4pt}", plain)}}{${latex(project.date)}}`)
+              add(
+                `    \\resumeEntry{${projectHeader(project, "\\hspace{4pt}|\\hspace{4pt}", underlined)}}{${latex(dateRange(project.start, project.end))}}`,
+              )
               items(project.bullets.map(runs), "    ", space.above(units.space(6.6)))
             }
           },
@@ -291,7 +284,7 @@ function body(data: TemplateData, units: Units): string {
         add(
           citations(
             data.publications,
-            plain,
+            underlined,
             `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${space.above(units.space(5.2))}`,
           ),
         )

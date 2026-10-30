@@ -11,10 +11,12 @@ import { PROFILE_FIELDS, SECTION_NAMES, SECTIONS } from "@/components/editor/sec
 import { CHECK_FIELD, readCheckState } from "@/lib/check/state"
 import { isObject } from "@/lib/isObject"
 import { isLeftOut, printedResume } from "@/lib/leftOut"
+import { MARKS_VERSION } from "@/lib/marks"
 import { cleanTag, type Entry, type Headings, type Profile, type Resume, type ResumeContent } from "@/lib/resume"
 import { templateById } from "@/lib/templates"
 import { readTune } from "@/lib/tune"
 import { isSectionRef, readExtraSections, resolveSections } from "./resumeSections"
+import { withProjectDates } from "@/lib/projectDates"
 
 export const ATTACHMENT_NAME = "resumezip.json"
 /** Where a Word file keeps its text, and its document's relationships, which have the addresses its links go to. */
@@ -230,7 +232,8 @@ const bulletText = (value: unknown) =>
  * any (toAttachment prints the resume first), but a JSON file does.
  */
 export function cleanResume(input: unknown): ResumeContent {
-  const resume = object(input)
+  // A file from before projects had a start and an end has its projects' dates split (withProjectDates).
+  const resume = object(withProjectDates(input))
   const profile = object(resume.profileSection)
   const headings = object(resume.headings)
   // Fine-tune's settings, if any. Files from before them, and older versions
@@ -270,6 +273,8 @@ export function cleanResume(input: unknown): ResumeContent {
     clean.updatedAt = resume.updatedAt
   }
   if (resume.extraSections !== undefined) clean.extraSections = readExtraSections(resume.extraSections).sections
+  // Without it, its text is from before underline and links, and is escaped as it's added (withMarks).
+  if (resume.marks === MARKS_VERSION) clean.marks = MARKS_VERSION
   // The sections it shows, in order (see resolveSections). That's then only the
   // sections it has, not every one, so it's marked as chosen (see Resume.sectionsChosen).
   clean.sectionOrder = resolveSections({ ...clean, sectionOrder: resume.sectionOrder, sectionsChosen: resume.sectionsChosen })

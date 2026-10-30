@@ -71,7 +71,8 @@
     {
       "id": 1,
       "projectName": "tracecat",
-      "projectDate": "2023",
+      "projectStartDate": "2023",
+      "projectEndDate": "",
       "techStack": "Go, eBPF",
       "projectGithub": "github.com/trivera/tracecat",
       "additionalLink": "",
@@ -80,7 +81,8 @@
     {
       "id": 2,
       "projectName": "zonelint",
-      "projectDate": "2021",
+      "projectStartDate": "2021",
+      "projectEndDate": "",
       "techStack": "Rust",
       "projectGithub": "github.com/trivera/zonelint",
       "additionalLink": "",

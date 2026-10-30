@@ -9,6 +9,8 @@
 import { SECTIONS } from "@/components/editor/sections"
 import { CHECK_FIELD } from "@/lib/check/state"
 import { isObject } from "@/lib/isObject"
+import { withMarks } from "@/lib/marks"
+import { withProjectDates } from "@/lib/projectDates"
 import { readExtraSections } from "@/lib/resumeSections"
 import { readTune } from "@/lib/tune"
 import type { Resume } from "./resume"
@@ -247,7 +249,9 @@ function readEntry(value: unknown): { resume: Resume | null; complete: boolean }
     if (readable) fields.push([key, readable.value])
   }
   // Each field is in a shape the editor can show (readField), which is all a Resume promises of saved data.
-  return { resume: Object.fromEntries(fields) as Resume, complete }
+  // Text saved before underline and links is escaped as it's read, so it prints as it did (withMarks), and a
+  // project's dates from before its start and end are split (withProjectDates).
+  return { resume: withMarks(withProjectDates(Object.fromEntries(fields) as Resume)), complete }
 }
 
 // Fields the editor reads as lists of entries, and as objects of named

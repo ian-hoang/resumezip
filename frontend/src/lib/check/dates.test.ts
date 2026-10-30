@@ -17,7 +17,7 @@ const jake = {
     { id: 1, schoolName: "University of Texas at Austin", degree: "B.S.", schoolStartDate: "Aug 2020", schoolEndDate: "May 2024" },
   ],
   workExperienceSection: [job("Jan 2025", "Present"), job("Jun 2024", "Dec 2024", "Meta")],
-  projectsSection: [{ id: 1, projectName: "Gitlytics", projectDate: "Sep – Dec 2024" }],
+  projectsSection: [{ id: 1, projectName: "Gitlytics", projectStartDate: "Sep 2024", projectEndDate: "Dec 2024" }],
 }
 
 const withWork = (...work: ReturnType<typeof job>[]) => ({ ...jake, workExperienceSection: work })
@@ -97,12 +97,12 @@ describe("D3 unreadable dates", () => {
   test("points at each date it can't read", () => {
     const resume = {
       ...withWork(job("Jnu 2024", "Present"), job("Jun 2023", "Agu 2023")),
-      projectsSection: [{ id: 1, projectName: "X", projectDate: "Summer" }],
+      projectsSection: [{ id: 1, projectName: "X", projectStartDate: "Summer" }],
     }
     expect(check("D3", resume).findings.map((finding) => finding.place)).toEqual([
       placeOf("Work", 0, "workStartDate"),
       placeOf("Work", 1, "workEndDate"),
-      placeOf("Projects", 0, "projectDate"),
+      placeOf("Projects", 0, "projectStartDate"),
     ])
   })
 
@@ -151,8 +151,8 @@ describe("D4 dates written different ways", () => {
     const resume = {
       ...jake,
       projectsSection: [
-        { id: 1, projectName: "Gitlytics", projectDate: "2024 – Present" },
-        { id: 2, projectName: "Raft", projectDate: "2023" },
+        { id: 1, projectName: "Gitlytics", projectStartDate: "2024", projectEndDate: "Present" },
+        { id: 2, projectName: "Raft", projectStartDate: "2023" },
       ],
       awardsSection: [{ id: 1, awardName: "Dean's List", awardDate: "2019 – 2022" }],
     }
@@ -176,14 +176,14 @@ describe("D4 dates written different ways", () => {
     const projects = {
       ...jake,
       projectsSection: [
-        { id: 1, projectName: "A", projectDate: "2024" },
-        { id: 2, projectName: "B", projectDate: "2023" },
-        { id: 3, projectName: "C", projectDate: "Mar 2022" },
+        { id: 1, projectName: "A", projectStartDate: "2024" },
+        { id: 2, projectName: "B", projectStartDate: "2023" },
+        { id: 3, projectName: "C", projectStartDate: "Mar 2022" },
       ],
     }
     expect(check("D4", projects).findings).toEqual([
       expect.objectContaining({
-        place: placeOf("Projects", 2, "projectDate"),
+        place: placeOf("Projects", 2, "projectStartDate"),
         message: "Has a month, unlike the rest of this section",
         suggestion: "Write just the year: “2022”.",
       }),
@@ -220,9 +220,9 @@ describe("D4 dates written different ways", () => {
   })
 
   test("points at one side of a range in one field", () => {
-    const resume = { ...jake, projectsSection: [{ id: 1, projectName: "Gitlytics", projectDate: "September – Dec 2024" }] }
+    const resume = { ...jake, awardsSection: [{ id: 1, awardName: "Dean's List", awardDate: "September – Dec 2024" }] }
     expect(check("D4", resume).findings).toEqual([
-      expect.objectContaining({ place: placeOf("Projects", 0, "projectDate"), text: "September", suggestion: "Write it like “Sep”." }),
+      expect.objectContaining({ place: placeOf("Awards", 0, "awardDate"), text: "September", suggestion: "Write it like “Sep”." }),
     ])
   })
 })
@@ -242,7 +242,7 @@ describe("D5 “Present” written different ways", () => {
   test("reads it in a range in one field too", () => {
     const resume = {
       ...withWork(job("Jan 2025", "Present")),
-      projectsSection: [{ id: 1, projectName: "Gitlytics", projectDate: "2024 – Now" }],
+      awardsSection: [{ id: 1, awardName: "Dean's List", awardDate: "2024 – Now" }],
     }
     expect(check("D5", resume).messages).toEqual(["“Now” here, “Present” elsewhere"])
   })
@@ -282,8 +282,8 @@ describe("D6 newest first", () => {
     const resume = {
       ...jake,
       projectsSection: [
-        { id: 1, projectName: "A", projectDate: "2021" },
-        { id: 2, projectName: "B", projectDate: "2024" },
+        { id: 1, projectName: "A", projectStartDate: "2021" },
+        { id: 2, projectName: "B", projectStartDate: "2024" },
       ],
     }
     expect(check("D6", resume).status).toBe("passed")

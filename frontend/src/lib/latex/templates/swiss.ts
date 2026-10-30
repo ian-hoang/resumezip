@@ -29,6 +29,8 @@ import {
   stretch,
   sum,
   texGyre,
+  underline,
+  underlined,
   webLink,
   type LatexTemplate,
   type ShowLink,
@@ -44,8 +46,8 @@ const CAP = 0.729
 /** The space between lines, in em, as `leading` in swiss.typ. */
 const LEADING = 0.5
 
-/** A project's links, in grey. */
-const greyLink: ShowLink = (url, text) => `\\textcolor{grey}{${shownLink(url, text)}}`
+/** A project's links, in grey and underlined. */
+const greyLink: ShowLink = (url, text) => `\\textcolor{grey}{${shownLink(url, text, underline)}}`
 
 const preamble = (units: Units, title: string, fallbacks: string) => `\\documentclass[${units.paper("letterpaper")}]{article}
 
@@ -183,10 +185,10 @@ function body(data: TemplateData, units: Units): string {
   const contacts = [
     latex(profile.location),
     latex(profile.phone),
-    profile.email && emailLink(profile.email),
-    profile.linkedin && webLink(profile.linkedin),
-    profile.github && webLink(profile.github),
-    profile.website && webLink(profile.website),
+    profile.email && emailLink(profile.email, underline),
+    profile.linkedin && webLink(profile.linkedin, underline),
+    profile.github && webLink(profile.github, underline),
+    profile.website && webLink(profile.website, underline),
   ]
     .filter(Boolean)
     .map((item) => `\\mbox{${item}}`)
@@ -229,14 +231,14 @@ function body(data: TemplateData, units: Units): string {
         break
       case "projects":
         for (const project of data.projects) {
-          add(`  \\resumeProject{${projectHeader(project, "\\dotSep ", greyLink)}}{${latex(project.date)}}`)
+          add(`  \\resumeProject{${projectHeader(project, "\\dotSep ", greyLink)}}{${latex(dateRange(project.start, project.end))}}`)
           items(project.bullets.map(runs))
         }
         break
       case "publications": {
         // [1], [2], ... 0.7em before each, 5pt apart.
         const apart = sum(units.space(5), units.space(-LEADING * SIZE))
-        add(citations(data.publications, shownLink, `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${apart}`))
+        add(citations(data.publications, underlined, `labelsep=0.7em, topsep=0pt, partopsep=0pt, parsep=0pt, itemsep=${apart}`))
         break
       }
       case "skills":

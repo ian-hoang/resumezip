@@ -81,7 +81,8 @@
     {
       "id": 1,
       "projectName": "gradbook",
-      "projectDate": "2024",
+      "projectStartDate": "2024",
+      "projectEndDate": "",
       "techStack": "Python, NumPy",
       "projectGithub": "github.com/dokafor/gradbook",
       "additionalLink": "",
@@ -90,7 +91,8 @@
     {
       "id": 2,
       "projectName": "Lagos Traffic Forecast",
-      "projectDate": "2021",
+      "projectStartDate": "2021",
+      "projectEndDate": "",
       "techStack": "PyTorch, FastAPI",
       "projectGithub": "github.com/dokafor/lagos-traffic",
       "additionalLink": "",

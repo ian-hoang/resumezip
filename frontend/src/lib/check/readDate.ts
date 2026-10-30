@@ -186,14 +186,14 @@ export function monthName(month: number, { long = false, dotted = false, sept = 
   return dotted && name !== full ? `${capital}.` : capital
 }
 
-// Each section's date fields: when it started and ended, or one field that
-// can hold a range, as a project's "Jun – Aug 2025".
+// Each section's date fields: when it started and ended, or one date, as a
+// publication's or an award's.
 export const DATE_FIELDS: {
   [Section in SectionName]?: { start: FieldKeyOf<Section>; end: FieldKeyOf<Section> } | { single: FieldKeyOf<Section> }
 } = {
   Education: { start: "schoolStartDate", end: "schoolEndDate" },
   Work: { start: "workStartDate", end: "workEndDate" },
-  Projects: { single: "projectDate" },
+  Projects: { start: "projectStartDate", end: "projectEndDate" },
   Publications: { single: "publicationDate" },
   Volunteership: { start: "volunteerStartDate", end: "volunteerEndDate" },
   Leadership: { start: "leadershipStartDate", end: "leadershipEndDate" },

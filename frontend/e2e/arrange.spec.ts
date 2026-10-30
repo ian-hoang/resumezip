@@ -17,7 +17,7 @@ import {
 // Entries and bullets can be moved, and left out of the PDF without being
 // deleted, to tailor one resume to a job.
 
-const BULLETS = "What you did"
+const BULLETS = "Description"
 const RESUME = {
   id: "tailored",
   resumeTitle: "Tailored",
@@ -71,30 +71,35 @@ test("an entry is a card, folded to its name and what's in it, opened with a cli
   await expect(page.getByText("3 entries · drag to reorder", { exact: true })).toBeVisible()
   // Open, its name, the company alone, is typed in where it's shown.
   await expect(page.getByRole("textbox", { name: "Company" }).first()).toHaveValue("Google")
+  // Its card is its name alone, as folded; its fields are under the card, not in it.
+  const openCard = page.locator("[data-card]").first()
+  await expect(openCard.getByRole("textbox", { name: "Company" })).toBeVisible()
+  await expect(openCard.getByRole("textbox", { name: "Role" })).toHaveCount(0)
+  await expect(page.getByRole("textbox", { name: "Role" }).first()).toHaveValue("Engineer")
   await expect(page.getByText("· Engineer", { exact: true })).toHaveCount(0)
 
-  // Its bullets show two at a time until the box is used, which then shows them all. (The folded
-  // cards' boxes are on the page too, out of reach, ready to slide open.)
-  const more = page.getByText("+ 1 more", { exact: true })
+  // Its bullets all show in full, without a click. (The folded cards' boxes are on the page too,
+  // out of reach, ready to slide open.)
   const box = page.getByLabel(BULLETS).first()
-  await expect(more).toBeVisible()
-  await box.click()
-  await expect(more).toBeHidden()
+  await expect(box).toBeVisible()
   await expectText(box, "• Built the search index\n• Cut serving costs by 30%\n• Mentored four interns")
+  await expect(page.getByText("+ 1 more", { exact: true })).toHaveCount(0)
+  // Its box is named Description, with no line of keys under it: the buttons over selected words show them.
+  await expect(box).toHaveAccessibleName("Description")
+  await expect(page.getByText(/One bullet per line/)).toHaveCount(0)
 
   await done.click()
   await expect(done).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Edit entry 1" })).toBeVisible()
 
-  // Folded, it shows its name and how many bullets it has, and a click on it opens it again,
-  // with its bullets two at a time again.
-  await expect(page.getByText("3 bullets", { exact: true })).toBeVisible()
+  // Folded, it shows its name, not how many bullets it has, and a click on it opens it again.
   const card = page.locator("[data-card]").first()
+  await expect(card).not.toContainText("bullets")
   await expect(card.getByText("Google", { exact: true })).toBeVisible()
   await expect(card).not.toContainText("Engineer")
   await card.getByText("Google", { exact: true }).click()
   await expect(done).toBeVisible()
-  await expect(more).toBeVisible()
+  await expect(box).toBeVisible()
 
   expect(errors).toEqual([])
 })
@@ -184,7 +189,7 @@ test("a school's card is named by the school alone, and volunteering's and leade
   expect(errors).toEqual([])
 })
 
-test("a folded card shows its dates in a few words, and the note under the title says when the newest is first", async ({ page }) => {
+test("a card shows its name alone, no dates, and the note under the title says when the newest is first", async ({ page }) => {
   const errors = pageErrors(page)
   await openSection(page, "Experience", {
     ...RESUME,
@@ -209,9 +214,14 @@ test("a folded card shows its dates in a few words, and the note under the title
     ],
   })
   await expect(page.getByText("2 entries · newest first", { exact: true })).toBeVisible()
-  await expect(page.getByText("Sep – Dec 2024 · 1 bullet", { exact: true })).toBeVisible()
-  // The open card's long bullet is cut short at a word.
-  await expect(page.getByText("• Built a service that cut page load time by 30% for twelve million…", { exact: true })).toBeVisible()
+  const folded = page.locator("[data-card]").nth(1)
+  await expect(folded.getByText("Initech", { exact: true })).toBeVisible()
+  await expect(folded).not.toContainText("2024")
+  // The open card's long bullet shows in full.
+  await expectText(
+    page.getByLabel(BULLETS).first(),
+    "• Built a service that cut page load time by 30% for twelve million monthly visitors\n• Ran it",
+  )
 
   // Moved above the newer one, it isn't newest first any more.
   await page.getByRole("button", { name: "Reorder entry 2" }).focus()
@@ -318,7 +328,6 @@ test("a section with every entry left out isn't printed, title and all", async (
   await openSection(page, "Skills")
   await expect.poll(() => printed(page)).toContain("Python, Rust")
 
-  // Its eye is on its card, folded.
   await page.getByRole("button", { name: "Done editing entry 1" }).click()
   await page.getByRole("checkbox", { name: "Include entry 1 in the PDF" }).uncheck()
   await expect
@@ -444,10 +453,10 @@ test("the checker skips what's left out, and opens the right entry after it", as
   })
 
   await page
-    .getByRole("tablist", { name: "Write, check or style" })
-    .getByRole("tab", { name: /^Check/ })
+    .getByRole("tablist", { name: /check or style$/i })
+    .getByRole("tab", { name: "ATS checks" })
     .click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await expect(panel.getByRole("button", { name: weak("Google") })).toBeVisible()
   await expect(panel.getByRole("button", { name: /Initech/ })).toHaveCount(0)
 
@@ -459,10 +468,10 @@ test("the checker skips what's left out, and opens the right entry after it", as
   await expect(box).toBeFocused()
   await expect.poll(selected).toBe("Responsible for the search index")
 
-  // Write mode hides the finding, and Check shows it again.
-  const modes = page.getByRole("tablist", { name: "Write, check or style" })
-  await modes.getByRole("tab", { name: "Write" }).click()
-  await modes.getByRole("tab", { name: /^Check/ }).click()
+  // The finding opened in the form, in the checks' place, and the checks show it again.
+  const modes = page.getByRole("tablist", { name: /check or style$/i })
+  await expect(modes.getByRole("tab", { name: "ATS checks" })).toHaveAttribute("aria-selected", "false")
+  await modes.getByRole("tab", { name: "ATS checks" }).click()
   await expect(panel.getByRole("button", { name: weak("Google") })).toBeVisible()
 
   // Choosing the finding again goes back to the text, at its bullet.
@@ -470,6 +479,77 @@ test("the checker skips what's left out, and opens the right entry after it", as
   await expect(box).toBeFocused()
   await expect.poll(selected).toBe("Responsible for the search index")
 
+  expect(errors).toEqual([])
+})
+
+test("every section's cards have their eye and Delete next to the chevron, open and folded", async ({ page }) => {
+  const errors = pageErrors(page)
+  const one = <T extends Record<string, string>>(entry: T) => [{ id: 1, ...entry }]
+  const resume = {
+    ...RESUME,
+    id: "every-section",
+    educationSection: one({ schoolName: "Stanford University" }),
+    projectsSection: one({ projectName: "Gitlytics" }),
+    publicationsSection: one({ publicationTitle: "Sparse Attention" }),
+    volunteerExperienceSection: one({ volunteerOrg: "Food Bank" }),
+    leadershipExperienceSection: one({ leadershipOrg: "Student Council" }),
+    awardsSection: one({ awardName: "AWS Certified" }),
+  }
+  await openSection(page, "Experience", resume)
+  for (const section of [
+    "Experience",
+    "Skills",
+    "Education",
+    "Projects",
+    "Publications",
+    "Volunteer",
+    "Leadership",
+    "Awards & Certifications",
+  ]) {
+    await page
+      .getByRole("navigation", { name: "Sections" })
+      .getByRole("button", { name: new RegExp(`^${section}$`) })
+      .click()
+    await expect(editorTitle(page)).toHaveText(new RegExp(section))
+    for (const state of ["Done editing entry 1", "Edit entry 1"]) {
+      if (state === "Edit entry 1") await page.getByRole("button", { name: "Done editing entry 1" }).click()
+      await expect(page.getByRole("button", { name: state })).toBeVisible()
+      await expect(page.getByRole("checkbox", { name: "Include entry 1 in the PDF" })).toBeVisible()
+      await expect(page.getByRole("button", { name: "Delete entry 1" })).toBeVisible()
+    }
+  }
+  expect(errors).toEqual([])
+})
+
+test("a folded card is deleted from its own bin, asked first, and an open one left out with its eye", async ({ page }) => {
+  const errors = pageErrors(page)
+  await openSection(page, "Experience")
+
+  // Open, its eye leaves it out, and puts it back.
+  const include = page.getByRole("checkbox", { name: "Include entry 1 in the PDF" })
+  await expect(page.getByRole("button", { name: "Done editing entry 1" })).toBeVisible()
+  await include.uncheck()
+  await expect(page.getByText("Left out of the PDF, and of the copy of the resume inside it.", { exact: false })).toBeVisible()
+  await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBe(true)
+  await include.check()
+  await expect.poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection[0].leftOut).toBeUndefined()
+
+  // Folded, its bin asks first; Keep backs out to the bin, and Delete deletes it, with Undo.
+  await expect(page.getByRole("button", { name: "Edit entry 2" })).toBeVisible()
+  await page.getByRole("button", { name: "Delete entry 2" }).click()
+  await expect(page.getByRole("status").filter({ hasText: "Delete it?" })).toBeVisible()
+  await page.getByRole("button", { name: "Keep" }).click()
+  await expect(page.getByRole("button", { name: "Delete entry 2" })).toBeFocused()
+  await page.getByRole("button", { name: "Delete entry 2" }).click()
+  await page.getByRole("button", { name: "Delete", exact: true }).click()
+  await expect(page.getByRole("status").filter({ hasText: "deleted" })).toHaveText("“Initech” deleted")
+  await expect
+    .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
+    .toEqual(["Google", "Hooli"])
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect
+    .poll(async () => (await savedResume(page, RESUME.id)).workExperienceSection.map((entry: { companyName: string }) => entry.companyName))
+    .toEqual(["Google", "Initech", "Hooli"])
   expect(errors).toEqual([])
 })
 

@@ -81,7 +81,8 @@
     {
       "id": 1,
       "projectName": "Campus Marketplace",
-      "projectDate": "Sep 2024 – Dec 2024",
+      "projectStartDate": "Sep 2024",
+      "projectEndDate": "Dec 2024",
       "techStack": "Figma, Airtable, Webflow",
       "projectGithub": "",
       "additionalLink": "",
@@ -90,7 +91,8 @@
     {
       "id": 2,
       "projectName": "Dining Hall Waste Study",
-      "projectDate": "Feb 2024",
+      "projectStartDate": "Feb 2024",
+      "projectEndDate": "",
       "techStack": "Excel, R",
       "projectGithub": "",
       "additionalLink": "",

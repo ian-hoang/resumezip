@@ -56,6 +56,10 @@ test("text run into the dates leaves no gap before them, and text run over them 
 // entry's name, rather than flush right: nothing comes before them to run into.
 const DATES_FIRST = new Set(["deedy"])
 
+// Templates that print a project's date on the line under its name, after its
+// links: a project without links has its date on that line alone.
+const PROJECT_DATES_UNDER = new Set(["zero2sudo"])
+
 /**
  * Whether `text` starts its line, with nothing printed just before it. Text
  * further left, an em or more away, is another column's.
@@ -91,14 +95,15 @@ test.each(TEMPLATES.map((template) => template.id))("%s keeps dates apart from t
         workRole: text,
         workStartDate: `May ${year}`,
       })),
-      projectsSection: entries.map(({ text, year }) => ({ projectName: text, projectDate: `Jan ${year}` })),
+      projectsSection: entries.map(({ text, year }) => ({ projectName: text, projectStartDate: `Jan ${year}` })),
       awardsSection: entries.map(({ text, year }) => ({ awardName: text, awardDate: `Mar ${year}` })),
     }),
   )
   for (const { text, year } of entries) {
     for (const dates of [`Sep ${year}`, `May ${year}`, `Jan ${year}`, `Mar ${year}`]) {
-      if (DATES_FIRST.has(id)) expect(startsLine(pages, dates), `${dates} under "${text}"`).toBe(true)
-      else expect(gapBefore(pages, dates), `${dates} after "${text}"`).toBeGreaterThanOrEqual(0.5)
+      if (DATES_FIRST.has(id) || (PROJECT_DATES_UNDER.has(id) && dates.startsWith("Jan"))) {
+        expect(startsLine(pages, dates), `${dates} under "${text}"`).toBe(true)
+      } else expect(gapBefore(pages, dates), `${dates} after "${text}"`).toBeGreaterThanOrEqual(0.5)
     }
     // Some templates print the GPA in the degree's line or a line of its own;
     // where it's flush right, like the dates, it's kept apart the same way.

@@ -16,8 +16,8 @@ import {
 } from "./resumeStorage"
 import { idOf, LEGACY_KEY, RESUME_PREFIX } from "./resumeKeys"
 
-const ada = { id: "a", resumeTitle: "Ada", profileSection: { fullName: "Ada Lovelace" } }
-const grace = { id: "g", resumeTitle: "Grace", profileSection: { fullName: "Grace Hopper" } }
+const ada = { id: "a", marks: 2 as const, resumeTitle: "Ada", profileSection: { fullName: "Ada Lovelace" } }
+const grace = { id: "g", marks: 2 as const, resumeTitle: "Grace", profileSection: { fullName: "Grace Hopper" } }
 
 const quotaError = () => new DOMException("The quota has been exceeded.", "QuotaExceededError")
 const deniedError = () => new DOMException("Access is denied for this document.", "SecurityError")
@@ -66,8 +66,9 @@ describe("what the editor can show of a saved resume", () => {
 
   test("is all of an older resume that lacks newer fields, or has them empty", () => {
     const old = { id: "o", resumeTitle: "Old", profileSection: { fullName: "Ada" }, educationSection: null, headings: null }
-    expect(readResume(JSON.stringify(old))).toEqual({ resume: old, complete: true })
-    expect(readResume(JSON.stringify({ ...old, tune: null }))).toEqual({ resume: { ...old, tune: null }, complete: true })
+    // Marked as read with underline and links, which it had none of (see lib/marks.test.ts).
+    expect(readResume(JSON.stringify(old))).toEqual({ resume: { ...old, marks: 2 }, complete: true })
+    expect(readResume(JSON.stringify({ ...old, tune: null }))).toEqual({ resume: { ...old, tune: null, marks: 2 }, complete: true })
   })
 
   test("keeps Fine-tune's settings", () => {

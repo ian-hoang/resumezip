@@ -53,7 +53,7 @@ test.describe("security headers", () => {
       .click()
     await page.getByRole("button", { name: "Add experience" }).click()
     await page.getByLabel("Company").fill("Analytical Engines")
-    await page.getByLabel(/^What you did/).fill("Wrote the first program")
+    await page.getByLabel(/^Description/).fill("Wrote the first program")
     await expect(
       preview(page)
         .getByText(/Analytical Engines/i)
@@ -62,8 +62,8 @@ test.describe("security headers", () => {
 
     // Check starts the grammar checker, and the resume reader reads the preview for it.
     await page
-      .getByRole("tablist", { name: "Write, check or style" })
-      .getByRole("tab", { name: /^Check/ })
+      .getByRole("tablist", { name: /check or style$/i })
+      .getByRole("tab", { name: "ATS checks" })
       .click()
     await expect.poll(() => workers.size).toBe(4)
     for (const url of workers) {

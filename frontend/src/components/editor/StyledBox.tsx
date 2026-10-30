@@ -5,11 +5,15 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { onMac } from "@/lib/keys"
 import { drawBox, htmlOf, readBox, selectIn, selectionIn, targetIn } from "./boxDom"
 import { scrollerOf, visibleArea } from "./layout"
+import { SelectionToolbar, type SelectedWords } from "./SelectionToolbar"
 import {
   BOLD,
+  hasWords,
   ITALIC,
   joinedBack,
   joinedForward,
+  linkAround,
+  linked,
   movedLine,
   pasted,
   removed,
@@ -21,8 +25,10 @@ import {
   styled,
   styledOf,
   styleOver,
+  stylesOver,
   toggled,
   typed,
+  UNDERLINE,
   type Kind,
   type Style,
   type Styled,
@@ -53,6 +59,17 @@ interface Range {
   end: number
 }
 
+/** What can be done to words in a box from outside it, without moving its selection or focus. */
+export interface BoxStyler {
+  stylesOver: (start: number, end: number) => { style: Style; link: string }
+  toggle: (start: number, end: number, style: Style) => void
+  /** Links the words to `address`, or with "", unlinks them. */
+  link: (start: number, end: number, address: string) => void
+}
+
+/** Each box on the page, for styling words picked on the preview (pickedStyle.ts). */
+export const boxStylers = new WeakMap<HTMLElement, BoxStyler>()
+
 /** "type" and "delete" steps in a row are undone together, as in a text box. */
 type StepKind = "type" | "delete" | "other"
 
@@ -72,7 +89,8 @@ const UNDO_STEPS = 200
 // bold and italic, and in a bullets box, its "○" bullets stay left out.
 let copied: Styled | undefined
 
-// What the PDF can't print, which the box ignores, as it does formatting other than bold and italic.
+// What the PDF can't print, which the box ignores, as it does formatting other than its own. A link is
+// made with the box's own button and ⌘K, which ask for its address.
 const IGNORED = new Set(["insertOrderedList", "insertUnorderedList", "insertHorizontalRule", "insertLink"])
 // Typing, pasting, Enter and undo, which the box makes itself, as it does
 // formatting and deletes (madeHere), when the browser says what they reach.
@@ -132,7 +150,11 @@ interface StyledBoxProps {
   className: string
 }
 
-/** A box for bullets or prose, which shows bold and italic words as they print, without their marks. */
+/**
+ * A box for bullets or prose, which shows styled and linked words as they
+ * print, without their marks. Selecting words shows a toolbar over them
+ * (SelectionToolbar.tsx) with the styles ⌘B, ⌘I, ⌘U and ⌘K set.
+ */
 export function StyledBox({ kind, id, value, onChange, labelId, describedBy, invalid, placeholder, className }: StyledBoxProps) {
   const root = useRef<HTMLDivElement>(null)
   const shown = useRef<Shown | null>(null)
@@ -145,6 +167,17 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
   const [composingWords, setComposingWords] = useState(false)
   const change = useRef(onChange)
   change.current = onChange
+  // The words selected, for the toolbar over them, and while the link box is
+  // open, the words it links and their address ("" for a new link).
+  const [selectedWords, setSelectedWords] = useState<SelectedWords | null>(null)
+  const [linking, setLinking] = useState<(Range & { address: string }) | null>(null)
+  const linkingNow = useRef(linking)
+  linkingNow.current = linking
+  const toolbar = useRef<HTMLDivElement>(null)
+  // What the toolbar's buttons do, set by the effect that makes edits.
+  const actions = useRef<{ toggle: (style: Style) => void; link: (range: Range, address: string) => void; editLink: () => void } | null>(
+    null,
+  )
 
   // Text the box didn't save (the first, or a change from another tab):
   // shown as given, with nothing to undo, as a text box does.
@@ -182,11 +215,34 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
     const current = () => shown.current!
     const selection = (): Range => selectionIn(box) ?? selected
 
+    /** Shows the toolbar over the words selected, with their styles, or hides it when none are. */
+    const placeToolbar = () => {
+      // While the link box is open, focus is in it, and the words stay as they were.
+      if (linkingNow.current) return
+      const range = composing.current || box.ownerDocument.activeElement !== box ? null : selectionIn(box)
+      const domSelection = box.ownerDocument.getSelection()
+      if (!range || range.start === range.end || !domSelection?.rangeCount) return setSelectedWords(null)
+      const rect = domSelection.getRangeAt(0).getBoundingClientRect()
+      const sides = box.getBoundingClientRect()
+      const { style, link } = stylesOver(current().styled, range.start, range.end, kind)
+      setSelectedWords({
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        boxLeft: sides.left,
+        boxRight: sides.right,
+        style,
+        link,
+      })
+    }
+
     const show = (s: Styled, start: number, end: number) => {
       drawBox(box, s)
       selectIn(box, start, end)
       selected = { start, end }
       revealCursor(box)
+      placeToolbar()
     }
 
     const record = (step: StepKind, before: Snapshot, after: Snapshot) => {
@@ -246,7 +302,7 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       restore(step.after)
     }
 
-    // Bold or italic on the words selected, or with none, on the words typed next.
+    // Bold, italic or underline on the words selected, or with none, on the words typed next.
     const toggle = (style: Style) => {
       const before = selection()
       const s = current().styled
@@ -255,6 +311,54 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       const now = pending?.at === before.start ? pending.style : styleAt(s, before.start, kind)
       pending = { at: before.start, style: now ^ style }
     }
+
+    // The link box, for the words selected, or with none, the link the cursor is in.
+    const editLink = () => {
+      const before = selection()
+      const s = current().styled
+      const around = before.start === before.end ? linkAround(s, before.start) : undefined
+      const range = around ?? before
+      if (!hasWords(s, range.start, range.end, kind)) return
+      if (around) {
+        selectIn(box, around.start, around.end)
+        selected = { start: around.start, end: around.end }
+      }
+      placeToolbar()
+      setLinking({ ...range, address: around?.address ?? stylesOver(s, range.start, range.end, kind).link })
+    }
+
+    // Links the words to `address`, or unlinks them with "", and puts the selection back on them.
+    const link = (range: Range, address: string) => {
+      setLinking(null)
+      linkingNow.current = null
+      box.focus({ preventScroll: true })
+      const edit = linked(current().styled, range.start, range.end, address, kind)
+      if (edit) commit(edit, "other", range)
+      else show(current().styled, range.start, range.end)
+    }
+
+    actions.current = { toggle, link, editLink }
+
+    // The same, on words picked on the preview, which stay selected there: an
+    // edit like any other, undone with ⌘Z here, that leaves the box's own
+    // selection where it was, and focus where it is.
+    const quietly = (edit: StyledEdit | undefined, range: Range) => {
+      if (!edit) return
+      const was = current()
+      const { edit: next, saved } = settled(edit, was.saved, kind)
+      if (saved === was.saved && sameStyled(next, was.styled)) return
+      record("other", { ...was, ...range }, { saved, styled: next, start: range.start, end: range.end })
+      shown.current = { saved, styled: next }
+      const cursor = box.ownerDocument.activeElement === box ? selectionIn(box) : null
+      drawBox(box, next)
+      if (cursor) selectIn(box, cursor.start, cursor.end)
+      if (saved !== was.saved) change.current(saved)
+    }
+    boxStylers.set(box, {
+      stylesOver: (start, end) => stylesOver(current().styled, start, end, kind),
+      toggle: (start, end, style) => quietly(toggled(current().styled, start, end, style, kind), { start, end }),
+      link: (start, end, address) => quietly(linked(current().styled, start, end, address, kind), { start, end }),
+    })
 
     /** Reads back what the browser changed itself, and makes it an edit. */
     const readBack = (before: Range) => {
@@ -295,9 +399,9 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
         event.preventDefault()
         return type === "historyUndo" ? undo() : redo()
       }
-      if (type === "formatBold" || type === "formatItalic") {
+      if (type === "formatBold" || type === "formatItalic" || type === "formatUnderline") {
         event.preventDefault()
-        return toggle(type === "formatBold" ? BOLD : ITALIC)
+        return toggle(type === "formatBold" ? BOLD : type === "formatItalic" ? ITALIC : UNDERLINE)
       }
       if (type.startsWith("format") || IGNORED.has(type)) return event.preventDefault()
       if (type === "insertParagraph" || type === "insertLineBreak") {
@@ -373,9 +477,12 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       if (unread.current) readBack(beforeComposing)
       const key = event.key.toLowerCase()
       const command = event.metaKey || event.ctrlKey
-      if (command && !event.altKey && (key === "b" || key === "i")) {
+      if (command && !event.altKey && !event.shiftKey && (key === "b" || key === "i" || key === "u")) {
         event.preventDefault()
-        toggle(key === "b" ? BOLD : ITALIC)
+        toggle(key === "b" ? BOLD : key === "i" ? ITALIC : UNDERLINE)
+      } else if (command && !event.altKey && !event.shiftKey && key === "k") {
+        event.preventDefault()
+        editLink()
       } else if (command && !event.altKey && key === "z") {
         event.preventDefault()
         if (event.shiftKey) redo()
@@ -423,9 +530,15 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
 
     const onSelectionChange = () => {
       const range = composing.current ? null : selectionIn(box)
+      placeToolbar()
       if (!range) return
       selected = range
       if (pending && (range.start !== pending.at || range.end !== pending.at)) pending = null
+    }
+
+    // Focus moving into the toolbar keeps it; anywhere else, it goes.
+    const onFocusOut = (event: FocusEvent) => {
+      if (!toolbar.current?.contains(event.relatedTarget as Node | null)) setSelectedWords(null)
     }
 
     // Dragging words would move them without the box's say.
@@ -439,7 +552,11 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
     box.addEventListener("copy", copy)
     box.addEventListener("cut", onCut)
     box.addEventListener("dragstart", onDragStart)
+    box.addEventListener("focusout", onFocusOut)
     document.addEventListener("selectionchange", onSelectionChange)
+    // Scrolling anything moves the words; the toolbar follows them.
+    window.addEventListener("scroll", placeToolbar, { capture: true, passive: true })
+    window.addEventListener("resize", placeToolbar)
     return () => {
       box.removeEventListener("beforeinput", onBeforeInput)
       box.removeEventListener("input", onInput)
@@ -449,30 +566,56 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
       box.removeEventListener("copy", copy)
       box.removeEventListener("cut", onCut)
       box.removeEventListener("dragstart", onDragStart)
+      box.removeEventListener("focusout", onFocusOut)
       document.removeEventListener("selectionchange", onSelectionChange)
+      window.removeEventListener("scroll", placeToolbar, { capture: true })
+      window.removeEventListener("resize", placeToolbar)
       clearTimeout(readSoon)
+      boxStylers.delete(box)
     }
   }, [kind])
 
   const hint = placeholder && (kind === "bullets" ? `• ${placeholder}` : placeholder)
+  const closeLink = (focusBox: boolean) => {
+    const range = linking
+    setLinking(null)
+    linkingNow.current = null
+    if (!focusBox || !range || !root.current) return setSelectedWords(null)
+    root.current.focus({ preventScroll: true })
+    selectIn(root.current, range.start, range.end)
+  }
   return (
-    <div
-      ref={root}
-      id={id}
-      role="textbox"
-      aria-multiline="true"
-      aria-labelledby={labelId}
-      aria-describedby={describedBy}
-      aria-invalid={invalid || undefined}
-      aria-placeholder={hint || undefined}
-      // Empty, it shows its placeholder (.styled-box in globals.css), but not over words being composed.
-      data-empty={hint && empty && !composingWords ? "" : undefined}
-      style={hint ? ({ "--placeholder": JSON.stringify(hint) } as React.CSSProperties) : undefined}
-      contentEditable
-      spellCheck
-      // Translating the page would rewrite the words, and then save them.
-      translate="no"
-      className={`styled-box relative cursor-text whitespace-pre-wrap break-words [&_strong]:font-semibold ${className}`}
-    />
+    <>
+      <div
+        ref={root}
+        id={id}
+        role="textbox"
+        aria-multiline="true"
+        aria-labelledby={labelId}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
+        aria-placeholder={hint || undefined}
+        // Empty, it shows its placeholder (.styled-box in globals.css), but not over words being composed.
+        data-empty={hint && empty && !composingWords ? "" : undefined}
+        style={hint ? ({ "--placeholder": JSON.stringify(hint) } as React.CSSProperties) : undefined}
+        contentEditable
+        spellCheck
+        // Translating the page would rewrite the words, and then save them.
+        translate="no"
+        className={`styled-box relative cursor-text whitespace-pre-wrap break-words [&_a]:text-inherit [&_a]:no-underline [&_strong]:font-semibold [&_u]:underline-offset-2 ${className}`}
+      />
+      {selectedWords && (
+        <SelectionToolbar
+          words={selectedWords}
+          editingLink={linking && linking.address}
+          onToggle={(style) => actions.current?.toggle(style)}
+          onEditLink={() => actions.current?.editLink()}
+          onLink={(address) => linking && actions.current?.link(linking, address)}
+          onCancelLink={() => closeLink(true)}
+          onLeave={() => closeLink(false)}
+          toolbarRef={toolbar}
+        />
+      )}
+    </>
   )
 }
