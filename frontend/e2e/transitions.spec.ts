@@ -52,7 +52,7 @@ async function startWriting(page: Page) {
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Reorder Experience" })).toBeVisible()
 }
 
-test("a section, Write, Check or Style, and the template gallery fade in as they're chosen", async ({ page }) => {
+test("a section, the ATS checks or Style, and the template gallery fade in as they're chosen", async ({ page }) => {
   const errors = pageErrors(page)
   await startWriting(page)
   const sections = page.getByRole("navigation", { name: "Sections" })
@@ -62,17 +62,18 @@ test("a section, Write, Check or Style, and the template gallery fade in as they
   await expect(editorHeading(page, "Experience")).toBeVisible()
 
   const check = await fadingIn(
-    page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ }),
+    page.getByRole("tablist", { name: /check or style$/i }).getByRole("tab", { name: "ATS checks" }),
     page.getByRole("heading", { name: "ATS score" }),
   )
   expect(check.some((text) => text.includes("ATS score"))).toBe(true)
-  const write = await fadingIn(page.getByRole("tab", { name: "Write" }), sections)
-  expect(write.some((text) => text.includes("Profile"))).toBe(true)
+  // Choosing the checks again brings the form back.
+  const write = await fadingIn(page.getByRole("tab", { name: "ATS checks" }), editorHeading(page, "Experience"))
+  expect(write.some((text) => text.includes("Add experience"))).toBe(true)
 
-  // The Style tab shows Fine-tune in the left panel.
+  // The Style tab shows Fine-tune in the form's place.
   const style = await fadingIn(page.getByRole("tab", { name: "Style" }), page.getByRole("region", { name: "Style" }))
   expect(style.some((text) => text.includes("Fine-tune"))).toBe(true)
-  await page.getByRole("tab", { name: "Write" }).click()
+  await page.getByRole("tab", { name: "Style" }).click()
   await expect(page.getByRole("region", { name: "Style" })).toBeHidden()
 
   // Let the preview finish, so the compiler's download isn't cut off as the page closes.
@@ -201,7 +202,7 @@ test.describe("with less motion", () => {
         editorHeading(page, "Experience"),
       ),
     ).toEqual([])
-    expect(await fadingIn(page.getByRole("tab", { name: /^Check/ }), page.getByRole("heading", { name: "ATS score" }))).toEqual([])
+    expect(await fadingIn(page.getByRole("tab", { name: "ATS checks" }), page.getByRole("heading", { name: "ATS score" }))).toEqual([])
     expect(await fadingIn(page.getByRole("tab", { name: "Style" }), page.getByRole("region", { name: "Style" }))).toEqual([])
     await previewShown(page)
     expect(

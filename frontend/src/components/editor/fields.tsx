@@ -71,10 +71,12 @@ export function FlagNote({ id, finding }: { id?: string; finding: Finding }) {
 /**
  * How a field looks, a one-line input or a text box alike: no box, just a
  * line under it, blue where the checker points. Its parent is `relative`, in
- * a `group/field`, with FocusGlow before it and FocusLine after it.
+ * a `group/field`, with FocusGlow before it and FocusLine after it. Its words
+ * are 15px on wide screens, and 16px narrower: Safari on iOS zooms the page
+ * into a field with smaller words when it's focused.
  */
 const underlined = (flagged: boolean) =>
-  `relative w-full min-w-0 border-0 bg-transparent py-2 text-base text-ink outline-none transition-colors focus-visible:outline-none ${
+  `relative w-full min-w-0 border-0 bg-transparent py-1.5 text-base text-ink outline-none xl:text-[15px] transition-colors focus-visible:outline-none ${
     !flagged ? "border-b border-rule-strong hover:border-ink/40" : "border-b-2 border-accent"
   }`
 
@@ -328,7 +330,7 @@ export function BulletsField({ label, value, placeholder, className = "", onChan
           describedBy={describedBy}
           invalid={flag?.level === "fix"}
           placeholder={placeholder}
-          className={`${underlined(!!flag)} min-h-[132px] leading-relaxed`}
+          className={`${underlined(!!flag)} min-h-[116px] leading-relaxed`}
         />
         <FocusLine />
       </div>
@@ -380,7 +382,7 @@ export function SectionHeading({ title, note, onRename, flag, allowEmpty = false
         <div className="flex min-w-0 flex-col gap-[5px]">
           {draft === null ? (
             <div className="group/title flex min-w-0 flex-wrap items-center gap-1.5">
-              <h1 tabIndex={-1} className="min-w-0 font-serif text-[34px] leading-[1.1] tracking-[-0.03em] wrap-anywhere sm:text-[40px]">
+              <h1 tabIndex={-1} className="min-w-0 font-serif text-[30px] leading-[1.1] tracking-[-0.03em] wrap-anywhere sm:text-[34px]">
                 {title}
               </h1>
               {onRename && (
@@ -412,7 +414,7 @@ export function SectionHeading({ title, note, onRename, flag, allowEmpty = false
                 if (event.key === "Enter") save()
                 else setDraft(null)
               }}
-              className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[34px] leading-[1.1] tracking-[-0.03em] outline-none focus-visible:outline-none sm:text-[40px]"
+              className="w-full border-0 border-b-[1.5px] border-accent bg-transparent font-serif text-[30px] leading-[1.1] tracking-[-0.03em] outline-none focus-visible:outline-none sm:text-[34px]"
             />
           )}
           {note && <p className="text-[14px] leading-5 text-ink-3">{note}</p>}

@@ -62,8 +62,8 @@ test.describe("security headers", () => {
 
     // Check starts the grammar checker, and the resume reader reads the preview for it.
     await page
-      .getByRole("tablist", { name: "Write, check or style" })
-      .getByRole("tab", { name: /^Check/ })
+      .getByRole("tablist", { name: /check or style$/i })
+      .getByRole("tab", { name: "ATS checks" })
       .click()
     await expect.poll(() => workers.size).toBe(4)
     for (const url of workers) {

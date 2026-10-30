@@ -155,7 +155,7 @@ export default function DownloadMenu({ choices, busy, onOpen, notice, onNoticeCl
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onButtonKeyDown}
         // The right half of Download PDF's blue pill (the editor's top bar), past a line.
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-r-full pr-1 text-white transition-colors before:absolute before:inset-y-[9px] before:left-0 before:w-px before:bg-white/30 hover:bg-white/[0.08] focus-visible:bg-white/[0.14] aria-expanded:bg-black/[0.08]"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-r-full pr-1 text-white transition-colors before:absolute before:inset-y-[9px] before:left-0 before:w-px before:bg-white/30 hover:bg-white/[0.08] focus-visible:bg-white/[0.14] aria-expanded:bg-black/[0.08]"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

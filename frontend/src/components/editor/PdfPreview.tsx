@@ -91,6 +91,8 @@ interface PdfPreviewProps {
   updating: boolean
   /** The template `pdfUrl` is printed in. */
   template: string | null
+  /** The widest the page is drawn at 100%: MAX_PAGE_WIDTH, or more while the form is folded away. */
+  maxPageWidth?: number
 }
 
 /**
@@ -114,7 +116,7 @@ interface HeldAnchor {
   box: DOMRect
 }
 
-function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
+function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE_WIDTH }: PdfPreviewProps) {
   const [drawings, setDrawings] = useState<Drawing[]>([])
   const [zoom, setZoom] = useState(1)
   // Catches up with the zoom once it settles. Until then, the pages on screen
@@ -174,7 +176,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
     if (downloaded) fetchWorker()
   }, [downloaded])
 
-  const fitWidth = Math.min(availableWidth, MAX_PAGE_WIDTH)
+  const fitWidth = Math.min(availableWidth, maxPageWidth)
   const pageWidth = fitWidth * zoom
   const drawWidth = fitWidth * drawnZoom
 
@@ -443,7 +445,7 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       {pickedAt && <PickedToolbar at={pickedAt} />}
-      {/* On wide screens the zoom is in a pill of its own under the page, below, and the page has this room. */}
+      {/* On wide screens the zoom is in a pill of its own floating over the foot of the page, below, and the page has this room. */}
       <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
           {zoomControls}
@@ -452,15 +454,16 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
       </div>
 
       {/* Focusable, so the preview can be scrolled from the keyboard. On wide
-          screens the pages scroll in the space above the zoom
-          pill, under soft edges (.preview-canvas in styles/editor.css). */}
+          screens the pages scroll the panel's whole height, under soft edges
+          (.preview-canvas in styles/editor.css) and the zoom pill, and can scroll
+          clear of the pill at the end. */}
       <div
         ref={scrollerRef}
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
         onMouseUp={(event) => pickSelected(event.nativeEvent)}
         onScroll={() => setPickedAt(null)}
-        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-4 xl:pt-5"
+        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (
           <div className="flex h-full min-h-[480px] items-center justify-center text-sm text-ink-2">
@@ -548,8 +551,8 @@ function PdfPreview({ pdfUrl, error, updating, template }: PdfPreviewProps) {
         )}
       </div>
 
-      {/* On wide screens, the zoom in a white pill under the page. */}
-      <div className="mb-[17px] mt-2 hidden h-[41px] shrink-0 items-center gap-1 self-center rounded-full bg-sheet px-2 font-mono text-[14px] text-ink shadow-[0_0_0_1px_rgb(17_19_24/0.04),0_6px_16px_-6px_rgb(17_19_24/0.22)] xl:flex">
+      {/* On wide screens, the zoom in a glass pill floating over the foot of the page, which shows through it. */}
+      <div className="glass glass-float absolute bottom-4 left-1/2 z-10 hidden h-10 -translate-x-1/2 items-center gap-1 rounded-full px-2 font-mono text-[14px] text-ink xl:flex">
         {zoomControls}
         <span aria-hidden="true" className="mx-2 h-5 w-px bg-ink/10" />
         <button

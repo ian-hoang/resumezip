@@ -3,7 +3,6 @@ import { expect, test, type Page } from "./test"
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 import {
   editorHeading,
-  editorTitle,
   openFile,
   pageErrors,
   pdfText,
@@ -119,12 +118,12 @@ test("a resume starts with four sections, and the optional ones are added and de
   await expect.poll(async () => (await savedResume(page, "flexible")).sectionOrder).toContain("Awards")
   // Added once, it's no longer offered. The menu opens over the page, and
   // Escape closes it, back on its button.
-  const help = page.getByText("Drag a section to change its place on the page.")
-  const before = await help.boundingBox()
+  const awards = nav(page).getByRole("button", { name: "Awards & Certifications", exact: true })
+  const before = await awards.boundingBox()
   await nav(page).getByRole("button", { name: "Add section", exact: true }).click()
   await expect(menu(page).getByRole("menuitem", { name: "Publications", exact: true })).toBeFocused()
   await expect(menu(page).getByRole("menuitem", { name: "Awards & Certifications", exact: true })).toHaveCount(0)
-  expect(await help.boundingBox()).toEqual(before)
+  expect(await awards.boundingBox()).toEqual(before)
   await page.keyboard.press("ArrowDown")
   await expect(menu(page).getByRole("menuitem", { name: "Volunteer", exact: true })).toBeFocused()
   await page.keyboard.press("Escape")
@@ -163,7 +162,7 @@ test("the Add section menu stays closed once a section is chosen, though the pag
   expect(errors).toEqual([])
 })
 
-test("an added section alone is checked, its finding selects the line it's about, and deleting it with Check open moves the focus to the title", async ({
+test("an added section alone is checked, its finding selects the line it's about, and deleting it moves the focus to the section before", async ({
   page,
 }) => {
   const errors = pageErrors(page)
@@ -179,8 +178,8 @@ test("an added section alone is checked, its finding selects the line it's about
   ])
   await page.goto("/create/new/flexible")
   await previewShown(page)
-  await page.getByRole("tab", { name: /^Check/ }).click()
-  const panel = page.getByRole("tabpanel", { name: /^Check/ })
+  await page.getByRole("tab", { name: "ATS checks" }).click()
+  const panel = page.getByRole("tabpanel", { name: "ATS checks" })
   await expect(panel.getByRole("region", { name: "ATS score" })).not.toContainText("Not scored yet")
   const issue = panel.getByRole("button", { name: /“the” twice in a row/ })
   await expect(issue).toBeVisible()
@@ -191,7 +190,8 @@ test("an added section alone is checked, its finding selects the line it's about
   await page.getByRole("button", { name: "Delete section", exact: true }).click()
   await expect(page.getByRole("button", { name: "Cancel", exact: true })).toBeFocused()
   await page.getByRole("button", { name: "Delete section", exact: true }).click()
-  await expect(editorTitle(page)).toBeFocused()
+  // The rail stays beside the form, so the focus goes to the section before it there, as in Write.
+  await expect.poll(() => page.evaluate(() => document.activeElement?.closest("nav")?.getAttribute("aria-label"))).toBe("Sections")
   await expect(issue).toBeHidden()
   expect(errors).toEqual([])
 })

@@ -50,3 +50,8 @@ export const SEGMENTS = "segment-track h-[46px] max-w-full gap-0.5 p-[5px]"
 export const BAR_SEGMENTS = "segment-track h-10 max-w-full gap-0.5 p-0.5"
 export const SEGMENT =
   "relative inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full text-[15px] font-medium tracking-[-0.01em] transition-colors duration-150 focus-visible:outline-none [&_svg]:size-4"
+/** SEGMENTS in the editor's top bar, which is kept lean: 40px tall, 4px round its white pill. */
+export const SLIM_SEGMENTS = "segment-track h-10 max-w-full gap-0.5 p-1"
+/** A choice in SLIM_SEGMENTS: SEGMENT at 32px, with 14px words. */
+export const SLIM_SEGMENT =
+  "relative inline-flex h-8 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full text-[14px] font-medium tracking-[-0.01em] transition-colors duration-150 focus-visible:outline-none [&_svg]:size-4"

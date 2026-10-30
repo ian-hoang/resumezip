@@ -53,7 +53,7 @@ const LIT: Keyframe = {
 }
 
 // The fields in an open card: closer together than the profile's, as there are several cards.
-const CARD_GRID = "grid grid-cols-1 gap-x-7 gap-y-5 @sm:grid-cols-2"
+const CARD_GRID = "grid grid-cols-1 gap-x-6 gap-y-4 @sm:grid-cols-2"
 
 // Where a field is typed in: not the Include boxes in an entry's heading.
 // A bullets box is an editable div.
@@ -396,7 +396,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
       ref={addButton}
       type="button"
       onClick={add}
-      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[18px] border border-dashed border-[#d4d7dd] text-[15px] font-medium tracking-[-0.01em] text-accent transition-colors duration-150 hover:border-[#b9bec7] hover:bg-[#f7f8fa] [&_svg]:size-4"
+      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[18px] border border-dashed border-[#d4d7dd] text-[15px] font-medium tracking-[-0.01em] text-accent transition-colors duration-150 hover:border-[#b9bec7] hover:bg-[#f7f8fa] [&_svg]:size-4"
     >
       <Plus aria-hidden="true" />
       {addLabel}
@@ -668,7 +668,7 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
 
       {section.choice && <SectionChoice choice={section.choice} />}
 
-      <div className="mt-[22px] flex flex-col">
+      <div className="mt-[18px] flex flex-col">
         {entries.length > 0 &&
           (dnd ? (
             <dnd.DragDropContext onBeforeCapture={() => stopMoving(elements.current)} onDragEnd={onDragEnd}>

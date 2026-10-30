@@ -42,7 +42,7 @@ test("reviews a resume in the browser, scribbles its notes on the page, and open
   // from elsewhere can score differently; a file the review prints scores the same (the Word file's test).
   await page.getByRole("button", { name: "Fix it in the editor" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(page.getByRole("tablist", { name: "Write, check or style" }).getByRole("tab", { name: /^Check/ })).toHaveAttribute(
+  await expect(page.getByRole("tablist", { name: /check or style$/i }).getByRole("tab", { name: "ATS checks" })).toHaveAttribute(
     "aria-selected",
     "true",
   )

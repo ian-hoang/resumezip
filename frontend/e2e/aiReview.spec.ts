@@ -171,10 +171,10 @@ test("AI notes are kept in the browser: the same resume shows them again without
   await expect(page.getByRole("button", { name: "Red flags, 2" })).toBeVisible({ timeout: 90_000 })
   expect(calls).toBe(1)
 
-  // In the editor, the Check tab opens on them and lists them, and they're marked on the preview.
+  // In the editor, AI review opens on them and lists them, and they're marked on the preview.
   await page.getByRole("button", { name: "Fix it in the editor" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(page.getByRole("button", { name: "AI notes", pressed: true })).toBeVisible()
+  await expect(page.getByRole("tab", { name: "AI review" })).toHaveAttribute("aria-selected", "true")
   const notes = page.getByRole("region", { name: "AI notes" })
   await expect(notes.getByRole("region", { name: "Red flags, 2" })).toBeVisible()
   await expect(notes.getByRole("region", { name: "Done well, 1" })).toBeVisible()
@@ -187,27 +187,30 @@ test("AI notes are kept in the browser: the same resume shows them again without
   const row = notes.getByRole("button", { name: /Says what you did, not what changed/ })
   await row.hover()
   await expect(page.getByRole("tooltip")).toContainText("Tested the checkout service, catching [number] bugs before release")
-  // Choosing it opens the words it's about, which say the note to a screen reader, not under the field.
+  // The note that was never on a line is about the whole resume, and has nothing to open.
+  await expect(notes.getByText("On your resume")).toBeVisible()
+  await expect(notes.getByText("Changed since the notes")).toHaveCount(0)
+  // Choosing it opens the words it's about in the form, in AI review's place, which say the note to a screen
+  // reader, not under the field.
   await row.click()
   const bullets = page.getByLabel(/^Description/)
   await expect(bullets).toBeFocused()
   await expect(bullets).toHaveAccessibleDescription(/Red flag: Says what you did, not what changed/)
-  // The note that was never on a line is about the whole resume, and has nothing to open.
-  await expect(notes.getByText("On your resume")).toBeVisible()
-  await expect(notes.getByText("Changed since the notes")).toHaveCount(0)
   // Once its words are rewritten, a note says so, and its mark goes from the preview.
   await bullets.fill(
     "• Responsible for the checkout service, catching 12 bugs before release\n• Built a deploy tool that cut release time from two hours to ten minutes for 40 engineers",
   )
+  await page.getByRole("button", { name: "Back to AI review" }).click()
   await expect(notes.getByText("Changed since the notes")).toBeVisible({ timeout: 60_000 })
   await expect(mark).toHaveCount(0, { timeout: 60_000 })
   await expect(page.getByRole("button", { name: "Done well: A result anyone can picture" })).toBeAttached()
-  // Choosing another note opens it, and the one that was open closes.
+  // Choosing another note opens it, and the one that was open closes; back from its words, it's still open.
   await notes.getByRole("button", { name: "A result anyone can picture" }).click()
+  await page.getByRole("button", { name: "Back to AI review" }).click()
   await expect(notes.getByText("Before and after, with who it helped.")).toBeVisible()
   await expect(notes.getByText("A recruiter can't tell what your testing caught.")).toHaveCount(0)
-  // The checks' marks are a switch away, and never drawn with the AI's.
-  await page.getByRole("button", { name: "ATS checks" }).click()
+  // The checks' marks are a tab away, and never drawn with the AI's.
+  await page.getByRole("tab", { name: "ATS checks" }).click()
   await expect(page.getByRole("button", { name: "“Responsible for” is a weak start", exact: true })).toBeAttached()
   await expect(mark).toHaveCount(0)
   expect(calls).toBe(1)
@@ -226,7 +229,7 @@ test("a review that found nothing can be asked again from the editor", async ({ 
 
   await page.getByRole("button", { name: "Fix it in the editor" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await page.getByRole("button", { name: "AI notes", pressed: false }).click()
+  await page.getByRole("tab", { name: "AI review" }).click()
   // Its empty review isn't taken for an answer: the AI is asked.
   const ask = page.getByRole("button", { name: "Get AI notes" })
   await expect(ask).toBeEnabled({ timeout: 60_000 })
@@ -258,6 +261,7 @@ test("a reviewed file is kept as a past review, which opens as it was reviewed, 
   const bullets = page.getByLabel(/^Description/)
   await expect(bullets).toBeFocused()
   await bullets.fill("• Built a deploy tool that cut release time from two hours to ten minutes for 40 engineers")
+  await page.getByRole("button", { name: "Back to AI review" }).click()
   const again = notes.getByRole("button", { name: "Get new notes for this version" })
   await expect(again).toBeEnabled({ timeout: 60_000 })
   await again.click()
@@ -457,7 +461,7 @@ async function askedFromTheEditor(page: Page) {
   await reviewed(page)
   await page.getByRole("button", { name: "Fix it in the editor" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await page.getByRole("button", { name: "AI notes", pressed: false }).click()
+  await page.getByRole("tab", { name: "AI review" }).click()
   const ask = page.getByRole("button", { name: "Get AI notes" })
   await expect(ask).toBeEnabled({ timeout: 60_000 })
   await ask.click()
@@ -635,7 +639,7 @@ test("where the lines can't be hashed, the editor still asks the AI and shows it
   await page.getByRole("button", { name: "Fix it in the editor" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
   // The review's notes weren't kept without a hash, so the editor asks again.
-  await page.getByRole("button", { name: "AI notes", pressed: false }).click()
+  await page.getByRole("tab", { name: "AI review" }).click()
   const ask = page.getByRole("button", { name: "Get AI notes" })
   await expect(ask).toBeEnabled({ timeout: 60_000 })
   await ask.click()

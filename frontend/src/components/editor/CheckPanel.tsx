@@ -136,7 +136,7 @@ export default function CheckPanel() {
   )
 }
 
-/** Which notes the panel lists and the preview is marked with: the ATS checks or the AI's. */
+/** Which notes the panel lists and the preview is marked with: the ATS checks or the AI's. On wide screens each has its own tab in the rail instead (LeftBar.tsx). */
 function MarksSwitch() {
   const { shown, show } = useMarks()
   return (
@@ -144,7 +144,7 @@ function MarksSwitch() {
     <div
       role="group"
       aria-label="Notes on the page"
-      className="review-switch self-start bg-fill shadow-[inset_0_0_0_1px_var(--color-fill-line)]"
+      className="review-switch self-start bg-fill shadow-[inset_0_0_0_1px_var(--color-fill-line)] xl:hidden"
     >
       <button type="button" aria-pressed={shown === "checks"} onClick={() => show("checks")}>
         ATS checks

@@ -21,8 +21,9 @@ const CLOSE_MS = 150
 // The gap between the button and the menu, and the least between the menu and the window's edges.
 const GAP = 8
 const MARGIN = 16
-// On smaller screens, where the button is in the row of tabs. On wide ones it's as wide as the button, in the left bar.
+// On smaller screens, where the button is in the row of tabs. On wide ones the button is an icon in the rail, and the menu is RAIL_WIDTH.
 const WIDTH = 352
+const RAIL_WIDTH = 248
 // About the menu's height with every choice in it: above the button if it fits there.
 const TALL = 240
 
@@ -34,15 +35,15 @@ interface Placement {
   bottom?: number
   maxHeight: number
   above: boolean
-  /** As narrow as the left bar, so the sections to add are in one column rather than two. */
+  /** By the rail on wide screens, so the sections to add are in one column rather than two. */
   narrow: boolean
 }
 
 function placeBy(button: HTMLElement): Placement {
   const box = button.getBoundingClientRect()
-  // In the left bar it stays inside the bar, over the sections, rather than spreading over the form.
+  // By the rail it opens out over the form, one column wide, from the button's left edge.
   const narrow = window.matchMedia(WIDE_SCREEN).matches
-  const width = narrow ? box.width : Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
+  const width = narrow ? RAIL_WIDTH : Math.min(WIDTH, window.innerWidth - 2 * MARGIN)
   const left = narrow ? box.left : Math.min(Math.max(MARGIN, box.left), window.innerWidth - MARGIN - width)
   const below = window.innerHeight - box.bottom
   // Above the button where it fits, as under the left bar's sections; below
@@ -136,15 +137,15 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={() => (open ? close() : openMenu())}
-        // In the list on wide screens, a row of its own, as wide as the sections, which the menu takes; in the row of tabs, a pill.
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[15px] font-medium tracking-[-0.01em] text-accent transition-[background-color,scale] duration-150 hover:bg-accent/[0.06] active:scale-[0.98] aria-expanded:bg-accent/[0.06] motion-reduce:transition-none xl:mt-[6px] xl:h-10 xl:w-full xl:justify-start xl:gap-3 xl:rounded-[12px] xl:px-[11px]"
+        // In the rail on wide screens, an icon as big as the sections'; in the row of tabs, a pill.
+        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[15px] font-medium tracking-[-0.01em] text-accent transition-[background-color,scale] duration-150 hover:bg-accent/[0.06] active:scale-[0.98] aria-expanded:bg-accent/[0.06] motion-reduce:transition-none xl:mt-[6px] xl:h-10 xl:w-10 xl:rounded-[12px] xl:px-0"
       >
         {/* It turns into a cross while the menu is open. */}
         <Plus
           className={`h-4 w-4 transition-transform duration-200 ease-out motion-reduce:transition-none xl:mx-px ${open ? "rotate-45" : ""}`}
           aria-hidden="true"
         />
-        Add section
+        <span className="xl:sr-only">Add section</span>
       </button>
 
       {place &&
