@@ -75,7 +75,8 @@ export function SelectionToolbar({
   linkOnly = false,
   onPointerOver,
 }: SelectionToolbarProps) {
-  const [place, setPlace] = useState<{ top: number; left: number } | null>(null)
+  // `glide`: moved because the address opened or shut, which slides it across with the address.
+  const [place, setPlace] = useState<{ top: number; left: number; glide: boolean } | null>(null)
   const [problem, setProblem] = useState("")
   const [typed, setTyped] = useState("")
   const input = useRef<HTMLInputElement>(null)
@@ -84,11 +85,24 @@ export function SelectionToolbar({
   const linked = words.link !== ""
   // The address shows while the words are linked, and while one is being typed for them.
   const withAddress = linked || linking
+  const parts = `${withAddress} ${linking}`
+  const placedFor = useRef(parts)
+  // What the address and its button said, kept on them as they slide shut.
+  const lastAddress = useRef("")
+  const lastSubmit = useRef("Add")
+  if (withAddress) lastAddress.current = linking ? typed : shown(words.link)
+  if (linking) lastSubmit.current = editingLink ? "Save" : "Add"
 
   useLayoutEffect(() => {
     const toolbar = toolbarRef.current
     if (!toolbar) return
-    const { width, height } = toolbar.getBoundingClientRect()
+    const { height } = toolbar.getBoundingClientRect()
+    // Placed for the width it's sliding to as the address opens or shuts, not the one it starts at.
+    let width = toolbar.getBoundingClientRect().width
+    for (const grow of toolbar.querySelectorAll<HTMLElement>("[data-grow]")) {
+      const inside = grow.firstElementChild as HTMLElement
+      width += (grow.dataset.grow === "open" ? inside.scrollWidth : 0) - inside.getBoundingClientRect().width
+    }
     const { top: visibleTop, bottom: visibleBottom } = uncovered()
     const bottom = Math.min(
       visibleBottom,
@@ -101,8 +115,10 @@ export function SelectionToolbar({
     const middle = (words.left + words.right) / 2 - width / 2
     const inBox = width <= words.boxRight - words.boxLeft ? Math.min(Math.max(middle, words.boxLeft), words.boxRight - width) : middle
     const left = Math.min(Math.max(inBox, MARGIN), window.innerWidth - MARGIN - width)
-    setPlace((old) => (old?.top === top && old.left === left ? old : { top, left }))
-  }, [words, withAddress, linking, toolbarRef])
+    const glide = placedFor.current !== parts
+    placedFor.current = parts
+    setPlace((old) => (old?.top === top && old.left === left ? old : { top, left, glide: old !== null && glide }))
+  }, [words, parts, toolbarRef])
 
   // The field starts on the words' own address, as the link box opens. It's
   // already focused when a click in it opened the box.
@@ -139,6 +155,24 @@ export function SelectionToolbar({
       pressed ? "bg-ink text-paper" : "text-ink hover:bg-ink/[0.06]"
     }`
 
+  // What slides open beside the link button, and shut again: grid's 0fr to 1fr is the width of what's in it, which
+  // `width` can't go to. Shut, it's hidden and can't be reached, as if it weren't there; its margin takes back
+  // the form's gap, and what's in it puts one back. It's shown at once as it opens, so the address can take
+  // focus, and hidden only once it has slid shut.
+  const grow = (open: boolean, children: React.ReactNode) => (
+    <div
+      data-grow={open ? "open" : "shut"}
+      inert={!open}
+      className={`-ml-0.5 grid duration-[220ms] ease-glide motion-reduce:transition-none ${
+        open
+          ? "visible grid-cols-[1fr] opacity-100 transition-[grid-template-columns,opacity]"
+          : "invisible grid-cols-[0fr] opacity-0 transition-[grid-template-columns,opacity,visibility]"
+      }`}
+    >
+      <div className="flex min-w-0 items-center overflow-hidden">{children}</div>
+    </div>
+  )
+
   const styleButton = (style: Style, label: string, letter: string, look: string, text: string) => (
     <button
       type="button"
@@ -171,7 +205,9 @@ export function SelectionToolbar({
           onCancelLink()
         }
       }}
-      className="glass glass-frost fixed z-50 rounded-full p-1 shadow-[0_6px_24px_-8px_rgb(17_19_24/0.3)]"
+      className={`glass glass-frost fixed z-50 rounded-full p-1 shadow-[0_6px_24px_-8px_rgb(17_19_24/0.3)] ${
+        place?.glide ? "transition-[left] duration-[220ms] ease-glide motion-reduce:transition-none" : ""
+      }`}
     >
       <form onSubmit={submit} className="flex items-center gap-0.5">
         {!linkOnly && (
@@ -194,13 +230,14 @@ export function SelectionToolbar({
         >
           <Link2 className="h-4 w-4" aria-hidden="true" />
         </button>
-        {withAddress && (
+        {grow(
+          withAddress,
           <>
             <input
               ref={input}
               type="text"
               inputMode="url"
-              value={linking ? typed : shown(words.link)}
+              value={withAddress ? (linking ? typed : shown(words.link)) : lastAddress.current}
               placeholder="Paste a link"
               aria-label="Link address"
               aria-invalid={problem ? true : undefined}
@@ -215,19 +252,20 @@ export function SelectionToolbar({
                 setTyped(event.target.value)
                 setProblem("")
               }}
-              className="h-8 w-48 min-w-0 rounded-full bg-transparent px-2 text-[15px] text-ink outline-none placeholder:text-ink-2/60 focus:bg-white/60"
+              className="ml-0.5 h-8 w-48 min-w-0 shrink-0 rounded-full bg-transparent px-2 text-[15px] text-ink outline-none placeholder:text-ink-2/60 focus:bg-white/60"
             />
-            {linking && (
+            {grow(
+              linking,
               <button
                 type="submit"
                 onPointerDown={keepSelection}
                 onMouseDown={keepSelection}
-                className="h-8 rounded-full bg-ink px-3 text-[14px] font-medium text-paper"
+                className="ml-1 h-8 shrink-0 rounded-full bg-ink px-3 text-[14px] font-medium text-paper"
               >
-                {editingLink ? "Save" : "Add"}
-              </button>
+                {lastSubmit.current}
+              </button>,
             )}
-          </>
+          </>,
         )}
         {problem && (
           <p id={problemId} role="alert" className="absolute left-3 top-full mt-1.5 rounded-full bg-ink px-2.5 py-1 text-[13px] text-paper">

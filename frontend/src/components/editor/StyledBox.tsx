@@ -623,7 +623,9 @@ export function StyledBox({ kind, id, value, onChange, labelId, describedBy, inv
           onEditLink={() => actions.current?.editLink()}
           onLink={(address) => actions.current?.link(linking, address)}
           onCancelLink={() => closeLink(true)}
-          onLeave={() => closeLink(false)}
+          // Not when the link box was closed already, and focus is leaving it for the box: the toolbar
+          // would go, and come back as the words are selected again.
+          onLeave={() => linkingNow.current && closeLink(false)}
           toolbarRef={toolbar}
         />
       )}
