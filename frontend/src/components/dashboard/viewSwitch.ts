@@ -87,18 +87,18 @@ let closing = false
 
 /**
  * Whether the dashboard is coming in under closeResume's transition. It
- * skips its own fade in then (page-in in globals.css): the transition already
- * crossfades it in, and a resume's page and name, pictured apart from the
- * rest, would escape the second fade and be there well before the sheet.
+ * skips its own fade in then (page-in in globals.css): the transition shows
+ * it whole from its first frame, and a resume's page and name, pictured
+ * apart from the rest, would escape the fade and be there before the sheet.
  */
 export const closingResume = () => closing
 
 /**
  * Back to the dashboard from a resume's editor: where the browser has view
  * transitions, the editor's page shrinks back into the resume's page on the
- * dashboard as it comes in, the way it came (openResume, backwards). The
- * browser holds a picture of the editor until that page is on the dashboard
- * (or gives up after a moment, and the rest crossfades). Returns false where
+ * dashboard, which is there at once (globals.css), the way it came
+ * (openResume, backwards). The browser holds a picture of the editor until
+ * that page is on the dashboard (or gives up after a moment). Returns false where
  * it doesn't run, for the link to go as usual.
  */
 export function closeResume(id: string, go: () => void): boolean {

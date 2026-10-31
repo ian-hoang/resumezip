@@ -259,7 +259,9 @@ test("on a wide screen the template gallery drops in solid, and only what's in i
   expect(errors).toEqual([])
 })
 
-test("back on the dashboard from a resume, the page comes in on the switch's one crossfade, with its resumes", async ({ page }) => {
+test("back on the dashboard from a resume, the dashboard is there at once, with its resumes, as the page shrinks into its card", async ({
+  page,
+}) => {
   const errors = pageErrors(page)
   await saveResumes(page, [MARA])
   await page.goto("/create/dashboard")
@@ -284,7 +286,27 @@ test("back on the dashboard from a resume, the page comes in on the switch's one
     new MutationObserver(look).observe(document.body, { childList: true, subtree: true })
     return seen
   })
+  // The parts of the switch that animate, once it's under way: looked for with timers, as the browser
+  // runs no animation frames while it waits for the dashboard.
+  const animated = page.evaluate(
+    () =>
+      new Promise<string[]>((done) => {
+        const look = () => {
+          const parts = document
+            .getAnimations()
+            .map((animation) => (animation.effect as KeyframeEffect | null)?.pseudoElement ?? "")
+            .filter((part) => part.startsWith("::view-transition"))
+          if (parts.length) done(parts)
+          else setTimeout(look, 10)
+        }
+        look()
+      }),
+  )
   await page.getByRole("link", { name: "Dashboard" }).click()
+  // Only the page moves. Faded in, however quickly, the dashboard came in behind the page, already solid.
+  const parts = await animated
+  expect(parts).toContain("::view-transition-group(resume-open-page)")
+  expect(parts.filter((part) => /-(old|new)\(root\)$/.test(part))).toEqual([])
   // The greeting by name: the editor can still be on the page as the switch begins, with headings of its own.
   await expect(page.getByRole("heading", { level: 1, name: /^Good \w+, Mara$/ })).toBeVisible()
   await expect(page.getByRole("link", { name: /Mara at Stripe/ }).first()).toBeVisible()
