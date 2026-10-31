@@ -179,7 +179,9 @@
    dashboard, doesn't fade, for the same reason: it's there from the first
    frame, with what's around it fading in. A block with frosted layers of
    its own behind its words (the review page's sheet and fog) is marked
-   no-page-in and fades only its words, marked page-in. A fade and no more:
+   no-page-in and fades only its words, marked page-in. A `main` marked
+   data-no-page-in, as the dashboard coming in under a view transition that
+   fades it already (closingResume), doesn't fade at all. A fade and no more:
    moving it as well could move what's under a click. */
 @keyframes page-in {
   from {
@@ -187,7 +189,7 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  main > :where(:not(.glass, .no-page-in)),
+  main:where(:not([data-no-page-in])) > :where(:not(.glass, .no-page-in)),
   .page-in {
     animation: page-in 450ms var(--ease-glide) backwards;
   }

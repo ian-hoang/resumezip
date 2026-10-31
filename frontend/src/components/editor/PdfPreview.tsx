@@ -16,7 +16,10 @@ import PrintingPage from "./PrintingPage"
 import { useCheckActions } from "./CheckContext"
 import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
+import { LinkPill, usePointedLink, type PointedLink } from "./LinkPill"
+import { onPickedInBox, pickedInBox, whenPickedInBox } from "./pickedStyle"
 import { PickedToolbar } from "./PickedToolbar"
+import { boxStylers } from "./StyledBox"
 import type { SelectedWords } from "./SelectionToolbar"
 import { newWords, wordsIn, type Word } from "./changedWords"
 
@@ -44,6 +47,7 @@ function fetchWorker() {
 }
 
 const compilerDownloaded = () => compilerStatus().downloaded === 1
+const noPick = () => null
 
 // A PDF's pages drawn at one width, on screen or drawing out of sight. A new
 // drawing stays hidden until all its pages have rendered, so a new PDF, or the
@@ -448,7 +452,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
   // here, to copy. Where the preview hides the form, as on a phone, a double-click
   // opens the form with the word selected, to edit. Only once the button's
   // up, so a drag isn't cut short; a click selects nothing.
-  const { pick } = useCheckActions()
+  const { pick, printedByBox } = useCheckActions()
   // Where the words picked are on the page, for the toolbar that styles them,
   // until the page scrolls under it.
   const [pickedAt, setPickedAt] = useState<Omit<SelectedWords, "style" | "link"> | null>(null)
@@ -480,6 +484,25 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
     requestAnimationFrame(() => setPickedAt(scrollerRef.current?.offsetParent ? at : null))
   }
 
+  // A link made in a box shows its address over it while it's pointed at (LinkPill.tsx). Changed or
+  // taken off there, it's picked as its words would be, which opens them lit up in their box, the
+  // change is made there, and the buttons that style picked words show over it.
+  const links = usePointedLink(pagesRef, scrollerRef, printedByBox)
+  // Not while the buttons for picked words are over the page.
+  const picked = useSyncExternalStore(onPickedInBox, pickedInBox, noPick)
+  function relink(link: PointedLink, address: string) {
+    links.close()
+    const stop = whenPickedInBox((picked) => {
+      const styler = boxStylers.get(picked.box)
+      if (!styler) return
+      const whole = styler.linkAround(picked.start) ?? picked
+      styler.link(whole.start, whole.end, address)
+      picked.relight()
+      setPickedAt(scrollerRef.current?.offsetParent ? link.at : null)
+    })
+    if (!pick(link.printed, link.start, link.end)) stop()
+  }
+
   // A PDF no drawing shows any more is closed by react-pdf, and forgotten here.
   useEffect(() => {
     for (const file of loadedRef.current.keys()) if (!files.includes(file)) loadedRef.current.delete(file)
@@ -503,6 +526,14 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
   return (
     <div className="relative flex h-full min-h-0 flex-col">
       {pickedAt && <PickedToolbar at={pickedAt} />}
+      {links.pointed && !(pickedAt && picked) && (
+        <LinkPill
+          link={links.pointed}
+          onLink={(address) => links.pointed && relink(links.pointed, address)}
+          onClose={links.close}
+          onPointerOver={links.overPill}
+        />
+      )}
       {/* On wide screens the zoom is in a pill of its own floating over the foot of the page, below, and the page has this room. */}
       <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
@@ -520,7 +551,12 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
         tabIndex={0}
         onCopy={(event) => pdf && copyPlainText(event, pdf.pdfjs)}
         onMouseUp={(event) => pickSelected(event.nativeEvent)}
-        onScroll={() => setPickedAt(null)}
+        onPointerOver={links.onPointerOver}
+        onPointerLeave={links.onPointerLeave}
+        onScroll={() => {
+          setPickedAt(null)
+          links.close()
+        }}
         className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (

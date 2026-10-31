@@ -14,6 +14,7 @@ import { extraRef } from "@/lib/resumeSections"
 import { printedOf } from "@/lib/typst/compile"
 import { WIDE_SCREEN } from "./layout"
 import { pickedIn, type PickedWords } from "./previewPick"
+import { PROFILE_FIELDS } from "./sections"
 import type { ActiveSection } from "./SectionNav"
 import { MarksProvider } from "./MarksContext"
 import { swapView } from "./swapView"
@@ -99,6 +100,8 @@ type CheckActions = ReturnType<typeof useResumeCheck>["actions"] & {
    * word selected there. False if no field printed them.
    */
   pick: (printed: string, start: number, end: number, edit?: boolean) => boolean
+  /** Whether characters `start` to `end` of the preview's text were printed by a box with bold, italic and links (StyledBox.tsx). */
+  printedByBox: (printed: string, start: number, end: number) => boolean
   /** Whether a request hasn't been taken yet. */
   pending: (request: number) => boolean
   /**
@@ -370,6 +373,16 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
     [chooseMode],
   )
 
+  const printedByBox = useCallback((printed: string, start: number, end: number) => {
+    const place = pickedIn(textsOf(viewOf(latest.current.resume)), printed, start, end)?.place
+    // Bullets, the summary, and a Text or list section's words.
+    return (
+      place?.kind === "extra-text" ||
+      (place?.kind === "entry" && place.line !== undefined) ||
+      (place?.kind === "profile" && PROFILE_FIELDS.some((field) => field.key === place.field && "multiline" in field))
+    )
+  }, [])
+
   const pending = useCallback((request: number) => request > claimed.current, [])
   const claim = useCallback((request: number) => {
     if (request <= claimed.current) return false
@@ -398,8 +411,8 @@ export function CheckProvider({ onSelect, onPick, preview, unbuilt, children }: 
   }, [target, picked])
   const value = useMemo(() => (report ? { report, checked, pdf, grammar } : null), [report, checked, pdf, grammar])
   const actions = useMemo(
-    () => ({ ...check.actions, chooseMode, open, pick, pending, claim }),
-    [check.actions, chooseMode, open, pick, pending, claim],
+    () => ({ ...check.actions, chooseMode, open, pick, printedByBox, pending, claim }),
+    [check.actions, chooseMode, open, pick, printedByBox, pending, claim],
   )
   return (
     <CheckActionsContext.Provider value={actions}>
