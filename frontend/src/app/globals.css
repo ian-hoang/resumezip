@@ -671,6 +671,12 @@
 /* Opening a resume from the dashboard (openResume in components/dashboard/viewSwitch.ts):
    its page grows into the editor's page while the rest crossfades; going back
    (closeResume), it shrinks back into its place on the dashboard. */
+/* Name the editor's page only for these transitions (OPEN_NAME in viewSwitch.ts).
+   A named snapshot escapes its ancestors' clipping and mask. During section
+   switches, keep the page in the root snapshot, clipped to its scroll panel. */
+:root:active-view-transition-type(resume-open, resume-close) [data-open-target] {
+  view-transition-name: resume-open-page;
+}
 :root:active-view-transition-type(resume-open, resume-close)::view-transition-group(*),
 :root:active-view-transition-type(resume-open, resume-close)::view-transition-old(*),
 :root:active-view-transition-type(resume-open, resume-close)::view-transition-new(*) {

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { editorHeading, newResume, pageErrors, previewShown, saveResumes, settled, transitionsDone } from "./helpers"
+import { editorHeading, newResume, pageErrors, preview, previewShown, saveResumes, settled, transitionsDone } from "./helpers"
 import { MARA } from "./resumes"
 
 // What a click brings up fades in, rather than appearing all at once, unless
@@ -52,6 +52,55 @@ async function startWriting(page: Page) {
   // the click could land on the old one, no longer on the page.
   await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Reorder Experience" })).toBeVisible()
 }
+
+test("switching editor sections keeps the preview inside its scroll panel throughout the crossfade", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await startWriting(page)
+  await previewShown(page)
+  await settled(preview(page))
+  test.skip(
+    !(await page.evaluate(() => "startViewTransition" in document && "types" in ViewTransition.prototype)),
+    "The crossfade needs typed view transitions",
+  )
+
+  // Inspect the snapshots as soon as they exist, even if the short animation
+  // finishes between test commands. A separately captured PDF escapes the
+  // scroll panel's clipping and mask, though its DOM bounds never change.
+  const recording = await page.evaluateHandle(() => {
+    const captures: Promise<string[]>[] = []
+    const start = document.startViewTransition.bind(document)
+    document.startViewTransition = (update) => {
+      const transition = start(update)
+      captures.push(
+        transition.ready.then(() =>
+          document.getAnimations().flatMap((animation) => {
+            const part = (animation.effect as KeyframeEffect | null)?.pseudoElement
+            return part?.startsWith("::view-transition-group(") ? [part] : []
+          }),
+        ),
+      )
+      return transition
+    }
+    return captures
+  })
+  const sections = page.getByRole("navigation", { name: "Sections" })
+  for (const control of [
+    sections.getByRole("button", { name: /^Experience$/ }),
+    sections.getByRole("button", { name: /^Education$/ }),
+    page.getByRole("tab", { name: "Style" }),
+    page.getByRole("tab", { name: "ATS checks" }),
+    sections.getByRole("button", { name: /^Profile$/ }),
+  ]) {
+    await control.click()
+    await settled(preview(page))
+  }
+  const captures = await recording.evaluate((captures) => Promise.all(captures))
+  await recording.dispose()
+  expect(captures).toHaveLength(5)
+  for (const groups of captures) expect(groups).toEqual(["::view-transition-group(root)"])
+  expect(errors).toEqual([])
+})
 
 test("a section, the ATS checks or Style, and on a narrow screen the template gallery, fade in as they're chosen", async ({ page }) => {
   const errors = pageErrors(page)
