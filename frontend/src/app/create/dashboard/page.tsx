@@ -122,7 +122,7 @@ export default function DashboardPage() {
   const [view, setView] = useState<View>("pages")
   // Set once a switch fades the new view in: off until then, so the first view doesn't fade in on load.
   const [fadeIn, setFadeIn] = useState(false)
-  // Back from the editor, the page comes in with the transition's crossfade alone (closingResume).
+  // Back from the editor, the page is there whole as the transition starts, without a fade of its own (closingResume).
   const [closedResume] = useState(closingResume)
   const [sort, setSort] = useState<Sort>("edited")
   const [tag, setTag] = useState(EVERY_TYPE)

@@ -181,7 +181,7 @@
    its own behind its words (the review page's sheet and fog) is marked
    no-page-in and fades only its words, marked page-in. A `main` marked
    data-no-page-in, as the dashboard coming in under a view transition that
-   fades it already (closingResume), doesn't fade at all. A fade and no more:
+   shows it whole at once (closingResume), doesn't fade at all. A fade and no more:
    moving it as well could move what's under a click. */
 @keyframes page-in {
   from {
@@ -676,6 +676,18 @@
 :root:active-view-transition-type(resume-open, resume-close)::view-transition-new(*) {
   animation-duration: 520ms;
   animation-timing-function: var(--ease-glide);
+}
+/* Going back, the dashboard is there from the first frame, with its other resumes, and only the page
+   moves, shrinking into its card. Crossfaded in, however quickly, the page was solid before the
+   dashboard round it was. The editor's picture is hidden: two solid pictures laid one on the other
+   would add up, brighter than either (the pair is blended with plus-lighter). */
+:root:active-view-transition-type(resume-close)::view-transition-old(root),
+:root:active-view-transition-type(resume-close)::view-transition-new(root),
+:root:active-view-transition-type(resume-close)::view-transition-new(*):only-child {
+  animation: none;
+}
+:root:active-view-transition-type(resume-close)::view-transition-old(root) {
+  opacity: 0;
 }
 :root:active-view-transition-type(resume-open, resume-close)::view-transition {
   pointer-events: none;
