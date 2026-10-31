@@ -14,7 +14,6 @@ import { compilerStatus, onCompilerStatus } from "@/lib/typst/compile"
 import { reducedMotion, scrollerOf, uncovered } from "./layout"
 import PrintingPage from "./PrintingPage"
 import { useCheckActions } from "./CheckContext"
-import { OPEN_NAME } from "@/components/dashboard/viewSwitch"
 import { PreviewGaze, PreviewMarks } from "./MarksContext"
 import { LinkPill, usePointedLink, type PointedLink } from "./LinkPill"
 import { onPickedInBox, pickedInBox, whenPickedInBox } from "./pickedStyle"
@@ -570,7 +569,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
             ref={pagesRef}
             data-open-target=""
             className={`relative mx-auto transition-opacity duration-300 ${updating ? "opacity-50 delay-150" : ""}`}
-            style={{ viewTransitionName: OPEN_NAME, width: pageWidth, minHeight: numPages * pageWidth * ratio + (numPages - 1) * PAGE_GAP }}
+            style={{ width: pageWidth, minHeight: numPages * pageWidth * ratio + (numPages - 1) * PAGE_GAP }}
           >
             {!faded && <PrintingPage width={pageWidth} leaving={!waiting} />}
             {/* A <Document> loads and parses its file, so the drawings of a PDF share one.
