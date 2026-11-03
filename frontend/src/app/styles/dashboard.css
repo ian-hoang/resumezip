@@ -61,20 +61,12 @@
       border-radius: 999px;
     }
   }
-  /* The templates page's bar (TemplateGallery.tsx): the search and the style
-     chips, with no sort or view after them. The search has its own line until
-     there's room for every chip beside it. */
+  /* The templates page's bar (TemplateGallery.tsx): only the search, so a
+     capsule on one line at every width. */
   .dash-toolbar.dash-toolbar-plain {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "search" "chips";
-    border-radius: 26px;
-  }
-  @media (min-width: 80rem) {
-    .dash-toolbar.dash-toolbar-plain {
-      grid-template-columns: 300px minmax(0, 1fr);
-      grid-template-areas: "search chips";
-      border-radius: 999px;
-    }
+    grid-template-areas: "search";
+    border-radius: 999px;
   }
   /* At rest (and its copy left in the toolbar while it's lifted), the search
      is a white field in the glass bar; lifted, it's glass of its own again. */

@@ -14,10 +14,10 @@
 // in step with the template.
 // `added` is the day it reached the site (the first four were there by
 // 2025-04-20), which marks the newest as new for a while: see newTemplate.
-// `tags` are what the templates page filters by, and must be true of the
-// template's .typ file.
+// `tags` are printed on its card and page, and searched by, and must be true
+// of the template's .typ file.
 
-/** What the templates page filters by. A tag that fits every template, or none, filters nothing, so isn't one. */
+/** The styles a template can be tagged with. */
 // prettier-ignore
 export const TEMPLATE_TAGS = [
   "Serif",          // Computer Modern, Garamond, Charis, Termes
@@ -245,12 +245,10 @@ const words = (text: string) =>
     .filter(Boolean)
 
 /**
- * Whether a template is one the templates page's search and tag pick out:
- * each word searched for starts a word of its name, font or tags.
+ * Whether a template is one the templates page's search picks out: each
+ * word searched for starts a word of its name, font or tags.
  */
-export function templateMatches(template: Template, search: string, tag?: TemplateTag): boolean {
-  const tags: readonly TemplateTag[] = template.tags
-  if (tag && !tags.includes(tag)) return false
-  const own = words([template.name, template.font, ...tags].join(" "))
+export function templateMatches(template: Template, search: string): boolean {
+  const own = words([template.name, template.font, ...template.tags].join(" "))
   return words(search).every((word) => own.some((its) => its.startsWith(word)))
 }
