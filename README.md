@@ -49,7 +49,7 @@ Drop any resume, PDF or Word, on the [review page](https://www.tryresumezip.com/
 
 ### Pick a template, change it any time
 
-Every template is free, and switching keeps your words. Each one is tested by printing its sample and [reading it back as plain text](https://www.tryresumezip.com/templates/how-they-read), the way hiring software does.
+Every template is free, and switching keeps your words. Each one is tested by printing its sample and [reading it back as plain text](frontend/src/lib/import/readsCleanly.test.ts), the way hiring software does.
 
 <table>
   <tr>

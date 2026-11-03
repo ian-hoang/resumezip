@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "./test"
 import { instantScrolling, pageErrors, seriousAccessibilityProblems, templateShown } from "./helpers"
-import { TEMPLATES } from "../src/lib/templates"
 
 // The templates page's search. Each card's picture leads to its template's page.
 
@@ -198,36 +197,15 @@ test("a template's page is at its name, not its id", async ({ request }) => {
   expect((await request.get("/templates/levelsfyi")).status()).toBe(404)
 })
 
-test("how each template reads: every template's checks, and why where one doesn't read as typed", async ({ page }) => {
-  const errors = pageErrors(page)
-  await page.setViewportSize({ width: 1280, height: 900 })
+test("a template's page has no plain-text checks, and the old page of them leads to every template", async ({ page }) => {
   await page.goto("/templates/margin")
-  await page.getByRole("link", { name: "4 of 5 checks" }).click()
-  await expect(page).toHaveURL(/\/templates\/how-they-read$/)
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("How each template reads")
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Margin resume template")
+  await expect(page.getByText(/reads as plain text|checks$/)).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "How it reads" })).toHaveCount(0)
 
-  const table = page.getByRole("table", { name: /whether it reads as typed/ })
-  await expect(table.getByRole("rowheader")).toHaveText(TEMPLATES.map((template) => template.name))
-  const jake = table.getByRole("row", { name: /^Jake's/ })
-  await expect(jake.getByText("Reads as typed")).toHaveCount(5)
-
-  // Margin's miss leads to what the test read of it.
-  await table
-    .getByRole("row", { name: /^Margin/ })
-    .getByRole("link", { name: /see why below/ })
-    .click()
-  await expect(page).toHaveURL(/#margin$/)
-  await expect(page.getByRole("heading", { name: "Margin", level: 3 })).toBeInViewport()
-  await expect(page.getByText(/heading "Experience" shares a line/)).toBeVisible()
-  expect(errors).toEqual([])
-})
-
-test("on a phone, how each template reads is a line for each template", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/templates/how-they-read")
-  await expect(page.getByRole("table")).toBeHidden()
-  await expect(page.getByRole("link", { name: "4 of 5: not Headings" })).toBeVisible()
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0)
+  await expect(page).toHaveURL(/\/templates$/)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pick a template.")
 })
 
 test.describe("on a touch screen", () => {

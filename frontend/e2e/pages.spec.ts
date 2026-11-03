@@ -7,7 +7,6 @@ const PAGES = [
   "/",
   "/templates",
   "/templates/jakes",
-  "/templates/how-they-read",
   "/review",
   ...PROMISES.map((promise) => promise.path),
   "/terms",
@@ -75,7 +74,7 @@ test("the pages that are mostly words are on the sheet the templates are on", as
       .evaluate((main) => [getComputedStyle(main).borderRadius, getComputedStyle(main.parentElement!).borderRadius])
   }
   const templates = await sheet("/templates")
-  for (const path of ["/terms", "/contact", "/templates/how-they-read", "/does-not-exist", ...PROMISES.map((promise) => promise.path)])
+  for (const path of ["/terms", "/contact", "/does-not-exist", ...PROMISES.map((promise) => promise.path)])
     expect(await sheet(path), path).toEqual(templates)
 })
 

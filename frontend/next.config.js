@@ -102,6 +102,8 @@ module.exports = {
   async redirects() {
     return [
       { source: "/about", destination: "/", permanent: true },
+      // Was a table of each template's plain-text checks, and is still linked from elsewhere.
+      { source: "/templates/how-they-read", destination: "/templates", permanent: true },
       ...Object.entries(RENAMED_PICTURES).map(([id, page]) => ({
         source: `/previews/${id}.webp`,
         destination: `/previews/${page}-resume-template.webp`,

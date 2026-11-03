@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, ArrowRight, BookOpen, Check, X } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { BLUE_PILL, sheetPill } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
@@ -12,7 +12,6 @@ import StructuredData from "@/components/site/StructuredData"
 import { pageMetadata, SHARE_IMAGE_SIZE } from "@/lib/site"
 import { breadcrumbs, TEMPLATES_CRUMB } from "@/lib/structuredData"
 import { printedName, type Template, TEMPLATES, templateBySlug, templateImageAlt, templatePath, templateSlug } from "@/lib/templates"
-import { checksPassed, READING_CHECKS, READING_RESULTS, WHY_NOT } from "../how-they-read/checks"
 import { ABOUT } from "./about"
 
 // A page for each template, built ahead of time; any other address is a 404.
@@ -42,15 +41,14 @@ export async function generateMetadata({ params }: TemplatePageProps): Promise<M
 
 /**
  * A template's own page, on the sheet the templates page is on: its page big
- * on a card, what it's like and Use, which starts a resume with it, how it
- * reads as plain text, and the other templates.
+ * on a card, what it's like and Use, which starts a resume with it, and the
+ * other templates.
  */
 export default async function TemplatePage({ params }: TemplatePageProps) {
   const template = templateBySlug((await params).template)
   if (!template) notFound()
   const about = ABOUT[template.id]
   const tags: readonly string[] = template.tags
-  const why = WHY_NOT[template.id]
 
   return (
     <div className="desk desk-bright flex min-h-screen flex-col">
@@ -75,10 +73,6 @@ export default async function TemplatePage({ params }: TemplatePageProps) {
               </span>
             </nav>
             <div className="flex items-center gap-2.5 max-sm:w-full max-sm:[&>*]:flex-1">
-              <Link href="/templates/how-they-read" className={sheetPill("white")}>
-                <BookOpen aria-hidden="true" />
-                How it reads
-              </Link>
               <StartWritingLink template={template.id} className={BLUE_PILL} preloadOnHover>
                 Use {template.name}
                 <ArrowRight aria-hidden="true" />
@@ -147,42 +141,6 @@ export default async function TemplatePage({ params }: TemplatePageProps) {
                 </Link>
                 .
               </p>
-
-              <section aria-labelledby="reads" className="mt-10">
-                <div className="flex items-baseline justify-between gap-4 border-b border-hairline pb-3">
-                  <h2 id="reads" className="label-mono text-ink-3">
-                    How it reads as plain text
-                  </h2>
-                  <Link
-                    href="/templates/how-they-read"
-                    className="text-[14px] text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink"
-                  >
-                    {checksPassed(template.id).length} of {READING_CHECKS.length} checks
-                  </Link>
-                </div>
-                <ul>
-                  {READING_CHECKS.map((check) => {
-                    const reads = READING_RESULTS[template.id][check.id].length === 0
-                    return (
-                      <li key={check.id} className="flex items-center justify-between gap-4 border-b border-hairline py-3 text-[15px]">
-                        <span className={reads ? "text-ink-2" : "text-ink"}>{check.name}</span>
-                        {reads ? (
-                          <span className="shrink-0">
-                            <Check className="h-[18px] w-[18px] text-ink" strokeWidth={2.25} aria-hidden="true" />
-                            <span className="sr-only">Reads as typed</span>
-                          </span>
-                        ) : (
-                          <span className="shrink-0">
-                            <X className="h-[18px] w-[18px] text-ink-3" strokeWidth={2.25} aria-hidden="true" />
-                            <span className="sr-only">Doesn’t read as typed</span>
-                          </span>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-                {why && <p className="mt-3 max-w-[620px] text-pretty text-[14px] leading-relaxed text-ink-3">{why}</p>}
-              </section>
             </div>
           </div>
 

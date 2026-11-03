@@ -1,6 +1,5 @@
-import Link from "next/link"
-import { BookOpen, Layers, PenLine } from "lucide-react"
-import { BLUE_PILL, sheetPill } from "@/components/pills"
+import { Layers, PenLine } from "lucide-react"
+import { BLUE_PILL } from "@/components/pills"
 import SiteFooter from "@/components/site/SiteFooter"
 import SiteHeader from "@/components/site/SiteHeader"
 import { CARD_SHEET, COUNT_BADGE, PAPER_FRAME } from "@/components/site/sheet"
@@ -30,16 +29,10 @@ export default function TemplatesPage() {
       <div className={PAPER_FRAME}>
         <main className={CARD_SHEET}>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <p className={COUNT_BADGE}>
-                <Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{TEMPLATES.length} templates · All free</span>
-              </p>
-              <Link href="/templates/how-they-read" className={sheetPill("text", "h-[34px] px-3.5 text-[14px]")}>
-                <BookOpen aria-hidden="true" />
-                How they read as plain text
-              </Link>
-            </div>
+            <p className={COUNT_BADGE}>
+              <Layers className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">{TEMPLATES.length} templates · All free</span>
+            </p>
             {/* A blank resume in the default template, for someone who'd rather pick one later. */}
             <StartWritingLink template={DEFAULT_TEMPLATE} className={`${BLUE_PILL} max-sm:w-full`} preloadOnHover>
               <PenLine aria-hidden="true" />

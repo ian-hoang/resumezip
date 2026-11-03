@@ -94,11 +94,7 @@ export default function OpenSource() {
         <p>
           Each <Code path={CODE.templates}>template</Code> is a file you can read and change, and so is every{" "}
           <Code path={CODE.checks}>check</Code> the editor runs on your resume. A test reads each template’s sample back as plain text, the
-          way hiring software does.{" "}
-          <Link href="/templates/how-they-read" className={TEXT_LINK}>
-            See how each template reads
-          </Link>
-          .
+          way hiring software does.
         </p>
       </PromiseSection>
 
