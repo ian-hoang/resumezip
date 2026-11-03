@@ -4,7 +4,6 @@ import { render, samples } from "@/lib/import/testRender"
 import { pageCount } from "@/lib/tune"
 import {
   newTemplate,
-  TEMPLATE_TAGS,
   TEMPLATES,
   templateById,
   templateBySlug,
@@ -15,8 +14,7 @@ import {
 } from "./templates"
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const names = (search: string, tag?: (typeof TEMPLATE_TAGS)[number]) =>
-  TEMPLATES.filter((template) => templateMatches(template, search, tag)).map((template) => template.name)
+const names = (search: string) => TEMPLATES.filter((template) => templateMatches(template, search)).map((template) => template.name)
 
 describe("the templates page's search", () => {
   test("finds a template by its name, font or tags, in any case", () => {
@@ -43,19 +41,10 @@ describe("the templates page's search", () => {
     expect(names("arvard")).toEqual([])
   })
 
-  test("with nothing typed, shows every template, or every one with the tag picked", () => {
+  test("with nothing typed, shows every template", () => {
     expect(names("")).toHaveLength(TEMPLATES.length)
     expect(names("  ")).toHaveLength(TEMPLATES.length)
-    expect(names("", "Serif")).toEqual(["Jake's", "Harvard", "Margin", "zero2sudo"])
-    expect(names("jake", "Sans-serif")).toEqual(["Modern Jake's"])
   })
-})
-
-test("each tag picks out some templates, not all of them", () => {
-  for (const tag of TEMPLATE_TAGS) {
-    expect(names("", tag).length, tag).toBeGreaterThan(0)
-    expect(names("", tag).length, tag).toBeLessThan(TEMPLATES.length)
-  }
 })
 
 describe("the template marked new", () => {

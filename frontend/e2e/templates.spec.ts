@@ -1,8 +1,8 @@
-import { expect, test, type Locator, type Page } from "./test"
-import { countThumbSlides, instantScrolling, pageErrors, seriousAccessibilityProblems, templateShown, thumbCovers } from "./helpers"
+import { expect, test, type Page } from "./test"
+import { instantScrolling, pageErrors, seriousAccessibilityProblems, templateShown } from "./helpers"
 import { TEMPLATES } from "../src/lib/templates"
 
-// The templates page's search and style chips. Each card's picture leads to its template's page.
+// The templates page's search. Each card's picture leads to its template's page.
 
 const cards = (page: Page) => page.getByRole("main").getByRole("link", { name: / template/ })
 
@@ -36,43 +36,7 @@ test("/ goes to the search, which finds templates by name, font or style", async
   expect(errors).toEqual([])
 })
 
-test("a chip shows the templates with that style, and says it's picked", async ({ page }) => {
-  await page.goto("/templates")
-  const chips = page.getByRole("group", { name: "Filter by style" })
-  const all = chips.getByRole("button", { name: "All" })
-  await expect(all).toHaveAttribute("aria-pressed", "true")
-  const every = await cards(page).count()
-
-  await chips.getByRole("button", { name: "Color headings" }).click()
-  await expect(chips.getByRole("button", { name: "Color headings" })).toHaveAttribute("aria-pressed", "true")
-  await expect(all).toHaveAttribute("aria-pressed", "false")
-  await expect(cards(page)).toHaveCount(3)
-  await expect(page.getByRole("status")).toHaveText("Showing Blueprint, Ian's, and Accent.")
-
-  await all.click()
-  await expect(cards(page)).toHaveCount(every)
-})
-
-test("the picked chip's white pill slides across to the next one picked, or jumps there with less motion", async ({ page }) => {
-  await page.goto("/templates")
-  const chips = page.getByRole("group", { name: "Filter by style" })
-  await expect.poll(() => thumbCovers(chips, chips.getByRole("button", { name: "All" }))).toBe(true)
-  const slides = await countThumbSlides(chips)
-
-  const latex = chips.getByRole("button", { name: "LaTeX look" })
-  await latex.click()
-  await expect.poll(() => thumbCovers(chips, latex)).toBe(true)
-  expect(await slides()).toBe(1)
-
-  // It's there as soon as it's picked, so there was nothing to slide.
-  await page.emulateMedia({ reducedMotion: "reduce" })
-  const serif = chips.getByRole("button", { name: "Serif", exact: true })
-  await serif.click()
-  await expect.poll(() => thumbCovers(chips, serif)).toBe(true)
-  expect(await slides()).toBe(1)
-})
-
-test("the page is the dashboard's sheet: a title on the left, the search and styles in one bar, and Start blank", async ({ page }) => {
+test("the page is the dashboard's sheet: a title on the left, the search in a bar of its own, and Start blank", async ({ page }) => {
   const errors = pageErrors(page)
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto("/templates")
@@ -83,14 +47,10 @@ test("the page is the dashboard's sheet: a title on the left, the search and sty
   const bar = page.getByRole("searchbox", { name: "Search templates" })
   expect(Math.abs((await title.boundingBox())!.x - (await main.boundingBox())!.x - 36)).toBeLessThan(2)
   expect((await bar.boundingBox())!.y).toBeGreaterThan((await title.boundingBox())!.y)
-  // The styles beside the search, on one line; no sort, and no Pages or List.
-  const chips = page.getByRole("group", { name: "Filter by style" })
-  const middle = async (locator: Locator) => {
-    const box = (await locator.boundingBox())!
-    return box.y + box.height / 2
-  }
-  expect(Math.abs((await middle(chips)) - (await middle(bar)))).toBeLessThan(3)
-  await expect(main.getByRole("group", { name: "View" })).toHaveCount(0)
+  // Only the search: no style chips to filter by, no sort, and no Pages or List.
+  await expect(cards(page).first()).toBeVisible()
+  await expect(main.getByRole("group")).toHaveCount(0)
+  await expect(main.getByRole("button", { name: "All", exact: true })).toHaveCount(0)
   expect(await seriousAccessibilityProblems(page)).toEqual([])
 
   // Start blank starts a resume in the template every resume starts in.

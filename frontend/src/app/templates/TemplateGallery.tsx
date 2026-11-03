@@ -5,27 +5,16 @@ import Link from "next/link"
 import { useEffect, useId, useRef, useState } from "react"
 import { ArrowUpRight, Search } from "lucide-react"
 import LiquidLens from "@/components/LiquidLens"
-import { BAR_SEGMENTS, SEGMENT, sheetPill, WHITE_PILL } from "@/components/pills"
+import { sheetPill, WHITE_PILL } from "@/components/pills"
 import { StartWritingLink } from "@/components/site/StartWriting"
-import { useThumb } from "@/components/useThumb"
 import { typingIn } from "@/lib/keys"
-import {
-  TEMPLATE_TAGS,
-  TEMPLATES,
-  templateImageAlt,
-  templateMatches,
-  templatePath,
-  type TemplateId,
-  type TemplateTag,
-} from "@/lib/templates"
+import { TEMPLATES, templateImageAlt, templateMatches, templatePath, type TemplateId } from "@/lib/templates"
 
 const names = new Intl.ListFormat("en", { type: "conjunction" })
 
-const STYLES = [undefined, ...TEMPLATE_TAGS]
-
 /**
  * The templates page's list, as the dashboard lays out resumes: a bar of
- * liquid glass with a search and a chip for each style, then a card for each
+ * liquid glass with a search, then a card for each
  * template, its page across its top and its styles, name and typeface under
  * it. The page leads to the template's own page. Pointed at, or with the
  * keyboard in the card, a glass plate with Use, which starts a resume with it,
@@ -35,12 +24,10 @@ const STYLES = [undefined, ...TEMPLATE_TAGS]
  */
 export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
   const [search, setSearch] = useState("")
-  const [tag, setTag] = useState<TemplateTag>()
   // Screen readers hear what's shown once the list has changed, not as the page opens.
   const [changed, setChanged] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const searchId = useId()
-  const chips = useThumb(tag ?? "")
 
   // The search is in the page's HTML, so it can be typed in before this script runs. React keeps
   // what's in the box as it hydrates, but `search` starts empty, and the list would ignore it.
@@ -62,8 +49,8 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const shown = TEMPLATES.filter((template) => templateMatches(template, search, tag))
-  const filtering = search.trim() !== "" || tag !== undefined
+  const shown = TEMPLATES.filter((template) => templateMatches(template, search))
+  const filtering = search.trim() !== ""
   const announcement = !changed
     ? ""
     : shown.length === 0
@@ -72,19 +59,14 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
         ? `Showing ${names.format(shown.map((template) => template.name))}.`
         : "Showing every template."
 
-  const pick = (next?: TemplateTag) => {
-    setTag(next)
-    setChanged(true)
-  }
   const clear = () => {
     setSearch("")
-    setTag(undefined)
     searchRef.current?.focus()
   }
 
   return (
     <>
-      {/* The dashboard's bar (styles/dashboard.css), with nothing after the chips. Straight in the page's
+      {/* The dashboard's bar (styles/dashboard.css), with only its search. Straight in the page's
           main, not in a block with the templates, which fades in (page-in in globals.css): glass in a fading
           block can't blur what's behind it, so the bar would change color as the fade ended. */}
       <div className="dash-toolbar dash-toolbar-plain glass glass-liquid mt-8 md:mt-5">
@@ -131,29 +113,6 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
             >
               /
             </kbd>
-          </div>
-        </div>
-        <div className="dash-toolbar-chips">
-          {/* One line that scrolls sideways where it's too narrow. */}
-          <div ref={chips.group} role="group" aria-label="Filter by style" className={`${BAR_SEGMENTS} overflow-x-auto no-scrollbar`}>
-            <span ref={chips.thumb} aria-hidden="true" className={`segment-thumb ${chips.placed ? "" : "invisible"}`} />
-            {STYLES.map((option) => {
-              const pressed = tag === option
-              return (
-                <button
-                  key={option ?? "all"}
-                  type="button"
-                  aria-pressed={pressed}
-                  onClick={() => pick(option)}
-                  // Until the white pill is placed, the pressed chip draws its own.
-                  className={`${SEGMENT} px-4 font-normal ${pressed ? "text-ink" : "text-ink-2 hover:text-ink"} ${
-                    pressed && !chips.placed ? "bg-sheet shadow-[0_1px_3px_rgb(17_19_24/0.14)]" : ""
-                  }`}
-                >
-                  {option ?? "All"}
-                </button>
-              )
-            })}
           </div>
         </div>
       </div>
@@ -243,7 +202,7 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
           <div className="flex flex-col items-start gap-4 pt-4">
             <p className="font-serif text-[28px] leading-tight tracking-[-0.02em]">No template matches that.</p>
             <p className="max-w-md text-[15px] leading-relaxed text-ink-2">
-              Try a template’s name, a font like Garamond or Lato, or one of the styles above.
+              Try a template’s name, a font like Garamond or Lato, or a style like serif.
             </p>
             <button type="button" onClick={clear} className={WHITE_PILL}>
               Show every template
