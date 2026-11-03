@@ -99,6 +99,13 @@ test("/ typed in the search is part of the search", async ({ page }) => {
   await expect(search).toHaveValue("a/b")
 })
 
+test("a card shows its template's name and font, not its styles", async ({ page }) => {
+  await page.goto("/templates")
+  const card = page.getByRole("listitem").filter({ has: page.getByRole("link", { name: /^Jake's resume template/ }) })
+  await expect(card.getByText("New Computer Modern").first()).toBeAttached()
+  await expect(card.getByText(/LaTeX look|Serif/)).toHaveCount(0)
+})
+
 test("at most one template is marked new", async ({ page }) => {
   await page.goto("/templates")
   await expect(cards(page).first()).toBeVisible()

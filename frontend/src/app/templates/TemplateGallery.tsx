@@ -15,7 +15,7 @@ const names = new Intl.ListFormat("en", { type: "conjunction" })
 /**
  * The templates page's list, as the dashboard lays out resumes: a bar of
  * liquid glass with a search, then a card for each
- * template, its page across its top and its styles, name and typeface under
+ * template, its page across its top and its name and typeface under
  * it. The page leads to the template's own page. Pointed at, or with the
  * keyboard in the card, a glass plate with Use, which starts a resume with it,
  * comes up over the page's foot (.template-card in styles/home.css); without
@@ -125,7 +125,6 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
         {shown.length > 0 ? (
           <ul className="resume-grid">
             {shown.map((template) => {
-              const tags: readonly string[] = template.tags
               return (
                 <li key={template.id} className="tile template-card relative min-w-0">
                   <div className="tile-stage">
@@ -157,7 +156,7 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                         <span className="sr-only">Use {template.name}</span>
                         <span aria-hidden="true" className="flex min-w-0 flex-1 flex-col gap-1">
                           <span className="truncate font-serif text-[18px] leading-none tracking-[-0.015em]">{template.name}</span>
-                          <span className="label-mono truncate text-ink-2">{[template.font, ...tags].join(" · ")}</span>
+                          <span className="label-mono truncate text-ink-2">{template.font}</span>
                         </span>
                         <span
                           aria-hidden="true"
@@ -171,8 +170,6 @@ export default function TemplateGallery({ newId }: { newId?: TemplateId }) {
                   </div>
 
                   <div className="tile-text flex min-w-0 flex-col gap-1 px-3.5 pb-3 pt-2.5 max-sm:px-3 max-sm:pb-1.5">
-                    {/* Its styles, over its name. One without a style keeps the line, so the names in a row line up. */}
-                    <span className="label-mono mb-[3px] truncate leading-[14px] text-ink-3">{tags.join(" · ") || " "}</span>
                     {/* The picture's link is the one announced, so this one's skipped. */}
                     <Link
                       href={templatePath(template)}
