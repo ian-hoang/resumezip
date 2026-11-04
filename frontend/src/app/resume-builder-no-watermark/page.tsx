@@ -77,11 +77,7 @@ export default function NoWatermark() {
       <PromiseSection id="reads" heading="What hiring software reads">
         <p>
           Hiring software reads the text in your PDF, so a watermark can end up read as part of your resume. resumezip’s PDFs only have your
-          words to read. Each time the code changes, a test reads every template’s sample back as plain text to check it.{" "}
-          <Link href="/templates/how-they-read" className={TEXT_LINK}>
-            See how each template reads
-          </Link>
-          .
+          words to read. Each time the code changes, a test reads every template’s sample back as plain text to check it.
         </p>
       </PromiseSection>
     </PromisePage>

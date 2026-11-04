@@ -12,6 +12,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...["/", "/templates", "/review"].map((path) => ({ url: url(path) })),
     ...TEMPLATES.map((template) => ({ url: url(templatePath(template)), images: [url(template.image)] })),
-    ...["/templates/how-they-read", ...PROMISES.map((promise) => promise.path), "/terms", "/contact"].map((path) => ({ url: url(path) })),
+    ...[...PROMISES.map((promise) => promise.path), "/terms", "/contact"].map((path) => ({ url: url(path) })),
   ]
 }

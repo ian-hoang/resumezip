@@ -6,18 +6,17 @@
 // split over two lines, sections read out of order, the contact details below
 // the first heading, a heading run into the text beside it.
 
-import { readFileSync, writeFileSync } from "node:fs"
-import path from "node:path"
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 import type { TextItem } from "pdfjs-dist/types/src/display/api"
 import { describe, expect, test } from "vitest"
-import { READING_CHECKS, WHY_NOT, type ReadingCheck, type ReadingResults } from "@/app/templates/how-they-read/checks"
 import { comparable } from "@/lib/check/pdf"
-import { TEMPLATES, type TemplateId } from "@/lib/templates"
+import { TEMPLATES } from "@/lib/templates"
 import { toTemplateData } from "@/lib/typst/resumeData"
 import { linesFromPages, readPdf, type Line } from "./lines"
 import { printedHeadings, render, samples } from "./testRender"
+
+type ReadingCheck = "letters" | "dates" | "order" | "contact" | "headings"
 
 /** What hiring software reads of a PDF. */
 interface PlainText {
@@ -174,25 +173,6 @@ describe.each(samples.map((sample) => [sample.selectedTemplate as string, sample
 test("every template has a sample to read", () => {
   expect(samples.map((sample) => sample.selectedTemplate).sort()).toEqual(TEMPLATES.map((template) => template.id).sort())
 })
-
-// What /templates/how-they-read shows. After a change to what a sample reads,
-// run with UPDATE_READ_RESULTS=1 to write it again.
-test("the page's results are what each sample reads", async () => {
-  const results = {} as ReadingResults
-  for (const { id } of TEMPLATES) {
-    const problems = await readingOf(samples.find((sample) => sample.selectedTemplate === id))
-    results[id] = Object.fromEntries(
-      READING_CHECKS.map((check) => [check.id, problems.filter((problem) => problem.check === check.id).map(({ message }) => message)]),
-    ) as ReadingResults[TemplateId]
-  }
-  const file = path.resolve("src/app/templates/how-they-read/results.json")
-  if (process.env.UPDATE_READ_RESULTS) writeFileSync(file, `${JSON.stringify(results, null, 2)}\n`)
-  // Read afresh, so a file just written is the one checked.
-  expect(JSON.parse(readFileSync(file, "utf8")), "run with UPDATE_READ_RESULTS=1 to write it again").toEqual(results)
-  // The page says why for each template that doesn't pass every check, and only for those.
-  const failing = TEMPLATES.filter(({ id }) => READING_CHECKS.some((check) => results[id][check.id].length > 0)).map(({ id }) => id)
-  expect(Object.keys(WHY_NOT).sort()).toEqual(failing.sort())
-}, 120_000)
 
 test("a ligature character, as text copied from a PDF brings, prints as its letters, and other fi's stay whole", async () => {
   // Typst gives each glyph one character in the PDF's text, so a typed "ﬁ"
