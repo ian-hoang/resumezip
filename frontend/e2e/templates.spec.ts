@@ -55,7 +55,7 @@ test("the page is the dashboard's sheet: a title on the left, the search in a ba
   // Start blank starts a resume in the template every resume starts in.
   await main.getByRole("link", { name: "Start blank" }).click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(templateShown(page)).toContainText("Jake's")
+  await expect(await templateShown(page)).toContainText("Jake's")
   expect(errors).toEqual([])
 })
 
@@ -156,7 +156,7 @@ test("pointed at, a card's Use plate whitens gradually, and its Use stays lit wi
   await page.mouse.down()
   await page.mouse.up()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(templateShown(page)).toContainText("Jake's")
+  await expect(await templateShown(page)).toContainText("Jake's")
 })
 
 test("a card's picture leads to its template's page, whose Use starts a resume with it", async ({ page }) => {
@@ -176,7 +176,7 @@ test("a card's picture leads to its template's page, whose Use starts a resume w
   await expect(page.getByRole("link", { name: "Use Harvard" })).toHaveCount(2)
   await page.getByRole("link", { name: "Use Harvard" }).last().click()
   await expect(page).toHaveURL(/\/create\/new\//)
-  await expect(templateShown(page)).toContainText("Harvard")
+  await expect(await templateShown(page)).toContainText("Harvard")
   expect(errors).toEqual([])
 })
 
@@ -225,7 +225,7 @@ test.describe("on a touch screen", () => {
 
     await use.tap()
     await expect(page).toHaveURL(/\/create\/new\//)
-    await expect(templateShown(page)).toContainText("Compact")
+    await expect(await templateShown(page)).toContainText("Compact")
     expect(errors).toEqual([])
   })
 })

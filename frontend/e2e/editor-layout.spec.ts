@@ -1,9 +1,9 @@
 import { expect, test, type Locator, type Page } from "./test"
 import { WIDE_SCREEN } from "../src/components/editor/layout"
-import { editorHeading, newResume, pageErrors, preview, previewShown, saveResumes, settled } from "./helpers"
+import { editorHeading, newResume, openSection, pageErrors, preview, previewShown, saveResumes, settled } from "./helpers"
 
 // The editor puts the form beside the preview only where both have room
-// (components/editor/layout.ts). Narrower, an Edit / Preview switch shows one
+// (components/editor/layout.ts). Narrower, a switch at the foot shows one
 // at a time, and the form's fields fit the form's own width.
 
 const ENTRY = {
@@ -25,7 +25,7 @@ async function writeExperience(page: Page, width: number, height: number) {
   await page.setViewportSize({ width, height })
   await newResume(page)
   await page.getByLabel("Full name").fill("Ada Lovelace")
-  await experience(page).click()
+  await openSection(page, "Experience")
   await page.getByRole("button", { name: "Add experience" }).click()
   // A new entry puts the cursor in its first field once it has slid open.
   // Typing before then could land in the wrong field.
@@ -116,6 +116,16 @@ for (const [width, height, split] of [
   })
 }
 
+test("on a phone, an open entry's fields run the width of its card", async ({ page }) => {
+  const errors = pageErrors(page)
+  await writeExperience(page, 390, 844)
+  const form = (await page.getByRole("main").boundingBox())!
+  const bullets = (await page.getByLabel(BULLETS).boundingBox())!
+  // The form's 16px padding each side, the card's edge and 12px inside it: nothing more is taken.
+  expect(bullets.width).toBeGreaterThanOrEqual(form.width - 2 * 16 - 2 * 14)
+  expect(errors).toEqual([])
+})
+
 test("resizing keeps the section, what's typed and the controls, and the bullets stay whole", async ({ page }) => {
   const errors = pageErrors(page)
   await writeExperience(page, 1440, 900)
@@ -130,8 +140,9 @@ test("resizing keeps the section, what's typed and the controls, and the bullets
   ] as const) {
     await page.setViewportSize({ width, height })
 
-    // Still on Experience, with everything typed in it.
-    await expect(experience(page)).toHaveAttribute("aria-current", "true")
+    // Still on Experience, with everything typed in it: in the rail, or narrower, the section bar.
+    if (split) await expect(experience(page)).toHaveAttribute("aria-current", "true")
+    else await expect(page.getByRole("button", { name: /^Sections: Experience, \d+ of / })).toBeVisible()
     for (const [label, value] of Object.entries(ENTRY)) await expect(page.getByLabel(label, { exact: true })).toHaveValue(value)
     // A narrower box wraps onto more lines, and grows to show them.
     await expect.poll(() => bulletsHidden(page), { message: `bullets show in full at ${width}px` }).toBeLessThanOrEqual(0)
@@ -149,7 +160,7 @@ test("resizing keeps the section, what's typed and the controls, and the bullets
     await views(page).getByRole("button", { name: "Preview" }).click()
     await expect(preview(page)).toBeVisible()
     await expect(editorHeading(page, "Experience")).toBeHidden()
-    await views(page).getByRole("button", { name: "Edit" }).click()
+    await views(page).getByRole("button", { name: "Write" }).click()
     await expect(editorHeading(page, "Experience")).toBeVisible()
   }
 

@@ -19,6 +19,11 @@ export interface DownloadChoice {
    * with the PDF rather than another kind of file.
    */
   apart?: boolean
+  /**
+   * Only in the drawer a phone shows the menu as, at its top: Download PDF, so
+   * every way out is in one place, under the thumb.
+   */
+  drawerOnly?: boolean
   onChoose: () => void
 }
 
@@ -43,6 +48,8 @@ export interface MenuNotice {
 
 // How long the menu takes to fade away, in milliseconds (matches duration-150).
 const CLOSE_MS = 150
+/** Phones, where the menu rises from the foot of the screen as a drawer, rather than dropping from the ▾. */
+const PHONE = "(max-width: 39.99rem)"
 // How long a notice that's done stays, in milliseconds, while the pointer and keyboard are elsewhere.
 const NOTICE_MS = 6000
 // The least between the menu and the window's edges.
@@ -142,6 +149,10 @@ export default function DownloadMenu({ choices, busy, onOpen, notice, onNoticeCl
     openMenu(event.key === "ArrowUp")
   }
 
+  // Only once it's placed, in the browser.
+  const drawer = place !== null && window.matchMedia(PHONE).matches
+  const shown = choices.filter((choice) => drawer || !choice.drawerOnly)
+
   return (
     <div className="relative flex">
       <button
@@ -155,7 +166,7 @@ export default function DownloadMenu({ choices, busy, onOpen, notice, onNoticeCl
         onClick={() => (open ? close() : openMenu())}
         onKeyDown={onButtonKeyDown}
         // The right half of Download PDF's blue pill (the editor's top bar), past a line.
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-r-full pr-1 text-white transition-colors before:absolute before:inset-y-[9px] before:left-0 before:w-px before:bg-white/30 hover:bg-white/[0.08] focus-visible:bg-white/[0.14] aria-expanded:bg-black/[0.08]"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-r-full pr-1 pointer-coarse:size-11 text-white transition-colors before:absolute before:inset-y-[9px] before:left-0 before:w-px before:bg-white/30 hover:bg-white/[0.08] focus-visible:bg-white/[0.14] aria-expanded:bg-black/[0.08]"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -167,24 +178,38 @@ export default function DownloadMenu({ choices, busy, onOpen, notice, onNoticeCl
         )}
       </button>
 
+      {/* On a phone the page behind the drawer softens, as behind a dialog, so it's plain it isn't live. A tap
+          on it closes the drawer, as any tap outside the menu does (useMenu). */}
+      {drawer && (
+        <div
+          aria-hidden="true"
+          className={`fixed inset-0 z-30 bg-ink/15 backdrop-blur-[3px] transition-opacity duration-200 motion-reduce:transition-none starting:opacity-0 ${closing ? "opacity-0" : ""}`}
+        />
+      )}
       {place && (
         // It fades and drops in from the ▾ (`starting:` is CSS @starting-style), and fades back the same way.
+        // On a phone it rises from the foot of the screen instead, the width of the screen.
         <div
           ref={menu}
           id={menuId}
           role="menu"
           aria-label="More formats"
           onKeyDown={onMenuKeyDown}
-          style={{ left: place.left, width: place.width }}
+          style={drawer ? undefined : { left: place.left, width: place.width }}
           // It grows in solid and only what's in it fades in, as see-through glass stops blurring.
           // Closing, it fades as a nearly solid sheet for the same reason.
-          className={`glass glass-float absolute top-full z-30 mt-2 origin-top-right rounded-panel p-1.5 transition-[opacity,scale,translate] ease-out motion-reduce:transition-none starting:-translate-y-1 starting:scale-[0.97] [&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
+          className={`glass glass-float z-30 transition-[opacity,scale,translate] ease-out motion-reduce:transition-none [&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
+            drawer
+              ? "fixed inset-x-0 bottom-0 rounded-t-[24px] px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 starting:translate-y-8"
+              : "absolute top-full mt-2 origin-top-right rounded-panel p-1.5 starting:-translate-y-1 starting:scale-[0.97]"
+          } ${
             closing
-              ? "-translate-y-1 scale-[0.97] opacity-0 duration-150 [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))]"
+              ? `${drawer ? "translate-y-8" : "-translate-y-1 scale-[0.97]"} opacity-0 duration-150 [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))]`
               : "duration-200"
           }`}
         >
-          {choices
+          {drawer && <span aria-hidden="true" className="mx-auto mb-2 block h-1 w-9 rounded-full bg-ink/15" />}
+          {shown
             .filter((choice) => !choice.apart)
             .map(({ title, hint, icon, onChoose }) => (
               <button
@@ -195,15 +220,15 @@ export default function DownloadMenu({ choices, busy, onOpen, notice, onNoticeCl
                   close(true)
                   onChoose()
                 }}
-                className={item}
+                className={`${item} ${drawer ? "min-h-14 py-2.5" : ""}`}
               >
                 <span className="col-start-1 row-span-2 row-start-1 mt-0.5 size-6 [&>svg]:size-6">{icon}</span>
                 <span className="col-start-2 text-sm font-medium text-ink">{title}</span>
                 <span className="col-start-2 text-[13px] leading-snug text-ink-2">{hint}</span>
               </button>
             ))}
-          {choices.some((choice) => choice.apart) && <div role="separator" className="mx-2.5 my-1.5 h-px bg-ink/[0.08]" />}
-          {choices
+          {shown.some((choice) => choice.apart) && <div role="separator" className="mx-2.5 my-1.5 h-px bg-ink/[0.08]" />}
+          {shown
             .filter((choice) => choice.apart)
             .map(({ title, icon, onChoose }) => (
               <button

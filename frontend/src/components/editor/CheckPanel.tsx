@@ -25,6 +25,7 @@ import { CATEGORIES, CONTENT_FULL, MUST_FIX_MAX, SCORE_BANDS, type CategoryId } 
 import { hasLeftOut } from "@/lib/leftOut"
 import AiNotesBox from "./AiNotesBox"
 import { useCheck, useCheckActions } from "./CheckContext"
+import { useWideScreen } from "./layout"
 import { useMarks, usePointAt } from "./MarksContext"
 import { TIER_BG, TIER_NAMES, tierOf, type Tier } from "./fields"
 
@@ -33,8 +34,9 @@ import { TIER_BG, TIER_NAMES, tierOf, type Tier } from "./fields"
 const TYPO_RULE = "G1"
 
 // A finding's actions, as quiet underlined words: Dismiss, Add word, Bring back.
+// On a touch screen, 44px tall round the words, so a thumb can't miss.
 const action =
-  "self-start text-[12px] font-medium text-ink-2 underline decoration-rule underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-2"
+  "self-start pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:-my-2.5 text-[12px] font-medium text-ink-2 underline decoration-rule underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-2"
 
 type Category = (typeof CATEGORIES)[number]
 
@@ -393,7 +395,15 @@ function CheckIndex({
   scores: readonly (CategoryScore | null)[]
 }) {
   const id = useId()
+  const wide = useWideScreen()
   const clear = CATEGORIES.filter((category) => !withFindings.has(category.id)).length
+  // Narrower, the index runs down the page over the form, so what needs work comes first and what passed after
+  // it, rather than having to scroll past what's fine to find what isn't. Each keeps its number. On wide screens
+  // the panel has the room, and it's in the categories' own order.
+  const rows = CATEGORIES.map((category, index) => ({ category, index }))
+  const shown = wide
+    ? rows
+    : [...rows.filter(({ category }) => withFindings.has(category.id)), ...rows.filter(({ category }) => !withFindings.has(category.id))]
   return (
     <section aria-labelledby={id} className="flex flex-col">
       <div className="flex items-baseline justify-between border-b border-ink pb-2">
@@ -405,7 +415,7 @@ function CheckIndex({
         </p>
       </div>
       <ol>
-        {CATEGORIES.map((category, index) => (
+        {shown.map(({ category, index }) => (
           <CheckRow
             key={category.id}
             number={index + 1}

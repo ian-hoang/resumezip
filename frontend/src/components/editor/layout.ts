@@ -3,7 +3,8 @@ import { useEffect, useState } from "react"
 /**
  * Wide enough for the editor's three panels: the left bar, the form and the
  * preview side by side, under the top bar. Narrower, the sections are a row
- * of tabs above the form, and an Edit / Preview switch shows one or the other.
+ * of tabs above the form, and a switch at the foot (ViewSwitch) shows the
+ * form, with Check or Style above it, or the preview.
  *
  * At 1280px the form has about 480px to write in and the page about 380px.
  * Any narrower and the left bar and the preview squeeze it. This is Tailwind's

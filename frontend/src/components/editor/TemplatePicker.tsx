@@ -12,14 +12,28 @@ const CLOSE_MS = 260
 interface TemplatePickerProps {
   value: string | undefined
   onChange: (template: TemplateId) => void
+  /**
+   * Always opens the gallery as the dialog in the middle of the screen, as in
+   * Style narrower than 1280px (StylePanel), where the button is down the
+   * page, on its left, and a panel under it wouldn't fit beside or below it.
+   */
+  centred?: boolean
 }
+
+/** Its classes without those for 1024px and wider (`lg:`), for a gallery that's always the dialog. */
+const narrowOnly = (classes: string) =>
+  classes
+    .split(" ")
+    .filter((name) => !name.startsWith("lg:"))
+    .join(" ")
 
 /**
  * A button showing the current template that opens a gallery of all of them:
  * a dialog in the middle of the screen below 1024px, where the button can be
  * anywhere in the header, and a panel under the button on wider screens.
  */
-function TemplatePicker({ value, onChange }: TemplatePickerProps) {
+function TemplatePicker({ value, onChange, centred = false }: TemplatePickerProps) {
+  const sized = centred ? narrowOnly : (classes: string) => classes
   // On the page while open and while it fades away.
   const [shown, setShown] = useState(false)
   const [closing, setClosing] = useState(false)
@@ -120,9 +134,11 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
         // as the ▾ menu does.
         <div
           inert={closing}
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity motion-reduce:transition-none starting:opacity-0 lg:starting:opacity-100 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${
-            closing ? "opacity-0 duration-[260ms] ease-in-out" : "duration-200 ease-out"
-          }`}
+          className={sized(
+            `fixed inset-0 z-50 flex items-center justify-center bg-ink/15 p-4 backdrop-blur-[3px] transition-opacity motion-reduce:transition-none starting:opacity-0 lg:starting:opacity-100 lg:absolute lg:inset-auto lg:right-0 lg:top-12 lg:z-30 lg:block lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${
+              closing ? "opacity-0 duration-[260ms] ease-in-out" : "duration-200 ease-out"
+            }`,
+          )}
           onClick={(event) => {
             if (event.target === event.currentTarget) close()
           }}
@@ -132,13 +148,15 @@ function TemplatePicker({ value, onChange }: TemplatePickerProps) {
             role="dialog"
             aria-modal="true"
             aria-label="Choose a template"
-            className={`glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-8rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100 lg:[&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
-              // Glass under a fading parent stops blurring, which would show the page through it as
-              // it goes: it fades as a nearly solid sheet instead.
-              closing
-                ? "scale-[0.98] duration-[260ms] ease-in-out [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))] lg:-translate-y-1 lg:scale-100"
-                : "duration-200 ease-out"
-            }`}
+            className={sized(
+              `glass glass-frost flex max-h-full w-full max-w-[560px] flex-col rounded-panel transition-[scale,translate] motion-reduce:transition-none starting:scale-[0.98] lg:max-h-[calc(100dvh-8rem)] lg:w-[560px] lg:starting:-translate-y-1 lg:starting:scale-100 lg:[&>*]:animate-[panel-contents_220ms_ease-out] motion-reduce:[&>*]:animate-none ${
+                // Glass under a fading parent stops blurring, which would show the page through it as
+                // it goes: it fades as a nearly solid sheet instead.
+                closing
+                  ? "scale-[0.98] duration-[260ms] ease-in-out [--glass-fill:linear-gradient(180deg,rgb(255_255_255/0.96),rgb(255_255_255/0.92))] lg:-translate-y-1 lg:scale-100"
+                  : "duration-200 ease-out"
+              }`,
+            )}
           >
             <div className="flex items-center justify-between gap-4 pl-6 pr-4 pt-4">
               <span className="label-mono text-ink-2">Templates</span>

@@ -1,11 +1,15 @@
 import { expect, test, type Page } from "./test"
-import { newResume, pageErrors, settled } from "./helpers"
+import { newResume, pageErrors, settled, templateShown } from "./helpers"
 import { TEMPLATES } from "../src/lib/templates"
 
-/** Starts a new resume with a name in it, then makes the window `width` × `height`. */
+/**
+ * Starts a new resume with a name in it, then makes the window `width` × `height`.
+ * Narrower than 1280px the Template button is at the top of Style, which it opens.
+ */
 async function startWriting(page: Page, width?: number, height?: number) {
   await newResume(page, { name: "Ada Lovelace" })
   if (width && height) await page.setViewportSize({ width, height })
+  await templateShown(page)
 }
 
 const picker = (page: Page) => page.getByRole("button", { name: /^Template/ })
@@ -17,6 +21,8 @@ for (const [width, height] of [
   [320, 568],
   [390, 844],
   [768, 1024],
+  // Wide enough for a panel under a button, but the button is in Style, down the page: it's the dialog still.
+  [1024, 768],
 ]) {
   test(`at ${width}px wide, every template can be seen and chosen`, async ({ page }) => {
     const errors = pageErrors(page)
@@ -93,9 +99,9 @@ test("the template gallery works from the keyboard, and closes every way", async
   expect(errors).toEqual([])
 })
 
-test("on a wider screen the gallery opens under its button, and a click elsewhere closes it", async ({ page }) => {
+test("on a wide screen the gallery opens under the header's Template button, and a click elsewhere closes it", async ({ page }) => {
   const errors = pageErrors(page)
-  await startWriting(page, 1024, 768)
+  await startWriting(page, 1280, 768)
   await picker(page).click()
   const dialog = gallery(page)
   await expect(dialog).toBeVisible()

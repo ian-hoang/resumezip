@@ -1,5 +1,14 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { chooseTemplate, newResume, pageErrors, preview, seriousAccessibilityProblems, templateShown } from "./helpers"
+import {
+  chooseTemplate,
+  editorHeading,
+  newResume,
+  openSection,
+  pageErrors,
+  preview,
+  seriousAccessibilityProblems,
+  templateShown,
+} from "./helpers"
 
 // From 1280px wide the editor is three columns on one sheet, under a top bar
 // (app/create/editor/page.tsx): the sections, Check or Style on the left, the
@@ -40,6 +49,8 @@ const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width &
 const download = (page: Page) => page.getByRole("button", { name: "Download PDF" })
 const modes = (page: Page) => page.getByRole("tablist", { name: /check or style$/i })
 const styleTab = (page: Page) => modes(page).getByRole("tab", { name: "Style" })
+/** The switch at the foot of a narrower screen: Write, Preview, Check and Style. */
+const views = (page: Page) => page.getByRole("group", { name: "View" })
 
 for (const [width, height] of [
   [1440, 900],
@@ -127,7 +138,7 @@ test("on a wide screen Style takes the form's place, beside the rail, and the he
   await chooseTemplate(page, "Harvard")
   // Harvard prints the name in capitals.
   await expect(preview(page).getByText("ADA LOVELACE", { exact: true })).toBeAttached()
-  await expect(templateShown(page)).toContainText("Harvard")
+  await expect(await templateShown(page)).toContainText("Harvard")
 
   // The arrow keys go round the rail's tabs, up and down.
   await styleTab(page).focus()
@@ -265,7 +276,9 @@ test.describe("on a phone", () => {
     await page.getByLabel("Full name").fill("Ada Lovelace")
     const style = page.getByRole("region", { name: "Style" })
 
-    await styleTab(page).tap()
+    // The switch at the foot steps aside while the keyboard is up, so it's put away first.
+    await page.getByLabel("Full name").blur()
+    await views(page).getByRole("button", { name: "Style" }).tap()
     await expect(style).toBeVisible()
     await expect(page.getByLabel("Full name")).toBeHidden()
     await page.getByRole("button", { name: /^Template/ }).tap()
@@ -273,17 +286,115 @@ test.describe("on a phone", () => {
     await expect(page.getByRole("button", { name: /^Template/ })).toContainText("Harvard")
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
 
-    await modes(page).getByRole("tab", { name: "Write" }).tap()
+    await views(page).getByRole("button", { name: "Write" }).tap()
     await expect(style).toBeHidden()
     await expect(page.getByLabel("Full name")).toHaveValue("Ada Lovelace")
 
     // Let the preview finish, so the compiler's download isn't cut off as the page closes.
-    await page.getByRole("group", { name: "View" }).getByRole("button", { name: "Preview" }).tap()
+    await views(page).getByRole("button", { name: "Preview" }).tap()
     await expect(preview(page).getByText("ADA LOVELACE", { exact: true })).toBeAttached()
     expect(errors).toEqual([])
   })
 
-  test("the Edit / Preview switch steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
+  test("the top bar keeps to one row with a long name, and the template is picked in Style", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    await page.getByLabel("Resume name").fill("Ada Lovelace, Analytical Engine programmer")
+    const bar = page.getByRole("banner")
+    // Only the way back, the name and Download PDF: one row, with the name cut short.
+    await expect(bar.getByRole("button", { name: /^Template/ })).toHaveCount(0)
+    await expect(bar.getByRole("button", { name: /PDF/ }).first()).toBeVisible()
+    expect((await boxOf(bar)).height).toBeLessThan(72)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+
+    await page.getByLabel("Resume name").blur()
+    await views(page).getByRole("button", { name: "Style" }).tap()
+    await expect(page.getByRole("region", { name: "Style" }).getByRole("button", { name: /^Template/ })).toBeVisible()
+    expect(errors).toEqual([])
+  })
+
+  test("the top bar's buttons, a date's calendar and the zoom are big enough for a thumb", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
+    const errors = pageErrors(page)
+    await newResume(page)
+    const tall = async (target: Locator, name: string) => {
+      const box = await boxOf(target)
+      expect(box.height, `${name} is 44px tall`).toBeGreaterThanOrEqual(44)
+      expect(box.width, `${name} is 44px wide`).toBeGreaterThanOrEqual(44)
+    }
+    await tall(page.getByRole("link", { name: "Dashboard" }), "the way back")
+    await tall(page.getByRole("button", { name: /PDF$/ }), "Download PDF")
+    await tall(page.getByRole("button", { name: "More formats" }), "the ▾ beside it")
+
+    await openSection(page, "Experience")
+    await page.getByRole("button", { name: "Add experience" }).tap()
+    await page.getByLabel("Company", { exact: true }).blur()
+    await tall(page.getByRole("button", { name: "Pick a date" }).first(), "a date's calendar")
+
+    await views(page).getByRole("button", { name: "Preview" }).tap()
+    await tall(preview(page).getByRole("button", { name: "Zoom in" }), "Zoom in")
+    await tall(preview(page).getByRole("button", { name: "Zoom out" }), "Zoom out")
+    expect(errors).toEqual([])
+  })
+
+  test("the sections are one bar over the form, with the one before and after, and all of them in a drawer", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    const bar = page.getByRole("button", { name: /^Sections: Profile, 1 of \d+$/ })
+    await expect(bar).toBeVisible()
+    // No row of tabs running off the side of the screen.
+    await expect(page.getByRole("navigation", { name: "Sections" })).toBeHidden()
+
+    const next = page.getByRole("button", { name: /^Next section: / })
+    const after = (await next.getAttribute("aria-label"))!.replace("Next section: ", "")
+    await next.tap()
+    await expect(page.getByRole("button", { name: new RegExp(`^Sections: ${after}, 2 of `) })).toBeVisible()
+    await expect(editorHeading(page, after)).toBeVisible()
+    await page.getByRole("button", { name: "Previous section: Profile" }).tap()
+
+    await page.getByRole("button", { name: /^Sections: / }).tap()
+    const drawer = page.getByRole("dialog", { name: "Sections" })
+    await expect(drawer).toBeVisible()
+    // At the foot of the screen, its width, every section and Add section in it, none off its side.
+    const box = await boxOf(drawer)
+    expect(Math.round(box.y + box.height)).toBe(844)
+    expect(Math.round(box.width)).toBe(390)
+    for (const name of ["Profile", after, "Skills", "Add section"])
+      await expect(drawer.getByRole("button", { name, exact: true })).toBeInViewport({ ratio: 1 })
+    expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+
+    await drawer.getByRole("button", { name: "Skills", exact: true }).tap()
+    await expect(drawer).toBeHidden()
+    await expect(editorHeading(page, "Skills")).toBeVisible()
+    await page.getByRole("button", { name: /^Sections: Skills/ }).tap()
+    await page.keyboard.press("Escape")
+    await expect(drawer).toBeHidden()
+    expect(errors).toEqual([])
+  })
+
+  test("More formats rises from the foot of the screen as a drawer, with Download PDF at its top", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    await page.getByLabel("Full name").fill("Ada Lovelace")
+    await page.getByLabel("Full name").blur()
+    await page.getByRole("button", { name: "More formats" }).tap()
+    const menu = page.getByRole("menu", { name: "More formats" })
+    await expect(menu.getByRole("menuitem").first()).toHaveText(/^Download PDF/)
+    await expect(menu.getByRole("menuitem", { name: /^JSON/ })).toBeVisible()
+    // The screen's width, at its foot.
+    await expect.poll(async () => Math.round((await boxOf(menu)).y + (await boxOf(menu)).height)).toBe(844)
+    const box = await boxOf(menu)
+    expect(Math.round(box.x)).toBe(0)
+    expect(Math.round(box.width)).toBe(390)
+
+    const downloading = page.waitForEvent("download")
+    await menu.getByRole("menuitem", { name: /^Download PDF/ }).tap()
+    expect((await downloading).suggestedFilename()).toMatch(/\.pdf$/)
+    await expect(menu).toBeHidden()
+    expect(errors).toEqual([])
+  })
+
+  test("the switch at the foot steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)
     await newResume(page)

@@ -418,7 +418,13 @@ for (const [layout, width] of [
   test(`on a ${layout}, a resume can be duplicated and renamed from the list`, async ({ page }) => {
     const errors = pageErrors(page)
     await page.setViewportSize({ width, height: 900 })
-    await dashboardWith(page, [{ ...resume("a", "Ada"), headings: { skills: "Toolbox" } }, resume("b", "Grace")])
+    // Enough for a phone to show the views (FIND_FROM in the dashboard).
+    await dashboardWith(page, [
+      { ...resume("a", "Ada"), headings: { skills: "Toolbox" } },
+      resume("b", "Grace"),
+      resume("c", "Kestrel"),
+      resume("d", "Lovelace"),
+    ])
     await page.getByRole("button", { name: "List" }).click()
     // The switch comes a frame later, as a view transition does, and the pages are a list too.
     await expect(page.getByRole("button", { name: "List" })).toHaveAttribute("aria-pressed", "true")
@@ -601,6 +607,18 @@ test("⌘Z (Ctrl+Z) puts back the resume just deleted, except in the search, whe
   expect(errors).toEqual([])
 })
 
+test("on a phone, a few resumes start on the first screen, with no search or sorting to scroll past", async ({ page }) => {
+  const errors = pageErrors(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await dashboardWith(page, [resume("a", "Ada")])
+  await expect(page.getByRole("link", { name: "Ada", exact: true })).toBeVisible()
+  await expect(page.getByRole("combobox", { name: "Search your resumes" })).toBeHidden()
+  // Its page starts in the top half of the screen, so it's plain it's there, without scrolling: it was 551px down.
+  const shown = (await tile(page, "Ada").boundingBox())!
+  expect(shown.y).toBeLessThan(844 / 2)
+  expect(errors).toEqual([])
+})
+
 test("on a phone, a page's More menu opens on screen, in front of the page beside it", async ({ page }) => {
   const errors = pageErrors(page)
   await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
@@ -756,7 +774,8 @@ test("on a phone, the search stays in the toolbar, with its matches under it, an
 }) => {
   const errors = pageErrors(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace")])
+  // Enough resumes to need finding: with fewer, a phone has no search (below).
+  await dashboardWith(page, [resume("a", "Ada"), resume("b", "Grace"), resume("c", "Kestrel"), resume("d", "Lovelace")])
   const search = page.getByRole("combobox", { name: "Search your resumes" })
   await expect(search).toBeVisible()
   const before = (await search.boundingBox())!

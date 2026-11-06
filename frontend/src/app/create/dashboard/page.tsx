@@ -95,6 +95,9 @@ function today() {
 // one), so a type of the person's own named "all" is a chip of its own.
 const EVERY_TYPE = ""
 
+// How many resumes a phone's dashboard needs before it shows the search, tags, sort and views.
+const FIND_FROM = 4
+
 export default function DashboardPage() {
   const router = useRouter()
   const {
@@ -562,8 +565,11 @@ export default function DashboardPage() {
               as the fade ended. */}
           {loaded && (
             <>
+              {/* On a phone, with a few resumes, there's nothing to search or sort, and the bar would push them
+                  down the screen; it shows once there are enough to need finding, or the list was chosen, so the
+                  way back to the pages is there. */}
               <Filters
-                className="mt-8 md:mt-5"
+                className={`mt-8 md:mt-5 ${kept.length < FIND_FROM && view === "pages" ? "max-sm:hidden" : ""}`}
                 search={<SearchBar resumes={kept} query={query} onQuery={setQuery} />}
                 tags={tags}
                 tag={tag}

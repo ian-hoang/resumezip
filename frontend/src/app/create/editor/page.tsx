@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { ArrowLeft, Eye, PencilLine } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { OpenResumeProvider, useOpenResume, useResumeActions, useResumeField, useResumeState } from "@/context/ResumeContext"
 import DeletedToast from "@/components/dashboard/DeletedToast"
 import { DownloadIcon } from "@/components/dashboard/RowActions"
@@ -20,6 +20,7 @@ import SectionForm, { type DeletedEntry } from "@/components/editor/SectionForm"
 import ExtraSectionForm from "@/components/editor/ExtraSectionForm"
 import { reducedMotion, useWideScreen, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
+import SectionPicker from "@/components/editor/SectionPicker"
 import StylePanel from "@/components/editor/StylePanel"
 import TemplatePicker from "@/components/editor/TemplatePicker"
 import { swapView } from "@/components/editor/swapView"
@@ -28,6 +29,7 @@ import { useKeepFormPlace } from "@/components/editor/useKeepFormPlace"
 import { usePdfFile } from "@/components/editor/usePdfFile"
 import { useSaveToDrive } from "@/components/editor/useSaveToDrive"
 import { useSharePdf } from "@/components/editor/useSharePdf"
+import ViewSwitch, { type View } from "@/components/editor/ViewSwitch"
 import DownloadFailed, { nextFailure, type Failure } from "@/components/site/DownloadFailed"
 import NotSaved from "@/components/site/NotSaved"
 import { SECTIONS, type SectionName } from "@/components/editor/sections"
@@ -150,10 +152,10 @@ function Editor({ id }: { id: string }) {
   // What to do with a LaTeX file pdfLaTeX can't compile, under the ▾ once it's downloaded.
   const [latexNotice, setLatexNotice] = useState<MenuNotice | null>(null)
   // Small screens show the form or the preview, not both.
-  const [view, setView] = useState<"edit" | "preview">("edit")
+  const [view, setView] = useState<View>("edit")
   // On wide screens the form can be folded away, so the page has the sheet to itself.
   const { folded, shut, foldTo, fold } = useFold()
-  // The Write | Check | Style tabs are in the top bar on wide screens, and atop the left bar narrower.
+  // Write, Check and Style are in the rail on wide screens, and in the switch at the foot narrower.
   const wide = useWideScreen()
   const [typing, setTyping] = useState(false)
   const editScroll = useRef(0)
@@ -292,7 +294,7 @@ function Editor({ id }: { id: string }) {
     }
   }, [pdfUrl])
 
-  // The Edit / Preview switch steps aside while a touch screen's keyboard is
+  // The switch at the foot steps aside while a touch screen's keyboard is
   // up. With a mouse and keyboard nothing covers the page, so it stays put and
   // can be clicked while a field has focus.
   useEffect(() => {
@@ -417,8 +419,9 @@ function Editor({ id }: { id: string }) {
     return () => window.removeEventListener("resize", measure)
   }, [toastShown])
   // The same elements while what they show is, so the left bar (memo) doesn't re-render with a new preview.
-  const nav = useMemo(
-    () => (
+  // The rail on wide screens; narrower, the bar over the form that opens them all in a drawer.
+  const nav = useMemo(() => {
+    const list = (stacked: boolean) => (
       <SectionNav
         sections={sections}
         headings={headings}
@@ -427,19 +430,32 @@ function Editor({ id }: { id: string }) {
         onSelect={select}
         onReorder={reorder}
         onAdd={add}
+        stacked={stacked}
       />
-    ),
-    [sections, headings, extraSections, selected, select, reorder, add],
-  )
+    )
+    return wide ? (
+      list(false)
+    ) : (
+      <SectionPicker sections={sections} headings={headings} extras={extraSections} active={selected} onSelect={select}>
+        {list(true)}
+      </SectionPicker>
+    )
+  }, [wide, sections, headings, extraSections, selected, select, reorder, add])
   const style = useMemo(() => <StylePanel />, [])
 
-  // Coming back to the form returns to where you were in it.
-  const show = (next: "edit" | "preview") => {
+  // Coming back to the form returns to where you were in it. `change` goes with it, as Check or Style chosen from the page.
+  const show = (next: View, change?: () => void, then?: () => void) => {
     if (next === view) return
     if (next === "preview") editScroll.current = window.scrollY
     swapView(
-      () => setView(next),
-      () => window.scrollTo({ top: next === "edit" ? editScroll.current : 0 }),
+      () => {
+        setView(next)
+        change?.()
+      },
+      () => {
+        window.scrollTo({ top: next === "edit" ? editScroll.current : 0 })
+        then?.()
+      },
     )
   }
   // Words picked on the preview open in the form, which scrolls to them rather than to where you were.
@@ -566,8 +582,8 @@ function Editor({ id }: { id: string }) {
     // it fills the window, with only a thin edge of sky round the frame so the page has the room: a
     // top bar over three columns, the sections (or what Check found, or Style) on the left, the form
     // in the middle, and the page on the right. Narrower, the same
-    // parts stack on the sheet: the top bar, the left bar's tabs, the form, and an Edit / Preview
-    // switch for the page. On wide screens it and the columns clip (overflow: clip) rather than
+    // parts stack on the sheet: the top bar, the left bar's tabs, the form, and a switch at the foot
+    // for Write, Preview, Check and Style. On wide screens it and the columns clip (overflow: clip) rather than
     // hide: a hidden box is still a scroll box, and choosing a finding scrolls its field into view
     // through every scroll box around it, which would shift the sheet up where no wheel can bring
     // it back.
@@ -576,10 +592,12 @@ function Editor({ id }: { id: string }) {
       <CheckProvider onSelect={select} onPick={showForm} preview={preview} unbuilt={unbuilt}>
         <div className="paper-frame flex flex-1 flex-col xl:min-h-0">
           <div className="paper flex flex-1 flex-col xl:min-h-0">
-            {/* Raised (z-40) over the columns and the Edit / Preview switch: the menus and the
+            {/* Raised (z-40) over the columns and the switch at the foot: the menus and the
                 gallery that open from it go over them. */}
             <header ref={headerRef} className="relative z-40 border-b border-hairline">
-              <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5 sm:px-3.5">
+              {/* One row on every screen: narrower than xl the template is picked in Style (StylePanel), and a
+                  long name is cut short rather than pushing Download PDF onto a row of its own. */}
+              <div className="flex min-h-[60px] items-center justify-between gap-x-4 px-3 py-2.5 sm:px-3.5">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-[15px]">
                   <Link
                     href="/create/dashboard"
@@ -590,16 +608,17 @@ function Editor({ id }: { id: string }) {
                     }}
                     aria-label="Dashboard"
                     title="Dashboard"
-                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full pointer-coarse:size-11"
                   >
                     <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
                   </Link>
                   <ResumeName />
                   <SavedNote />
                 </div>
-                {/* On the narrowest phones the template's name is cut short, so Download PDF still fits. */}
-                <div className="flex min-w-0 items-center justify-end gap-2.5 sm:gap-[15px]">
-                  <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+                <div className="flex shrink-0 items-center justify-end gap-2.5 sm:gap-[15px]">
+                  <div className="hidden xl:contents">
+                    <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+                  </div>
                   {/* Download PDF is the main way out; the ▾ beside it has the others. One blue pill,
                       split. The button's least width fits "Download PDF", so it doesn't shrink when it
                       says Downloaded. */}
@@ -612,7 +631,7 @@ function Editor({ id }: { id: string }) {
                       type="button"
                       onClick={download}
                       disabled={downloading}
-                      className="download-button relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-4 pr-3.5 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[148px] [&_svg]:size-4"
+                      className="download-button relative inline-flex h-9 items-center pointer-coarse:h-11 justify-center gap-2 overflow-hidden rounded-l-full pl-4 pr-3.5 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[148px] [&_svg]:size-4"
                     >
                       <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
                       {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}
@@ -642,6 +661,14 @@ function Editor({ id }: { id: string }) {
                     </button>
                     <DownloadMenu
                       choices={[
+                        // On a phone the menu is a drawer of its own, so it has the PDF too.
+                        {
+                          title: "Download PDF",
+                          hint: "Best for applying. Open it here again to keep editing.",
+                          icon: <DownloadIcon state="idle" />,
+                          drawerOnly: true,
+                          onChoose: download,
+                        },
                         { title: "Word", hint: "To edit in Word, Google Docs or Pages", icon: <WordIcon />, onChoose: downloadWord },
                         {
                           title: "LaTeX",
@@ -733,7 +760,7 @@ function Editor({ id }: { id: string }) {
             </header>
 
             <div className="flex flex-1 flex-col xl:min-h-0 xl:flex-row">
-              <LeftBar hidden={view === "preview"} tabs={!wide} folded={folded} shut={shut} onFold={fold} style={style}>
+              <LeftBar hidden={view === "preview"} wide={wide} folded={folded} shut={shut} onFold={fold} style={style}>
                 {nav}
               </LeftBar>
 
@@ -782,7 +809,7 @@ function Editor({ id }: { id: string }) {
                   sheet's edges, its corner rounded with the sheet's. */}
               <section
                 aria-label="Live preview"
-                className={`min-w-0 flex-col p-2.5 xl:flex xl:flex-1 xl:overflow-clip xl:p-0 ${
+                className={`min-w-0 flex-col p-2.5 max-sm:p-1.5 xl:flex xl:flex-1 xl:overflow-clip xl:p-0 ${
                   view === "preview" ? "flex max-xl:flex-1" : "hidden"
                 }`}
               >
@@ -799,6 +826,7 @@ function Editor({ id }: { id: string }) {
             </div>
           </div>
         </div>
+        <ViewSwitch view={view} onView={show} typing={typing} />
       </CheckProvider>
 
       {deletedEntry && (
@@ -811,38 +839,6 @@ function Editor({ id }: { id: string }) {
           style={toastSpan}
         />
       )}
-
-      <div
-        data-covers="bottom"
-        // Out of the way while typing, below the foot of the screen.
-        className={`fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex justify-center transition-transform duration-200 xl:hidden ${
-          typing ? "pointer-events-none translate-y-24" : ""
-        }`}
-      >
-        <div
-          role="group"
-          aria-label="View"
-          className="flex gap-1 rounded-full bg-sheet p-[5px] shadow-[0_0_0_1px_rgb(17_19_24/0.06),0_10px_28px_-8px_rgb(17_19_24/0.3)]"
-        >
-          {(["edit", "preview"] as const).map((option) => {
-            const Icon = option === "edit" ? PencilLine : Eye
-            return (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={view === option}
-                onClick={() => show(option)}
-                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-[15px] font-medium transition-colors ${
-                  view === option ? "bg-ink text-white" : "text-ink-3 hover:text-ink"
-                }`}
-              >
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {option === "edit" ? "Edit" : "Preview"}
-              </button>
-            )
-          })}
-        </div>
-      </div>
     </div>
   )
 }

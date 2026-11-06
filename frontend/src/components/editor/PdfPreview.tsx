@@ -534,7 +534,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
         />
       )}
       {/* On wide screens the zoom is in a pill of its own floating over the foot of the page, below, and the page has this room. */}
-      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
+      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 max-sm:px-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
           {zoomControls}
           {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
@@ -556,7 +556,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
           setPickedAt(null)
           links.close()
         }}
-        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
+        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 max-sm:px-2.5 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (
           <div className="flex h-full min-h-[480px] items-center justify-center text-sm text-ink-2">
@@ -675,14 +675,20 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
 /** The zoom's − 100% + buttons: in the bar over the preview, or in the pill under the page on wide screens. */
 function ZoomControls({ zoom, onOut, onReset, onIn }: { zoom: number; onOut: () => void; onReset: () => void; onIn: () => void }) {
   // At the smallest or largest zoom, its button stays focusable but does nothing, so the focus isn't lost.
+  // A thumb gets 44px.
   const iconButton =
-    "inline-flex h-8 w-8 items-center justify-center rounded-full text-[18px] text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:bg-transparent aria-disabled:hover:text-ink-2"
+    "inline-flex h-8 w-8 pointer-coarse:size-11 items-center justify-center rounded-full text-[18px] text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:bg-transparent aria-disabled:hover:text-ink-2"
   return (
     <>
       <button type="button" aria-label="Zoom out" aria-disabled={zoom <= MIN_ZOOM || undefined} onClick={onOut} className={iconButton}>
         −
       </button>
-      <button type="button" onClick={onReset} title="Reset zoom" className="w-12 text-center tabular-nums hover:text-ink">
+      <button
+        type="button"
+        onClick={onReset}
+        title="Reset zoom"
+        className="w-12 text-center tabular-nums hover:text-ink pointer-coarse:min-h-11"
+      >
         {Math.round(zoom * 100)}%
       </button>
       <button type="button" aria-label="Zoom in" aria-disabled={zoom >= MAX_ZOOM || undefined} onClick={onIn} className={iconButton}>

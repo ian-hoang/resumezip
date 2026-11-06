@@ -29,14 +29,26 @@ interface SectionNavProps {
   onSelect: (section: ActiveSection) => void
   onReorder: (sections: SectionRef[]) => void
   onAdd: (kind: ExtraKind | SectionName) => void
+  /** As a list down the drawer a narrower screen opens them in (SectionPicker), each row its width, rather than a row of tabs. */
+  stacked?: boolean
 }
 
 /**
  * The sections, each with its icon: a rail of icons in the left column on wide screens, each
- * section's name and how many entries it has in a tip beside it, and a row of pill tabs on
- * narrower ones. Profile stays first; the rest can be dragged into any order by their icons.
+ * section's name and how many entries it has in a tip beside it, and narrower, a list down the
+ * drawer the section bar opens (`stacked`, SectionPicker), each with how many entries it has.
+ * Profile stays first; the rest can be dragged into any order by their icons.
  */
-export default function SectionNav({ sections, headings, extras, active: open, onSelect, onReorder, onAdd }: SectionNavProps) {
+export default function SectionNav({
+  sections,
+  headings,
+  extras,
+  active: open,
+  onSelect,
+  onReorder,
+  onAdd,
+  stacked = false,
+}: SectionNavProps) {
   const navRef = useRef<HTMLElement>(null)
   const tabRef = useRef<HTMLSpanElement>(null)
   // The section the white tab was last put behind, so choosing another slides it there.
@@ -91,12 +103,12 @@ export default function SectionNav({ sections, headings, extras, active: open, o
   useEffect(() => {
     const nav = navRef.current
     const tab = nav?.querySelector<HTMLElement>("[aria-current]")
-    if (wide || !nav || !tab) return
+    if (wide || stacked || !nav || !tab) return
     const box = (tab.parentElement === nav ? tab : tab.parentElement!).getBoundingClientRect()
     const view = nav.getBoundingClientRect()
     const by = box.left < view.left + 16 ? box.left - view.left - 16 : box.right > view.right - 16 ? box.right - view.right + 16 : 0
     if (by) nav.scrollBy({ left: by, behavior: reducedMotion() ? "auto" : "smooth" })
-  }, [active, wide])
+  }, [active, wide, stacked])
 
   const onDragEnd = ({ source, destination }: DropResult) => {
     setDragging(false)
@@ -165,7 +177,7 @@ export default function SectionNav({ sections, headings, extras, active: open, o
   // Keyboard focus shows as a soft shade and dark text rather than the site's blue ring, which would box the row in.
   // The chosen section has the grey tab behind it already, so a shade there would draw a second one inside it.
   const item = (isActive: boolean) =>
-    `flex h-9 w-full min-w-0 shrink-0 items-center gap-3 whitespace-nowrap rounded-full pl-9 pr-3.5 text-left text-[15px] tracking-[-0.01em] transition-colors focus-visible:outline-none xl:h-10 xl:rounded-[12px] xl:p-0 ${
+    `flex ${stacked ? "h-12" : "h-9"} w-full min-w-0 shrink-0 items-center gap-3 whitespace-nowrap rounded-full pl-9 pr-3.5 text-left text-[15px] tracking-[-0.01em] transition-colors focus-visible:outline-none xl:h-10 xl:rounded-[12px] xl:p-0 ${
       isActive ? "font-medium text-ink" : "text-[#3a3e46] hover:text-ink focus-visible:bg-ink/[0.05] focus-visible:text-ink"
     }`
   // A row's own background: the grey tab is drawn behind the chosen one,
@@ -229,6 +241,11 @@ export default function SectionNav({ sections, headings, extras, active: open, o
           {wide && <Icon className={`mx-auto ${iconClass(isActive)}`} aria-hidden="true" />}
           {/* A title too long for a tab, as a section can be renamed, is cut short. In the rail it's the tip instead. */}
           <span className="min-w-0 truncate xl:sr-only">{titleOf(name)}</span>
+          {stacked && count > 0 && (
+            <span aria-hidden="true" className="shrink-0 font-normal text-ink-3">
+              · {count === 1 ? "1 entry" : `${count} entries`}
+            </span>
+          )}
         </button>
       </div>
     )
@@ -263,7 +280,7 @@ export default function SectionNav({ sections, headings, extras, active: open, o
       ref={navRef}
       onKeyDown={onArrowKey}
       aria-label="Sections"
-      className="relative isolate flex gap-1 overflow-x-auto px-2 py-2 no-scrollbar xl:flex-col xl:overflow-visible xl:p-0"
+      className={`relative isolate flex gap-1 ${stacked ? "flex-col py-1" : "overflow-x-auto px-2 py-2 no-scrollbar xl:flex-col xl:overflow-visible xl:p-0"}`}
     >
       <span
         ref={tabRef}
@@ -295,9 +312,9 @@ export default function SectionNav({ sections, headings, extras, active: open, o
 
       {dnd ? (
         <dnd.DragDropContext onDragStart={() => setDragging(true)} onDragEnd={onDragEnd}>
-          <dnd.Droppable droppableId="sections" direction={wide ? "vertical" : "horizontal"}>
+          <dnd.Droppable droppableId="sections" direction={wide || stacked ? "vertical" : "horizontal"}>
             {(drop) => (
-              <div ref={drop.innerRef} {...drop.droppableProps} className="flex gap-1 xl:flex-col">
+              <div ref={drop.innerRef} {...drop.droppableProps} className={`flex gap-1 ${stacked ? "flex-col" : "xl:flex-col"}`}>
                 {sections.map((name, index) => (
                   <dnd.Draggable key={name} draggableId={name} index={index}>
                     {(drag, snapshot) => renderSection(name, index, drag, snapshot.isDragging)}
@@ -309,7 +326,9 @@ export default function SectionNav({ sections, headings, extras, active: open, o
           </dnd.Droppable>
         </dnd.DragDropContext>
       ) : (
-        <div className="flex gap-1 xl:flex-col">{sections.map((name, index) => renderSection(name, index))}</div>
+        <div className={`flex gap-1 ${stacked ? "flex-col" : "xl:flex-col"}`}>
+          {sections.map((name, index) => renderSection(name, index))}
+        </div>
       )}
 
       <AddSectionMenu sections={addable} onAdd={onAdd} />

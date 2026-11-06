@@ -129,8 +129,10 @@ test("a section, the ATS checks or Style, and on a narrow screen the template ga
   // Let the preview finish, so the compiler's download isn't cut off as the page closes.
   await previewShown(page)
 
-  // Under 1024px the gallery is a dialog over a dimmed screen, which fades in with it.
+  // Under 1024px the gallery is a dialog over a dimmed screen, which fades in with it. Narrower than 1280px
+  // the Template button is at the top of Style, chosen in the switch at the foot.
   await page.setViewportSize({ width: 800, height: 900 })
+  await page.getByRole("group", { name: "View" }).getByRole("button", { name: "Style" }).click()
   const gallery = await fadingIn(page.getByRole("button", { name: /^Template/ }), page.getByRole("dialog", { name: "Choose a template" }))
   expect(gallery.some((text) => text.includes("Templates"))).toBe(true)
   await expect(page.getByRole("dialog", { name: "Choose a template" })).toBeVisible()

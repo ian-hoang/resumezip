@@ -68,7 +68,10 @@ interface AddSectionMenuProps {
  * The Add section button, and the menu it opens over the page: the sections
  * the resume doesn't have, then Custom section, which slides over to a text or a bullet list.
  * It's a portal to document.body, fixed above the page, so the left bar's scrolling,
- * and the row of tabs on smaller screens, neither cut it off nor move for it.
+ * and the row of tabs on smaller screens, neither cut it off nor move for it. In the
+ * sections' drawer on a narrower screen (SectionPicker), a modal <dialog> in the
+ * browser's top layer, it's a portal to the dialog instead: the top layer covers
+ * all of document.body, so the menu would open behind the drawer, out of reach.
  */
 export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps) {
   const menuId = useId()
@@ -85,10 +88,13 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
   const [height, setHeight] = useState<number>()
   // Coming back from Custom section puts the keyboard back on it.
   const backToCustom = useRef(false)
+  // Where the menu goes: the dialog the button is in, if it's in one, or else the page (see above).
+  const [layer, setLayer] = useState<HTMLElement | null>(null)
 
   const openMenu = () => {
     setCustom(false)
     setHeight(undefined)
+    setLayer(button.current?.closest("dialog") ?? document.body)
     show()
   }
 
@@ -138,7 +144,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
         aria-controls={open ? menuId : undefined}
         onClick={() => (open ? close() : openMenu())}
         // In the rail on wide screens, an icon as big as the sections'; in the row of tabs, a pill.
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[15px] font-medium tracking-[-0.01em] text-accent transition-[background-color,scale] duration-150 hover:bg-accent/[0.06] active:scale-[0.98] aria-expanded:bg-accent/[0.06] motion-reduce:transition-none xl:mt-[6px] xl:h-10 xl:w-10 xl:rounded-[12px] xl:px-0"
+        className="inline-flex h-9 max-xl:h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[15px] font-medium tracking-[-0.01em] text-accent transition-[background-color,scale] duration-150 hover:bg-accent/[0.06] active:scale-[0.98] aria-expanded:bg-accent/[0.06] motion-reduce:transition-none xl:mt-[6px] xl:h-10 xl:w-10 xl:rounded-[12px] xl:px-0"
       >
         {/* It turns into a cross while the menu is open. */}
         <Plus
@@ -149,6 +155,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
       </button>
 
       {place &&
+        layer &&
         createPortal(
           // It grows in from the button's side (`starting:` is CSS @starting-style),
           // solid, and only what's in it fades in, as see-through glass stops
@@ -220,7 +227,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
               </div>
             </div>
           </div>,
-          document.body,
+          layer,
         )}
     </>
   )
