@@ -293,6 +293,17 @@ test("text saved before underline and links reads as it did, and is saved so it 
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
+  test("the summary says to select words to bold them, not which marks to type", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
+    const errors = pageErrors(page)
+    await saveResumes(page, [RESUME])
+    await page.goto(`/create/new/${RESUME.id}`)
+    const summary = page.getByRole("textbox", { name: "Summary", exact: true })
+    await expect(summary).toHaveAccessibleDescription(/Select words to make them bold or italic/)
+    await expect(summary).not.toHaveAccessibleDescription(/\*\*/)
+    expect(errors).toEqual([])
+  })
+
   test("the toolbar shows clear of the words selected and inside the screen, and its buttons work", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)
