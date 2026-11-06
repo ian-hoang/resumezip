@@ -233,7 +233,7 @@ export function Field({
             spellCheck={web ? false : undefined}
             autoCapitalize={web ? "off" : undefined}
             onChange={(event) => onChange(event.target.value)}
-            className={`${look} placeholder:text-ink-2/50 ${date ? "pr-9" : ""}`}
+            className={`${look} placeholder:text-ink-2/50 ${date ? "pr-9 pointer-coarse:pr-10" : ""}`}
           />
         )}
         {date && (
@@ -246,7 +246,7 @@ export function Field({
             aria-expanded={picking}
             aria-controls={picking ? pickerId : undefined}
             onClick={() => (picking ? setPicking(false) : openPicker())}
-            className="absolute bottom-1 right-0 inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-expanded:bg-fill aria-expanded:text-accent [&_svg]:size-[17px]"
+            className="absolute bottom-1 right-0 inline-flex h-8 w-8 pointer-coarse:-bottom-1 pointer-coarse:-right-1.5 pointer-coarse:size-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-fill hover:text-ink aria-expanded:bg-fill aria-expanded:text-accent [&_svg]:size-[17px]"
           >
             <Calendar aria-hidden="true" />
           </button>

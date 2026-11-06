@@ -599,7 +599,7 @@ function Editor({ id }: { id: string }) {
                     }}
                     aria-label="Dashboard"
                     title="Dashboard"
-                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    className="white-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full pointer-coarse:size-11"
                   >
                     <ArrowLeft className="h-[18px] w-[18px]" aria-hidden="true" />
                   </Link>
@@ -622,7 +622,7 @@ function Editor({ id }: { id: string }) {
                       type="button"
                       onClick={download}
                       disabled={downloading}
-                      className="download-button relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-l-full pl-4 pr-3.5 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[148px] [&_svg]:size-4"
+                      className="download-button relative inline-flex h-9 items-center pointer-coarse:h-11 justify-center gap-2 overflow-hidden rounded-l-full pl-4 pr-3.5 text-sm font-medium transition-colors hover:bg-white/[0.08] focus-visible:bg-white/[0.14] disabled:cursor-wait sm:min-w-[148px] [&_svg]:size-4"
                     >
                       <DownloadIcon state={downloading ? "busy" : downloaded ? "done" : "idle"} />
                       {/* Fills along the bottom while the PDF is made, then the rest of the way, and fades, once it's downloaded. */}

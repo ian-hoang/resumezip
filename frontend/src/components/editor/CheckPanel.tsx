@@ -33,8 +33,9 @@ import { TIER_BG, TIER_NAMES, tierOf, type Tier } from "./fields"
 const TYPO_RULE = "G1"
 
 // A finding's actions, as quiet underlined words: Dismiss, Add word, Bring back.
+// On a touch screen, 44px tall round the words, so a thumb can't miss.
 const action =
-  "self-start text-[12px] font-medium text-ink-2 underline decoration-rule underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-2"
+  "self-start pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:-my-2.5 text-[12px] font-medium text-ink-2 underline decoration-rule underline-offset-[3px] transition-colors hover:text-ink hover:decoration-ink-2"
 
 type Category = (typeof CATEGORIES)[number]
 

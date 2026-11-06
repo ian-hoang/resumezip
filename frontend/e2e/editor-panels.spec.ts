@@ -304,6 +304,33 @@ test.describe("on a phone", () => {
     expect(errors).toEqual([])
   })
 
+  test("the top bar's buttons, a date's calendar and the zoom are big enough for a thumb", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
+    const errors = pageErrors(page)
+    await newResume(page)
+    const tall = async (target: Locator, name: string) => {
+      const box = await boxOf(target)
+      expect(box.height, `${name} is 44px tall`).toBeGreaterThanOrEqual(44)
+      expect(box.width, `${name} is 44px wide`).toBeGreaterThanOrEqual(44)
+    }
+    await tall(page.getByRole("link", { name: "Dashboard" }), "the way back")
+    await tall(page.getByRole("button", { name: /PDF$/ }), "Download PDF")
+    await tall(page.getByRole("button", { name: "More formats" }), "the ▾ beside it")
+
+    await page
+      .getByRole("navigation", { name: "Sections" })
+      .getByRole("button", { name: /^Experience$/ })
+      .tap()
+    await page.getByRole("button", { name: "Add experience" }).tap()
+    await page.getByLabel("Company", { exact: true }).blur()
+    await tall(page.getByRole("button", { name: "Pick a date" }).first(), "a date's calendar")
+
+    await views(page).getByRole("button", { name: "Preview" }).tap()
+    await tall(preview(page).getByRole("button", { name: "Zoom in" }), "Zoom in")
+    await tall(preview(page).getByRole("button", { name: "Zoom out" }), "Zoom out")
+    expect(errors).toEqual([])
+  })
+
   test("the switch at the foot steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Locator, type Page } from "./test"
+import { MARA } from "./resumes"
 import {
   editorHeading,
   holdablePreviews,
@@ -742,6 +743,24 @@ test.describe("on a phone", () => {
     await view.getByRole("button", { name: "Write" }).tap()
     await expect(sections).toBeVisible()
     expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+    expect(errors).toEqual([])
+  })
+
+  test("a note's Dismiss is big enough for a thumb", async ({ page, browserName }) => {
+    test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
+    const errors = pageErrors(page)
+    await saveResumes(page, [MARA])
+    await page.goto(`/create/new/${MARA.id}`)
+    await page
+      .getByRole("group", { name: "View" })
+      .getByRole("button", { name: /^Check/ })
+      .tap()
+    // Mara has no phone number, which the checker suggests adding.
+    const dismiss = page.getByRole("button", { name: /^Dismiss: .*phone/i })
+    const box = (await dismiss.boundingBox())!
+    expect(box.height).toBeGreaterThanOrEqual(44)
+    await dismiss.tap()
+    await expect(dismiss).toHaveCount(0)
     expect(errors).toEqual([])
   })
 
