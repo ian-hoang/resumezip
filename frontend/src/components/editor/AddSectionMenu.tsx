@@ -68,7 +68,10 @@ interface AddSectionMenuProps {
  * The Add section button, and the menu it opens over the page: the sections
  * the resume doesn't have, then Custom section, which slides over to a text or a bullet list.
  * It's a portal to document.body, fixed above the page, so the left bar's scrolling,
- * and the row of tabs on smaller screens, neither cut it off nor move for it.
+ * and the row of tabs on smaller screens, neither cut it off nor move for it. In the
+ * sections' drawer on a narrower screen (SectionPicker), a modal <dialog> in the
+ * browser's top layer, it's a portal to the dialog instead: the top layer covers
+ * all of document.body, so the menu would open behind the drawer, out of reach.
  */
 export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps) {
   const menuId = useId()
@@ -85,10 +88,13 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
   const [height, setHeight] = useState<number>()
   // Coming back from Custom section puts the keyboard back on it.
   const backToCustom = useRef(false)
+  // Where the menu goes: the dialog the button is in, if it's in one, or else the page (see above).
+  const [layer, setLayer] = useState<HTMLElement | null>(null)
 
   const openMenu = () => {
     setCustom(false)
     setHeight(undefined)
+    setLayer(button.current?.closest("dialog") ?? document.body)
     show()
   }
 
@@ -149,6 +155,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
       </button>
 
       {place &&
+        layer &&
         createPortal(
           // It grows in from the button's side (`starting:` is CSS @starting-style),
           // solid, and only what's in it fades in, as see-through glass stops
@@ -220,7 +227,7 @@ export default function AddSectionMenu({ sections, onAdd }: AddSectionMenuProps)
               </div>
             </div>
           </div>,
-          document.body,
+          layer,
         )}
     </>
   )
