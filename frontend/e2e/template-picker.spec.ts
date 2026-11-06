@@ -21,6 +21,8 @@ for (const [width, height] of [
   [320, 568],
   [390, 844],
   [768, 1024],
+  // Wide enough for a panel under a button, but the button is in Style, down the page: it's the dialog still.
+  [1024, 768],
 ]) {
   test(`at ${width}px wide, every template can be seen and chosen`, async ({ page }) => {
     const errors = pageErrors(page)

@@ -20,7 +20,7 @@ export default function StylePanel() {
     <section aria-label="Style" className="flex flex-col px-2 pb-5 pt-4 sm:px-3 xl:p-0">
       <div className="mx-1 mb-6 flex flex-col items-start gap-2.5 px-2 xl:hidden">
         <span className="label-mono text-ink-2">Template</span>
-        <TemplatePicker value={template} onChange={(next) => update("selectedTemplate", next)} />
+        <TemplatePicker value={template} onChange={(next) => update("selectedTemplate", next)} centred />
       </div>
       <section aria-labelledby={tuneId} className="mx-1 px-2 xl:mx-0 xl:px-0">
         {/* On wide screens the panel's title, Style, is over it. */}
