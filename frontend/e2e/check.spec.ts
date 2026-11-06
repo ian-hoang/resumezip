@@ -764,6 +764,26 @@ test.describe("on a phone", () => {
     expect(errors).toEqual([])
   })
 
+  test("what needs work is listed before what passed", async ({ page }) => {
+    const errors = pageErrors(page)
+    await saveResumes(page, [MARA])
+    await page.goto(`/create/new/${MARA.id}`)
+    await page
+      .getByRole("group", { name: "View" })
+      .getByRole("button", { name: /^Check/ })
+      .tap()
+    await expect(page.getByRole("button", { name: /^Dismiss: .*phone/i })).toBeVisible()
+    // Each category's line in the index: one that found something has a heading of its own; one that passed doesn't.
+    const order = () =>
+      page
+        .getByRole("region", { name: "Checks" })
+        .evaluate((index) => [...index.querySelector("ol")!.children].map((row) => (row.querySelector("h3") ? "found" : "passed")))
+    await expect.poll(async () => (await order()).includes("passed")).toBe(true)
+    const rows = await order()
+    expect(rows.lastIndexOf("found")).toBeLessThan(rows.indexOf("passed"))
+    expect(errors).toEqual([])
+  })
+
   test("tapping Check far down the form goes back up to what was found", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
