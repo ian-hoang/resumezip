@@ -55,20 +55,15 @@ function Tile({ tone, count, pressed, onPress }: { tone: AiInk; count: number; p
   const line = useId()
   const { title, line: words } = TILES[tone]
   return (
-    <button
-      type="button"
-      className="review-tile"
-      data-tone={tone}
-      aria-pressed={pressed}
-      aria-label={`${title}, ${count}`}
-      aria-describedby={line}
-      onClick={onPress}
-    >
+    <button type="button" className="review-tile" data-tone={tone} aria-pressed={pressed} aria-describedby={line} onClick={onPress}>
+      {/* Named by its title and count, not an aria-label: axe wants a label to hold all
+          the visible text, and the line is read as the description instead. */}
       <span className="review-tile-head">
         <span className="review-tile-title">{title}</span>
+        <span className="sr-only">, </span>
         <span className="review-tile-count">{count}</span>
       </span>
-      <span id={line} className="review-tile-line">
+      <span id={line} className="review-tile-line" aria-hidden="true">
         {words}
       </span>
       <TextPicture picture={TILES[tone].picture} className="review-tile-picture" />
