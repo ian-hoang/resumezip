@@ -2,10 +2,10 @@
 
 @layer components {
   /* "Deleted · Undo" (DeletedToast.tsx, dashboard.css) for an entry: above the
-     Edit | Preview switch at the foot of a narrow screen, and on a wide one
-     inside the foot of the form's panel, which the editor centres it on. */
+     switch at the foot of a narrow screen (ViewSwitch.tsx, 54px tall), and on
+     a wide one inside the foot of the form's panel, which the editor centres it on. */
   .deleted-toast-dock.in-editor {
-    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 3.5rem);
+    bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4rem);
   }
   @media (min-width: 80rem) {
     .deleted-toast-dock.in-editor {

@@ -3,7 +3,7 @@ import { WIDE_SCREEN } from "../src/components/editor/layout"
 import { editorHeading, newResume, pageErrors, preview, previewShown, saveResumes, settled } from "./helpers"
 
 // The editor puts the form beside the preview only where both have room
-// (components/editor/layout.ts). Narrower, an Edit / Preview switch shows one
+// (components/editor/layout.ts). Narrower, a switch at the foot shows one
 // at a time, and the form's fields fit the form's own width.
 
 const ENTRY = {
@@ -149,7 +149,7 @@ test("resizing keeps the section, what's typed and the controls, and the bullets
     await views(page).getByRole("button", { name: "Preview" }).click()
     await expect(preview(page)).toBeVisible()
     await expect(editorHeading(page, "Experience")).toBeHidden()
-    await views(page).getByRole("button", { name: "Edit" }).click()
+    await views(page).getByRole("button", { name: "Write" }).click()
     await expect(editorHeading(page, "Experience")).toBeVisible()
   }
 

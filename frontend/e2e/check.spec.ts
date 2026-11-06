@@ -710,28 +710,37 @@ test.describe("with less motion", () => {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
 
-  test("the switch sits above the section tabs, and works with the Edit and Preview switch", async ({ page }) => {
+  test("Write, Preview, Check and Style are one switch at the foot, and Check comes back from the page as it was", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const modes = page.getByRole("tablist", { name: /check or style$/i })
-    const check = modes.getByRole("tab", { name: /^Check/ })
+    const view = page.getByRole("group", { name: "View" })
+    const check = view.getByRole("button", { name: /^Check/ })
     const sections = page.getByRole("navigation", { name: "Sections" })
+    const checked = page.getByRole("region", { name: "Check" })
 
-    const switchBox = await modes.boundingBox()
-    const tabsBox = await sections.boundingBox()
-    expect(switchBox!.y + switchBox!.height).toBeLessThanOrEqual(tabsBox!.y + 1)
+    // One switch, at the foot of the screen below the sections, and no row of tabs above them.
+    await expect(view.getByRole("button")).toHaveText(["Write", "Preview", "Check", "Style"])
+    const switchBox = (await view.boundingBox())!
+    const sectionsBox = (await sections.boundingBox())!
+    expect(switchBox.y).toBeGreaterThan(sectionsBox.y + sectionsBox.height)
+    expect(switchBox.y + switchBox.height).toBeLessThanOrEqual(844)
+    await expect(page.getByRole("tablist", { name: /check or style$/i })).toHaveCount(0)
 
     await check.tap()
-    await expect(check).toHaveAttribute("aria-selected", "true")
-    await expect(page.getByRole("tabpanel", { name: /^Check/ })).toBeVisible()
+    await expect(check).toHaveAttribute("aria-pressed", "true")
+    await expect(checked).toBeVisible()
     await expect(sections).toBeHidden()
 
-    // Preview hides the left bar, and Edit brings it back as it was.
-    await page.getByRole("button", { name: "Preview", exact: true }).tap()
+    // Preview hides the form and what was found; Check brings them back as they were.
+    await view.getByRole("button", { name: "Preview" }).tap()
     await expect(preview(page)).toBeVisible()
-    await expect(modes).toBeHidden()
-    await page.getByRole("button", { name: "Edit", exact: true }).tap()
-    await expect(check).toHaveAttribute("aria-selected", "true")
+    await expect(checked).toBeHidden()
+    await check.tap()
+    await expect(check).toHaveAttribute("aria-pressed", "true")
+    await expect(checked).toBeVisible()
+    // And Write goes back to the sections.
+    await view.getByRole("button", { name: "Write" }).tap()
+    await expect(sections).toBeVisible()
     expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
     expect(errors).toEqual([])
   })
@@ -739,15 +748,15 @@ test.describe("on a phone", () => {
   test("tapping Check far down the form goes back up to what was found", async ({ page }) => {
     const errors = pageErrors(page)
     await newResume(page)
-    const check = page.getByRole("tablist", { name: /check or style$/i }).getByRole("tab", { name: /^Check/ })
+    const check = page.getByRole("group", { name: "View" }).getByRole("button", { name: /^Check/ })
 
-    // The switch stays pinned while the form scrolls under it.
+    // The switch stays at the foot while the form scrolls.
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100)
     await expect(check).toBeInViewport()
 
     await check.tap()
-    await expect(page.getByRole("tabpanel", { name: /^Check/ })).toBeInViewport()
+    await expect(page.getByRole("region", { name: "Check" })).toBeInViewport()
     await expect(check).toBeInViewport()
     expect(errors).toEqual([])
   })

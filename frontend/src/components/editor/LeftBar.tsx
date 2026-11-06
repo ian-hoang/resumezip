@@ -2,117 +2,15 @@
 
 import type React from "react"
 import { memo, useRef } from "react"
-import {
-  ListChecks,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PenLine,
-  ScanEye,
-  ShieldCheck,
-  SlidersHorizontal,
-  Type,
-  type LucideIcon,
-} from "lucide-react"
-import { SLIM_SEGMENT, SLIM_SEGMENTS } from "@/components/pills"
-import { useThumb } from "@/components/useThumb"
-import { useCheckActions, useCheckIfOpened, useCheckMode, type Mode } from "./CheckContext"
+import { ListChecks, PanelLeftClose, PanelLeftOpen, ScanEye, Type, type LucideIcon } from "lucide-react"
+import { useCheckActions, useCheckIfOpened, useCheckMode } from "./CheckContext"
 import CheckPanel from "./CheckPanel"
-import { WIDE_SCREEN } from "./layout"
 import { useMarks, type Shown } from "./MarksContext"
 import { useRailTip } from "./RailTip"
 import { swapView } from "./swapView"
 
-const MODES: { id: Mode; label: string; icon: LucideIcon }[] = [
-  { id: "write", label: "Write", icon: PenLine },
-  { id: "check", label: "Check", icon: ShieldCheck },
-  { id: "style", label: "Style", icon: SlidersHorizontal },
-]
-
-// The tabs and the panel they show, by these ids: the tabs are in the rail on
-// wide screens and at the top of the left bar on narrower ones, but only ever
-// in one of them.
-const tabId = (mode: Mode) => `editor-mode-${mode}`
+// The rail's tabs control this panel, which is the form's column on wide screens.
 const PANEL_ID = "editor-mode-panel"
-
-/** The tab an arrow key, Home or End moves to from tab `index` (WAI-ARIA tabs pattern); either arrow along each way. */
-function tabFrom(key: string, index: number): number | undefined {
-  const last = MODES.length - 1
-  const back = index === 0 ? last : index - 1
-  const on = index === last ? 0 : index + 1
-  return { ArrowLeft: back, ArrowUp: back, ArrowRight: on, ArrowDown: on, Home: 0, End: last }[key]
-}
-
-/**
- * The Write | Check | Style switch on narrower screens: a grey track with the
- * chosen one on a white pill, at the top of the left bar; on a phone its tabs
- * share the width. On wide screens they're in the rail (RailTabs).
- */
-export function ModeTabs({ stretch = false }: { stretch?: boolean }) {
-  const mode = useCheckMode()
-  const { chooseMode } = useCheckActions()
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const thumb = useThumb(mode)
-
-  const choose = (next: Mode) =>
-    swapView(
-      () => chooseMode(next),
-      () => {
-        // On small screens the bar is only pinned in Write mode, so if the page
-        // was scrolled down the form, go back up to show what Check or Style has.
-        // It stops at the top, where the pinned bar sits.
-        if (next === "write" || window.matchMedia(WIDE_SCREEN).matches) return
-        const top = document.getElementById(PANEL_ID)?.closest("aside")?.getBoundingClientRect().top ?? 0
-        if (top < 0) window.scrollTo({ top: window.scrollY + top })
-      },
-    )
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const next = tabFrom(event.key, index)
-    if (next === undefined) return
-    event.preventDefault()
-    choose(MODES[next].id)
-    tabRefs.current[next]?.focus()
-  }
-
-  return (
-    <div
-      ref={thumb.group}
-      role="tablist"
-      aria-label="Write, check or style"
-      className={`${SLIM_SEGMENTS} ${stretch ? "flex w-full sm:inline-flex sm:w-auto" : ""}`}
-    >
-      <span ref={thumb.thumb} aria-hidden="true" className={`segment-thumb ${thumb.placed ? "" : "invisible"}`} />
-      {MODES.map((option, index) => {
-        const selected = option.id === mode
-        const Icon = option.icon
-        return (
-          <button
-            key={option.id}
-            ref={(element) => {
-              tabRefs.current[index] = element
-            }}
-            type="button"
-            role="tab"
-            id={tabId(option.id)}
-            aria-selected={selected}
-            aria-controls={PANEL_ID}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => choose(option.id)}
-            onKeyDown={(event) => onKeyDown(event, index)}
-            // No ring on keyboard focus: arrows choose the tab as they move, so the white pill shows where focus is.
-            // Until the pill is placed, the chosen tab draws its own.
-            className={`${SLIM_SEGMENT} px-3.5 ${stretch ? "min-w-0 flex-1 max-sm:px-2 sm:flex-none" : ""} ${selected ? "text-ink" : "text-ink-3 hover:text-ink"} ${
-              selected && !thumb.placed ? "bg-sheet shadow-[0_1px_3px_rgb(17_19_24/0.14)]" : ""
-            }`}
-          >
-            <Icon aria-hidden="true" />
-            {option.label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 // A button in the rail: a 40px square of icon, shaded while pointed at, as the sections are (SectionNav).
 const RAIL_BUTTON =
@@ -208,7 +106,7 @@ function RailTabs({ unfold }: { unfold?: () => void }) {
 }
 
 /** How many of the checker's findings must be fixed; 0 until Check has been opened, as nothing's checked before. */
-function useFixCount(): number {
+export function useFixCount(): number {
   const check = useCheckIfOpened()
   return check?.report.findings.filter((finding) => finding.level === "fix").length ?? 0
 }
@@ -241,8 +139,8 @@ const RAIL_RULE = "my-2 h-px w-6 shrink-0 bg-hairline"
 interface LeftBarProps {
   /** Hidden while small screens show the preview. */
   hidden: boolean
-  /** Whether the Write | Check | Style tabs are here, as on narrower screens; on wide ones they're in the rail. */
-  tabs: boolean
+  /** Whether it's the rail of a wide screen; narrower, Write, Check and Style are in the switch at the foot (ViewSwitch). */
+  wide: boolean
   /** Whether the form is folded away, on wide screens, or on its way. */
   folded: boolean
   /** Whether it has slid shut, and is out of the layout. */
@@ -259,18 +157,18 @@ interface LeftBarProps {
  * the sheet: hide or show the form, then the ATS Checks, AI Reviews and
  * Style, each opening its panel beside it, in the form's place (styles/editor.css
  * hides the form), and hidden with it, then the sections. Narrower, it's a bar
- * above the form with the Write | Check | Style tabs and the section list,
- * what the checker found, or Fine-tune, pinned in Write mode so the section
- * tabs stay at hand; in Style mode it takes the form's place (styles/editor.css).
+ * above the form with the section list, what the checker found, or Fine-tune,
+ * as chosen in the switch at the foot of the screen (ViewSwitch), pinned in
+ * Write mode so the section tabs stay at hand; in Style mode it takes the
+ * form's place (styles/editor.css).
  */
-function LeftBar({ hidden, tabs, folded, shut, onFold, children, style }: LeftBarProps) {
+function LeftBar({ hidden, wide, folded, shut, onFold, children, style }: LeftBarProps) {
   const mode = useCheckMode()
-  const wide = !tabs
   const railTab = useRailTab()
   const { shown: notes } = useMarks()
   // Check has been opened on this visit, so there's a report for its panel.
   const checked = useCheckIfOpened() !== null
-  const panel = { role: "tabpanel", id: PANEL_ID, "aria-labelledby": wide ? railTabId(railTab) : tabId(mode) }
+  const panel = { role: "tabpanel", id: PANEL_ID, "aria-labelledby": railTabId(railTab) }
   // Switching fades the other one in (`starting:` is CSS @starting-style).
   const fadeIn = "transition-opacity duration-200 ease-out motion-reduce:transition-none starting:opacity-0"
   // On wide screens each part scrolls inside the column, fading at its foot as a sign there's more; the padding lets
@@ -320,10 +218,7 @@ function LeftBar({ hidden, tabs, folded, shut, onFold, children, style }: LeftBa
       data-mode={mode}
       className={`shrink-0 border-b border-hairline bg-sheet ${mode === "write" ? "sticky top-0 z-20" : ""} ${hidden ? "hidden" : ""}`}
     >
-      <div className="px-3 pt-3 sm:px-4">
-        <ModeTabs stretch />
-      </div>
-      <div {...panel}>
+      <div {...(mode === "check" ? { role: "region", "aria-label": "Check" } : {})}>
         <div key={mode} className={fadeIn}>
           {mode === "write" ? children : mode === "check" ? <CheckPanel /> : style}
         </div>

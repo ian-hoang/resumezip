@@ -209,7 +209,7 @@ async function startResume(page: Page) {
   await newResume(page)
   await page.getByLabel("Full name").fill("Ada Lovelace")
   await page.getByLabel("Email").fill("ada@example.com")
-  // Narrower than 1280px, the preview is behind the Edit / Preview switch.
+  // Narrower than 1280px, the preview is behind the switch at the foot.
   const toPreview = page.getByRole("group", { name: "View" }).getByRole("button", { name: "Preview" })
   if (await toPreview.isVisible()) await toPreview.click()
   const email = preview(page).locator(".textLayer span[role=presentation]", { hasText: "ada@example.com" })

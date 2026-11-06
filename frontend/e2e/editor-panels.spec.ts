@@ -40,6 +40,8 @@ const overlap = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width &
 const download = (page: Page) => page.getByRole("button", { name: "Download PDF" })
 const modes = (page: Page) => page.getByRole("tablist", { name: /check or style$/i })
 const styleTab = (page: Page) => modes(page).getByRole("tab", { name: "Style" })
+/** The switch at the foot of a narrower screen: Write, Preview, Check and Style. */
+const views = (page: Page) => page.getByRole("group", { name: "View" })
 
 for (const [width, height] of [
   [1440, 900],
@@ -265,7 +267,9 @@ test.describe("on a phone", () => {
     await page.getByLabel("Full name").fill("Ada Lovelace")
     const style = page.getByRole("region", { name: "Style" })
 
-    await styleTab(page).tap()
+    // The switch at the foot steps aside while the keyboard is up, so it's put away first.
+    await page.getByLabel("Full name").blur()
+    await views(page).getByRole("button", { name: "Style" }).tap()
     await expect(style).toBeVisible()
     await expect(page.getByLabel("Full name")).toBeHidden()
     await page.getByRole("button", { name: /^Template/ }).tap()
@@ -273,17 +277,17 @@ test.describe("on a phone", () => {
     await expect(page.getByRole("button", { name: /^Template/ })).toContainText("Harvard")
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
 
-    await modes(page).getByRole("tab", { name: "Write" }).tap()
+    await views(page).getByRole("button", { name: "Write" }).tap()
     await expect(style).toBeHidden()
     await expect(page.getByLabel("Full name")).toHaveValue("Ada Lovelace")
 
     // Let the preview finish, so the compiler's download isn't cut off as the page closes.
-    await page.getByRole("group", { name: "View" }).getByRole("button", { name: "Preview" }).tap()
+    await views(page).getByRole("button", { name: "Preview" }).tap()
     await expect(preview(page).getByText("ADA LOVELACE", { exact: true })).toBeAttached()
     expect(errors).toEqual([])
   })
 
-  test("the Edit / Preview switch steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
+  test("the switch at the foot steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)
     await newResume(page)

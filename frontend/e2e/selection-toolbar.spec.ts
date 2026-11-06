@@ -301,7 +301,7 @@ test.describe("on a phone", () => {
     await expect(toolbar(page)).toBeVisible()
     const words = await wordsBox(box, "dashboard")
     const bar = (await toolbar(page).boundingBox())!
-    // Below them where there's room, clear of the phone's own menu over them; here the pinned Edit / Preview bar is below them.
+    // Below them where there's room, clear of the phone's own menu over them; here the switch at the foot is below them.
     expect(bar.y >= words.bottom || bar.y + bar.height <= words.top).toBe(true)
     expect(bar.x).toBeGreaterThanOrEqual(0)
     expect(bar.x + bar.width).toBeLessThanOrEqual(390)
@@ -309,7 +309,7 @@ test.describe("on a phone", () => {
     await expect(box.getByRole("strong")).toHaveText("dashboard")
     await expect.poll(() => saved(page)).toBe("• Shipped the **dashboard** on time")
     // Let the preview finish, so the compiler's download isn't cut off as the page closes. The
-    // Edit / Preview switch steps aside while the keyboard is up, so the box is left first.
+    // switch at the foot steps aside while the keyboard is up, so the box is left first.
     await box.blur()
     await page.getByRole("group", { name: "View" }).getByRole("button", { name: "Preview" }).tap()
     await previewShown(page)
