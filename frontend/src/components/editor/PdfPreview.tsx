@@ -534,7 +534,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
         />
       )}
       {/* On wide screens the zoom is in a pill of its own floating over the foot of the page, below, and the page has this room. */}
-      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 md:px-8 xl:hidden">
+      <div className="flex flex-wrap items-center justify-end gap-3 px-5 py-3 max-sm:px-3 md:px-8 xl:hidden">
         <div className="flex items-center font-mono text-xs text-ink-2">
           {zoomControls}
           {numPages > 1 && <span className="ml-3">{numPages} pages</span>}
@@ -556,7 +556,7 @@ function PdfPreview({ pdfUrl, error, updating, template, maxPageWidth = MAX_PAGE
           setPickedAt(null)
           links.close()
         }}
-        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
+        className="preview-canvas relative min-h-[480px] flex-1 overflow-auto rounded-[inherit] px-5 pb-10 max-sm:px-2.5 focus-visible:outline-offset-[-2px] md:px-8 xl:min-h-0 xl:px-3 xl:pb-20 xl:pt-5"
       >
         {loadError || (error && drawings.length === 0) ? (
           <div className="flex h-full min-h-[480px] items-center justify-center text-sm text-ink-2">

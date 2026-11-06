@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { chooseTemplate, newResume, pageErrors, preview, selectInBox } from "./helpers"
+import { chooseTemplate, newResume, pageErrors, preview, previewShown, selectInBox } from "./helpers"
 
 declare global {
   interface Window {
@@ -371,4 +371,22 @@ test("a pinch zooms as far as the fingers move, and a mouse wheel's notch a tent
 
   expect((await page.evaluate(() => window.painted))!.blank).toBe(0)
   expect(errors).toEqual([])
+})
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test("the page is drawn nearly the screen's width", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    await page.getByLabel("Full name").fill("Ada Lovelace")
+    await page.getByLabel("Full name").blur()
+    await page.getByRole("group", { name: "View" }).getByRole("button", { name: "Preview" }).tap()
+    await previewShown(page)
+    // The frame round the sheet and a thin edge of the grey panel: a page 300px wide had words too small to read.
+    const drawn = (await preview(page).locator(".react-pdf__Page__canvas").first().boundingBox())!
+    expect(drawn.width).toBeGreaterThanOrEqual(326)
+    expect(drawn.x + drawn.width).toBeLessThanOrEqual(390)
+    expect(errors).toEqual([])
+  })
 })

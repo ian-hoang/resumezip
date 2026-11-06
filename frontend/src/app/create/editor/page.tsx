@@ -809,7 +809,7 @@ function Editor({ id }: { id: string }) {
                   sheet's edges, its corner rounded with the sheet's. */}
               <section
                 aria-label="Live preview"
-                className={`min-w-0 flex-col p-2.5 xl:flex xl:flex-1 xl:overflow-clip xl:p-0 ${
+                className={`min-w-0 flex-col p-2.5 max-sm:p-1.5 xl:flex xl:flex-1 xl:overflow-clip xl:p-0 ${
                   view === "preview" ? "flex max-xl:flex-1" : "hidden"
                 }`}
               >
