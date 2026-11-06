@@ -116,6 +116,16 @@ for (const [width, height, split] of [
   })
 }
 
+test("on a phone, an open entry's fields run the width of its card", async ({ page }) => {
+  const errors = pageErrors(page)
+  await writeExperience(page, 390, 844)
+  const form = (await page.getByRole("main").boundingBox())!
+  const bullets = (await page.getByLabel(BULLETS).boundingBox())!
+  // The form's 16px padding each side, the card's edge and 12px inside it: nothing more is taken.
+  expect(bullets.width).toBeGreaterThanOrEqual(form.width - 2 * 16 - 2 * 14)
+  expect(errors).toEqual([])
+})
+
 test("resizing keeps the section, what's typed and the controls, and the bullets stay whole", async ({ page }) => {
   const errors = pageErrors(page)
   await writeExperience(page, 1440, 900)

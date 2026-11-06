@@ -536,7 +536,9 @@ function SectionForm({ section, onDelete, onEntryDeleted, restored, onRestored }
               }`}
               inert={!isOpen}
             >
-              <div className="mb-3 ml-[10px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[13px] pr-6 pt-3">
+              {/* Under the entry's name, behind a rule down its left; on a phone, where every pixel of width
+                  is wanted for typing, the fields run the card's width instead. */}
+              <div className="mb-3 ml-[10px] mt-1.5 flex flex-col gap-4 border-l border-[#dcdfe5] pb-2 pl-[13px] pr-6 pt-3 max-sm:mx-3 max-sm:border-l-0 max-sm:px-0">
                 {flagAt(index) && <FlagNote finding={flagAt(index)!} />}
                 {titleFlag && <FlagNote id={titleNote} finding={titleFlag} />}
                 <div className={CARD_GRID}>
