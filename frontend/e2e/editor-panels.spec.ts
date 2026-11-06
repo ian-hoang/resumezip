@@ -331,6 +331,28 @@ test.describe("on a phone", () => {
     expect(errors).toEqual([])
   })
 
+  test("More formats rises from the foot of the screen as a drawer, with Download PDF at its top", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    await page.getByLabel("Full name").fill("Ada Lovelace")
+    await page.getByLabel("Full name").blur()
+    await page.getByRole("button", { name: "More formats" }).tap()
+    const menu = page.getByRole("menu", { name: "More formats" })
+    await expect(menu.getByRole("menuitem").first()).toHaveText(/^Download PDF/)
+    await expect(menu.getByRole("menuitem", { name: /^JSON/ })).toBeVisible()
+    // The screen's width, at its foot.
+    await expect.poll(async () => Math.round((await boxOf(menu)).y + (await boxOf(menu)).height)).toBe(844)
+    const box = await boxOf(menu)
+    expect(Math.round(box.x)).toBe(0)
+    expect(Math.round(box.width)).toBe(390)
+
+    const downloading = page.waitForEvent("download")
+    await menu.getByRole("menuitem", { name: /^Download PDF/ }).tap()
+    expect((await downloading).suggestedFilename()).toMatch(/\.pdf$/)
+    await expect(menu).toBeHidden()
+    expect(errors).toEqual([])
+  })
+
   test("the switch at the foot steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)

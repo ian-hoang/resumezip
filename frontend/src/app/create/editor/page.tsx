@@ -652,6 +652,14 @@ function Editor({ id }: { id: string }) {
                     </button>
                     <DownloadMenu
                       choices={[
+                        // On a phone the menu is a drawer of its own, so it has the PDF too.
+                        {
+                          title: "Download PDF",
+                          hint: "Best for applying. Open it here again to keep editing.",
+                          icon: <DownloadIcon state="idle" />,
+                          drawerOnly: true,
+                          onChoose: download,
+                        },
                         { title: "Word", hint: "To edit in Word, Google Docs or Pages", icon: <WordIcon />, onChoose: downloadWord },
                         {
                           title: "LaTeX",
