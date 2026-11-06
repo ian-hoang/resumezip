@@ -394,12 +394,26 @@ export async function openFile(button: Locator, files: Parameters<FileChooser["s
 
 /** Chooses a template from the gallery behind the header's Template button, which every screen has. */
 export async function chooseTemplate(page: Page, name: string): Promise<void> {
-  await page.getByRole("button", { name: /^Template/ }).click()
+  await (await templateShown(page)).click()
   await page.getByRole("dialog", { name: "Choose a template" }).getByRole("button", { name, exact: true }).click()
 }
 
-/** What names the resume's template on screen: the header's Template button. */
-export const templateShown = (page: Page): Locator => page.getByRole("button", { name: /^Template/ })
+/**
+ * What names the resume's template on screen, the Template button: in the
+ * header on a wide screen, and narrower, at the top of Style, which is opened
+ * from the switch at the foot first.
+ */
+export async function templateShown(page: Page): Promise<Locator> {
+  const button = page.getByRole("button", { name: /^Template/ })
+  if (await page.evaluate(() => !matchMedia("(min-width: 80rem)").matches)) {
+    // The switch steps aside while a touch screen's keyboard is up.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    const style = page.getByRole("group", { name: "View" }).getByRole("button", { name: "Style" })
+    if ((await style.getAttribute("aria-pressed")) !== "true") await style.click()
+  }
+  await expect(button).toBeVisible()
+  return button
+}
 
 /**
  * The editor's heading of a section, such as "Experience". Not the preview's:

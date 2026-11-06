@@ -138,7 +138,7 @@ test("on a wide screen Style takes the form's place, beside the rail, and the he
   await chooseTemplate(page, "Harvard")
   // Harvard prints the name in capitals.
   await expect(preview(page).getByText("ADA LOVELACE", { exact: true })).toBeAttached()
-  await expect(templateShown(page)).toContainText("Harvard")
+  await expect(await templateShown(page)).toContainText("Harvard")
 
   // The arrow keys go round the rail's tabs, up and down.
   await styleTab(page).focus()
