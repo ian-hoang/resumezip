@@ -302,6 +302,22 @@ export async function saveResumes(
 export const savedResume = (page: Page, id: string): Promise<Record<string, any>> =>
   page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), `resume:${id}`)
 
+/**
+ * The list of sections: the rail on a wide screen, and narrower, the drawer
+ * the section bar opens (SectionPicker), which it opens first if it's shut.
+ */
+export async function sectionList(page: Page): Promise<Locator> {
+  const list = page.getByRole("navigation", { name: "Sections" })
+  if (!(await list.isVisible())) await page.getByRole("button", { name: /^Sections: / }).click()
+  await expect(list).toBeVisible()
+  return list
+}
+
+/** Opens a section from the list of sections, wherever it is (sectionList). */
+export async function openSection(page: Page, name: string | RegExp) {
+  await (await sectionList(page)).getByRole("button", { name: typeof name === "string" ? new RegExp(`^${name}$`) : name }).click()
+}
+
 /** The editor's preview. */
 export const preview = (page: Page): Locator => page.getByRole("region", { name: "Live preview" })
 

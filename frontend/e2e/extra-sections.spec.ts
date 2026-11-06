@@ -9,8 +9,9 @@ import {
   pdfText,
   preview,
   previewShown,
-  saveResumes,
   savedResume,
+  saveResumes,
+  sectionList,
   seriousAccessibilityProblems,
 } from "./helpers"
 
@@ -29,7 +30,7 @@ async function open(page: Page) {
 const menu = (page: Page) => page.getByRole("menu", { name: "Add section" })
 /** Adds a section from the Add section menu: an optional one, or a custom Text or Bullet list. */
 async function add(page: Page, kind: string) {
-  await nav(page).getByRole("button", { name: "Add section", exact: true }).click()
+  await (await sectionList(page)).getByRole("button", { name: "Add section", exact: true }).click()
   if (kind === "Text" || kind === "Bullet list") await menu(page).getByRole("menuitem", { name: "Custom section" }).click()
   await menu(page).getByRole("menuitem", { name: kind, exact: true }).click()
   await expect(menu(page)).toBeHidden()

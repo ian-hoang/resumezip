@@ -1,5 +1,16 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { expectText, pageErrors, preview, previewShown, printed, saveResumes, savedResume, selectInBox, settled } from "./helpers"
+import {
+  expectText,
+  openSection,
+  pageErrors,
+  preview,
+  previewShown,
+  printed,
+  saveResumes,
+  savedResume,
+  selectInBox,
+  settled,
+} from "./helpers"
 
 // Selecting words in a styled box shows a toolbar over them: bold, italic,
 // underline and link, each also on a key (⌘B, ⌘I, ⌘U, ⌘K). A link underlines
@@ -44,10 +55,7 @@ async function openBox(page: Page, bullets: string, { before = false, phone = fa
   await saveResumes(page, [resume])
   await page.goto(`/create/new/${RESUME.id}`)
   if (!phone) await previewShown(page)
-  await page
-    .getByRole("navigation", { name: "Sections" })
-    .getByRole("button", { name: /^Experience$/ })
-    .click()
+  await openSection(page, "Experience")
   const box = page.getByLabel(LABEL)
   await box.focus()
   return box

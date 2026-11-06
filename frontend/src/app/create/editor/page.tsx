@@ -20,6 +20,7 @@ import SectionForm, { type DeletedEntry } from "@/components/editor/SectionForm"
 import ExtraSectionForm from "@/components/editor/ExtraSectionForm"
 import { reducedMotion, useWideScreen, WIDE_SCREEN } from "@/components/editor/layout"
 import SectionNav, { type ActiveSection } from "@/components/editor/SectionNav"
+import SectionPicker from "@/components/editor/SectionPicker"
 import StylePanel from "@/components/editor/StylePanel"
 import TemplatePicker from "@/components/editor/TemplatePicker"
 import { swapView } from "@/components/editor/swapView"
@@ -418,8 +419,9 @@ function Editor({ id }: { id: string }) {
     return () => window.removeEventListener("resize", measure)
   }, [toastShown])
   // The same elements while what they show is, so the left bar (memo) doesn't re-render with a new preview.
-  const nav = useMemo(
-    () => (
+  // The rail on wide screens; narrower, the bar over the form that opens them all in a drawer.
+  const nav = useMemo(() => {
+    const list = (stacked: boolean) => (
       <SectionNav
         sections={sections}
         headings={headings}
@@ -428,10 +430,17 @@ function Editor({ id }: { id: string }) {
         onSelect={select}
         onReorder={reorder}
         onAdd={add}
+        stacked={stacked}
       />
-    ),
-    [sections, headings, extraSections, selected, select, reorder, add],
-  )
+    )
+    return wide ? (
+      list(false)
+    ) : (
+      <SectionPicker sections={sections} headings={headings} extras={extraSections} active={selected} onSelect={select}>
+        {list(true)}
+      </SectionPicker>
+    )
+  }, [wide, sections, headings, extraSections, selected, select, reorder, add])
   const style = useMemo(() => <StylePanel />, [])
 
   // Coming back to the form returns to where you were in it. `change` goes with it, as Check or Style chosen from the page.

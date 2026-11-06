@@ -716,7 +716,7 @@ test.describe("on a phone", () => {
     await newResume(page)
     const view = page.getByRole("group", { name: "View" })
     const check = view.getByRole("button", { name: /^Check/ })
-    const sections = page.getByRole("navigation", { name: "Sections" })
+    const sections = page.getByRole("button", { name: /^Sections: / })
     const checked = page.getByRole("region", { name: "Check" })
 
     // One switch, at the foot of the screen below the sections, and no row of tabs above them.

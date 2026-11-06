@@ -1,5 +1,14 @@
 import { expect, test, type Locator, type Page } from "./test"
-import { chooseTemplate, newResume, pageErrors, preview, seriousAccessibilityProblems, templateShown } from "./helpers"
+import {
+  chooseTemplate,
+  editorHeading,
+  newResume,
+  openSection,
+  pageErrors,
+  preview,
+  seriousAccessibilityProblems,
+  templateShown,
+} from "./helpers"
 
 // From 1280px wide the editor is three columns on one sheet, under a top bar
 // (app/create/editor/page.tsx): the sections, Check or Style on the left, the
@@ -317,10 +326,7 @@ test.describe("on a phone", () => {
     await tall(page.getByRole("button", { name: /PDF$/ }), "Download PDF")
     await tall(page.getByRole("button", { name: "More formats" }), "the ▾ beside it")
 
-    await page
-      .getByRole("navigation", { name: "Sections" })
-      .getByRole("button", { name: /^Experience$/ })
-      .tap()
+    await openSection(page, "Experience")
     await page.getByRole("button", { name: "Add experience" }).tap()
     await page.getByLabel("Company", { exact: true }).blur()
     await tall(page.getByRole("button", { name: "Pick a date" }).first(), "a date's calendar")
@@ -328,6 +334,41 @@ test.describe("on a phone", () => {
     await views(page).getByRole("button", { name: "Preview" }).tap()
     await tall(preview(page).getByRole("button", { name: "Zoom in" }), "Zoom in")
     await tall(preview(page).getByRole("button", { name: "Zoom out" }), "Zoom out")
+    expect(errors).toEqual([])
+  })
+
+  test("the sections are one bar over the form, with the one before and after, and all of them in a drawer", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    const bar = page.getByRole("button", { name: /^Sections: Profile, 1 of \d+$/ })
+    await expect(bar).toBeVisible()
+    // No row of tabs running off the side of the screen.
+    await expect(page.getByRole("navigation", { name: "Sections" })).toBeHidden()
+
+    const next = page.getByRole("button", { name: /^Next section: / })
+    const after = (await next.getAttribute("aria-label"))!.replace("Next section: ", "")
+    await next.tap()
+    await expect(page.getByRole("button", { name: new RegExp(`^Sections: ${after}, 2 of `) })).toBeVisible()
+    await expect(editorHeading(page, after)).toBeVisible()
+    await page.getByRole("button", { name: "Previous section: Profile" }).tap()
+
+    await page.getByRole("button", { name: /^Sections: / }).tap()
+    const drawer = page.getByRole("dialog", { name: "Sections" })
+    await expect(drawer).toBeVisible()
+    // At the foot of the screen, its width, every section and Add section in it, none off its side.
+    const box = await boxOf(drawer)
+    expect(Math.round(box.y + box.height)).toBe(844)
+    expect(Math.round(box.width)).toBe(390)
+    for (const name of ["Profile", after, "Skills", "Add section"])
+      await expect(drawer.getByRole("button", { name, exact: true })).toBeInViewport({ ratio: 1 })
+    expect(await seriousAccessibilityProblems(page, [".react-pdf__Page"])).toEqual([])
+
+    await drawer.getByRole("button", { name: "Skills", exact: true }).tap()
+    await expect(drawer).toBeHidden()
+    await expect(editorHeading(page, "Skills")).toBeVisible()
+    await page.getByRole("button", { name: /^Sections: Skills/ }).tap()
+    await page.keyboard.press("Escape")
+    await expect(drawer).toBeHidden()
     expect(errors).toEqual([])
   })
 
