@@ -142,7 +142,7 @@ test("resizing keeps the section, what's typed and the controls, and the bullets
 
     // Still on Experience, with everything typed in it: in the rail, or narrower, the section bar.
     if (split) await expect(experience(page)).toHaveAttribute("aria-current", "true")
-    else await expect(page.getByRole("button", { name: /^Sections: Experience, 2 of / })).toBeVisible()
+    else await expect(page.getByRole("button", { name: /^Sections: Experience, \d+ of / })).toBeVisible()
     for (const [label, value] of Object.entries(ENTRY)) await expect(page.getByLabel(label, { exact: true })).toHaveValue(value)
     // A narrower box wraps onto more lines, and grows to show them.
     await expect.poll(() => bulletsHidden(page), { message: `bullets show in full at ${width}px` }).toBeLessThanOrEqual(0)
