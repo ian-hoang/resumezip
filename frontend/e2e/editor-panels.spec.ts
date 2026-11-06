@@ -287,6 +287,23 @@ test.describe("on a phone", () => {
     expect(errors).toEqual([])
   })
 
+  test("the top bar keeps to one row with a long name, and the template is picked in Style", async ({ page }) => {
+    const errors = pageErrors(page)
+    await newResume(page)
+    await page.getByLabel("Resume name").fill("Ada Lovelace, Analytical Engine programmer")
+    const bar = page.getByRole("banner")
+    // Only the way back, the name and Download PDF: one row, with the name cut short.
+    await expect(bar.getByRole("button", { name: /^Template/ })).toHaveCount(0)
+    await expect(bar.getByRole("button", { name: /PDF/ }).first()).toBeVisible()
+    expect((await boxOf(bar)).height).toBeLessThan(72)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
+
+    await page.getByLabel("Resume name").blur()
+    await views(page).getByRole("button", { name: "Style" }).tap()
+    await expect(page.getByRole("region", { name: "Style" }).getByRole("button", { name: /^Template/ })).toBeVisible()
+    expect(errors).toEqual([])
+  })
+
   test("the switch at the foot steps aside while the keyboard is up, in the summary's box too", async ({ page, browserName }) => {
     test.skip(browserName !== "chromium", "Checked in Chromium, whose touch emulation gives the page a phone's coarse pointer")
     const errors = pageErrors(page)

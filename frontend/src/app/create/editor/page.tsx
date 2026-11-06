@@ -586,7 +586,9 @@ function Editor({ id }: { id: string }) {
             {/* Raised (z-40) over the columns and the switch at the foot: the menus and the
                 gallery that open from it go over them. */}
             <header ref={headerRef} className="relative z-40 border-b border-hairline">
-              <div className="flex min-h-[60px] flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2.5 sm:px-3.5">
+              {/* One row on every screen: narrower than xl the template is picked in Style (StylePanel), and a
+                  long name is cut short rather than pushing Download PDF onto a row of its own. */}
+              <div className="flex min-h-[60px] items-center justify-between gap-x-4 px-3 py-2.5 sm:px-3.5">
                 <div className="flex min-w-0 items-center gap-3 sm:gap-[15px]">
                   <Link
                     href="/create/dashboard"
@@ -604,9 +606,10 @@ function Editor({ id }: { id: string }) {
                   <ResumeName />
                   <SavedNote />
                 </div>
-                {/* On the narrowest phones the template's name is cut short, so Download PDF still fits. */}
-                <div className="flex min-w-0 items-center justify-end gap-2.5 sm:gap-[15px]">
-                  <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+                <div className="flex shrink-0 items-center justify-end gap-2.5 sm:gap-[15px]">
+                  <div className="hidden xl:contents">
+                    <TemplatePicker value={selectedTemplate} onChange={chooseTemplate} />
+                  </div>
                   {/* Download PDF is the main way out; the ▾ beside it has the others. One blue pill,
                       split. The button's least width fits "Download PDF", so it doesn't shrink when it
                       says Downloaded. */}
